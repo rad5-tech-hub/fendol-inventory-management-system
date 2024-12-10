@@ -1,0 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
+@import '../shared/style.scss';
+
+
+.content {
+  width: $content-width;
+}
+
+.sidebar {
+  width: $sidebar-width;
+}
+
+
+.create_form {
+  height: 89vh; // Full viewport height
+  padding: 40px;
+  overflow: auto;
+  background-color: #FAFCFF;
+
+
+  h4 {
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 30px;
+      color: #2E3135;
+  }
+}
+
+
+.inputs{
+  border: #b79173aa 1px solid;
+  &::placeholder {
+    opacity: 0.5;
+  }
+  &:focus{
+    border: #896143aa 1px solid;
+  }
+}
+
+
+.submit {
+  background-color: #512728;  // Initial background color
+  
+  &:hover {
+    background-color: #714445; // Background color on hover
+  }
+
+  &:active {
+    background-color: #512728; // Background color when the button is clicked (active)
+  }
+}
+
+.styled_table {
+  width: 100%;
+  position: relative; // Ensure that child elements with absolute positioning are relative to this table
+}
+
+.styled_table th,
+.styled_table td {
+  white-space: nowrap; // Prevent text wrapping
+}
+
+.styled_table th {
+  color: #8C949B;
+  padding-bottom: 20px;
+  text-align: left; // Optional: align text to the left
+}
+
+.styled_table td {
+  padding: 18px 0px;
+  border-bottom:  0.2px solid #d0d6db;
+  font-family: Roboto Flex;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 18.75px;
+  letter-spacing: 0.04em;
+  color: #2E3135;
+  position: relative; // Ensure td can contain absolute positioned elements like the dropdown
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%; // Position dropdown below the element
+  right: 0;
+  background-color: #2E3135; // Background color
+  color: white; // Text color
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10000; // Ensure it is on top of the table
+  min-width: 150px; // Ensures a minimum width for the dropdown
+}
+
+.menuList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menuItem {
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  
+  &:hover {
+    background-color: #FAFCFF; // Hover background color
+    color: #2E3135; // Hover text color
+  }
+}
+
+
+@media (max-width: 992) {
+  .body{
+    display: none;
+  }
+}
+
+.inputContainer {
+  // Ensure the container is relative for positioning the sign
+  position: relative;
+}
+
+.nairaSign {
+  position: absolute;
+  right: 10px; // Adjust this value as needed for spacing
+  top: 50%;
+  transform: translateY(-50%); // Center it vertically
+  pointer-events: none; // Prevent mouse events on the sign
+  color: #524d4d; // Change color as needed
+}

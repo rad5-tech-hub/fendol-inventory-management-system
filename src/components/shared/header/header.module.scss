@@ -1,0 +1,44 @@
+$bg-color: #FAFCFF;
+$text-color: #2E3135;
+$icon-color: #512728;
+
+.brand {
+    img {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+    }
+}
+
+.header {
+    background-color: $bg-color;
+}
+
+.search {
+    // Hide search bar for tablet and smaller devices
+    @media (max-width: 991px) {
+        display: none;
+    }
+}
+
+#input {
+    border: 2px solid #AA3328;
+    border-radius: 20px;
+}
+
+.icons {
+    color: $icon-color;
+}
+
+.icon {
+    span {
+        font-size: 15px;
+        font-weight: 500;
+    }
+}
+
+@media (max-width: 991px) {
+    .header {
+        justify-content: space-between;
+    }
+}

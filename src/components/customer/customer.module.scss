@@ -1,0 +1,195 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
+@import '../shared/style.scss';
+
+
+.content {
+  width: $content-width;
+  height: 89vh;
+}
+
+.sidebar {
+  width: $sidebar-width;
+}
+
+
+.create_form {
+  height: 89vh; // Full viewport height
+  padding: 40px;
+  overflow: auto;
+  background-color: #FAFCFF;
+
+
+  h4 {
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 30px;
+      color: #2E3135;
+  }
+}
+
+.inputs{
+  border: #b79173aa 1px solid;
+  &::placeholder {
+    opacity: 0.5;
+  }
+  &:focus{
+    border: #896143aa 1px solid;
+  }
+}
+
+.styled_table {
+  width: 100%;
+}
+
+.styled_table th {
+  color: #8C949B;
+  padding-bottom: 20px;
+}
+
+.fadedPlaceholder::placeholder {
+  opacity: 0.5;
+}
+
+
+.styled_table tbody tr{
+  border-bottom:  0.2px solid #d0d6db;
+
+  &:hover{
+    cursor: pointer;
+  }
+
+  td{
+    padding: 18px 0px;
+    font-family: Roboto Flex;
+    font-size: 16px;
+    font-weight: 500;
+    text-align: left;
+    line-height: 18.75px;
+    letter-spacing: 0.04em;
+    color: #2E3135;
+    cursor: auto;
+  }
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%; // Position dropdown below the element
+  right: 0;
+  background-color: #2E3135; // Background color
+  color: white; // Text color
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10000; // Ensure it is on top of the table
+  min-width: 150px; // Ensures a minimum width for the dropdown
+}
+
+.menuList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menuItem {
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  
+  &:hover {
+    background-color: #FAFCFF; // Hover background color
+    color: #2E3135; // Hover text color
+  }
+}
+
+@media (max-width: 992) {
+  .body{
+    display: none;
+  }
+}
+
+.pagination {
+  .page-item.active .page-link {
+    background-color: #343a40; 
+    border-color: #343a40;
+  }
+}
+
+.suggestions_box {
+  position: absolute;
+  max-height: 170px;
+  width: calc(100% - 34px); /* Adjust for borders */
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 0; /* Ensure no margin is applied */
+  padding: 0; /* Reset padding */
+}
+
+.suggestions_box ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+.suggestions_box li {
+  padding: 8px;
+  cursor: pointer;
+}
+.suggestions_box li:hover {
+  background-color: #f0f0f0;
+}
+
+.styled_tables {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto; /* Remove fixed to allow for natural column sizing */
+  
+  td {
+    padding: 16px;
+    text-align: left;
+    font-size: 15px;
+    font-weight: 500;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    color: #2E3135;
+    background-color: #D0D5DD;
+    text-transform: uppercase;
+    font-size: 16px;
+    font-weight: 650;
+  }
+
+  tbody tr:hover {
+    background-color: #f5f5f5;
+    cursor: auto; /* Make sure it's clear that the rows are clickable */
+  }
+
+}
+
+.theaders {
+  th {
+    padding: 12px;
+    &:first-of-type {
+      border-top-left-radius: 8px;
+      border-bottom-left-radius: 8px;
+    }
+    &:last-of-type {
+      border-top-right-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+  }
+}
+
+.submit {
+  background-color: #512728;  // Initial background color
+  
+  &:hover {
+    background-color: #714445; // Background color on hover
+  }
+
+  &:active {
+    background-color: #512728; // Background color when the button is clicked (active)
+  }
+}

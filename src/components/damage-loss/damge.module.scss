@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
+@import '../shared/style.scss';
+
+
+.content {
+  width: $content-width;
+}
+
+.sidebar {
+  width: $sidebar-width;
+}
+
+
+.create_form {
+  background-color: #FAFCFF;
+  height: 89vh; // Full viewport height
+  padding: 40px;
+  overflow: auto;
+  h4 {
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 30px;
+      color: #2E3135;
+  }
+}
+.stageBox {
+  background-color: #FAFCFF;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 15px;
+  h6 {
+    color: #8C949B;
+  }
+  
+  p {
+    color: #2E3135;
+    font-size: 30px;
+    font-weight: 600;
+
+    span {
+    color: #8C949B;
+      font-size: small;
+      font-weight: 400;
+    }
+  }
+  &:hover {
+    box-shadow: 2px 4px 8px #2E3135; // Increase shadow
+    transform: scale(1.05); // Slightly increase size on hover
+  }
+}
+.styled_table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; // Fixed layout for equal column widths
+
+  th, td {
+    padding: 8px;
+    text-align: left;
+    overflow: hidden; // Prevent overflow
+    text-overflow: ellipsis; // Add ellipsis for overflowed text
+    white-space: nowrap; // Prevent text wrapping
+  }
+}
+
+.styled_table th {
+  color: #8C949B;
+  padding: 20px 9px;
+  text-align: left; // Optional: align text to the left
+}
+
+.theader{
+  background-color: #D0D5DD;
+  th {
+    color: #2E3135;
+    &:first-of-type {
+      border-top-left-radius: 8px; // Adjust to desired radius
+      border-bottom-left-radius: 8px;
+    }
+    &:last-of-type {
+      border-top-right-radius: 8px; // Adjust to desired radius
+      border-bottom-right-radius: 8px;
+    }
+  }
+
+}
+
+.trow{
+  &:hover{
+    cursor: pointer;
+  }
+}
+
+.styled_table td {
+  padding: 19px 8px;
+  border-bottom:  0.2px solid #d0d6db;
+  font-family: Roboto Flex;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 18.75px;
+  letter-spacing: 0.04em;
+  color: #2E3135;
+  position: relative; // Ensure td can contain absolute positioned elements like the dropdown
+  :hover{
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 992) {
+  .body{
+    display: none;
+  }
+}

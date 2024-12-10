@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
+$siderbar-color: #B06426;
+$active-color: #512728;
+$text-color: #ffffff;
+@import '../style.scss';
+
+
+.sidebar {
+    width: $sidebar-width;
+    background-color: $siderbar-color;
+    height: 90vh;
+    overflow-x: hidden; 
+    overflow-y: auto 2px; 
+}
+
+// Custom scrollbar styling for WebKit browsers (Chrome, Safari)
+.sidebar::-webkit-scrollbar {
+    width: 8px; // Adjust width of the scrollbar
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: darken($siderbar-color, 10%); // Darken the sidebar color for the thumb
+    border-radius: 10px; // Makes the scrollbar rounded
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background-color: lighten($siderbar-color, 15%); // Lighter background for the scrollbar track
+}
+
+// For Firefox
+.sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: darken($siderbar-color, 10%) lighten($siderbar-color, 15%);
+}
+
+// Styling for scroll indicators (optional)
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: darken($siderbar-color, 20%); // Darker color on hover
+}
+
+.card{
+    background-color: $siderbar-color;
+    border: none;
+    margin: 10px 0;
+}
+
+.cardHeader{
+    background-color: $siderbar-color;
+}
+
+.activeLink {
+    background-color: $active-color;
+    color: #ffffff;
+    border-radius: 15px;
+    font-family: "Roboto Flex", system-ui;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 14px;
+    box-shadow: 2px 2px 5px $active-color;
+    padding: 7px 10px;
+}
+
+.activeLink:hover{
+    color: #ffffff;    
+    background-color: $active-color;
+    box-shadow: 2px 2px 2px $active-color;
+}
+
+.activeLink:active{
+    color: #ffffff;
+    box-shadow: 2px 2px 6px $active-color;
+}
+  
+.nonactiveLink{
+    color: #ffffff;
+    font-family: "Roboto Flex", system-ui;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 14px;
+}
+
+.nonactiveLink:hover{
+    color: #ffffff;    
+}
+
+.navs{
+
+    .title{
+        color: #ffffff;
+        font-family: "Roboto Flex", system-ui;
+        font-optical-sizing: auto;
+        font-weight: 500;
+        font-style: normal;
+        font-size: 15px;
+    }
+    .navigationLinks{
+        color: #ffffff;
+        font-family: "Roboto Flex", system-ui;
+        font-optical-sizing: auto;
+        font-weight: 500;
+        font-style: normal;
+        font-size: 14px;
+    }
+}
