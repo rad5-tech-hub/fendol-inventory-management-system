@@ -38,7 +38,7 @@ const fetchTableData = async () => {
       }
     } catch (error) {
       console.error(error);
-      setErrorTable("Error fetching fish stages data.");
+      setErrorTable(error.response?.data?.message || "Error getting showcase data.");
     } finally {
       setLoadingTable(false);
     }

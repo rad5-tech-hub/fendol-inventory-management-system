@@ -3,7 +3,7 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../process.module.scss';
-import { Spinner, Alert } from "react-bootstrap";
+import { Spinner, Alert, OverlayTrigger,Popover } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import Api from '../../shared/api/apiLink';
@@ -16,6 +16,11 @@ export default function ViewSummary() {
   const [currentPage, setCurrentPage] = useState(0); // Current page
   const [itemsPerPage] = useState(10); // Items per page
   const [selectedDate, setSelectedDate] = useState("");
+  const [selectedNote, setSelectedNote] = useState(null); // Store the clicked note
+
+  const handleNoteClick = (remark) => {
+    setSelectedNote(remark);
+  };
 
   useEffect(() => {
     const fetchMoveFishHistory = async () => {
@@ -39,6 +44,14 @@ export default function ViewSummary() {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
+    // Define the popover content
+    const renderPopover = (remark) => (
+      <Popover id="popover-basic">
+        <Popover.Header as="h5">Full Remark</Popover.Header>
+        <Popover.Body>{remark}</Popover.Body>
+      </Popover>
+    );
 
   const handleDateChange = (event) => {
     const date = event.target.value;
@@ -121,7 +134,7 @@ export default function ViewSummary() {
                       <th>DATE CREATED</th>
                       <th>FISH BATCH</th>
                       <th>QUANTITY BEFORE</th>
-                      <th>QUANTITY AFTER <br /> (W,S,D)</th>
+                      <th>QUANTITY AFTER <br /> (W,B,D)</th>
                       <th>REMARK</th>
                     </tr>
                   </thead>
@@ -133,8 +146,20 @@ export default function ViewSummary() {
                           <td>{formattedDate}</td>
                           <td>{history.batch_no || '-'}</td>
                           <td>{history.quantityBefore}</td>
-                          <td>{`${history.wholeQuantity},${history.brokenQuantity},${history.damageLoss}`}</td>
-                          <td>{history.remarks ? history.remarks.slice(0, 40) + (history.remarks.length > 40 ? '...' : '') : '-'}</td>
+                          <td>{`${history.wholeQuantity},${history.brokenQuantity},${history.damageLoss}`}</td>                          
+                          <OverlayTrigger
+                              trigger="click" // Show the popover on click
+                              placement="right" // Position the popover to the right
+                              overlay={renderPopover(history.remarks)} // Pass the full note as popover content
+                            >
+                              <td
+                                style={{cursor: 'pointer'}}
+                                className="text-end"
+                                onClick={() => handleNoteClick(history.remarks)}
+                              >
+                                {history.remarks.length > 50 ? `${history.remarks.substring(0, 50)}...` : history.remarks}                                
+                              </td>
+                            </OverlayTrigger>
                         </tr>
                       );
                     })}

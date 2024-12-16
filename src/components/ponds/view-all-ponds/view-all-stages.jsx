@@ -246,7 +246,7 @@ const ViewAllStages = () => {
                     {displayedStages.map((stage) => {
                       const formattedCreatedAt = formatDate(stage.createdAt);
                       return (
-                        <tr key={stage.id} style={{cursor: 'pointer'}} onClick={()=>{handleEditStage(stage); fetchnote(stage.id)}}>
+                        <tr key={stage.id} style={{cursor: 'pointer'}} title={`View ${stage.title}`} onClick={()=>{handleEditStage(stage); fetchnote(stage.id)}}>
                           <td>{formattedCreatedAt}</td>
                           <td>{stage.title}</td>
                           <td>{stage.quantity}</td>
@@ -294,10 +294,13 @@ const ViewAllStages = () => {
       >
         <Modal.Header closeButton className="border-0 mb-4">
           <div className="row w-100 px-3">
-            <div className="col-9 mb-2">
+            <div className="col-12 mb-2">
               <Modal.Title id="contained-modal-title-vcenter" className="fw-semibold">
                 Name: {selectedStage?.title}
               </Modal.Title>
+            </div>            
+            <div className="col-9">
+              <p className="mb-0 fs-5 fw-semibold">Quantity: {selectedStage?.quantity}</p>
             </div>
             <div  className="col-3 mb-2 text-end">
               <span className={`bg-light rounded-circle ${styles.action}`} title="Edit pond" onClick={() => setModaltype('edit pond')}>
@@ -306,9 +309,6 @@ const ViewAllStages = () => {
               <span className={`bg-light rounded-circle ${styles.action}`} onClick={()=>DeletePond()} title="Delete Pond">
                 <BsTrash size={18} className="text-danger text-center" />
               </span>
-            </div>
-            <div className="col-12">
-              <p className="mb-0 fs-5 fw-semibold">Quantity: {selectedStage?.quantity}</p>
             </div>
           </div>
         </Modal.Header>

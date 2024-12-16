@@ -45,9 +45,8 @@ export default function ViewBrokenHistory() {
       } else {
         throw new Error('Expected an object with the data property');
       }
-    } catch (error) {
-      console.error(error);
-      setErrorTable("Error fetching fish stages data.");
+    } catch (error) {  
+      setErrorTable(error.response?.data?.message ||"Error getting showcase data.");
     } finally {
       setLoadingTable(false);
     }

@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Nav, Card, Collapse, Tooltip, OverlayTrigger} from 'react-bootstrap';
-import { FaCaretDown, FaCaretUp } from 'react-icons/fa';
+import { FaCaretDown, FaCaretUp} from 'react-icons/fa';
 import { IoGridOutline } from "react-icons/io5";
-import { LuClipboardCheck } from "react-icons/lu";
+import { BsShopWindow } from "react-icons/bs";
+import { LuClipboardCheck, LuClipboardPenLine } from "react-icons/lu";
 import { FaRegCircle } from "react-icons/fa6";
+import { GiCannedFish, GiCirclingFish, GiFriedFish, GiChipsBag, GiDamagedHouse } from "react-icons/gi";
+import { TbFishOff } from "react-icons/tb";
+import { RiStoreFill } from "react-icons/ri";
+import { MdOutlinePointOfSale } from "react-icons/md";
 import styles from './siderbar.module.scss';
 import { useLocation, useNavigate,Link } from 'react-router-dom';
 
@@ -133,7 +138,7 @@ export default function SideBar() {
                                 className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
                             >
                                 <span className={`${styles.title}`}>
-                                    <LuClipboardCheck size={25} className="me-1" /> Customer
+                                    <LuClipboardPenLine size={25} className="me-1" /> Customer
                                 </span>
                                 <span>
                                     {open.customer ? <FaCaretUp className='text-light'/> : <FaCaretDown className='text-light'/>}
@@ -176,7 +181,7 @@ export default function SideBar() {
                                 style={{ cursor: 'pointer' }}
                             >
                                 <span className={`${styles.title}`}>
-                                    <LuClipboardCheck size={25} className="me-1" /> Ponds
+                                    <GiCannedFish size={25} className="me-1" /> Ponds
                                 </span>
                                 
                                 <span >
@@ -220,7 +225,7 @@ export default function SideBar() {
                                 style={{ cursor: 'pointer' }}
                             >
                                 <span className={`${styles.title}`}>
-                                    <LuClipboardCheck size={25} className="me-1" /> Manage Fish
+                                    <GiCirclingFish size={25} className="me-1" /> Manage Fish
                                 </span>
                                 
                                 <span >
@@ -300,7 +305,7 @@ export default function SideBar() {
                                 className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
                             >
                                 <span className={`${styles.title}`}>
-                                    <LuClipboardCheck size={25} className="me-1" /> Fish Processing
+                                    <TbFishOff size={25} className="me-1" /> Fish Processing
                                 </span>
                                 <span>
                                     {open.fish_processes? <FaCaretUp className='text-light'/> : <FaCaretDown className='text-light'/>}
@@ -343,7 +348,7 @@ export default function SideBar() {
                                 className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
                             >
                                 <span className={`${styles.title}`}>
-                                    <LuClipboardCheck size={25} className="me-1" /> Products
+                                    <GiFriedFish size={25} className="me-1" /> Products
                                 </span>
                                 <span>
                                     {open.products ? <FaCaretUp className='text-light'/> : <FaCaretDown className='text-light'/>}
@@ -386,7 +391,7 @@ export default function SideBar() {
                                 className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
                             >
                                 <span className={`${styles.title}`}>
-                                    <LuClipboardCheck size={25} className="me-1" /> Showcase
+                                    <BsShopWindow size={25} className="me-1" /> Showcase
                                 </span> 
                                 <span>
                                     {open.showcase ? <FaCaretUp className='text-light'/> : <FaCaretDown className='text-light'/>}
@@ -434,7 +439,7 @@ export default function SideBar() {
                                 className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
                             >
                                 <span className={`${styles.title}`}>
-                                    <LuClipboardCheck size={25} className="me-1" /> Feed
+                                    <GiChipsBag size={25} className="me-1" /> Feed
                                 </span> 
                                 <span>
                                     {open.feed ? <FaCaretUp className='text-light'/> : <FaCaretDown className='text-light'/>}
@@ -486,7 +491,7 @@ export default function SideBar() {
                                 className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
                             >
                                 <span className={`${styles.title}`}>
-                                    <LuClipboardCheck size={25} className="me-1" /> Store
+                                    <RiStoreFill size={25} className="me-1" /> Store
                                 </span> 
                                 <span>
                                     {open.store ? <FaCaretUp className='text-light'/> : <FaCaretDown className='text-light'/>}
@@ -538,7 +543,7 @@ export default function SideBar() {
                                 className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
                             >
                                 <span className={`${styles.title}`}>
-                                    <LuClipboardCheck size={25} className="me-1" /> Finance
+                                    <MdOutlinePointOfSale size={25} className="me-1" /> Finance
                                 </span> 
                                 <span>
                                     {open.finance ? <FaCaretUp className='text-light'/> : <FaCaretDown className='text-light'/>}
@@ -566,17 +571,6 @@ export default function SideBar() {
                                                 <FaRegCircle size={16} className="me-1" /> Add Expenses
                                             </div>
                                         </Nav.Item>
-                                        {role === 'super_admin' && (
-                                            <Nav.Item className="mb-3" title="Add staff Salary">
-                                                <div 
-                                                    onClick={() => navigate('/finance/staff-salary')} 
-                                                    className={`${location.pathname === "/finance/staff-salary" ? styles.activeLink : styles.nonactiveLink}`}
-                                                    style={{ cursor: 'pointer' }}
-                                                >
-                                                    <FaRegCircle size={16} className="me-1" /> Staff Salary
-                                                </div>
-                                            </Nav.Item>
-                                        )}
                                         {role === 'super_admin' && (<Nav.Item className="mb-3" title="Financial Ledger">
                                             <div 
                                                 onClick={() => navigate('/finance/ledger')} 
@@ -674,7 +668,7 @@ export default function SideBar() {
                             onClick={() => navigate('/damage-loss')}
                             className={`${location.pathname === "/damage-loss" ? styles.activeLink : styles.nonactiveLink}`}
                         >
-                            <LuClipboardCheck size={25} className="me-1 text-light" /> <span className={styles.title}>Damage/Loss</span>
+                            <GiDamagedHouse size={25} className="me-1 text-light" /> <span className={styles.title}>Damage/Loss</span>
                         </Nav.Link>                        
                     </Nav.Item>
 

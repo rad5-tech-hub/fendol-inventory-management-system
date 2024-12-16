@@ -153,6 +153,18 @@
   margin: 8px 10px;
 }
 
+.border_dote {
+  border-bottom: 2px dotted #616468; /* Adjust thickness and color */
+  width: 100px; /* Adjust this value to control the width */
+  margin: 8px 8px;
+}
+
+.border_dots {
+  border-bottom: 2px dotted #616468; /* Adjust thickness and color */
+  width: 94px; /* Adjust this value to control the width */
+  margin: 8px 6px;
+}
+
 @media (max-width: 992) {
   .body{
     display: none;

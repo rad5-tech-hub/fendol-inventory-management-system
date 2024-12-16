@@ -16,9 +16,7 @@ const AddFish = () => {
   useEffect(() => {
     const fetchStages = async () => {
         try {
-            const response = await Api.get('/fish-stages'); // Replace with your API URL
-            console.log(response.data);
-            
+            const response = await Api.get('/fish-stages'); // Replace with your API URL                    
             if (Array.isArray(response.data.data)) {
                 // Filter out "washing", "smoking", and "drying"
                 const filteredStages = response.data.data.filter(stage => 
@@ -29,9 +27,9 @@ const AddFish = () => {
                 throw new Error('Expected an array of stages');
             }
         } catch (err) {
-            console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+            // console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
         } finally {
-            console.log('Fetch stages success');
+            // console.log('Fetch stages success');
         }
     };
 
@@ -43,16 +41,16 @@ const AddFish = () => {
         const fetchFishType = async () => {
           try {
             const response = await Api.get('/species'); // Replace with your API URL
-            console.log(response.data);
+            // console.log(response.data);
             if (Array.isArray(response.data.data)) {
               setfishType(response.data.data);
             } else {
               throw new Error('Expected an array of stages');
             }
           } catch (err) {
-            console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+            // console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
           } finally {
-            console.log('get success')
+            // console.log('get success')
           }
         };
     

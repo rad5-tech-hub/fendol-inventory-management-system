@@ -49,28 +49,28 @@ export default function ViewAllHistory() {
   // Tab configuration
   const tabConfig = {
     "#add-histories": {
-      label: "Add Fish",
+      label: "Added Fish",
       endpoint: "fishes",
       headers: ["Date", "Pond", "Quantity", "Fish Type", "Fish Batch"],
       dataKeys: ["createdAt", "stageTitle", "quantity", "speciesName", "batch_no"],
     },
     "#move-fish": {
-      label: "Move Fish",
+      label: "Moved Fish",
       endpoint: "fish-movements",
       headers: ["Date", "Pond From", "Fish Batch", "Pond To", "Quantity", "Remark"],
       dataKeys: ["createdAt", "sourcePond", "batch_no", "destinationPond", "actual_quantity", "remarks"],
     },
     "#harvest-fish": {
-      label: "Harvest Fish",
+      label: "Harvested Fish",
       endpoint: "harvested-fish",
       headers: ["Date", "Pond From", "Quantity", "Fish Batch", "Remark"],
       dataKeys: ["createdAt", "FishStage", "quantity", "batch_no", "remarks"],
     },
     "#damage-fish": {
-      label: "Damage Fish",
+      label: "Damaged Fish",
       endpoint: "damaged-fish",
       headers: ["Date", "Pond From", "Quantity", "Fish Batch", "Remark"],
-      dataKeys: ["createdAt", "FishStage", "quantity", "batch_no", "remarks"],
+      dataKeys: ["createdAt", "sourcePond", "quantity", "batch_no", "remarks"],
     },
   };
 

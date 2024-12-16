@@ -28,7 +28,7 @@ const HarvestFish = () => {
         const fetchStages = async () => {
             try {
                 const response = await Api.get('/fish-stages');
-                console.log(response.data);
+                // console.log(response.data);
 
                 if (Array.isArray(response.data.data)) {
                     setStages(response.data.data); // Update stages state
@@ -36,7 +36,7 @@ const HarvestFish = () => {
                     throw new Error('Expected an array of stages');
                 }
             } catch (err) {
-                console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+                // console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
             }
         };
 

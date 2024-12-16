@@ -450,7 +450,7 @@ export default function NewBatchFish() {
                                             <div className='d-flex align-items-center mb-4'>
                                                 <div className='d-flex align-items-center'>
                                                     <p className='fw-semibold me-2 mb-0'>BROKEN FISH</p>
-                                                    <div className={styles.border_dot}></div>
+                                                    <div className={styles.border_dote}></div>
                                                 </div>
                                                 <div className="d-flex justify-content-center gap-3 align-items-center">
                                                     <Form.Control
@@ -475,7 +475,7 @@ export default function NewBatchFish() {
                                             <div className='d-flex align-items-center'>
                                                 <div className='d-flex align-items-center'>
                                                     <p className='fw-semibold me-2 mb-0'>DAMAGE/LOSS</p>
-                                                    <div className={styles.border_dot}></div>
+                                                    <div className={styles.border_dots}></div>
                                                 </div>
                                                 <div className="d-flex justify-content-center align-items-center gap-3">
                                                     <Form.Control
@@ -485,17 +485,16 @@ export default function NewBatchFish() {
                                                         value={quantity.damage} // Ensure this value is set correctly
                                                         className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
                                                     />
-                                                    {moveData.stageId_from && 
-                                                        orderedStages.find((stage) => stage.id === moveData.stageId_from)?.title !== "Drying" && (
-                                                        <Form.Control
-                                                            required
-                                                            placeholder='Enter Quantity of Damageed Fish on the process checked'
-                                                            type='number'
-                                                            name="damageOrLoss"
-                                                            value={moveData.damageOrLoss}
-                                                            onChange={handleMoveFish}
-                                                            className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                                                        />)}
+                                                
+                                                    <Form.Control
+                                                        required
+                                                        placeholder='Enter Quantity of Damageed Fish on the process checked'
+                                                        type='number'
+                                                        name="damageOrLoss"
+                                                        value={moveData.damageOrLoss}
+                                                        onChange={handleMoveFish}
+                                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>

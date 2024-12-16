@@ -135,6 +135,15 @@ export default function ViewAll() {
     setActiveDropdown(activeDropdown === customerId ? null : customerId); // Toggle active dropdown
   };
 
+  const handleSearch = (e) => {
+    const searchQuery = e.target.value.toLowerCase();
+    setFilteredCustomers(
+      customers.filter((customer) =>
+        customer.fullName.toLowerCase().includes(searchQuery)
+      )
+    );
+  };  
+
   const handleClickOutside = () => setActiveDropdown(null);
   return (
     <section className={`d-none d-lg-block ${styles.body}`}>
@@ -148,13 +157,13 @@ export default function ViewAll() {
 
         <section className={`${styles.content}`}>
           <main className={styles.create_form}>
-            <div className="d-flex justify-content-between align-items-center">
-              <h4 className="mt-3 mb-5">All Customers</h4>
-              <div className="d-flex gap-2">
+            <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+              <h4>All Customers</h4>
+              <div>              
                 <Form.Select
                   onChange={handleCategoryChange}
                   value={selectedCategory}
-                  className="w-auto mb-3"
+                  className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs} ${styles.fadedPlaceholder}`}
                   aria-label="Filter by Category"
                 >
                   <option value="">All Categories</option>
@@ -162,6 +171,15 @@ export default function ViewAll() {
                   <option value="Customer">Customer</option>
                 </Form.Select>
               </div>
+            </div>
+            <div className="text-end mb-3">
+              <Form.Control
+                type="text"
+                placeholder="Search for customer..."
+                onChange={handleSearch}
+                className={`py-2 bg-light-subtle w-50 shadow-none border-1 ${styles.inputs} ${styles.fadedPlaceholder}`}
+                style={{ width: '50%', marginLeft: 'auto' }}
+              />
             </div>
 
             {loading && (

@@ -1,7 +1,6 @@
 import React from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Row, Col, Form, Dropdown, ButtonGroup } from 'react-bootstrap';
-import { FaSearch } from "react-icons/fa";
+import { Row, Col, Dropdown, ButtonGroup } from 'react-bootstrap';
 import { IoMdNotifications } from "react-icons/io";
 import { FaRegUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -16,27 +15,8 @@ export default function Header() {
             <div className={`shadow-sm sticky-top py-1 ${styles.header}`}>
                 <Row className="align-items-center g-0 px-3">
                     {/* Logo Section */}
-                    <Col xs={6} lg={2} className={`d-flex align-items-center ${styles.brand}`}>
+                    <Col xs={6} lg={9} className={`d-flex align-items-center text-start ${styles.brand}`}>
                         <img src={Logo} alt="logo" />
-                    </Col>
-
-                    {/* Search Section */}
-                    <Col lg={7} className={`d-none d-lg-block px-4 ${styles.search}`}>
-                        <Form className="d-flex align-items-center">
-                            <div className="position-relative w-100">
-                                <Form.Control
-                                    aria-label="Search"
-                                    placeholder="Search..."
-                                    readOnly
-                                    id={styles.input}
-                                    className="ps-5 border-1 shadow-none rounded-pill"
-                                />
-                                <FaSearch
-                                    className="position-absolute top-50 translate-middle-y ms-3 text-secondary"
-                                    style={{ pointerEvents: 'none' }}
-                                />
-                            </div>
-                        </Form>
                     </Col>
 
                     {/* Icons Section */}

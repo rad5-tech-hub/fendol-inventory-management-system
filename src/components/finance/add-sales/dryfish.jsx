@@ -246,7 +246,9 @@ const SalesForm = ({ customers, stages, products}) => {
 
                 {/* Quantity Input */}
                 <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Quantity</Form.Label>
+                    <Form.Label className="fw-semibold">
+                        Quantity {dryData.productName?.toLowerCase().includes("broken") && `(Kg)`}
+                    </Form.Label>
                     <Form.Control
                         placeholder="Enter quantity"
                         type="number"
@@ -259,7 +261,7 @@ const SalesForm = ({ customers, stages, products}) => {
                 </Col>
 
                 {/* Quantity Used to Pack */}
-                <Col className="mb-4">
+                {!dryData.productName?.toLowerCase().includes("broken") &&  <Col className="mb-4">
                     <Form.Label className="fw-semibold">Quantity Used to Pack</Form.Label>
                     <Form.Control
                         placeholder="Enter quantity used to pack"
@@ -270,11 +272,11 @@ const SalesForm = ({ customers, stages, products}) => {
                         onChange={handleInputChange}
                         className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
                     />
-                </Col>
+                </Col>}
 
                 {/* Discount Input */}
                 <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Discount</Form.Label>
+                    <Form.Label className="fw-semibold">Discount (₦)</Form.Label>
                     <div className={`${styles.inputContainer} position-relative`}>
                         <Form.Control
                             placeholder="Enter discount"
@@ -283,8 +285,7 @@ const SalesForm = ({ customers, stages, products}) => {
                             value={dryData.discount || ''}                            
                             onChange={handleInputChange}
                             className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs} pe-5`}
-                        />
-                        <span className={`${styles.nairaSign} position-absolute end-0 top-50 translate-middle-y pe-2`}>₦</span>
+                        />                    
                     </div>
                 </Col>
 
@@ -321,14 +322,14 @@ const SalesForm = ({ customers, stages, products}) => {
 
                 {/* Total Price (Readonly) */}
                 <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Total Price</Form.Label>
+                    <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
                     <Form.Control
                         placeholder="Total price"
                         type="text"
                         name="totalPrice"
                         value={
                             dryData && typeof dryData.totalPrice === 'number'
-                                ? `₦ ${new Intl.NumberFormat().format(dryData.totalPrice)}`
+                                ? `${new Intl.NumberFormat().format(dryData.totalPrice)}`
                                 : ''
                         }
                         readOnly

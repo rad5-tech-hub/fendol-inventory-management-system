@@ -17,7 +17,7 @@ const DamageFish = () => {
     const fetchStages = async () => {
         try {
             const response = await Api.get('/fish-stages'); // Replace with your API URL
-            console.log(response.data);
+            // console.log(response.data);
             
             if (Array.isArray(response.data.data)) {
                 // Filter out "washing", "smoking", and "drying"
@@ -27,9 +27,9 @@ const DamageFish = () => {
                 throw new Error('Expected an array of stages');
             }
         } catch (err) {
-            console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+            // console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
         } finally {
-            console.log('Fetch stages success');
+            // console.log('Fetch stages success');
         }
     };
 
