@@ -64,7 +64,7 @@ export default function ViewAllHistory() {
       label: "Harvested Fish",
       endpoint: "harvested-fish",
       headers: ["Date", "Pond From", "Quantity", "Remark"],
-      dataKeys: ["createdAt", "PondId", "actual_quantity", "remarks"],
+      dataKeys: ["createdAt", "pondName", "actual_quantity", "remarks"],
     },
     "#damage-fish": {
       label: "Damaged Fish",
