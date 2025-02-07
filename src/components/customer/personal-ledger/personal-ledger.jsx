@@ -192,7 +192,7 @@ const PersonalLedger = () => {
                         <td className="d-flex gap-3 align-items-center">
                           <span>{record.balance}</span>
                           <p
-                            className={`badge p-2 mt-1 ${record.debit === 0 ? 'bg-success' : 'bg-primary'}`}
+                            className={`badge p-2 mt-1 ${record.debit === 0 ? 'bg-success' : 'bg-danger'}`}
                             style={{ cursor: 'pointer' }}
                             onClick={() => handleEditAmount(record)}
                           >

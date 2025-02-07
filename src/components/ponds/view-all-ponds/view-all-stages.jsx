@@ -337,7 +337,10 @@ const ViewAllStages = () => {
       <ToastContainer/>
       <Modal
         show={showModal}
-        onHide={() => setShowModal(false)}
+        onHide={() => {
+          setShowModal(false);
+          setModaltype('view all note'); // Set your default modalType here
+        }}
         size="lg"
         aria-labelledby="contained-modal-title-vcenter"
         centered
