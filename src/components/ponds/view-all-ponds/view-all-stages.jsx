@@ -17,8 +17,10 @@ const ViewAllStages = () => {
   const [sampling, setSampling] = useState([]); // Add sampling state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [loader, setLoader] = useState(true);
-  const [errors, setErrors] = useState('');
+  const [noteLoader, setNoteLoader] = useState(true);
+  const [noteError, setNoteError] = useState('');
+  const [samplingLoader, setSamplingLoader] = useState(true);
+  const [samplingError, setSamplingError] = useState('');
   const [modaltype, setModaltype] = useState('view all note');
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,9 +127,9 @@ const ViewAllStages = () => {
       }
     } catch (err) {
       console.error("Error fetching notes:", err);
-      setErrors(err.response?.data?.message || "Failed to fetch notes. Please try again.");
+      setNoteError(err.response?.data?.message || "Failed to fetch notes. Please try again.");
     } finally {
-      setLoader(false);
+      setNoteLoader(false);
     }
   };
 
@@ -156,9 +158,9 @@ const ViewAllStages = () => {
       }
     } catch (err) {
       console.error("Error fetching sampling data:", err);
-      setErrors(err.response?.data?.message || "Failed to fetch sampling. Please try again.");
+      setSamplingError(err.response?.data?.message || "Failed to fetch sampling. Please try again.");
     } finally {
-      setLoader(false);
+      setSamplingLoader(false);
     }
   };
 
@@ -218,6 +220,15 @@ const ViewAllStages = () => {
 
   // Get the stages to be displayed based on current page
   const displayedStages = filteredStages.slice(startIndex, endIndex);
+
+  // Fetch sampling data when modaltype changes to 'view all sampling'
+  useEffect(() => {
+    if (modaltype === 'view all sampling' && selectedStage) {
+      fetchSampling(selectedStage.id);
+    } else if  (modaltype === 'view all note' && selectedStage){
+      fetchnote(selectedStage.id);
+    }
+  }, [modaltype, selectedStage]);
 
   return (
     <section className={`d-none d-lg-block ${styles.body}`}>
@@ -434,7 +445,7 @@ const ViewAllStages = () => {
             {modaltype === 'view all note' && (
               <>
                 {/* Loading Spinner */}
-                {loader && (
+                {noteLoader && (
                   <div className="text-center">
                     <Spinner animation="border" role="status">
                       <span className="visually-hidden">Loading...</span>
@@ -443,17 +454,17 @@ const ViewAllStages = () => {
                 )}
 
                 {/* Error Message */}
-                {errors && (
+                {noteError && (
                   <div className="d-flex justify-content-center">
                     <Alert variant="danger" className="text-center w-50 py-5">
                       <BsExclamationTriangleFill size={40} />{' '}
-                      <span className="fw-semibold">{errors}</span>
+                      <span className="fw-semibold">{noteError || 'No available Note'}</span>
                     </Alert>
                   </div>
                 )}
 
                 {/* No Data Message */}
-                {!loader && !errors && note.length === 0 && (
+                {!noteLoader && !noteError && note.length === 0 && (
                   <div className="d-flex justify-content-center">
                     <Alert variant="info" className="text-center w-50 py-5">
                       No available data
@@ -462,7 +473,7 @@ const ViewAllStages = () => {
                 )}
 
                 {/* Notes Table */}
-                {!loader && !errors && note.length > 0 && (
+                {!noteLoader && !noteError && note.length > 0 && (
                   <table className={styles.styled_table}>
                     <thead>
                       <tr>
@@ -506,7 +517,7 @@ const ViewAllStages = () => {
             {modaltype === 'view all sampling' && (
               <>
                 {/* Loading Spinner */}
-                {loader && (
+                {samplingLoader && (
                   <div className="text-center">
                     <Spinner animation="border" role="status">
                       <span className="visually-hidden">Loading...</span>
@@ -515,17 +526,17 @@ const ViewAllStages = () => {
                 )}
 
                 {/* Error Message */}
-                {errors && (
+                {samplingError && (
                   <div className="d-flex justify-content-center">
                     <Alert variant="danger" className="text-center w-50 py-5">
                       <BsExclamationTriangleFill size={40} />{' '}
-                      <span className="fw-semibold">{errors}</span>
+                      <span className="fw-semibold">{samplingError}</span>
                     </Alert>
                   </div>
                 )}
 
                 {/* No Data Message */}
-                {!loader && !errors && sampling.length === 0 && (
+                {!samplingLoader && !samplingError && sampling.length === 0 && (
                   <div className="d-flex justify-content-center">
                     <Alert variant="info" className="text-center w-50 py-5">
                       No available data
@@ -534,7 +545,7 @@ const ViewAllStages = () => {
                 )}
 
                 {/* Sampling Table */}
-                {!loader && !errors && sampling.length > 0 && (
+                {!samplingLoader && !samplingError && sampling.length > 0 && (
                   <table className={styles.styled_table}>
                     <thead>
                       <tr>

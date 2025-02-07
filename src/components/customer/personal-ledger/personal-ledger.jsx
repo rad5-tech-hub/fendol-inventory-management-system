@@ -217,7 +217,7 @@ const PersonalLedger = () => {
         </Modal.Header>
         <Modal.Body>
           <p><strong>Amount Paid Before:</strong> ₦{amountPaidB || 0}</p>
-          <p><strong>Balance:</strong> <span className="ps-1">{amountPaid || 0} - {totalAmount}</span> = ₦{(totalAmount - amountPaid).toLocaleString()} </p>
+          <p><strong>Balance:</strong> <span className="ps-1">{totalAmount} - {amountPaid || 0}</span> = ₦{(totalAmount - amountPaid).toLocaleString()} </p>
           <Form.Control
             type="number"
             value={amountPaid}
