@@ -131,9 +131,7 @@ export default function ViewSummary() {
                 <table className={styles.styled_table}> 
                   <thead>
                     <tr>
-                      <th>DATE CREATED</th>
-                      <th>FISH BATCH</th>
-                      <th>QUANTITY BEFORE</th>
+                      <th>DATE CREATED</th>                    
                       <th>QUANTITY AFTER <br /> (W,B,D)</th>
                       <th>REMARK</th>
                     </tr>
@@ -143,23 +141,27 @@ export default function ViewSummary() {
                       const formattedDate = formatDate(history.createdAt);
                       return (
                         <tr key={index}>
-                          <td>{formattedDate}</td>
-                          <td>{history.batch_no || '-'}</td>
-                          <td>{history.quantityBefore}</td>
+                          <td>{formattedDate}</td>                          
                           <td>{`${history.wholeQuantity},${history.brokenQuantity},${history.damageLoss}`}</td>                          
                           <OverlayTrigger
-                              trigger="click" // Show the popover on click
-                              placement="right" // Position the popover to the right
-                              overlay={renderPopover(history.remarks)} // Pass the full note as popover content
+                            trigger={['hover', 'focus']}
+                            placement="bottom" // Changed placement to top
+                            overlay={
+                              <Popover id="popover-basic">
+                                <Popover.Header as="h5">Full Remark</Popover.Header>
+                                <Popover.Body style={{ maxWidth: '250px', wordWrap: 'break-word' }}>
+                                  {history.remarks}
+                                </Popover.Body>
+                              </Popover>
+                            }
+                          >
+                            <td
+                              style={{ cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}
+                              className="text-end"
                             >
-                              <td
-                                style={{cursor: 'pointer'}}
-                                className="text-end"
-                                onClick={() => handleNoteClick(history.remarks)}
-                              >
-                                {history.remarks.length > 50 ? `${history.remarks.substring(0, 50)}...` : history.remarks}                                
-                              </td>
-                            </OverlayTrigger>
+                              {history.remarks.length > 50 ? `${history.remarks.substring(0, 50)}...` : history.remarks}
+                            </td>
+                          </OverlayTrigger>
                         </tr>
                       );
                     })}

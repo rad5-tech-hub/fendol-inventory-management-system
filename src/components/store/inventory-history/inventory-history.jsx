@@ -136,7 +136,7 @@ export default function InventoryHistory() {
                           <td>{formattedDate}</td>
                           <td>{history.storeDetails.name}</td>
                           <td>{history.stage}</td>
-                          <td>{history.storeDetails.quantity}</td>
+                          <td>{history.stage === null ? history.storeDetails.originalQuantity : '-'}</td>
                           <td>{history.quantityUsed}</td>
                           <td>{history.remainingStock}</td>
                           <td className="text-uppercase fw-semibold d-flex">
