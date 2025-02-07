@@ -174,6 +174,7 @@ const ViewAllStages = () => {
       await Api.post(`/sample/${selectedStage.id}`, sampling);
       toast.update(samplingToast, { render: 'Sampling added successfully!', type: 'success', isLoading: false, autoClose: 3000 });
       setShowSamplingModal(false);
+      
     } catch (err) {
       toast.update(samplingToast, { render: 'Failed to add sampling. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
     }
