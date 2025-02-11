@@ -187,7 +187,7 @@ const FreshForm = ({ customers, stages, products }) => {
             const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
     
             // 3. Fetch receipt using transaction ID
-            const receiptResponse = await Api.get(`/receipt/${transactionId}`);
+            const receiptResponse = await Api.get(`/receipts/${transactionId}`);
     
             if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
                 throw new Error("Receipt could not be fetched.");
@@ -257,9 +257,10 @@ const FreshForm = ({ customers, stages, products }) => {
                         >
                             <option value="" disabled>Select Pond</option>
                             {stages
+                                .filter(stage => stage.title !== "Fingerlings") // Exclude "Fingerlings"
                                 .map((stage, index) => (
                                     <option key={index} value={stage.id}>
-                                        {stage.title || 'No Data Yet'} {freshData.stageId_from === stage.id ? `- (${stage.quantity || '0'})` : ''}
+                                    {stage.title || 'No Data Yet'} {freshData.stageId_from === stage.id ? `- (${stage.quantity || '0'})` : ''}
                                     </option>
                                 ))}
                         </Form.Select>
@@ -399,8 +400,16 @@ const FreshForm = ({ customers, stages, products }) => {
                         <Form.Select
                             name='paymentType'
                             value={freshData.paymentType || ''}
-                            onChange={handleInputChange}
-                            className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                            onChange={(e) => {
+                                const selectedPayment = e.target.value;
+                                setFreshData((prev) => ({
+                                    ...prev,
+                                    paymentType: selectedPayment,
+                                    amountPaid: selectedPayment !== "Credit" ?  calculateTotalBalance() : prev.amountPaid, // Ensure amountPaid matches totalBalance for non-credit
+                                }));
+                            }}
+                            required
+                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                         >
                             <option value="" disabled>Select Payment Type</option>
                             <option value="Cash">Cash</option>
@@ -410,33 +419,23 @@ const FreshForm = ({ customers, stages, products }) => {
                         </Form.Select>
                     </Col>
 
-                    {/* Amount Paid Input (only if paymentType is Credit) */}                    
+                    {/* Amount Paid Input (Only for Credit Payment) */}
+                    {freshData.paymentType === "Credit" && (
                         <Col className="mb-4">
                             <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
                             <Form.Control
                                 placeholder="Enter amount paid"
                                 type="text"
                                 name="amountPaid"
-                                value={
-                                    freshData.amountPaid !== null && !isNaN(freshData.amountPaid)
-                                        ? new Intl.NumberFormat().format(freshData.amountPaid)
-                                        : ''
-                                }
+                                value={freshData.amountPaid ? new Intl.NumberFormat().format(freshData.amountPaid) : ''}
                                 onChange={(e) => {
-                                    const rawValue = e.target.value.replace(/,/g, ''); // Remove commas for proper number parsing
-                                    const numericValue = parseFloat(rawValue); // Convert to number
-
-                                    // Update state only if the input is a valid number or an empty string
-                                    if (!isNaN(numericValue) || rawValue === '') {
-                                        setFreshData({
-                                            ...freshData,
-                                            amountPaid: rawValue === '' ? null : numericValue, // Set to null if empty
-                                        });
-                                    }
+                                    const value = e.target.value.replace(/,/g, ''); // Remove commas for proper number parsing
+                                    setFreshData({ ...freshData, amountPaid: value });
                                 }}
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
-                        </Col>                
+                        </Col>
+                    )}           
 
                     {/* Total Price (Readonly) */}
                     <Col className="mb-4">

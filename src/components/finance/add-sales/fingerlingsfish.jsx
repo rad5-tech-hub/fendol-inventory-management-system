@@ -164,7 +164,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                 return;
             }
     
-            const receiptResponse = await Api.get(`/receipt/${transactionId}`);
+            const receiptResponse = await Api.get(`/receipt-finger/${transactionId}`);
             if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
                 throw new Error("Receipt could not be fetched.");
             }
@@ -226,7 +226,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                                 .filter(product => product.productName?.toLowerCase().includes('fingerlings'))
                                 .map((product) => (
                                     <option key={product.id} value={product.productName} data-id={product.id}>
-                                        {`${product.productName} - (₦${new Intl.NumberFormat().format(product.basePrice || 0)})`}
+                                        {`${product.productName} - ( ₦${new Intl.NumberFormat().format(product.basePrice || 0)} for ${product.productWeight || '0'} ${product.unit || ''} )`}
                                     </option>
                                 ))
                             }
@@ -248,7 +248,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                                 .filter(stage => stage.title.toLowerCase().includes('fingerlings'))
                                 .map((stage, index) => (
                                     <option key={index} value={stage.id}>
-                                        {stage.title || 'No Data Yet'}
+                                        {stage.title || 'No Data Yet'} {fingerlingsData.stageId_from === stage.id ? `- (${stage.quantity || '0'})` : ''}
                                     </option>
                                 ))}
                         </Form.Select>
@@ -269,21 +269,18 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                         />
                     </Col>
 
-                    {/* Discount */}
+                    {/* Description */}
                     <Col className="mb-4">
-                        <Form.Label className="fw-semibold">Discount</Form.Label>
-                        <div className="position-relative">
-                            <Form.Control
-                                placeholder="Enter discount"
-                                type="text"
-                                name="discount"
-                                value={fingerlingsData.discount || ''}
-                                onChange={handleInputChange}
-                                className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs} pe-5`}
-                            />
-                            <span className="position-absolute end-0 top-50 translate-middle-y pe-2">₦</span>
-                        </div>
-                    </Col>
+                        <Form.Label className="fw-semibold">Description</Form.Label>
+                        <Form.Control
+                            placeholder="Enter description"
+                            as="textarea"
+                            name="description"
+                            value={fingerlingsData.description || ''}
+                            onChange={handleInputChange}
+                            className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                        />
+                    </Col>                    
 
                     {/* Buyer Category */}
                     <Col className="mb-4">
@@ -330,18 +327,21 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                         </Form.Group>
                     </Col>
 
-                    {/* Description */}
+                    {/* Discount */}
                     <Col className="mb-4">
-                        <Form.Label className="fw-semibold">Description</Form.Label>
-                        <Form.Control
-                            placeholder="Enter description"
-                            as="textarea"
-                            name="description"
-                            value={fingerlingsData.description || ''}
-                            onChange={handleInputChange}
-                            className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                        />
-                    </Col>
+                        <Form.Label className="fw-semibold">Discount</Form.Label>
+                        <div className="position-relative">
+                            <Form.Control
+                                placeholder="Enter discount"
+                                type="text"
+                                name="discount"
+                                value={fingerlingsData.category === 'Marketer' ? '10%' : fingerlingsData.discount || ''}
+                                onChange={(e) => setFingerlingsData({ ...fingerlingsData, discount: e.target.value })}
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
+                                readOnly={fingerlingsData.category === 'Marketer'}
+                            />
+                        </div>
+                    </Col>                    
 
                     {/* Payment Type */}
                     <Col className='mb-4'>
@@ -349,8 +349,16 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                         <Form.Select
                             name='paymentType'
                             value={fingerlingsData.paymentType || ''}
-                            onChange={handleInputChange}
-                            className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                            onChange={(e) => {
+                                const selectedPayment = e.target.value;
+                                setFingerlingsData((prev) => ({
+                                    ...prev,
+                                    paymentType: selectedPayment,
+                                    amountPaid: selectedPayment !== "Credit" ?  calculateTotalBalance() : prev.amountPaid, // Ensure amountPaid matches totalBalance for non-credit
+                                }));
+                            }}
+                            required
+                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                         >
                             <option value="" disabled>Select Payment Type</option>
                             <option value="Cash">Cash</option>
@@ -360,35 +368,24 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                         </Form.Select>
                     </Col>
 
-                    {/* Amount Paid Input (only if paymentType is Credit) */}                
-                    <Col className="mb-4">
-                        <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
-                        <Form.Control
-                            placeholder="Enter amount paid"
-                            type="text"
-                            name="amountPaid"
-                            value={
-                                fingerlingsData.amountPaid !== null && !isNaN(fingerlingsData.amountPaid)
-                                    ? new Intl.NumberFormat().format(fingerlingsData.amountPaid)
-                                    : ''
-                            }
-                            onChange={(e) => {
-                                const rawValue = e.target.value.replace(/,/g, ''); // Remove commas for proper number parsing
-                                const numericValue = parseFloat(rawValue); // Convert to number
-
-                                // Update state only if the input is a valid number or an empty string
-                                if (!isNaN(numericValue) || rawValue === '') {
-                                    setFingerlingsData({
-                                        ...fingerlingsData,
-                                        amountPaid: rawValue === '' ? null : numericValue, // Set to null if empty
-                                    });
-                                }
-                            }}
+                    {/* Amount Paid Input (Only for Credit Payment) */}
+                    {fingerlingsData.paymentType === "Credit" && (
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
+                            <Form.Control
+                                placeholder="Enter amount paid"
+                                type="text"
+                                name="amountPaid"
+                                value={fingerlingsData.amountPaid ? new Intl.NumberFormat().format(fingerlingsData.amountPaid) : ''}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/,/g, ''); // Remove commas for proper number parsing
+                                    setFingerlingsData({ ...fingerlingsData , amountPaid: value });
+                                }}
                             className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                         />
-                    </Col>
+                    </Col>)}
      
-                    {/* Total Price (Readonly) */}
+                    { /* Total Price (Readonly) */ }
                     <Col className="mb-4">
                         <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
                         <Form.Control

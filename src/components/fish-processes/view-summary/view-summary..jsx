@@ -25,17 +25,20 @@ export default function ViewSummary() {
   useEffect(() => {
     const fetchMoveFishHistory = async () => {
       try {
-        const response = await Api.get('/get-all-harvest-histories');
-        setMoveFishHistory(response.data.data); // Assuming the response contains an array of history data
-        setFilteredData(response.data.data); // Set the initial filtered data to all data
+        const response = await Api.get('/latest-completed');
+        const data = response.data.data || []; // Ensure it defaults to an empty array
+        setMoveFishHistory(data);
+        setFilteredData(data);
       } catch (error) {
         setError("Error fetching move fish history. Please try again.");
+        setFilteredData([]); // Ensure it is always an array
       } finally {
         setLoading(false);
       }
     };
     fetchMoveFishHistory();
   }, []);
+  
 
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
@@ -59,7 +62,7 @@ export default function ViewSummary() {
 
     if (date) {
       const filtered = moveFishHistory.filter((history) => {
-        const createdDate = new Date(history.createdAt);
+        const createdDate = new Date(history.date);
         const formattedDate = createdDate.toISOString().split('T')[0]; // Get the date in YYYY-MM-DD format
         return formattedDate === date; // Filter by the selected date
       });
@@ -131,18 +134,20 @@ export default function ViewSummary() {
                 <table className={styles.styled_table}> 
                   <thead>
                     <tr>
-                      <th>DATE CREATED</th>                    
+                      <th>DATE CREATED</th>                  
+                      <th>QUANTITY BEFORE</th>                  
                       <th>QUANTITY AFTER <br /> (W,B,D)</th>
                       <th>REMARK</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedData.map((history, index) => {
-                      const formattedDate = formatDate(history.createdAt);
+                  {Array.isArray(paginatedData) && paginatedData.map((history, index) => {
+                      const formattedDate = formatDate(history.date);
                       return (
                         <tr key={index}>
-                          <td>{formattedDate}</td>                          
-                          <td>{`${history.wholeQuantity},${history.brokenQuantity},${history.damageLoss}`}</td>                          
+                          <td>{formattedDate}</td>   
+                          <td>{history.totalQuantity}</td>                      
+                          <td>{`${history.wholeFishQuantity},${history.brokenFishQuantity},${history.damageOrLoss}`}</td>                          
                           <OverlayTrigger
                             trigger={['hover', 'focus']}
                             placement="bottom" // Changed placement to top
@@ -150,7 +155,7 @@ export default function ViewSummary() {
                               <Popover id="popover-basic">
                                 <Popover.Header as="h5">Full Remark</Popover.Header>
                                 <Popover.Body style={{ maxWidth: '250px', wordWrap: 'break-word' }}>
-                                  {history.remarks}
+                                  {history.remark}
                                 </Popover.Body>
                               </Popover>
                             }
@@ -159,7 +164,7 @@ export default function ViewSummary() {
                               style={{ cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}
                               className="text-end"
                             >
-                              {history.remarks.length > 50 ? `${history.remarks.substring(0, 50)}...` : history.remarks}
+                              {history.remark ? (history.remark.length > 50 ? `${history.remark.substring(0, 50)}...` : history.remark) : "No remarks"}
                             </td>
                           </OverlayTrigger>
                         </tr>
