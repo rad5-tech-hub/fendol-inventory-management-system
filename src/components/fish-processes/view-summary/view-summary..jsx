@@ -26,9 +26,9 @@ export default function ViewSummary() {
     const fetchMoveFishHistory = async () => {
       try {
         const response = await Api.get('/latest-completed');
-        const data = response.data.data || []; // Ensure it defaults to an empty array
+        const data = Array.isArray(response.data.data) ? response.data.data : [];
         setMoveFishHistory(data);
-        setFilteredData(data);
+        setFilteredData(data);       
       } catch (error) {
         setError("Error fetching move fish history. Please try again.");
         setFilteredData([]); // Ensure it is always an array
