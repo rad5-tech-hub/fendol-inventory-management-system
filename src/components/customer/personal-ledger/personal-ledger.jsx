@@ -4,10 +4,11 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../customer.module.scss'; 
-import { BsExclamationTriangleFill } from "react-icons/bs";
+import { BsExclamationTriangleFill, BsPrinter } from "react-icons/bs";
 import { Spinner, Alert, Button, Form, Modal } from 'react-bootstrap';
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
+import ReceiptModal from "../../finance/add-sales/receipt";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -18,12 +19,15 @@ const PersonalLedger = () => {
 
   const [ledgerData, setLedgerData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loader, setLoader] = useState(false);
   const [error, setError] = useState('');
   const [fullName, setFullName] = useState('');
   const [category, setCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 5;
   const [balance, setBalance] = useState(0);
+  const [receiptData, setReceiptData] = useState({}); // Store receipt details
+  const [showReceipt, setShowReceipt] = useState(false);
 
   const [editingRecord, setEditingRecord] = useState(null);
   const [amountPaid, setAmountPaid] = useState("");
@@ -128,6 +132,32 @@ const PersonalLedger = () => {
       });
     }
   };
+
+  const handleReceipt = async (record) => {
+    // 2. Toast for fetching receipt
+    const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
+
+    // 3. Fetch receipt using transaction ID
+    const receiptResponse = await Api.get(`/receipt/${record.transactionId}`);
+
+    if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+        throw new Error("Receipt could not be fetched.");
+    }
+
+    // 4. Update state with receipt data
+    setReceiptData(receiptResponse.data);
+
+    // ✅ Receipt success toast
+    toast.update(receiptToast, {
+        render: "Receipt fetched successfully!",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+        className: 'dark-toast'
+    });
+
+    setShowReceipt(true); // Show receipt modal     
+  }
   
   return (
     <section className={`d-none d-lg-block ${styles.body}`}>
@@ -175,7 +205,7 @@ const PersonalLedger = () => {
                       <th>PAYMENT</th>
                       <th style={{ color: 'green' }}>CREDIT(₦)</th>
                       <th style={{ color: 'red' }}>DEBIT(₦)</th>
-                      <th>BALANCE(₦)</th>
+                      <th>BALANCE(₦)</th>                  
                     </tr>
                   </thead>
                   <tbody>
@@ -192,14 +222,16 @@ const PersonalLedger = () => {
                         <td className="d-flex gap-3 align-items-center">
                           <span>{record.balance}</span>
                           <p
-                            className={`badge p-2 mt-1 ${record.debit === 0 ? 'bg-success' : 'bg-danger'}`}
+                            className={`badge p-2 mt-3 ${record.debit === 0 ? 'bg-success' : 'bg-danger'}`}
                             style={{ cursor: 'pointer' }}
-                            onClick={() => handleEditAmount(record)}
+                            onClick={record.debit !== 0 ? () => handleEditAmount(record) : null}
                           >
-                            {record.debit === 0 ? 'Paid' : 'Credit'}
-                          </p>
-
-                        </td>
+                            {record.debit === 0 ? 'Paid' : 'Credit'}                            
+                          </p>                      
+                          <span className="bg-white p-2 rounded-circle badge ">
+                            <BsPrinter style={{ cursor: 'pointer' }} onClick={() => handleReceipt(record)} className="text-primary" size={28} />
+                          </span>  
+                        </td>                                                                    
                       </tr>
                     ))}
                   </tbody>
@@ -234,6 +266,8 @@ const PersonalLedger = () => {
       </Modal>
 
       <ToastContainer />
+      {/* Receipt Modal */}
+      <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt}/>
     </section>
   );
 };

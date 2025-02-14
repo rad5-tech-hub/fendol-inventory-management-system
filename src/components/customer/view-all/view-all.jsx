@@ -43,8 +43,7 @@ export default function ViewAll() {
   const fetchData = async () => {
     try {
       const response = await Api.get('/customers');
-      console.log('API Response:', response);
-
+      
       if (Array.isArray(response.data.data)) {
         setCustomers(response.data.data);
         setFilteredCustomers(response.data.data);
@@ -125,7 +124,6 @@ export default function ViewAll() {
 
   // Handle Remove click
   const handleNavigate = (customer) => {
-    console.log(customer)
     navigate(`/customer/personal-ledger/?id=${customer}`)
   };
   
