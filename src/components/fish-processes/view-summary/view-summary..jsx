@@ -142,12 +142,12 @@ export default function ViewSummary() {
                   </thead>
                   <tbody>
                   {Array.isArray(paginatedData) && paginatedData.map((history, index) => {
-                      const formattedDate = formatDate(history.date);
+                      const formattedDate = formatDate(history.createdAt);
                       return (
                         <tr key={index}>
                           <td>{formattedDate}</td>   
                           <td>{history.totalQuantity}</td>                      
-                          <td>{`${history.wholeFishQuantity},${history.brokenFishQuantity},${history.damageOrLoss}`}</td>                          
+                          <td>{`${history.wholeFishQuantity},${history.brokenFishQuantity},${history.totalDamageLoss}`}</td>                          
                           <OverlayTrigger
                             trigger={['hover', 'focus']}
                             placement="bottom" // Changed placement to top
