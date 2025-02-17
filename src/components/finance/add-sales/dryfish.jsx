@@ -31,6 +31,7 @@ const SalesForm = ({ customers, stages, products }) => {
         setCustomer(customers);
     }, [customers]);
 
+    
     useEffect(() => {
         const total = dryData.products.reduce((total, product) => {
             if (checkedProducts[product?.productName]) {
@@ -98,7 +99,6 @@ const SalesForm = ({ customers, stages, products }) => {
         }
     };
 
-
     const calculateDiscountedPrice = () => {
         let discountedPrice = totalPrice;
         if (dryData.category === 'Marketer') {
@@ -144,37 +144,25 @@ const SalesForm = ({ customers, stages, products }) => {
         setFilteredCustomer([]); // Clear suggestions after selection
     };
 
-    const handleCategoryChange = (e) => {
-        const { value } = e.target;
-        setDryData(prevData => ({ ...prevData, category: value }));
-
-        const filtered = customer.filter(c =>
-            c.fullName?.toLowerCase().includes(dryData.fullName?.toLowerCase() || '') &&
-            (!value || c.category === value)
-        );
-
-        setFilteredCustomer(filtered.length ? filtered : []);
-    };
-
     const handleAddSales = async (e) => {
         e.preventDefault();
         if (!window.confirm("Are you sure you want to add this sale?")) return;
-
+    
         setLoader(true);
-
+        
         // Toast for sale process
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
-
+    
         try {
             // 1. Create sale first
             const saleResponse = await Api.post('/sales', dryData);
-
+    
             if (saleResponse.status < 200 || saleResponse.status >= 300) {
                 throw new Error(saleResponse.data?.message || "Sale failed!");
             }
-
+    
             const transactionId = saleResponse.data?.transactionId;
-
+    
             if (!transactionId) {
                 toast.update(salesToast, {
                     render: "Transaction ID not found. Please try again.",
@@ -186,7 +174,7 @@ const SalesForm = ({ customers, stages, products }) => {
                 setLoader(false);
                 return;
             }
-
+    
             // ✅ Sale success toast
             toast.update(salesToast, {
                 render: "Sale added successfully!",
@@ -195,20 +183,20 @@ const SalesForm = ({ customers, stages, products }) => {
                 autoClose: 3000,
                 className: 'dark-toast'
             });
-
+    
             // 2. Toast for fetching receipt
             const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
-
+    
             // 3. Fetch receipt using transaction ID
             const receiptResponse = await Api.get(`/receipt/${transactionId}`);
-
-            if (receiptResponse.status < 200 || saleResponse.status >= 300) {
+    
+            if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
                 throw new Error("Receipt could not be fetched.");
             }
-
+    
             // 4. Update state with receipt data
             setReceiptData(receiptResponse.data);
-
+    
             // ✅ Receipt success toast
             toast.update(receiptToast, {
                 render: "Receipt fetched successfully!",
@@ -217,9 +205,9 @@ const SalesForm = ({ customers, stages, products }) => {
                 autoClose: 3000,
                 className: 'dark-toast'
             });
-
+    
             setShowReceipt(true); // Show receipt modal
-
+    
             // 5. Reset form after showing receipt
             setDryData({
                 products: [],
@@ -230,14 +218,14 @@ const SalesForm = ({ customers, stages, products }) => {
                 paymentType: '',
                 amountPaid: ''
             });
-
+    
             setCheckedProducts({});
             setCurrentStep(1);
             setFormSubmitted(false);
-
+    
         } catch (error) {
             console.error("Error in handleAddSales:", error);
-
+    
             // Handle errors separately for sale and receipt
             toast.update(salesToast, {
                 render: error.response?.data?.message || error.message || 'Sale failed!',
@@ -246,13 +234,13 @@ const SalesForm = ({ customers, stages, products }) => {
                 autoClose: 3000,
                 className: 'dark-toast'
             });
-
+    
             toast.dismiss(); // Ensure no stale loading toasts remain
         } finally {
             setLoader(false);
         }
-    };
-
+    };    
+    
     const isNextButtonDisabled = () => {
         const hasCheckedProduct = Object.values(checkedProducts).some(checked => checked);
         if (!hasCheckedProduct) {
@@ -335,7 +323,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                             </td>
                                             <td><p className="text-muted py-2">
                                                 ₦ {new Intl.NumberFormat().format(calculateSubtotal(product.productName))}
-                                            </p>
+                                                </p>
                                             </td>
                                         </tr>
                                     ))
@@ -346,8 +334,8 @@ const SalesForm = ({ customers, stages, products }) => {
                             <h5 className='fw-semibold mt-3'>Total Price: ₦ {new Intl.NumberFormat().format(totalPrice)}</h5>
                         </div>
                         <div className='text-end'>
-                            <Button
-                                onClick={handleNextStep}
+                            <Button 
+                                onClick={handleNextStep} 
                                 variant='dark'
                                 className={`border-0 btn btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
                                 disabled={isNextButtonDisabled()}
@@ -373,160 +361,169 @@ const SalesForm = ({ customers, stages, products }) => {
                             <Form.Select
                                 name="category"
                                 value={dryData.category || ''}
-                                onChange={handleInputChange}
+                                onChange={(e) => setDryData({ ...dryData, category: e.target.value })}
                                 required
-                                className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs} pe-5`}
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
                             >
                                 <option value="" disabled>Select Category</option>
                                 <option value="Marketer">Marketer</option>
                                 <option value="Customer">Customer</option>
                             </Form.Select>
-                            {formSubmitted && !dryData.category && (
-                                <Form.Text className="text-danger">Category is required.</Form.Text>
-                            )}
                         </Col>
 
-                        {/* Full Name */}
+                        {/* Customer Name with Suggestions */}
                         <Col className="mb-4">
-                            <Form.Label className="fw-semibold">Full Name</Form.Label>
-                            <Form.Control
-                                type="text"
-                                name="fullName"
-                                value={dryData.fullName || ''}
-                                onChange={handleSearchChange}
-                                className={`shadow-none bg-light-subtle ${styles.inputs}`}
-                                required
-                            />
-                            {formSubmitted && !dryData.fullName && (
-                                <Form.Text className="text-danger">Full Name is required.</Form.Text>
-                            )}
-                            {filteredCustomer.length > 0 && (
-                                <div className="list-group position-absolute bg-light mt-1 shadow border">
-                                    {filteredCustomer.map(c => (
-                                        <button
-                                            key={c.id}
-                                            type="button"
-                                            className="list-group-item list-group-item-action"
-                                            onClick={() => handleSelectCustomer(c.fullName)}
-                                        >
-                                            {c.fullName} ({c.category})
-                                        </button>
-                                    ))}
+                            <Form.Group controlId="searchCustomer">
+                                <Form.Label className="fw-semibold">Name</Form.Label>
+                                <div style={{ position: 'relative', width: '100%' }}>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Search Name..."
+                                        name="fullName"
+                                        value={dryData.fullName || ''}
+                                        onChange={handleSearchChange}
+                                        style={{ width: '100%' }}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
+                                    />
+                                    {dryData.fullName && filteredCustomer.length > 0 && (
+                                        <div className={`${styles.suggestions_box}`}>
+                                            <ul>
+                                                {filteredCustomer.map((customer, index) => (
+                                                    <li
+                                                        key={index}
+                                                        onClick={() => handleSelectCustomer(customer.fullName)}
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        {customer.fullName}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </Form.Group>
                         </Col>
+
+                        {/* Discount Input */}
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Discount</Form.Label>
+                            <div className={`${styles.inputContainer} position-relative`}>
+                                <Form.Control
+                                    placeholder="Enter discount"
+                                    type="text"
+                                    name="discount"
+                                    value={dryData.category === 'Marketer' ? '10%' : dryData.discount || ''}
+                                    onChange={(e) => setDryData({ ...dryData, discount: e.target.value })}
+                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
+                                    readOnly={dryData.category === 'Marketer'}
+                                />
+                            </div>
+                        </Col>
+
+                        {/* Description Textarea */}
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Description</Form.Label>
+                            <Form.Control
+                                placeholder="Enter description"
+                                as="textarea"
+                                name="description"
+                                value={dryData.description || ''}
+                                onChange={(e) => setDryData({ ...dryData, description: e.target.value })}
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                            />
+                        </Col>
+
+                        {/* Payment Type */}
                         <Col className="mb-4">
                             <Form.Label className="fw-semibold">Payment Type</Form.Label>
                             <Form.Select
                                 name="paymentType"
                                 value={dryData.paymentType || ''}
-                                onChange={(e) => setDryData({ ...dryData, paymentType: e.target.value })}
-                                className={`shadow-none bg-light-subtle ${styles.inputs}`}
+                                onChange={(e) => {
+                                    const selectedPayment = e.target.value;
+                                    setDryData((prev) => ({
+                                        ...prev,
+                                        paymentType: selectedPayment,
+                                        amountPaid: selectedPayment !== "Credit" ?  calculateTotalBalance() : prev.amountPaid, // Ensure amountPaid matches totalBalance for non-credit
+                                    }));
+                                }}
                                 required
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             >
                                 <option value="" disabled>Select Payment Type</option>
                                 <option value="Cash">Cash</option>
+                                <option value="Credit">Credit</option>
                                 <option value="Transfer">Transfer</option>
-                                {/* Add other payment types as needed */}
+                                <option value="Pos">Pos</option>
                             </Form.Select>
-                            {formSubmitted && !dryData.paymentType && (
-                                <Form.Text className="text-danger">Payment Type is required.</Form.Text>
-                            )}
                         </Col>
 
-                        {/* Amount Paid */}
+                        {/* Amount Paid Input (Only for Credit Payment) */}
+                        {dryData.paymentType === "Credit" && (
+                            <Col className="mb-4">
+                                <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
+                                <Form.Control
+                                    placeholder="Enter amount paid"
+                                    type="text"
+                                    name="amountPaid"
+                                    value={dryData.amountPaid ? new Intl.NumberFormat().format(dryData.amountPaid) : ''}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/,/g, ''); // Remove commas for proper number parsing
+                                        setDryData({ ...dryData, amountPaid: value });
+                                    }}
+                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                />
+                            </Col>
+                        )}
+
+                        {/* Total Price (Readonly) */}
                         <Col className="mb-4">
-                            <Form.Label className="fw-semibold">Amount Paid</Form.Label>
+                            <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
                             <Form.Control
-                                type="number"
-                                name="amountPaid"
-                                value={dryData.amountPaid || ''}
-                                onChange={(e) => setDryData({ ...dryData, amountPaid: parseFloat(e.target.value) })}
-                                className={`shadow-none bg-light-subtle ${styles.inputs}`}
-                                required
-                                min={0}
-                            />
-                            {formSubmitted && !dryData.amountPaid && (
-                                <Form.Text className="text-danger">Amount Paid is required.</Form.Text>
-                            )}
-                        </Col>
-                    </Row>
-                    <Row>
-                        {/* Discount */}
-                        <Col className="mb-4" lg={6}>
-                            <Form.Label className="fw-semibold">Discount</Form.Label>
-                            <Form.Control
-                                type="number"
-                                name="discount"
-                                value={dryData.discount || ''}
-                                onChange={(e) => setDryData({ ...dryData, discount: parseFloat(e.target.value) })}
-                                className={`shadow-none bg-light-subtle ${styles.inputs}`}
-                                disabled={dryData.category === 'Marketer'}
-                                min={0}
+                                placeholder="Total price"
+                                type="text"
+                                name="totalPrice"
+                                value={new Intl.NumberFormat().format(totalPrice)}
+                                readOnly
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
                         </Col>
 
-                        {/* Total */}
-                        <Col className="mb-4" lg={6}>
-                            <Form.Label className="fw-semibold">Total Amount</Form.Label>
+                        {/* Total Balance (Readonly) */}
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
                             <Form.Control
+                                placeholder="Total balance"
                                 type="text"
-                                value={`₦ ${new Intl.NumberFormat().format(calculateDiscountedPrice())}`}
+                                name="totalBalance"
+                                value={new Intl.NumberFormat().format(calculateTotalBalance())}
                                 readOnly
-                                className={`shadow-none bg-light-subtle ${styles.inputs}`}
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
                         </Col>
-                    </Row>
-                    <Row>
-                        {/* Balance */}
-                        <Col className="mb-4" lg={6}>
-                            <Form.Label className="fw-semibold">Balance</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={`₦ ${new Intl.NumberFormat().format(calculateTotalBalance())}`}
-                                readOnly
-                                className={`shadow-none bg-light-subtle ${styles.inputs}`}
-                            />
-                        </Col>
-                        {/* Description */}
-                        <Col className="mb-4" lg={6}>
-                            <Form.Label className="fw-semibold">Description</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                name="description"
-                                value={dryData.description || ''}
-                                onChange={(e) => setDryData({ ...dryData, description: e.target.value })}
-                                className={`shadow-none bg-light-subtle ${styles.inputs}`}
-                                rows={1}
-                            />
-                        </Col>
-                    </Row>
 
-                    <div className='text-end'>
+                    </Row>
+                    <div className="d-flex justify-content-between">
                         <Button
-                            variant="outline-secondary"
+                            variant="secondary"
+                            className={`border-0 btn btn-secondary shadow py-2 px-5 fs-6 mb-5 fw-semibold`}
                             onClick={() => setCurrentStep(1)}
-                            className="me-2 border-0 btn btn-light shadow py-2 px-5 fs-6 fw-semibold"
                         >
-                            Previous
+                            Back
                         </Button>
                         <Button
-                            type="submit"
                             variant="dark"
-                            className={`border-0 btn btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}
                             disabled={loader}
+                            className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+                            type="submit"
                         >
-                            {loader ? 'Adding Sale...' : 'Add Sales'}
+                            {loader ? 'Adding Sale...' : 'Add Sale'}
                         </Button>
                     </div>
                 </Form>
             )}
-
-            <ReceiptModal
-                show={showReceipt}
-                onHide={() => setShowReceipt(false)}
-                receiptData={receiptData}
-            />
+             {/* Receipt Modal */}
+                <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt}/>
         </div>
     );
 };
