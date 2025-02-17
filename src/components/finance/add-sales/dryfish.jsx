@@ -74,10 +74,22 @@ const SalesForm = ({ customers, stages, products }) => {
 
     const calculateSubtotal = (productName) => {
         const product = dryData.products.find(product => product.productName === productName);
+        if (!product) {
+            return 0; // Return 0 if product is undefined
+        }
+    
         const quantity = product?.quantity || 0;
-        const basePrice = products.find(product => product.productName === productName).basePrice;
-        return quantity * basePrice;
+        const quantityUsedToPack = product?.quantityUsedToPack || 0;
+        const basePrice = products.find(p => p.productName === productName)?.basePrice || 0;
+        const isBrokenProduct = product.productName?.toLowerCase().includes("broken");
+    
+        if (isBrokenProduct) {
+            return quantityUsedToPack * basePrice;
+        } else {
+            return quantity * basePrice;
+        }
     };
+       
 
     const calculateDiscountedPrice = () => {
         let discountedPrice = totalPrice;

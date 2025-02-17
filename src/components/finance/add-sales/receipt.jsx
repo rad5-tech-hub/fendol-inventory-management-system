@@ -73,7 +73,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                     <div className="d-flex justify-content-between align-items-center gap-2 my-2">
                         <div className="bg-secondary p-3 shadow rounded-3 border-2 border-secondary-subtle" style={{ width: "60%" }}>
                             <p className="text-light">
-                                <strong>{receiptData.receipt.customerCategory} Name:</strong> <span className=" px-3 text-decoration-underline">{receiptData.receipt.customerAddress}</span>
+                                <strong>{receiptData.receipt.customerCategory} Name:</strong> <span className=" px-3 text-decoration-underline">{receiptData.receipt.customerName}</span>
                             </p>
                             <p className="text-light">
                                 <strong>Address:</strong> <span className="px-3 text-decoration-underline">{receiptData.receipt.customerAddress}</span>
