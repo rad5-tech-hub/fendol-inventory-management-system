@@ -373,16 +373,13 @@ const SalesForm = ({ customers, stages, products }) => {
                             <Form.Select
                                 name="category"
                                 value={dryData.category || ''}
-                                onChange={(e) => handleCategoryChange(e)}
-                                className={`shadow-none bg-light-subtle ${styles.inputs}`}
+                                onChange={handleInputChange}
                                 required
+                                className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs} pe-5`}
                             >
                                 <option value="" disabled>Select Category</option>
-                                {stages.map((stage) => (
-                                    <option key={stage.category} value={stage.category}>
-                                        {stage.category}
-                                    </option>
-                                ))}
+                                <option value="Marketer">Marketer</option>
+                                <option value="Customer">Customer</option>
                             </Form.Select>
                             {formSubmitted && !dryData.category && (
                                 <Form.Text className="text-danger">Category is required.</Form.Text>
