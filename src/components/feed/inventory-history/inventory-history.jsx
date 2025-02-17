@@ -138,7 +138,7 @@ export default function InventoryHistory() {
                           <td>{history.feedDetails.feedName}</td>
                           <td>{history.feedDetails.feedType}</td>
                           <td>{history.stage || '-'}</td>
-                          <td>{history.originalQuantity}</td>                        
+                          <td>{history.stage === null ? history.feedDetails.originalQuantity : '-'}</td>                        
                           <td>{history.quantityUsed}</td>
                           <td>{history.remainingFeed}</td>
                           <td className="text-uppercase fw-semibold d-flex">
