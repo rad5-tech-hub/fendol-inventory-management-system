@@ -13,6 +13,7 @@ const SalesForm = ({ customers, stages, products }) => {
         fullName: '',
         discount: 0,
         description: '',
+        salesType: 'dry',
         paymentType: '',
         amountPaid: 0
     });
@@ -278,7 +279,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                         return (
                                             product.productName &&
                                             !lowerProductName.includes('fresh fish') &&
-                                            !lowerProductName.includes('fingerlings fish')
+                                            !lowerProductName.includes('fingerlings')
                                         );
                                     })
                                     .map((product, index) => (

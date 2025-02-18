@@ -136,28 +136,53 @@ const PersonalLedger = () => {
   const handleReceipt = async (record) => {
     // 2. Toast for fetching receipt
     const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
-
-    // 3. Fetch receipt using transaction ID
-    const receiptResponse = await Api.get(`/receipt/${record.transactionId}`);
-
-    if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+  
+    try {
+      // Determine the endpoint based on salesType
+      let endpoint;
+      if (record.salesType === 'dry') {
+        endpoint = `/receipt/${record.transactionId}`;
+      } else if (record.salesType === 'fresh') {
+        endpoint = `/receipts/${record.transactionId}`;
+      } else {
+        endpoint = `/receipt-finger/${record.transactionId}`;
+      }
+  
+      // 3. Fetch receipt using transaction ID
+      const receiptResponse = await Api.get(endpoint);
+  
+      if (receiptResponse.status === 404) {
+        throw new Error(receiptResponse.data.message || "Receipt not found.");
+      }
+  
+      if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
         throw new Error("Receipt could not be fetched.");
-    }
-
-    // 4. Update state with receipt data
-    setReceiptData(receiptResponse.data);
-
-    // ✅ Receipt success toast
-    toast.update(receiptToast, {
+      }
+  
+      // 4. Update state with receipt data
+      setReceiptData(receiptResponse.data);
+  
+      // ✅ Receipt success toast
+      toast.update(receiptToast, {
         render: "Receipt fetched successfully!",
         type: "success",
         isLoading: false,
         autoClose: 3000,
         className: 'dark-toast'
-    });
-
-    setShowReceipt(true); // Show receipt modal     
-  }
+      });
+  
+      setShowReceipt(true); // Show receipt modal
+    } catch (error) {
+      // ❌ Receipt error toast
+      toast.update(receiptToast, {
+        render: error.message,
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+        className: 'dark-toast'
+      });
+    }
+  };
   
   return (
     <section className={`d-none d-lg-block ${styles.body}`}>
@@ -217,20 +242,22 @@ const PersonalLedger = () => {
                         <td>{record.productName}</td>
                         <td>{record.quantity}</td>
                         <td>{record.paymentType}</td>
-                        <td style={{ color: 'green' }}>{record.credit || '-'}</td>
-                        <td style={{ color: 'red' }}>{record.debit || '-'}</td>
-                        <td className="d-flex gap-3 align-items-center">
-                          <span>{record.balance}</span>
-                          <p
-                            className={`badge p-2 mt-3 ${record.debit === 0 ? 'bg-success' : 'bg-danger'}`}
-                            style={{ cursor: 'pointer' }}
-                            onClick={record.debit !== 0 ? () => handleEditAmount(record) : null}
-                          >
-                            {record.debit === 0 ? 'Paid' : 'Credit'}                            
-                          </p>                      
-                          <span className="bg-white p-2 rounded-circle badge ">
-                            <BsPrinter style={{ cursor: 'pointer' }} onClick={() => handleReceipt(record)} className="text-primary" size={28} />
-                          </span>  
+                        <td style={{ color: 'green' }}>{record.credit ? record.credit.toLocaleString() : '-'}</td>
+                        <td style={{ color: 'red' }}>{record.debit ? record.debit.toLocaleString() : '-'}</td>
+                        <td>
+                          <div className="d-flex gap-3 align-items-center">
+                            <span>{record.balance.toLocaleString()}</span>
+                            <p
+                              className={`badge p-2 mt-3 ${record.debit === 0 ? 'bg-success' : 'bg-danger'}`}
+                              style={{ cursor: 'pointer' }}
+                              onClick={record.debit !== 0 ? () => handleEditAmount(record) : null}
+                            >
+                              {record.debit === 0 ? 'Paid' : 'Credit'}                            
+                            </p>                      
+                            <span className="bg-white p-2 rounded-circle badge ">
+                              <BsPrinter style={{ cursor: 'pointer' }} onClick={() => handleReceipt(record)} className="text-primary" size={28} />
+                            </span>
+                          </div>
                         </td>                                                                    
                       </tr>
                     ))}

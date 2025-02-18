@@ -14,6 +14,7 @@ const FreshForm = ({ customers, stages, products }) => {
         category: '',
         fullName: '',
         discount: 0,
+        salesType: 'fresh',
         amountPaid: null,
         batch_no: '',
         stageId_from: "",

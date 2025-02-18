@@ -13,6 +13,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
         fullName: '',
         description: "",
         discount: 0,
+        salesType: 'fingerlings',
         stageId_from: "",
         paymentType: '',
         amountPaid: null,

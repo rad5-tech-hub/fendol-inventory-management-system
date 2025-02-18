@@ -16,6 +16,7 @@ const AddExpense = () => {
     const [formData, setFormData] = useState({
         price: '',
         description: '',
+        paymentType:''
     });
     const [unformattedPrice, setUnformattedPrice] = useState(0);
        const [loader, setLoader] = useState(false);
@@ -74,6 +75,7 @@ const AddExpense = () => {
             setFormData({
                 price: '',
                 description: '',
+                paymentType:''
             });
             setUnformattedPrice(0);
         } catch (error) {
@@ -104,7 +106,7 @@ const AddExpense = () => {
                         <ToastContainer />
                         <Form className={styles.create_form} onSubmit={handleAddExpense}>
                             <h4 className="mt-4 mb-5">Add New Expense</h4>
-                            <Row xxl={2} xl={2} lg={2}>
+                            <Row lg={1} xl={1}>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Total Price</Form.Label>
                                     <Form.Control
@@ -114,8 +116,23 @@ const AddExpense = () => {
                                         value={formData.price} // Display the formatted price
                                         required
                                         onChange={handleInputChange}
-                                        className={`py-2 bg-light-subtle shadow-none border-secondary-subtle border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
+                                </Col>
+                                 {/* Payment Type */}
+                                <Col className="mb-4">
+                                    <Form.Label className="fw-semibold">Payment Type</Form.Label>
+                                    <Form.Select
+                                        name="paymentType"
+                                        value={formData.paymentType || ''}
+                                        onChange={handleInputChange}
+                                        required
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                    >
+                                        <option value="" disabled>Select Payment Type</option>
+                                        <option value="Cash">Cash</option>                                        
+                                        <option value="Bank Transfer">Bank Transfer</option>                                        
+                                    </Form.Select>
                                 </Col>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Description</Form.Label>
@@ -126,7 +143,8 @@ const AddExpense = () => {
                                         required
                                         value={formData.description}
                                         onChange={handleInputChange}
-                                        className={`py-2 bg-light-subtle shadow-none border-secondary-subtle border-1 ${styles.inputs}`}
+                                        rows={4}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 </Col>
                             </Row>

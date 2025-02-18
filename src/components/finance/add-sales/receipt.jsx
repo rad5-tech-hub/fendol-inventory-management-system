@@ -70,7 +70,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                             SALES RECEIPT
                         </p>
                     </div>
-                    <div className="d-flex justify-content-between align-items-center gap-2 my-2">
+                    <div className="d-flex justify-content-between align-items-center gap-1 my-2">
                         <div className="bg-secondary p-3 shadow rounded-3 border-2 border-secondary-subtle" style={{ width: "60%" }}>
                             <p className="text-light">
                                 <strong>{receiptData.receipt.customerCategory} Name:</strong> <span className=" px-3 text-decoration-underline">{receiptData.receipt.customerName}</span>
@@ -87,7 +87,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                                 display: 'inline-block', // Required for transform to work
                                 transform: 'rotate(8deg)',                                 
                                 margin: '20px 10px 30px',
-                                fontSize: '1.4rem',
+                                fontSize: '1.3rem',
                                 color: '#D2D2D2',
                                 fontStyle: 'italic',
                                 fontWeight: '600',
@@ -95,18 +95,18 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                             }}>
                                 {receiptData.receipt.receiptNumber}
                             </span>
-                            <p><strong>Date:</strong> <span className="text-decoration-underline px-3"> {receiptData.receipt.date}</span></p>
-                            <p><strong>Time:</strong> <span className="text-decoration-underline px-3">  {receiptData.receipt.time} </span> </p>
+                            <p><strong>Date:</strong> <span className="text-decoration-underline px-2"> {receiptData.receipt.date}</span></p>
+                            <p><strong>Time:</strong> <span className="text-decoration-underline px-2">  {receiptData.receipt.time} </span> </p>
                         </div>
                     </div>                
 
-                    <table className="table mt-4">
+                    <table className="table mt-2">
                         <thead className="bg-secondary">
                             <tr className='bg-secondary'>
-                                <th>PRODUCT</th>
-                                <th>QUANTITY</th>
-                                <th>TOTAL(₦)</th>
-                                <th>PRICE (₦)</th>
+                                <th>PROD</th>
+                                <th>QTY</th>
+                                <th>TOT(₦)</th>
+                                <th>PRC(₦)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -121,7 +121,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                         </tbody>
                     </table>
 
-                    <div className="text-end text-muted">
+                    <div className="text-end pe-3 text-muted">
                         <p><strong>Grand Total:</strong> ₦{receiptData.receipt.totalAmount?.toLocaleString()}</p>
                         <p><strong>Paid:</strong> ₦{receiptData.receipt.amountPaid?.toLocaleString()}</p>
                         <p><strong>Amount Due:</strong> ₦{receiptData.receipt.remainingBalance?.toLocaleString()}</p>
@@ -129,7 +129,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                         <p><strong>Your Total Savings:</strong> ₦{receiptData.receipt.discount?.toLocaleString()}</p>
                     </div>
                     <hr className="my-4"/>
-                    <p className="text-center">Thanks for your Kind Patronage!</p>
+                    <p className="text-center">Thanks For Your Kind Patronage!</p>
                 </div>
 
                 <div className={`d-print-none d-flex justify-content-between ${styles.receiptButtons}`}>

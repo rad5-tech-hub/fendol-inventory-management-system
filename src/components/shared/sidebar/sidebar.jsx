@@ -561,7 +561,7 @@ export default function SideBar() {
                                                 <FaRegCircle size={16} className="me-1" /> Add Sales
                                             </div>
                                         </Nav.Item>
-                                        {role !== 'sales_manager' && <Nav.Item className="mb-3" title="Add Expenses">
+                                        <Nav.Item className="mb-3" title="Add Expenses">
                                             <div 
                                                 onClick={() => navigate('/finance/add-expenses')} 
                                                 className={`${location.pathname === "/finance/add-expenses" ? styles.activeLink : styles.nonactiveLink}`}
@@ -569,7 +569,7 @@ export default function SideBar() {
                                             >
                                                 <FaRegCircle size={16} className="me-1" /> Add Expenses
                                             </div>
-                                        </Nav.Item>}
+                                        </Nav.Item>                                       
                                         {role === 'super_admin' && (<Nav.Item className="mb-3" title="Financial Ledger">
                                             <div 
                                                 onClick={() => navigate('/finance/ledger')} 
@@ -579,6 +579,15 @@ export default function SideBar() {
                                                 <FaRegCircle size={16} className="me-1" />Finance Ledger
                                             </div>
                                         </Nav.Item>)}
+                                        <Nav.Item className="mb-3" title="Add Expenses">
+                                            <div 
+                                                onClick={() => navigate('/finance/cash-drawer')} 
+                                                className={`${location.pathname === "/finance/cash-drawer" ? styles.activeLink : styles.nonactiveLink}`}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <FaRegCircle size={16} className="me-1" /> Cash Drawer
+                                            </div>
+                                        </Nav.Item>
                                     </Card.Body>
                                 </div>
                             </Collapse>
