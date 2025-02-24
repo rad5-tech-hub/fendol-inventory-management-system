@@ -45,7 +45,7 @@ const FinanceLedger = () => {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
     const year = date.getFullYear();
-    return `${day}/${month}/${year}`; // Return ISO 8601 format for input[type="date"]
+    return `${year}-${month}-${day}`; // Return ISO 8601 format for input[type="date"]
   };
 
   // Handle date change for filtering
@@ -156,7 +156,12 @@ const FinanceLedger = () => {
                       <tr key={index}>
                         <td>{formatDate(record.date)}</td>
                         <td>{record.productName}</td>
-                        <td>
+                        <td
+                          title={record.description}
+                          style={{
+                            cursor: record.description && record.description.length > 40 ? 'pointer' : 'normal'
+                          }}
+                        >
                           {record.description
                             ? record.description.slice(0, 40) +
                               (record.description.length > 40 ? "..." : "")
@@ -164,12 +169,12 @@ const FinanceLedger = () => {
                         </td>
                         <td>{record.quantity}</td>
                         <td style={{ color: "green" }}>
-                          {record.credit ? `₦${record.credit}` : "-"}
+                          {record.credit ? `₦${new Intl.NumberFormat().format(record.credit)}` : "-"}
                         </td>
                         <td style={{ color: "red" }}>
-                          {record.debit ? `₦${record.debit}` : "-"}
+                          {record.debit ? `₦${new Intl.NumberFormat().format(record.debit)}` : "-"}
                         </td>
-                        <td>{`₦${record.balance}`}</td>
+                        <td>{`₦${new Intl.NumberFormat().format(record.balance)}`}</td>
                       </tr>
                     ))}
                   </tbody>

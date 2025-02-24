@@ -20,7 +20,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
             printContainer.style.minHeight = "100vh";
             printContainer.style.backgroundColor = "white";
             printContainer.style.zIndex = "9999"; // High z-index to bring it to the front
-            printContainer.style.padding = "20px";
+            printContainer.style.padding = "2px";
             printContainer.style.boxSizing = "border-box";
             
             // Copy the content from printRef into the container
@@ -36,9 +36,9 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                 document.body.removeChild(printContainer);
             }, 100);
         }
-    };       
-    
-    if (!receiptData || !receiptData.receipt) {
+    };
+
+    if (!receiptData || !receiptData.data) {
         return (
             <Modal show={show} centered size="md">
                 <Modal.Body className="text-center">
@@ -49,8 +49,11 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
         );
     }
 
-    const { receipt } = receiptData;
-    
+    const receipt = receiptData.data.data;
+
+    // Format date and time from the receipt object
+    const formattedDate = new Date(receipt.date).toLocaleDateString('en-GB');
+
     return (
         <Modal show={show} centered size="md">
             <Modal.Body className={styles.receiptModal}>
@@ -73,13 +76,13 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                     <div className="d-flex justify-content-between align-items-center gap-1 my-2">
                         <div className="bg-secondary p-3 shadow rounded-3 border-2 border-secondary-subtle" style={{ width: "60%" }}>
                             <p className="text-light">
-                                <strong>{receiptData.receipt.customerCategory} Name:</strong> <span className=" px-3 text-decoration-underline">{receiptData.receipt.customerName}</span>
+                                <strong>{receipt.customerCategory} Name:</strong> <span className=" px-3 text-decoration-underline">{receipt.customerName}</span>
                             </p>
                             <p className="text-light">
-                                <strong>Address:</strong> <span className="px-3 text-decoration-underline">{receiptData.receipt.customerAddress}</span>
+                                <strong>Address:</strong> <span className="px-3 text-decoration-underline">{receipt.customerAddress}</span>
                             </p>
                             <p className="text-light">
-                                <strong>Served by:</strong> <span className=" px-3 text-decoration-underline">{receiptData.receipt.servedBy}</span>
+                                <strong>Served by:</strong> <span className=" px-3 text-decoration-underline">{receipt.servedBy}</span>
                             </p>
                         </div>
                         <div>
@@ -93,10 +96,10 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                                 fontWeight: '600',
                                 transformOrigin: 'center' // Ensures the text rotates around its center
                             }}>
-                                {receiptData.receipt.receiptNumber}
+                                {receipt.receiptNumber}
                             </span>
-                            <p><strong>Date:</strong> <span className="text-decoration-underline px-2"> {receiptData.receipt.date}</span></p>
-                            <p><strong>Time:</strong> <span className="text-decoration-underline px-2">  {receiptData.receipt.time} </span> </p>
+                            <p><strong>Date:</strong> <span className="text-decoration-underline px-2"> {formattedDate}</span></p>
+                            <p><strong>Time:</strong> <span className="text-decoration-underline px-2">  {receipt.time} </span> </p>
                         </div>
                     </div>                
 
@@ -110,11 +113,15 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {receiptData.receipt.items.map((product, index) => (
+                            {receipt.purchasedItems && receipt.purchasedItems.map((product, index) => (
                                 <tr key={index}>
-                                    <td>{product.product}</td>
-                                    <td>{product.quantity}</td>
-                                    <td>{product.total?.toLocaleString()}</td>
+                                    <td>{product.productName}</td>
+                                    <td>
+                                        {product.productName && product.productName.toLowerCase().includes("broken")
+                                        ? product.quantityUsedToPack
+                                        : product.quantity}
+                                    </td>
+                                    <td>{product.totalPrice?.toLocaleString() || product.total?.toLocaleString()}</td>
                                     <td>{product.unitPrice?.toLocaleString()}</td>
                                 </tr>
                             ))}
@@ -122,11 +129,11 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                     </table>
 
                     <div className="text-end pe-3 text-muted">
-                        <p><strong>Grand Total:</strong> ₦{receiptData.receipt.totalAmount?.toLocaleString()}</p>
-                        <p><strong>Paid:</strong> ₦{receiptData.receipt.amountPaid?.toLocaleString()}</p>
-                        <p><strong>Amount Due:</strong> ₦{receiptData.receipt.remainingBalance?.toLocaleString()}</p>
-                        <p><strong>Payment Type:</strong> {receiptData.receipt.paymentMethod}</p>
-                        <p><strong>Your Total Savings:</strong> ₦{receiptData.receipt.discount?.toLocaleString()}</p>
+                        <p><strong>Grand Total:</strong> ₦{receipt.totalAmount?.toLocaleString()}</p>
+                        <p><strong>Paid:</strong> ₦{receipt.amountPaid?.toLocaleString()}</p>
+                        <p><strong>Amount Due:</strong> ₦{receipt.remainingBalance?.toLocaleString()}</p>
+                        <p><strong>Payment Type:</strong> {receipt.paymentMethod}</p>
+                        <p><strong>Your Total Savings:</strong> ₦{receipt.discount?.toLocaleString()}</p>
                     </div>
                     <hr className="my-4"/>
                     <p className="text-center">Thanks For Your Kind Patronage!</p>

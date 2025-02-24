@@ -45,7 +45,7 @@ const CashDrawer = () => {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
     const year = date.getFullYear();
-    return `${day}/${month}/${year}`; // Return ISO 8601 format for input[type="date"]
+    return `${year}-${month}-${day}`; // Return ISO 8601 format for input[type="date"]
   };
 
   // Handle date change for filtering
@@ -153,7 +153,12 @@ const CashDrawer = () => {
                     {displayedLedgerData.map((record, index) => (
                       <tr key={index}>
                         <td>{formatDate(record.date)}</td>                      
-                        <td>
+                        <td
+                          title={record.description}
+                          style={{
+                            cursor: record.description && record.description.length > 50 ? 'pointer' : 'normal'
+                          }}
+                        >
                           {record.description
                             ? record.description.slice(0, 50) +
                               (record.description.length > 50 ? "..." : "")

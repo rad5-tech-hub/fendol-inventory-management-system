@@ -137,19 +137,9 @@ const PersonalLedger = () => {
     // 2. Toast for fetching receipt
     const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
   
-    try {
-      // Determine the endpoint based on salesType
-      let endpoint;
-      if (record.salesType === 'dry') {
-        endpoint = `/receipt/${record.transactionId}`;
-      } else if (record.salesType === 'fresh') {
-        endpoint = `/receipts/${record.transactionId}`;
-      } else {
-        endpoint = `/receipt-finger/${record.transactionId}`;
-      }
-  
+    try {           
       // 3. Fetch receipt using transaction ID
-      const receiptResponse = await Api.get(endpoint);
+      const receiptResponse = await Api.get(`/sales-receipts/${record.transactionId}`);
   
       if (receiptResponse.status === 404) {
         throw new Error(receiptResponse.data.message || "Receipt not found.");
@@ -160,7 +150,7 @@ const PersonalLedger = () => {
       }
   
       // 4. Update state with receipt data
-      setReceiptData(receiptResponse.data);
+      setReceiptData(receiptResponse);
   
       // ✅ Receipt success toast
       toast.update(receiptToast, {

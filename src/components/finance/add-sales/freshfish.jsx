@@ -14,7 +14,7 @@ const FreshForm = ({ customers, stages, products }) => {
         category: '',
         fullName: '',
         discount: 0,
-        salesType: 'fresh',
+        salesType: '',
         amountPaid: null,
         batch_no: '',
         stageId_from: "",
@@ -80,15 +80,16 @@ const FreshForm = ({ customers, stages, products }) => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         const numericValue = name === 'productWeight' || name === 'discount' || name === 'quantity' ? parseFloat(value) || 0 : value;
-
+      
         if (name === 'stageId_from') {
-            setFreshData(prevData => ({ ...prevData, stageId_from: value }));
-            getQuantity(value);  // Pass stageId_from to getQuantity
+          setFreshData(prevData => ({ ...prevData, stageId_from: value }));
+          getQuantity(value);  // Pass stageId_from to getQuantity
         }
-
+      
         setFreshData(prevData => ({
-            ...prevData,
-            [name]: numericValue,
+          ...prevData,
+          [name]: numericValue,
+          salesType: 'fresh' // Automatically set salesType to 'fresh'
         }));
     };
 
@@ -141,106 +142,109 @@ const FreshForm = ({ customers, stages, products }) => {
 
     const calculateTotalBalance = () => {
         const discountedPrice = calculateDiscountedPrice();
-        return discountedPrice - (freshData.amountPaid || 0);
+        if (freshData.paymentType === 'Credit') {
+          return discountedPrice - (freshData.amountPaid || 0);
+        }
+        return discountedPrice;
     };
 
     const handleAddSales = async (e) => {
         e.preventDefault();
         if (!window.confirm("Are you sure you want to add this sale?")) return;
-    
+      
         setLoader(true);
-        
+      
         // Toast for sale process
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
-    
+      
         try {
-            // 1. Create sale first
-            const saleResponse = await Api.post('/sales-fresh-fish', freshData);
-    
-            if (saleResponse.status < 200 || saleResponse.status >= 300) {
-                throw new Error(saleResponse.data?.message || "Sale failed!");
-            }
-    
-            const transactionId = saleResponse.data?.transactionId;
-    
-            if (!transactionId) {
-                toast.update(salesToast, {
-                    render: "Transaction ID not found. Please try again.",
-                    type: "error",
-                    isLoading: false,
-                    autoClose: 3000,
-                    className: 'dark-toast'
-                });
-                setLoader(false);
-                return;
-            }
-    
-            // ✅ Sale success toast
+          // 1. Create sale first
+          const saleResponse = await Api.post('/sales-fresh-fish', freshData);
+      
+          if (saleResponse.status < 200 || saleResponse.status >= 300) {
+            throw new Error(saleResponse.data?.message || "Sale failed!");
+          }
+      
+          const transactionId = saleResponse.data?.transactionId;
+      
+          if (!transactionId) {
             toast.update(salesToast, {
-                render: "Sale added successfully!",
-                type: "success",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
+              render: "Transaction ID not found. Please try again.",
+              type: "error",
+              isLoading: false,
+              autoClose: 3000,
+              className: 'dark-toast'
             });
-    
-            // 2. Toast for fetching receipt
-            const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
-    
-            // 3. Fetch receipt using transaction ID
-            const receiptResponse = await Api.get(`/receipts/${transactionId}`);
-    
-            if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
-                throw new Error("Receipt could not be fetched.");
-            }
-    
-            // 4. Update state with receipt data
-            setReceiptData(receiptResponse.data);
-    
-            // ✅ Receipt success toast
-            toast.update(receiptToast, {
-                render: "Receipt fetched successfully!",
-                type: "success",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
-            });
-    
-            setShowReceipt(true); // Show receipt modal
-    
-            // 5. Reset form after showing receipt
-            setFreshData({
-                productName: "",
-                productWeight: 0,
-                quantity: 0,
-                description: "",
-                category: '',
-                fullName: '',
-                discount: 0,
-                stageId_from: "",
-                paymentType: '',
-                batch_no: '',
-                basePrice: 0,
-                totalPrice: 0
-            });
-    
-        } catch (error) {
-            console.error("Error in handleAddSales:", error);
-    
-            // Handle errors separately for sale and receipt
-            toast.update(salesToast, {
-                render: error.response?.data?.message || error.message || 'Sale failed!',
-                type: "error",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
-            });
-    
-            toast.dismiss(); // Ensure no stale loading toasts remain
-        } finally {
             setLoader(false);
+            return;
+          }
+          
+          // 5. Reset form after showing receipt
+          setFreshData({
+            productName: "",
+            productWeight: 0,
+            quantity: 0,
+            description: "",
+            category: '',
+            fullName: '',
+            discount: 0,
+            stageId_from: "",
+            paymentType: '',
+            batch_no: '',
+            basePrice: 0,
+            totalPrice: 0
+          });
+      
+          // ✅ Sale success toast
+          toast.update(salesToast, {
+            render: "Sale added successfully!",
+            type: "success",
+            isLoading: false,
+            autoClose: 3000,
+            className: 'dark-toast'
+          });
+      
+          // 2. Toast for fetching receipt
+          const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
+      
+          // 3. Fetch receipt using transaction ID
+          const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
+      
+          if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+            throw new Error("Receipt could not be fetched.");
+          }
+      
+          // 4. Update state with receipt data
+          setReceiptData(receiptResponse);
+      
+          // ✅ Receipt success toast
+          toast.update(receiptToast, {
+            render: "Receipt fetched successfully!",
+            type: "success",
+            isLoading: false,
+            autoClose: 3000,
+            className: 'dark-toast'
+          });
+      
+          setShowReceipt(true); // Show receipt modal              
+      
+        } catch (error) {
+          console.error("Error in handleAddSales:", error);
+      
+          // Handle errors separately for sale and receipt
+          toast.update(salesToast, {
+            render: error.response?.data?.message || error.message || 'Sale failed!',
+            type: "error",
+            isLoading: false,
+            autoClose: 6000,
+            className: 'dark-toast'
+          });
+      
+          toast.dismiss(); // Ensure no stale loading toasts remain
+        } finally {
+          setLoader(false);
         }
-    };    
+      };
 
     return (
         <div>
@@ -406,7 +410,7 @@ const FreshForm = ({ customers, stages, products }) => {
                                 setFreshData((prev) => ({
                                     ...prev,
                                     paymentType: selectedPayment,
-                                    amountPaid: selectedPayment !== "Credit" ?  calculateTotalBalance() : prev.amountPaid, // Ensure amountPaid matches totalBalance for non-credit
+                                    amountPaid: selectedPayment !== "Credit" ? calculateTotalBalance() : prev.amountPaid, // Ensure amountPaid matches totalBalance for non-credit
                                 }));
                             }}
                             required
@@ -431,7 +435,7 @@ const FreshForm = ({ customers, stages, products }) => {
                                 value={freshData.amountPaid ? new Intl.NumberFormat().format(freshData.amountPaid) : ''}
                                 onChange={(e) => {
                                     const value = e.target.value.replace(/,/g, ''); // Remove commas for proper number parsing
-                                    setFreshData({ ...freshData, amountPaid: value });
+                                    setFreshData({ ...freshData , amountPaid: value });
                                 }}
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />

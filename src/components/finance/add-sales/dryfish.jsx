@@ -13,7 +13,7 @@ const SalesForm = ({ customers, stages, products }) => {
         fullName: '',
         discount: 0,
         description: '',
-        salesType: 'dry',
+        salesType: '',
         paymentType: '',
         amountPaid: 0
     });
@@ -56,12 +56,12 @@ const SalesForm = ({ customers, stages, products }) => {
     const handleInputChange = (e, productName) => {
         const { name, value } = e.target;
         setDryData(prevState => {
-            const updatedProducts = prevState.products.map(product =>
-                product.productName === productName ? { ...product, [name]: value } : product
-            );
-            return { ...prevState, products: updatedProducts };
+          const updatedProducts = prevState.products.map(product =>
+            product.productName === productName ? { ...product, [name]: value } : product
+          );
+          return { ...prevState, products: updatedProducts, salesType: 'dry' };
         });
-    };
+      };
 
     const handleCheckChange = (e, productName) => {
         const { checked } = e.target;
@@ -103,16 +103,19 @@ const SalesForm = ({ customers, stages, products }) => {
     const calculateDiscountedPrice = () => {
         let discountedPrice = totalPrice;
         if (dryData.category === 'Marketer') {
-            discountedPrice -= (totalPrice * 0.1);
+          discountedPrice -= (totalPrice * 0.1);
         } else {
-            discountedPrice -= (dryData.discount || 0);
+          discountedPrice -= (parseFloat(dryData.discount) || 0);
         }
         return discountedPrice;
     };
 
     const calculateTotalBalance = () => {
         const discountedPrice = calculateDiscountedPrice();
-        return discountedPrice - (dryData.amountPaid || 0);
+        if (dryData.paymentType === 'Credit') {
+          return discountedPrice - (dryData.amountPaid || 0);
+        }
+        return discountedPrice;
     };
 
     const handleNextStep = () => {
@@ -148,99 +151,103 @@ const SalesForm = ({ customers, stages, products }) => {
     const handleAddSales = async (e) => {
         e.preventDefault();
         if (!window.confirm("Are you sure you want to add this sale?")) return;
-    
+      
         setLoader(true);
-        
+      
         // Toast for sale process
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
-    
+      
         try {
-            // 1. Create sale first
-            const saleResponse = await Api.post('/sales', dryData);
-    
-            if (saleResponse.status < 200 || saleResponse.status >= 300) {
-                throw new Error(saleResponse.data?.message || "Sale failed!");
-            }
-    
-            const transactionId = saleResponse.data?.transactionId;
-    
-            if (!transactionId) {
-                toast.update(salesToast, {
-                    render: "Transaction ID not found. Please try again.",
-                    type: "error",
-                    isLoading: false,
-                    autoClose: 3000,
-                    className: 'dark-toast'
-                });
-                setLoader(false);
-                return;
-            }
-    
-            // ✅ Sale success toast
+          // Set discount to 10% if category is Marketer
+          const discount = dryData.category === 'Marketer' ? '10%' : dryData.discount;
+      
+          // 1. Create sale first
+          const saleResponse = await Api.post('/sales', { ...dryData, discount });
+      
+          if (saleResponse.status < 200 || saleResponse.status >= 300) {
+            throw new Error(saleResponse.data?.message || "Sale failed!");
+          }
+      
+          const transactionId = saleResponse.data?.transactionId;
+          const salesType = dryData.salesType;
+      
+          if (!transactionId) {
             toast.update(salesToast, {
-                render: "Sale added successfully!",
-                type: "success",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
+              render: "Transaction ID not found. Please try again.",
+              type: "error",
+              isLoading: false,
+              autoClose: 3000,
+              className: 'dark-toast'
             });
-    
-            // 2. Toast for fetching receipt
-            const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
-    
-            // 3. Fetch receipt using transaction ID
-            const receiptResponse = await Api.get(`/receipt/${transactionId}`);
-    
-            if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
-                throw new Error("Receipt could not be fetched.");
-            }
-    
-            // 4. Update state with receipt data
-            setReceiptData(receiptResponse.data);
-    
-            // ✅ Receipt success toast
-            toast.update(receiptToast, {
-                render: "Receipt fetched successfully!",
-                type: "success",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
-            });
-    
-            setShowReceipt(true); // Show receipt modal
-    
-            // 5. Reset form after showing receipt
-            setDryData({
-                products: [],
-                category: '',
-                fullName: '',
-                discount: '',
-                description: '',
-                paymentType: '',
-                amountPaid: ''
-            });
-    
-            setCheckedProducts({});
-            setCurrentStep(1);
-            setFormSubmitted(false);
-    
-        } catch (error) {
-            console.error("Error in handleAddSales:", error);
-    
-            // Handle errors separately for sale and receipt
-            toast.update(salesToast, {
-                render: error.response?.data?.message || error.message || 'Sale failed!',
-                type: "error",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
-            });
-    
-            toast.dismiss(); // Ensure no stale loading toasts remain
-        } finally {
             setLoader(false);
+            return;
+          }
+      
+          // ✅ Sale success toast
+          toast.update(salesToast, {
+            render: "Sale added successfully!",
+            type: "success",
+            isLoading: false,
+            autoClose: 3000,
+            className: 'dark-toast'
+          });
+      
+          // 2. Toast for fetching receipt
+          const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
+      
+          // 3. Fetch receipt using transaction ID
+          const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
+      
+          if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+            throw new Error("Receipt could not be fetched.");
+          }
+      
+          // 4. Update state with receipt data
+          setReceiptData(receiptResponse);
+      
+          // ✅ Receipt success toast
+          toast.update(receiptToast, {
+            render: "Receipt fetched successfully!",
+            type: "success",
+            isLoading: false,
+            autoClose: 3000,
+            className: 'dark-toast'
+          });
+      
+          setShowReceipt(true); // Show receipt modal
+      
+          // 5. Reset form after showing receipt
+          setDryData({
+            products: [],
+            category: '',
+            fullName: '',
+            discount: '',
+            description: '',
+            paymentType: '',
+            amountPaid: ''
+          });
+      
+          setCheckedProducts({});
+          setCurrentStep(1);
+          setFormSubmitted(false);
+      
+        } catch (error) {
+          console.error("Error in handleAddSales:", error);
+      
+          // Handle errors separately for sale and receipt
+          toast.update(salesToast, {
+            render: error.response?.data?.message || error.message || 'Sale failed!',
+            type: "error",
+            isLoading: false,
+            autoClose: 6000,
+            className: 'dark-toast'
+          });
+      
+          toast.dismiss(); // Ensure no stale loading toasts remain
+        } finally {
+          setLoader(false);
         }
-    };    
+    }; 
     
     const isNextButtonDisabled = () => {
         const hasCheckedProduct = Object.values(checkedProducts).some(checked => checked);

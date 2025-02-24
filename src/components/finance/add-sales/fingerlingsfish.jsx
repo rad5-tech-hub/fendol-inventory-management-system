@@ -13,7 +13,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
         fullName: '',
         description: "",
         discount: 0,
-        salesType: 'fingerlings',
+        salesType: '',
         stageId_from: "",
         paymentType: '',
         amountPaid: null,
@@ -75,15 +75,16 @@ const FingerlingsForm = ({ customers, stages, products }) => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         const numericValue = name === 'quantity' || name === 'discount' ? parseFloat(value) || 0 : value;
-
+      
         if (name === 'stageId_from') {
-            setFingerlingsData(prevData => ({ ...prevData, stageId_from: value }));
-            getQuantity(value); // Pass stageId_from to getQuantity
+          setFingerlingsData(prevData => ({ ...prevData, stageId_from: value }));
+          getQuantity(value); // Pass stageId_from to getQuantity
         }
-
+      
         setFingerlingsData(prevData => ({
-            ...prevData,
-            [name]: numericValue,
+          ...prevData,
+          [name]: numericValue,
+          salesType: 'fingerlings' // Automatically set salesType to 'fingerlings'
         }));
     };
 
@@ -135,78 +136,104 @@ const FingerlingsForm = ({ customers, stages, products }) => {
 
     const calculateTotalBalance = () => {
         const discountedPrice = calculateDiscountedPrice();
-        return discountedPrice - (fingerlingsData.amountPaid || 0);
+        if (fingerlingsData.paymentType === 'Credit') {
+          return discountedPrice - (fingerlingsData.amountPaid || 0);
+        }
+        return discountedPrice;
     };
 
     const handleAddSales = async (e) => {
         e.preventDefault();
         if (!window.confirm("Are you sure you want to add this sale?")) return;
-    
+      
         setLoader(true);
-        const loadingToast = toast.loading("Adding sale...", { className: 'dark-toast' });
+        const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
+      
+        try {
+          // 1. Create sale first
+          const saleResponse = await Api.post('/sales-fingerlings', fingerlingsData);
+          if (saleResponse.status < 200 || saleResponse.status >= 300) {
+            throw new Error(saleResponse.data?.message || "Sale failed!");
+          }
+      
+          const transactionId = saleResponse.data?.transactionId;
+          const salesType = fingerlingsData.salesType;
     
-        try {    
-            // 1. Create sale first
-            const saleResponse = await Api.post('/sales-fingerlings', fingerlingsData);
-            if (saleResponse.status < 200 || saleResponse.status >= 300) {
-                throw new Error(saleResponse.data?.message || "Sale failed!");
-            }
-    
-            const transactionId = saleResponse.data?.transactionId;
-            if (!transactionId) {
-                toast.update(loadingToast, {
-                    render: "Transaction ID not found. Please try again.",
-                    type: "error",
-                    isLoading: false,
-                    autoClose: 3000,
-                    className: 'dark-toast'
-                });
-                setLoader(false);
-                return;
-            }
-    
-            const receiptResponse = await Api.get(`/receipt-finger/${transactionId}`);
-            if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
-                throw new Error("Receipt could not be fetched.");
-            }
-    
-            setReceiptData(receiptResponse.data);
-            toast.update(loadingToast, {
-                render: "Sale added successfully!",
-                type: "success",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
+          if (!transactionId) {
+            toast.update(salesToast, {
+              render: "Transaction ID not found. Please try again.",
+              type: "error",
+              isLoading: false,
+              autoClose: 3000,
+              className: 'dark-toast'
             });
-    
-            setShowReceipt(true);
-    
-            setFingerlingsData({
-                productName: "",
-                quantity: 0,
-                category: '',
-                fullName: '',
-                description: "",
-                discount: 0,
-                stageId_from: "",
-                paymentType: '',
-                basePrice: 0,
-                totalPrice: 0
-            });
-    
-        } catch (error) {
-            console.error("Error in handleAddSales:", error);
-            toast.update(loadingToast, {
-                render: error.response?.data?.message || error.message || 'Something went wrong!',
-                type: "error",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
-            });
-        } finally {
             setLoader(false);
+            return;
+          }
+      
+          // ✅ Sale success toast
+          toast.update(salesToast, {
+            render: "Sale added successfully!",
+            type: "success",
+            isLoading: false,
+            autoClose: 3000,
+            className: 'dark-toast'
+          });
+      
+          // 2. Toast for fetching receipt
+          const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
+      
+          // 3. Fetch receipt using transaction ID
+          const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
+          if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+            throw new Error("Receipt could not be fetched.");
+          }
+      
+          // 4. Update state with receipt data
+          setReceiptData(receiptResponse);
+      
+          // ✅ Receipt success toast
+          toast.update(receiptToast, {
+            render: "Receipt fetched successfully!",
+            type: "success",
+            isLoading: false,
+            autoClose: 3000,
+            className: 'dark-toast'
+          });
+      
+          setShowReceipt(true);
+      
+          // Reset form after showing receipt
+          setFingerlingsData({
+            productName: "",
+            quantity: 0,
+            category: '',
+            fullName: '',
+            description: "",
+            discount: 0,
+            stageId_from: "",
+            paymentType: '',
+            basePrice: 0,
+            totalPrice: 0
+          });
+      
+        } catch (error) {
+          console.error("Error in handleAddSales:", error);
+      
+          // Handle errors separately for sale and receipt
+          toast.update(salesToast, {
+            render: error.response?.data?.message || error.message || 'Sale failed!',
+            type: "error",
+            isLoading: false,
+            autoClose: 3000,
+            className: 'dark-toast'
+          });
+      
+          toast.dismiss(); // Ensure no stale loading toasts remain
+        } finally {
+          setLoader(false);
         }
-    };  
+      };
 
     return (
         <div>
