@@ -10,11 +10,12 @@ const SalesForm = ({ customers, stages, products }) => {
     const [dryData, setDryData] = useState({
         products: [],
         category: '',
-        fullName: '',
+        customerId: '',
         discount: 0,
         description: '',
         salesType: '',
         paymentType: '',
+        fullName: '',
         amountPaid: 0
     });
 
@@ -32,12 +33,11 @@ const SalesForm = ({ customers, stages, products }) => {
         setCustomer(customers);
     }, [customers]);
 
-    
     useEffect(() => {
         const total = dryData.products.reduce((total, product) => {
-            if (checkedProducts[product?.productName]) {
+            if (checkedProducts[product?.id]) {
                 const quantity = product?.quantity || 0;
-                const basePrice = products.find(p => p?.productName === product?.productName)?.basePrice || 0;
+                const basePrice = products.find(p => p?.id === product?.id)?.basePrice || 0;
                 const isBrokenProduct = product?.productName?.toLowerCase().includes("broken");
                 const quantityUsedToPack = product?.quantityUsedToPack || 0; // default to 0 if undefined
                 let productTotal;
@@ -53,44 +53,68 @@ const SalesForm = ({ customers, stages, products }) => {
         setTotalPrice(total);
     }, [dryData.products, checkedProducts, products]);
 
-    const handleInputChange = (e, productName) => {
+    const handleInputChange = (e, productId) => {
         const { name, value } = e.target;
+    
         setDryData(prevState => {
-          const updatedProducts = prevState.products.map(product =>
-            product.productName === productName ? { ...product, [name]: value } : product
-          );
-          return { ...prevState, products: updatedProducts, salesType: 'dry' };
+            let updatedProducts = prevState.products.map(product =>
+                product.id === productId 
+                    ? { 
+                        ...product, 
+                        [name]: ['quantity', 'discount'].includes(name) ? parseFloat(value) || 0 : value 
+                      } 
+                    : product
+            );
+    
+            // If category changes, reset fullName and customerId
+            if (name === "category" && prevState.category !== value) {
+                return {
+                    ...prevState,
+                    [name]: value,
+                    fullName: "",  // Clear fullName when changing category
+                    customerId: "", // Clear customerId
+                    products: updatedProducts,
+                    salesType: 'dry'
+                };
+            }
+    
+            return { 
+                ...prevState, 
+                products: updatedProducts, 
+                salesType: 'dry' 
+            };
         });
-      };
+    };    
 
-    const handleCheckChange = (e, productName) => {
+    const handleCheckChange = (e, productId) => {
         const { checked } = e.target;
         setCheckedProducts(prevState => ({
             ...prevState,
-            [productName]: checked
+            [productId]: checked
         }));
         if (checked) {
+            const product = products.find(p => p.id === productId);
             setDryData(prevState => ({
                 ...prevState,
-                products: [...prevState.products, { productName, quantity: 0, quantityUsedToPack: 0 }]
+                products: [...prevState.products, { id: productId, productName: product.productName, quantity: 0, quantityUsedToPack: 0 }]
             }));
         } else {
             setDryData(prevState => ({
                 ...prevState,
-                products: prevState.products.filter(product => product.productName !== productName)
+                products: prevState.products.filter(product => product.id !== productId)
             }));
         }
     };
 
-    const calculateSubtotal = (productName) => {
-        const product = dryData.products.find(product => product.productName === productName);
+    const calculateSubtotal = (productId) => {
+        const product = dryData.products.find(product => product.id === productId);
         if (!product) {
             return 0; // Return 0 if product is undefined
         }
 
         const quantity = product?.quantity || 0;
         const quantityUsedToPack = product?.quantityUsedToPack || 0;
-        const basePrice = products.find(p => p.productName === productName)?.basePrice || 0;
+        const basePrice = products.find(p => p.id === productId)?.basePrice || 0;
         const isBrokenProduct = product.productName?.toLowerCase().includes("broken");
 
         if (isBrokenProduct) {
@@ -103,9 +127,9 @@ const SalesForm = ({ customers, stages, products }) => {
     const calculateDiscountedPrice = () => {
         let discountedPrice = totalPrice;
         if (dryData.category === 'Marketer') {
-          discountedPrice -= (totalPrice * 0.1);
+            discountedPrice -= (totalPrice * 0.1);
         } else {
-          discountedPrice -= (parseFloat(dryData.discount) || 0);
+            discountedPrice -= (parseFloat(dryData.discount) || 0);
         }
         return discountedPrice;
     };
@@ -113,7 +137,7 @@ const SalesForm = ({ customers, stages, products }) => {
     const calculateTotalBalance = () => {
         const discountedPrice = calculateDiscountedPrice();
         if (dryData.paymentType === 'Credit') {
-          return discountedPrice - (dryData.amountPaid || 0);
+            return discountedPrice - (dryData.amountPaid || 0);
         }
         return discountedPrice;
     };
@@ -143,124 +167,136 @@ const SalesForm = ({ customers, stages, products }) => {
         setFilteredCustomer(filtered.length ? filtered : []);
     };
 
-    const handleSelectCustomer = (name) => {
-        setDryData(prevData => ({ ...prevData, fullName: name }));
+    const handleSelectCustomer = (customer) => {
+        setDryData(prevData => ({ ...prevData, customerId: customer.id, fullName: customer.fullName}));
         setFilteredCustomer([]); // Clear suggestions after selection
     };
 
     const handleAddSales = async (e) => {
         e.preventDefault();
         if (!window.confirm("Are you sure you want to add this sale?")) return;
-      
+
         setLoader(true);
-      
+
         // Toast for sale process
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
-      
+
         try {
-          // Set discount to 10% if category is Marketer
-          const discount = dryData.category === 'Marketer' ? '10%' : dryData.discount;
-      
-          // 1. Create sale first
-          const saleResponse = await Api.post('/sales', { ...dryData, discount });
-      
-          if (saleResponse.status < 200 || saleResponse.status >= 300) {
-            throw new Error(saleResponse.data?.message || "Sale failed!");
-          }
-      
-          const transactionId = saleResponse.data?.transactionId;
-          const salesType = dryData.salesType;
-      
-          if (!transactionId) {
+            // Set discount to 10% if category is Marketer
+            const discount = dryData.category === 'Marketer' ? '10%' : dryData.discount;
+
+            // 1. Create sale first
+            const saleResponse = await Api.post('/sales', { ...dryData, discount });
+
+            if (saleResponse.status < 200 || saleResponse.status >= 300) {
+                throw new Error(saleResponse.data?.message || "Sale failed!");
+            }
+
+            const transactionId = saleResponse.data?.transactionId;
+            const salesType = dryData.salesType;
+
+            if (!transactionId) {
+                toast.update(salesToast, {
+                    render: "Transaction ID not found. Please try again.",
+                    type: "error",
+                    isLoading: false,
+                    autoClose: 3000,
+                    className: 'dark-toast'
+                });
+                setLoader(false);
+                return;
+            }
+
+            // ✅ Sale success toast
             toast.update(salesToast, {
-              render: "Transaction ID not found. Please try again.",
-              type: "error",
-              isLoading: false,
-              autoClose: 3000,
-              className: 'dark-toast'
+                render: "Sale added successfully!",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000,
+                className: 'dark-toast'
             });
-            setLoader(false);
-            return;
-          }
-      
-          // ✅ Sale success toast
-          toast.update(salesToast, {
-            render: "Sale added successfully!",
-            type: "success",
-            isLoading: false,
-            autoClose: 3000,
-            className: 'dark-toast'
-          });
-      
-          // 2. Toast for fetching receipt
-          const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
-      
-          // 3. Fetch receipt using transaction ID
-          const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
-      
-          if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
-            throw new Error("Receipt could not be fetched.");
-          }
-      
-          // 4. Update state with receipt data
-          setReceiptData(receiptResponse);
-      
-          // ✅ Receipt success toast
-          toast.update(receiptToast, {
-            render: "Receipt fetched successfully!",
-            type: "success",
-            isLoading: false,
-            autoClose: 3000,
-            className: 'dark-toast'
-          });
-      
-          setShowReceipt(true); // Show receipt modal
-      
-          // 5. Reset form after showing receipt
-          setDryData({
-            products: [],
-            category: '',
-            fullName: '',
-            discount: '',
-            description: '',
-            paymentType: '',
-            amountPaid: ''
-          });
-      
-          setCheckedProducts({});
-          setCurrentStep(1);
-          setFormSubmitted(false);
-      
+
+            // 2. Toast for fetching receipt
+            const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
+
+            // 3. Fetch receipt using transaction ID
+            const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
+
+            if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+                throw new Error("Receipt could not be fetched.");
+            }
+
+            // 4. Update state with receipt data
+            setReceiptData(receiptResponse);
+
+            // ✅ Receipt success toast
+            toast.update(receiptToast, {
+                render: "Receipt fetched successfully!",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000,
+                className: 'dark-toast'
+            });
+
+            setShowReceipt(true); // Show receipt modal
+
+            // 5. Reset form after showing receipt
+            setDryData({
+                products: [],
+                category: '',
+                customerId: '',
+                discount: '',
+                description: '',
+                paymentType: '',
+                amountPaid: ''
+            });
+
+            setCheckedProducts({});
+            setCurrentStep(1);
+            setFormSubmitted(false);
+
         } catch (error) {
-          console.error("Error in handleAddSales:", error);
-      
-          // Handle errors separately for sale and receipt
-          toast.update(salesToast, {
-            render: error.response?.data?.message || error.message || 'Sale failed!',
-            type: "error",
-            isLoading: false,
-            autoClose: 6000,
-            className: 'dark-toast'
-          });
-      
-          toast.dismiss(); // Ensure no stale loading toasts remain
+            console.error("Error in handleAddSales:", error);
+
+            // Handle errors separately for sale and receipt
+            toast.update(salesToast, {
+                render: error.response?.data?.message || error.message || 'Sale failed!',
+                type: "error",
+                isLoading: false,
+                autoClose: 6000,
+                className: 'dark-toast'
+            });
+
+            toast.dismiss(); // Ensure no stale loading toasts remain
         } finally {
-          setLoader(false);
+            setLoader(false);
         }
-    }; 
-    
+    };
+
     const isNextButtonDisabled = () => {
         const hasCheckedProduct = Object.values(checkedProducts).some(checked => checked);
         if (!hasCheckedProduct) {
             return true;
         }
-        return Object.keys(checkedProducts).some(productName => {
-            if (checkedProducts[productName]) {
-                const product = dryData.products.find(p => p.productName === productName);
+        return Object.keys(checkedProducts).some(productId => {
+            if (checkedProducts[productId]) {
+                const product = dryData.products.find(p => p.id === productId);
                 return !product || !product.quantity || !product.quantityUsedToPack;
             }
             return false;
         });
+    };
+
+    const handleCategoryChange = (e) => {
+        const { value } = e.target;
+        setDryData(prevData => ({ ...prevData, category: value }));
+
+        const filtered = customer.filter(c =>
+            c.fullName?.toLowerCase().includes(dryData.fullName?.toLowerCase() || '') &&
+            (!value || c.category === value)
+        );
+
+        setFilteredCustomer(filtered.length ? filtered : []);
     };
 
     return (
@@ -275,7 +311,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                     <th>PRODUCT WEIGHT</th>
                                     <th>PRICE</th>
                                     <th>QUANTITY</th>
-                                    <th>QUANTITY USED TO PACK <br /> QUANTITY IN KG FOR BROKEN</th>
+                                    <th>QUANTITY USED TO PACK <br /> WEIGH IN KG FOR BROKEN</th>
                                     <th>SUBTOTAL</th>
                                 </tr>
                             </thead>
@@ -295,11 +331,11 @@ const SalesForm = ({ customers, stages, products }) => {
                                                 <Form.Check
                                                     type="checkbox"
                                                     label={product.productName}
-                                                    value={product.productName}
+                                                    value={product.id}
                                                     data-id={product.id}
                                                     className=" text-uppercase mt-2 fw-semibold"
-                                                    onChange={(e) => handleCheckChange(e, product.productName)}
-                                                    checked={checkedProducts[product.productName] || false}
+                                                    onChange={(e) => handleCheckChange(e, product.id)}
+                                                    checked={checkedProducts[product.id] || false}
                                                 />
                                             </td>
                                             <td><p className='py-2'>{product.productWeight}{product.unit}</p></td>
@@ -309,28 +345,28 @@ const SalesForm = ({ customers, stages, products }) => {
                                                     placeholder="Enter quantity"
                                                     type="number"
                                                     name="quantity"
-                                                    value={dryData.products.find(p => p.productName === product.productName)?.quantity || ''}
+                                                    value={dryData.products.find(p => p.id === product.id)?.quantity || ''}
                                                     required
                                                     min={1}
-                                                    onChange={(e) => handleInputChange(e, product.productName)}
+                                                    onChange={(e) => handleInputChange(e, product.id)}
                                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                                    disabled={!checkedProducts[product.productName]}
+                                                    disabled={!checkedProducts[product.id]}
                                                 />
                                             </td>
                                             <td className='px-2'>
                                                 <Form.Control
-                                                    placeholder={!product.productName?.toLowerCase().includes("broken") ? `Enter quantity used to pack` : `Enter quantity in to Kg`}
+                                                     placeholder={!product.productName?.toLowerCase().includes("broken") ? `Fishes in ${product.quantity} ${product.productName}` : `Weigh in Kg`}
                                                     type="number"
                                                     name="quantityUsedToPack"
-                                                    value={dryData.products.find(p => p.productName === product.productName)?.quantityUsedToPack || ''}
+                                                    value={dryData.products.find(p => p.id === product.id)?.quantityUsedToPack || ''}
                                                     min="0"
-                                                    onChange={(e) => handleInputChange(e, product.productName)}
+                                                    onChange={(e) => handleInputChange(e, product.id)}
                                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                                    disabled={!checkedProducts[product.productName]}
+                                                    disabled={!checkedProducts[product.id]}
                                                 />
                                             </td>
                                             <td><p className="text-muted py-2">
-                                                ₦ {new Intl.NumberFormat().format(calculateSubtotal(product.productName))}
+                                                ₦ {new Intl.NumberFormat().format(calculateSubtotal(product.id))}
                                                 </p>
                                             </td>
                                         </tr>
@@ -369,7 +405,7 @@ const SalesForm = ({ customers, stages, products }) => {
                             <Form.Select
                                 name="category"
                                 value={dryData.category || ''}
-                                onChange={(e) => setDryData({ ...dryData, category: e.target.value })}
+                                onChange={handleCategoryChange}
                                 required
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
                             >
@@ -399,7 +435,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                                 {filteredCustomer.map((customer, index) => (
                                                     <li
                                                         key={index}
-                                                        onClick={() => handleSelectCustomer(customer.fullName)}
+                                                        onClick={() => handleSelectCustomer(customer)}
                                                         style={{ cursor: 'pointer' }}
                                                     >
                                                         {customer.fullName}

@@ -79,19 +79,41 @@ const FreshForm = ({ customers, stages, products }) => {
     // Handle input change for freshData
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        const numericValue = name === 'productWeight' || name === 'discount' || name === 'quantity' ? parseFloat(value) || 0 : value;
-      
+        
+        // Convert numeric fields
+        const numericFields = ['productWeight', 'discount', 'quantity'];
+        const numericValue = numericFields.includes(name) ? parseFloat(value) || 0 : value;
+    
+        setFreshData(prevData => {
+            let newState = { 
+                ...prevData, 
+                [name]: numericValue, 
+                salesType: 'fresh' 
+            };
+    
+            // If category changes, check if fullName still belongs to the new category
+            if (name === "category" && prevData.category !== value) {
+                const isFullNameValid = prevData.fullName && filteredCustomer.some(
+                    customer => customer.fullName === prevData.fullName && customer.category === value
+                );
+    
+                newState = {
+                    ...newState,
+                    category: value,
+                    fullName: isFullNameValid ? prevData.fullName : "",  // Clear if category does not match
+                    customerId: isFullNameValid ? prevData.customerId : "" // Clear customerId if category doesn't match
+                };
+            }
+    
+            return newState;
+        });
+    
+        // Handle `stageId_from` separately to trigger `getQuantity`
         if (name === 'stageId_from') {
-          setFreshData(prevData => ({ ...prevData, stageId_from: value }));
-          getQuantity(value);  // Pass stageId_from to getQuantity
+            setFreshData(prevData => ({ ...prevData, stageId_from: value }));
+            getQuantity(value);
         }
-      
-        setFreshData(prevData => ({
-          ...prevData,
-          [name]: numericValue,
-          salesType: 'fresh' // Automatically set salesType to 'fresh'
-        }));
-    };
+    };    
 
     // get batches available
     const getQuantity = async (stageId_from) => {
@@ -126,7 +148,7 @@ const FreshForm = ({ customers, stages, products }) => {
 
     // Handle customer selection
     const handleSelectCustomer = (name) => {
-        setFreshData(prevData => ({ ...prevData, fullName: name }));
+        setFreshData(prevData => ({ ...prevData, fullName: name.fullName, customerId: name.id  }));
         setFilteredCustomer([]); // Clear suggestions after selection
     };
 
@@ -285,7 +307,7 @@ const FreshForm = ({ customers, stages, products }) => {
                             {products
                                 .filter(product => product.productName?.toLowerCase().includes('fresh'))
                                 .map((product) => (
-                                    <option key={product.id} value={product.productName} data-id={product.id}>
+                                    <option key={product.id} value={product.id} data-id={product.id}>
                                         {`${product.productName} - (₦${new Intl.NumberFormat().format(product.basePrice || 0)})`}
                                     </option>
                                 ))
@@ -357,7 +379,7 @@ const FreshForm = ({ customers, stages, products }) => {
                                             {filteredCustomer.map((customer, index) => (
                                                 <li
                                                     key={index}
-                                                    onClick={() => handleSelectCustomer(customer.fullName)}
+                                                    onClick={() => handleSelectCustomer(customer)}
                                                     style={{ cursor: 'pointer' }}
                                                 >
                                                     {customer.fullName}

@@ -11,6 +11,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
         quantity: 0,
         category: '',
         fullName: '',
+        customerId: '',
         description: "",
         discount: 0,
         salesType: '',
@@ -71,22 +72,39 @@ const FingerlingsForm = ({ customers, stages, products }) => {
         }
     };
 
-    // Handle input change for fingerlingsData
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        const numericValue = name === 'quantity' || name === 'discount' ? parseFloat(value) || 0 : value;
-      
-        if (name === 'stageId_from') {
-          setFingerlingsData(prevData => ({ ...prevData, stageId_from: value }));
-          getQuantity(value); // Pass stageId_from to getQuantity
-        }
-      
-        setFingerlingsData(prevData => ({
-          ...prevData,
-          [name]: numericValue,
-          salesType: 'fingerlings' // Automatically set salesType to 'fingerlings'
-        }));
-    };
+        
+        setFingerlingsData(prevData => {
+            // Reset fullName & customerId if category changes
+            if (name === "category" && prevData.category !== value) {
+                return {
+                    ...prevData,
+                    [name]: value,
+                    fullName: "",  // Clear fullName when changing category
+                    customerId: "" // Clear customerId as well
+                };
+            }
+    
+            // Convert numeric values where needed
+            const numericFields = ['quantity', 'discount'];
+            const updatedValue = numericFields.includes(name) ? parseFloat(value) || 0 : value;
+    
+            let updatedData = { 
+                ...prevData, 
+                [name]: updatedValue,
+                salesType: 'fingerlings' // Automatically set salesType to 'fingerlings'
+            };
+    
+            // Handle stageId_from separately
+            if (name === 'stageId_from') {
+                updatedData.stageId_from = value;
+                getQuantity(value);
+            }
+    
+            return updatedData;
+        });
+    };        
 
     // Fetch quantity based on stageId_from
     const getQuantity = async (stageId_from) => {
@@ -119,10 +137,15 @@ const FingerlingsForm = ({ customers, stages, products }) => {
     };
 
     // Handle customer selection
-    const handleSelectCustomer = (name) => {
-        setFingerlingsData(prevData => ({ ...prevData, fullName: name }));
+    const handleSelectCustomer = (customer) => {
+        setFingerlingsData(prevData => ({ 
+            ...prevData, 
+            customerId: customer.id, 
+            fullName: customer.fullName // Set fullName in the input field
+        }));
         setFilteredCustomer([]); // Clear suggestions after selection
     };
+    
 
     const calculateDiscountedPrice = () => {
         let discountedPrice = fingerlingsData.totalPrice;
@@ -253,7 +276,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                             {products
                                 .filter(product => product.productName?.toLowerCase().includes('fingerlings'))
                                 .map((product) => (
-                                    <option key={product.id} value={product.productName} data-id={product.id}>
+                                    <option key={product.id} value={product.id} data-id={product.id}>
                                         {`${product.productName} - ( ₦${new Intl.NumberFormat().format(product.basePrice || 0)} for ${product.productWeight || '0'} ${product.unit || ''} )`}
                                     </option>
                                 ))
@@ -344,7 +367,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                                     <div className={`${styles.suggestions_box}`}>
                                         <ul>
                                             {filteredCustomer.map((customer, index) => (
-                                                <li key={index} onClick={() => handleSelectCustomer(customer.fullName)}>
+                                                <li key={index} onClick={() => handleSelectCustomer(customer)}>
                                                     {customer.fullName}
                                                 </li>
                                             ))}
