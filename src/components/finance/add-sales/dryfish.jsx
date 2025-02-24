@@ -355,7 +355,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                             </td>
                                             <td className='px-2'>
                                                 <Form.Control
-                                                     placeholder={!product.productName?.toLowerCase().includes("broken") ? `Fishes in ${product.quantity} ${product.productName}` : `Weigh in Kg`}
+                                                     placeholder={!product.productName?.toLowerCase().includes("broken") ? `Fishes in the ${product.productName}` : `Weigh in Kg`}
                                                     type="number"
                                                     name="quantityUsedToPack"
                                                     value={dryData.products.find(p => p.id === product.id)?.quantityUsedToPack || ''}
