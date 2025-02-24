@@ -13,11 +13,14 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
             printContainer.id = "printable-content";
             
             // Apply styles to ensure it fills the page and is visible
-            printContainer.style.position = "fixed";      
-            printContainer.style.width = "100%";
+            printContainer.style.position = "fixed";
+            printContainer.style.top = "0";
+            printContainer.style.left = "0";
+            printContainer.style.width = "auto";
+            printContainer.style.minHeight = "100vh";
             printContainer.style.backgroundColor = "white";
             printContainer.style.zIndex = "9999"; // High z-index to bring it to the front
-            printContainer.style.boxSizing = "border-box";
+            printContainer.style.padding = "2px";        
             
             // Copy the content from printRef into the container
             printContainer.innerHTML = printRef.current.innerHTML;
@@ -124,7 +127,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                         </tbody>
                     </table>
 
-                    <div className="text-end pe-5 text-muted">
+                    <div className="text-end pe-3 text-muted">
                         <p><strong>Grand Total:</strong> ₦{receipt.totalAmount?.toLocaleString()}</p>
                         <p><strong>Paid:</strong> ₦{receipt.amountPaid?.toLocaleString()}</p>
                         <p><strong>Amount Due:</strong> ₦{receipt.remainingBalance?.toLocaleString()}</p>
