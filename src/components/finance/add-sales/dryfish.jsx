@@ -13,7 +13,7 @@ const SalesForm = ({ customers, stages, products }) => {
         customerId: '',
         discount: 0,
         description: '',
-        salesType: '',
+        salesCategory: '',
         paymentType: '',
         fullName: '',
         amountPaid: 0
@@ -53,39 +53,7 @@ const SalesForm = ({ customers, stages, products }) => {
         setTotalPrice(total);
     }, [dryData.products, checkedProducts, products]);
 
-    const handleInputChange = (e, productId) => {
-        const { name, value } = e.target;
-    
-        setDryData(prevState => {
-            let updatedProducts = prevState.products.map(product =>
-                product.id === productId 
-                    ? { 
-                        ...product, 
-                        [name]: ['quantity', 'discount'].includes(name) ? parseFloat(value) || 0 : value 
-                      } 
-                    : product
-            );
-    
-            // If category changes, reset fullName and customerId
-            if (name === "category" && prevState.category !== value) {
-                return {
-                    ...prevState,
-                    [name]: value,
-                    fullName: "",  // Clear fullName when changing category
-                    customerId: "", // Clear customerId
-                    products: updatedProducts,
-                    salesType: 'dry'
-                };
-            }
-    
-            return { 
-                ...prevState, 
-                products: updatedProducts, 
-                salesType: 'dry' 
-            };
-        });
-    };    
-
+    // In your handleCheckChange, initialize all required properties
     const handleCheckChange = (e, productId) => {
         const { checked } = e.target;
         setCheckedProducts(prevState => ({
@@ -96,7 +64,15 @@ const SalesForm = ({ customers, stages, products }) => {
             const product = products.find(p => p.id === productId);
             setDryData(prevState => ({
                 ...prevState,
-                products: [...prevState.products, { id: productId, productName: product.productName, quantity: 0, quantityUsedToPack: 0 }]
+                products: [
+                    ...prevState.products,
+                    { 
+                        id: productId, 
+                        productName: product.productName, 
+                        quantity: '',  // Initialize as empty string to match input
+                        quantityUsedToPack: ''  // Initialize as empty string to match input
+                    }
+                ]
             }));
         } else {
             setDryData(prevState => ({
@@ -104,6 +80,43 @@ const SalesForm = ({ customers, stages, products }) => {
                 products: prevState.products.filter(product => product.id !== productId)
             }));
         }
+    };
+
+    const handleInputChange = (e, productId) => {
+        const { name, value } = e.target;
+
+        setDryData(prevState => {
+            const productExists = prevState.products.find(p => p.id === productId);
+            let updatedProducts;
+
+            if (productExists) {
+                updatedProducts = prevState.products.map(product =>
+                    product.id === productId
+                        ? {
+                            ...product,
+                            [name]: value === '' ? '' : parseFloat(value) || 0
+                        }
+                        : product
+                );
+            } else {
+                const productInfo = products.find(p => p.id === productId);
+                updatedProducts = [
+                    ...prevState.products,
+                    {
+                        id: productId,
+                        productName: productInfo.productName,
+                        quantity: name === 'quantity' ? (parseFloat(value) || 0) : '',
+                        quantityUsedToPack: name === 'quantityUsedToPack' ? (parseFloat(value) || 0) : ''
+                    }
+                ];
+            }
+
+            return {
+                ...prevState,
+                products: updatedProducts,
+                salesCategory: 'dry'
+            };
+        });
     };
 
     const calculateSubtotal = (productId) => {
@@ -168,7 +181,7 @@ const SalesForm = ({ customers, stages, products }) => {
     };
 
     const handleSelectCustomer = (customer) => {
-        setDryData(prevData => ({ ...prevData, customerId: customer.id, fullName: customer.fullName}));
+        setDryData(prevData => ({ ...prevData, customerId: customer.id, fullName: customer.fullName }));
         setFilteredCustomer([]); // Clear suggestions after selection
     };
 
@@ -192,8 +205,8 @@ const SalesForm = ({ customers, stages, products }) => {
                 throw new Error(saleResponse.data?.message || "Sale failed!");
             }
 
-            const transactionId = saleResponse.data?.transactionId;
-            const salesType = dryData.salesType;
+            const transactionId = saleResponse.data.data?.transactionId;
+            const salesCategory = dryData.salesCategory;
 
             if (!transactionId) {
                 toast.update(salesToast, {
@@ -281,7 +294,7 @@ const SalesForm = ({ customers, stages, products }) => {
         return Object.keys(checkedProducts).some(productId => {
             if (checkedProducts[productId]) {
                 const product = dryData.products.find(p => p.id === productId);
-                return !product || !product.quantity || !product.quantityUsedToPack;
+                return !product || (!product.quantity && product.quantity !== 0) || (!product.quantityUsedToPack && product.quantityUsedToPack !== 0);
             }
             return false;
         });
@@ -298,7 +311,31 @@ const SalesForm = ({ customers, stages, products }) => {
 
         setFilteredCustomer(filtered.length ? filtered : []);
     };
+// New handleFocus event
+    const handleFocus = (e, productId) => {
+        if (!checkedProducts[productId]) {
+            // If the product isn't checked yet, simulate a check event
+            setCheckedProducts(prevState => ({
+                ...prevState,
+                [productId]: true
+            }));
 
+            // Initialize the product in dryData
+            const product = products.find(p => p.id === productId);
+            setDryData(prevState => ({
+                ...prevState,
+                products: [
+                    ...prevState.products,
+                    {
+                        id: productId,
+                        productName: product.productName,
+                        quantity: '',
+                        quantityUsedToPack: ''
+                    }
+                ]
+            }));
+        }
+    };
     return (
         <div>
             {currentStep === 1 && (
@@ -331,7 +368,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                                 <Form.Check
                                                     type="checkbox"
                                                     label={product.productName}
-                                                    value={product.id}
+                                                    value={product.productName}
                                                     data-id={product.id}
                                                     className=" text-uppercase mt-2 fw-semibold"
                                                     onChange={(e) => handleCheckChange(e, product.id)}
@@ -349,25 +386,27 @@ const SalesForm = ({ customers, stages, products }) => {
                                                     required
                                                     min={1}
                                                     onChange={(e) => handleInputChange(e, product.id)}
+                                                    onFocus={(e) => handleFocus(e, product.id)}
                                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                                    disabled={!checkedProducts[product.id]}
+                                                    
                                                 />
                                             </td>
                                             <td className='px-2'>
                                                 <Form.Control
-                                                     placeholder={!product.productName?.toLowerCase().includes("broken") ? `Fishes in the ${product.productName}` : `Weigh in Kg`}
+                                                    placeholder={!product.productName?.toLowerCase().includes("broken") ? `Fishes in the ${product.productName}` : `Weigh in Kg`}
                                                     type="number"
                                                     name="quantityUsedToPack"
                                                     value={dryData.products.find(p => p.id === product.id)?.quantityUsedToPack || ''}
                                                     min="0"
                                                     onChange={(e) => handleInputChange(e, product.id)}
+                                                    onFocus={(e) => handleFocus(e, product.id)}
                                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                                    disabled={!checkedProducts[product.id]}
+                                                    
                                                 />
                                             </td>
                                             <td><p className="text-muted py-2">
                                                 ₦ {new Intl.NumberFormat().format(calculateSubtotal(product.id))}
-                                                </p>
+                                            </p>
                                             </td>
                                         </tr>
                                     ))
@@ -378,8 +417,8 @@ const SalesForm = ({ customers, stages, products }) => {
                             <h5 className='fw-semibold mt-3'>Total Price: ₦ {new Intl.NumberFormat().format(totalPrice)}</h5>
                         </div>
                         <div className='text-end'>
-                            <Button 
-                                onClick={handleNextStep} 
+                            <Button
+                                onClick={handleNextStep}
                                 variant='dark'
                                 className={`border-0 btn btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
                                 disabled={isNextButtonDisabled()}

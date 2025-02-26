@@ -38,9 +38,6 @@ const PersonalLedger = () => {
 
   const [showModal, setShowModal] = useState(false);
 
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-
   useEffect(() => {
     if (id) {
       fetchLedgerData();
@@ -56,7 +53,7 @@ const PersonalLedger = () => {
   
         if (response.data.data.length > 0) {
           setFullName(response.data.data[0].fullName);
-          setCategory(response.data.data[0].category);
+          setCategory(response.data.data[0].customerCategory);
         } else {
           console.log("No data available");
         }
@@ -113,7 +110,7 @@ const PersonalLedger = () => {
   const handleEditAmount = (record) => {
     setEditingRecord(record.id);
     setAmountPaidB(record.amountPaid || "");
-    setTransactionId(record.transactionId || "");
+    setTransactionId(record.salesId || "");
     setTotalAmount(record.balance); // Set total amount due
     setShowModal(true);
   };
@@ -255,8 +252,7 @@ const PersonalLedger = () => {
                         <th>DATE</th>
                         <th>NAME</th>
                         <th>CATEGORY</th>
-                        <th>PRODUCT</th>
-                        <th>QUANTITY</th>
+                        <th>PRODUCT</th>                      
                         <th>PAYMENT</th>
                         <th style={{ color: 'green' }}>CREDIT(₦)</th>
                         <th style={{ color: 'red' }}>DEBIT(₦)</th>
@@ -268,9 +264,8 @@ const PersonalLedger = () => {
                         <tr key={index} className="text-start">
                           <td>{formatDate(record.date)}</td>
                           <td>{record.fullName}</td>
-                          <td>{record.category}</td>
-                          <td>{record.productName}</td>
-                          <td>{record.quantity}</td>
+                          <td>{record.customerCategory}</td>
+                          <td>{record.productName}</td>                        
                           <td>{record.paymentType}</td>
                           <td style={{ color: 'green' }}>{record.credit ? record.credit.toLocaleString() : '-'}</td>
                           <td style={{ color: 'red' }}>{record.debit ? record.debit.toLocaleString() : '-'}</td>

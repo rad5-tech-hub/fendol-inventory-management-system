@@ -138,10 +138,8 @@ const FinanceLedger = () => {
                 <table className={styles.styled_table}>
                   <thead className={`rounded-2 ${styles.theader}`}>
                     <tr>
-                      <th>DATE</th>
-                      <th className="pt-3">PRODUCT</th>
-                      <th className="pt-3">DESCRIPTION</th>
-                      <th className="pt-3">QUANTITY</th>
+                      <th>DATE</th>                      
+                      <th className="pt-3">DESCRIPTION</th>               
                       <th style={{ color: "green" }} className="pt-3">
                         CREDIT(₦)
                       </th>
@@ -154,8 +152,7 @@ const FinanceLedger = () => {
                   <tbody>
                     {displayedLedgerData.map((record, index) => (
                       <tr key={index}>
-                        <td>{formatDate(record.date)}</td>
-                        <td>{record.productName}</td>
+                        <td>{formatDate(record.date)}</td>                       
                         <td
                           title={record.description}
                           style={{
@@ -166,8 +163,7 @@ const FinanceLedger = () => {
                             ? record.description.slice(0, 40) +
                               (record.description.length > 40 ? "..." : "")
                             : ""}
-                        </td>
-                        <td>{record.quantity}</td>
+                        </td>                     
                         <td style={{ color: "green" }}>
                           {record.credit ? `₦${new Intl.NumberFormat().format(record.credit)}` : "-"}
                         </td>
