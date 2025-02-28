@@ -154,7 +154,7 @@ const FinanceLedger = () => {
                     {displayedLedgerData.map((record, index) => (
                       <tr key={index}>
                         <td>{formatDate(record.date)}</td>                       
-                        <td>{record.productName}</td>                       
+                        <td>{record.productName || '-'}</td>                       
                         <td
                           title={record.description}
                           style={{
