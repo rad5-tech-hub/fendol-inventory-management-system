@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Form, Row, Col, Button } from 'react-bootstrap';
-import Api from '../../shared/api/apiLink'; // Adjust based on your API import path
-import styles from '../finance.module.scss'; // Adjust the import as needed
+import Api from '../../shared/api/apiLink';
+import styles from '../finance.module.scss';
 import ReceiptModal from './receipt';
 
 const FreshForm = ({ customers, stages, products }) => {
@@ -35,25 +35,22 @@ const FreshForm = ({ customers, stages, products }) => {
   const [fishType, setFishType] = useState([]);
   const [customer, setCustomer] = useState([]);
 
-  // Fetch products
   useEffect(() => {
     setCustomer(customers);
     setStage(stages);
     setProductList(products);
   }, [customers, stages, products]);
 
-  // Recalculate totalPrice whenever products.quantity, basePrice, or discount changes
+  // Recalculate totalPrice whenever productWeight, basePrice, or discount changes
   useEffect(() => {
-    const { products, basePrice, discount } = freshData;
-    const quantity = products[0]?.quantity || 0; // Assuming single product for now
-    const totalPrice = (basePrice || 0) * quantity - (discount || 0);
+    const { productWeight, basePrice, discount } = freshData;
+    const totalPrice = (basePrice || 0) * (productWeight || 0) - (discount || 0);
     setFreshData(prevData => ({
       ...prevData,
-      totalPrice: Math.max(totalPrice, 0),
+      totalPrice: Math.max(totalPrice, 0), // Ensure totalPrice is never negative
     }));
-  }, [freshData.products, freshData.basePrice, freshData.discount]);
+  }, [freshData.productWeight, freshData.basePrice, freshData.discount]);
 
-  // Product selection handler
   const handleProductSelect = async (e) => {
     const selectedOption = e.target.selectedOptions[0];
     const selectedProductId = selectedOption?.getAttribute('data-id');
@@ -78,7 +75,6 @@ const FreshForm = ({ customers, stages, products }) => {
     }
   };
 
-  // Handle input change for freshData
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
@@ -86,13 +82,12 @@ const FreshForm = ({ customers, stages, products }) => {
       const numericFields = ['productWeight', 'discount', 'quantity', 'amountPaid'];
       const numericValue = numericFields.includes(name) ? parseFloat(value) || 0 : value;
 
-      let newState = { 
-        ...prevData, 
-        [name]: numericValue, 
+      let newState = {
+        ...prevData,
+        [name]: numericValue,
         salesCategory: 'fresh-fish',
       };
 
-      // If category changes, check if fullName still belongs to the new category
       if (name === 'category' && prevData.category !== value) {
         const isFullNameValid = prevData.fullName && filteredCustomer.some(
           customer => customer.fullName === prevData.fullName && customer.category === value
@@ -105,14 +100,12 @@ const FreshForm = ({ customers, stages, products }) => {
         };
       }
 
-      // Handle quantity inside products
       if (name === 'quantity') {
         newState.products = [
           { ...prevData.products[0], quantity: numericValue },
         ];
       }
 
-      // Handle pondId separately to trigger getQuantity
       if (name === 'pondId') {
         newState.pondId = value;
         getQuantity(value);
@@ -122,7 +115,6 @@ const FreshForm = ({ customers, stages, products }) => {
     });
   };
 
-  // Get batches available
   const getQuantity = async (pondId) => {
     setSelectedQuantity('loading...');
     if (pondId) {
@@ -192,13 +184,10 @@ const FreshForm = ({ customers, stages, products }) => {
       const saleResponse = await Api.post('/sales', freshData);
       if (saleResponse.status < 200 || saleResponse.status >= 300) {
         throw new Error(saleResponse.data?.message || 'Sale failed!');
-    }
+      }
 
-    // Extract transactionId from response data
-     const transactionId = saleResponse.data.data?.transactionId;
-    
-      console.log(transactionId);
-      
+      const transactionId = saleResponse.data.data?.transactionId;
+
       if (!transactionId) {
         toast.update(salesToast, {
           render: 'Transaction ID not found. Please try again.',
@@ -335,21 +324,8 @@ const FreshForm = ({ customers, stages, products }) => {
               type="number"
               name="productWeight"
               value={freshData.productWeight || ''}
-              readOnly
-              onChange={handleInputChange}
-              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            />
-          </Col>
-
-          {/* Description */}
-          <Col className="mb-4">
-            <Form.Label className="fw-semibold">Description</Form.Label>
-            <Form.Control
-              placeholder="Enter description"
-              as="textarea"
-              name="description"
-              value={freshData.description || ''}
-              onChange={handleInputChange}
+              required // Changed to required since it’s now used for totalPrice
+              onChange={handleInputChange} // Made editable instead of readOnly
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
             />
           </Col>
@@ -401,6 +377,19 @@ const FreshForm = ({ customers, stages, products }) => {
                 )}
               </div>
             </Form.Group>
+          </Col>
+
+        {/* Description */}
+        <Col className="mb-4">
+            <Form.Label className="fw-semibold">Description</Form.Label>
+            <Form.Control
+              placeholder="Enter description"
+              as="textarea"
+              name="description"
+              value={freshData.description || ''}
+              onChange={handleInputChange}
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
           </Col>
 
           {/* Discount */}
@@ -500,7 +489,6 @@ const FreshForm = ({ customers, stages, products }) => {
         </div>
       </Form>
 
-      {/* Receipt Modal */}
       <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
     </div>
   );

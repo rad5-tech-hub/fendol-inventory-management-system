@@ -227,32 +227,3 @@
     }
 }
 
-@media print {
-  .receiptButtons {
-    display: none !important; // Hide buttons when printing
-  }
-
-    .printable, .printable * {
-        visibility: visible;
-    }
-    .printable {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-    }
-    
-    .receiptModal {
-    ul {
-      list-style: none; // Remove list styling (bullets/numbers)
-      padding-left: 0; // Remove default padding for lists
-
-      li {
-        span {
-          font-style: oblique; // Apply oblique font style to spans inside list items
-        }
-      }
-    }
-  }
-}
-
