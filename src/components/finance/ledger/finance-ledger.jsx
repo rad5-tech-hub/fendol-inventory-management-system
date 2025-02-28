@@ -139,6 +139,7 @@ const FinanceLedger = () => {
                   <thead className={`rounded-2 ${styles.theader}`}>
                     <tr>
                       <th>DATE</th>                      
+                      <th>PRODUCT</th>                      
                       <th className="pt-3">DESCRIPTION</th>               
                       <th style={{ color: "green" }} className="pt-3">
                         CREDIT(₦)
@@ -153,6 +154,7 @@ const FinanceLedger = () => {
                     {displayedLedgerData.map((record, index) => (
                       <tr key={index}>
                         <td>{formatDate(record.date)}</td>                       
+                        <td>{record.productName}</td>                       
                         <td
                           title={record.description}
                           style={{
