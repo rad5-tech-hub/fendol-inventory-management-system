@@ -11,7 +11,6 @@ import ReactPaginate from 'react-paginate';
 import ReceiptModal from "../../finance/add-sales/receipt";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import "react-datepicker/dist/react-datepicker.css";
 
 const PersonalLedger = () => {
   const location = useLocation();
