@@ -371,6 +371,31 @@ const FingerlingsForm = ({ customers, stages, products }) => {
             </Form.Group>
           </Col>
 
+          {/* Payment Type */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Payment Type</Form.Label>
+            <Form.Select
+              name="paymentType"
+              value={fingerlingsData.paymentType || ''}
+              onChange={(e) => {
+                const selectedPayment = e.target.value;
+                setFingerlingsData(prev => ({
+                  ...prev,
+                  paymentType: selectedPayment,
+                  amountPaid: selectedPayment === 'Credit' ? '' : prev.amountPaid || calculateTotalBalance(),
+                }));
+              }}
+              required
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            >
+              <option value="" disabled>Select Payment Type</option>
+              <option value="Cash">Cash</option>
+              <option value="Credit">Credit</option>
+              <option value="Transfer">Transfer</option>
+              <option value="Pos">Pos</option>
+            </Form.Select>
+          </Col>
+
           {/* Discount */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Discount</Form.Label>
@@ -387,46 +412,21 @@ const FingerlingsForm = ({ customers, stages, products }) => {
             </div>
           </Col>
 
-          {/* Payment Type */}
-          <Col className="mb-4">
-            <Form.Label className="fw-semibold">Payment Type</Form.Label>
-            <Form.Select
-              name="paymentType"
-              value={fingerlingsData.paymentType || ''}
-              onChange={(e) => {
-                const selectedPayment = e.target.value;
-                setFingerlingsData(prev => ({
-                  ...prev,
-                  paymentType: selectedPayment,
-                  amountPaid: selectedPayment !== 'Credit' ? calculateTotalBalance() : prev.amountPaid,
-                }));
-              }}
-              required
-              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            >
-              <option value="" disabled>Select Payment Type</option>
-              <option value="Cash">Cash</option>
-              <option value="Credit">Credit</option>
-              <option value="Transfer">Transfer</option>
-              <option value="Pos">Pos</option>
-            </Form.Select>
-          </Col>
-
-          {/* Amount Paid Input (Only for Credit Payment) */}
-          {fingerlingsData.paymentType === 'Credit' && (
+          {/* Amount Paid Input (Empty and Editable for Credit, Auto-filled otherwise) */}
+          {(fingerlingsData.paymentType === 'Credit') && (
             <Col className="mb-4">
-              <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
-              <Form.Control
-                placeholder="Enter amount paid"
-                type="text"
-                name="amountPaid"
-                value={fingerlingsData.amountPaid ? new Intl.NumberFormat().format(fingerlingsData.amountPaid) : ''}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/,/g, '');
-                  setFingerlingsData({ ...fingerlingsData, amountPaid: parseFloat(value) || 0 });
-                }}
-                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-              />
+                <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
+                <Form.Control
+                    placeholder="Enter amount paid"
+                    type="text"
+                    name="amountPaid"
+                    value={fingerlingsData.amountPaid !== null && fingerlingsData.amountPaid !== '' ? new Intl.NumberFormat().format(fingerlingsData.amountPaid) : ''}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/,/g, '');
+                      setFingerlingsData({ ...fingerlingsData, amountPaid: value ? parseFloat(value) : '' });
+                    }}
+                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                />
             </Col>
           )}
 

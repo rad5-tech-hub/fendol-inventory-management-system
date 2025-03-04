@@ -8,7 +8,7 @@ import ReceiptModal from './receipt';
 const FreshForm = ({ customers, stages, products }) => {
   const [freshData, setFreshData] = useState({
     products: [{ id: '', quantity: 0 }],
-    productWeight: 0,
+    productWeight: '', // Initialize as empty string, allowing manual entry
     description: '',
     category: '',
     fullName: '',
@@ -44,7 +44,8 @@ const FreshForm = ({ customers, stages, products }) => {
   // Recalculate totalPrice whenever productWeight, basePrice, or discount changes
   useEffect(() => {
     const { productWeight, basePrice, discount } = freshData;
-    const totalPrice = (basePrice || 0) * (productWeight || 0) - (discount || 0);
+    const weightValue = typeof productWeight === 'string' ? parseFloat(productWeight) || 0 : productWeight || 0;
+    const totalPrice = (basePrice || 0) * weightValue - (discount || 0);
     setFreshData(prevData => ({
       ...prevData,
       totalPrice: Math.max(totalPrice, 0), // Ensure totalPrice is never negative
@@ -65,7 +66,7 @@ const FreshForm = ({ customers, stages, products }) => {
           ...prevData,
           products: [{ id: selectedProductId, quantity: prevData.products[0]?.quantity || 0 }],
           basePrice: productData.basePrice || 0,
-          productWeight: productData.productWeight || 0,
+          productWeight: '', // Set productWeight to empty string, not the product's weight
         }));
 
         setProductDetails(productData);
@@ -79,7 +80,7 @@ const FreshForm = ({ customers, stages, products }) => {
     const { name, value } = e.target;
 
     setFreshData(prevData => {
-      const numericFields = ['productWeight', 'discount', 'quantity', 'amountPaid'];
+      const numericFields = ['discount', 'quantity', 'amountPaid'];
       const numericValue = numericFields.includes(name) ? parseFloat(value) || 0 : value;
 
       let newState = {
@@ -104,6 +105,10 @@ const FreshForm = ({ customers, stages, products }) => {
         newState.products = [
           { ...prevData.products[0], quantity: numericValue },
         ];
+      }
+
+      if (name === 'productWeight') {
+        newState.productWeight = value; // Allow manual entry of productWeight as a string
       }
 
       if (name === 'pondId') {
@@ -227,7 +232,7 @@ const FreshForm = ({ customers, stages, products }) => {
 
       setFreshData({
         products: [{ id: '', quantity: 0 }],
-        productWeight: 0,
+        productWeight: '', // Reset to empty string
         description: '',
         category: '',
         fullName: '',
@@ -302,6 +307,19 @@ const FreshForm = ({ customers, stages, products }) => {
             </Form.Select>
           </Col>
 
+          {/* Total Product Weight (Visible but empty when product is selected) */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Total Product Weight {`(${unit})`}</Form.Label>
+            <Form.Control
+              placeholder="Enter product weight"
+              type="number"
+              name="productWeight"
+              value={freshData.productWeight || ''} // Empty unless manually entered
+              onChange={handleInputChange}
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
+          </Col>
+
           {/* Quantity */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Quantity Of Fresh Fish</Form.Label>
@@ -312,20 +330,6 @@ const FreshForm = ({ customers, stages, products }) => {
               value={freshData.products[0]?.quantity || ''}
               required
               onChange={handleInputChange}
-              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            />
-          </Col>
-
-          {/* Total Product Weight */}
-          <Col className="mb-4">
-            <Form.Label className="fw-semibold">Total Product Weight {`(${unit})`}</Form.Label>
-            <Form.Control
-              placeholder="Enter product weight"
-              type="number"
-              name="productWeight"
-              value={freshData.productWeight || ''}
-              required // Changed to required since it’s now used for totalPrice
-              onChange={handleInputChange} // Made editable instead of readOnly
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
             />
           </Col>
@@ -379,8 +383,8 @@ const FreshForm = ({ customers, stages, products }) => {
             </Form.Group>
           </Col>
 
-        {/* Description */}
-        <Col className="mb-4">
+          {/* Description */}
+          <Col className="mb-4">
             <Form.Label className="fw-semibold">Description</Form.Label>
             <Form.Control
               placeholder="Enter description"
@@ -419,7 +423,7 @@ const FreshForm = ({ customers, stages, products }) => {
                 setFreshData(prev => ({
                   ...prev,
                   paymentType: selectedPayment,
-                  amountPaid: selectedPayment !== 'Credit' ? calculateTotalBalance() : prev.amountPaid,
+                  amountPaid: selectedPayment === 'Credit' ? '' : prev.amountPaid || calculateTotalBalance(),
                 }));
               }}
               required
@@ -433,18 +437,18 @@ const FreshForm = ({ customers, stages, products }) => {
             </Form.Select>
           </Col>
 
-          {/* Amount Paid Input (Only for Credit Payment) */}
-          {freshData.paymentType === 'Credit' && (
+          {/* Amount Paid Input (Only for Credit Payment, empty on Credit selection) */}
+          {(freshData.paymentType === 'Credit') && (
             <Col className="mb-4">
               <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
               <Form.Control
                 placeholder="Enter amount paid"
                 type="text"
                 name="amountPaid"
-                value={freshData.amountPaid ? new Intl.NumberFormat().format(freshData.amountPaid) : ''}
+                value={freshData.amountPaid !== null && freshData.amountPaid !== '' ? new Intl.NumberFormat().format(freshData.amountPaid) : ''}
                 onChange={(e) => {
                   const value = e.target.value.replace(/,/g, '');
-                  setFreshData({ ...freshData, amountPaid: parseFloat(value) || 0 });
+                  setFreshData({ ...freshData, amountPaid: value ? parseFloat(value) : '' });
                 }}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
               />

@@ -16,7 +16,7 @@ const SalesForm = ({ customers, stages, products }) => {
         salesCategory: '',
         paymentType: '',
         fullName: '',
-        amountPaid: 0
+        amountPaid: null
     });
 
     const [receiptData, setReceiptData] = useState({}); // Store receipt details
@@ -185,6 +185,44 @@ const SalesForm = ({ customers, stages, products }) => {
         setFilteredCustomer([]); // Clear suggestions after selection
     };
 
+    const handleCategoryChange = (e) => {
+        const { value } = e.target;
+        setDryData(prevData => ({ ...prevData, category: value }));
+
+        const filtered = customer.filter(c =>
+            c.fullName?.toLowerCase().includes(dryData.fullName?.toLowerCase() || '') &&
+            (!value || c.category === value)
+        );
+
+        setFilteredCustomer(filtered.length ? filtered : []);
+    };
+
+    // New handleFocus event
+    const handleFocus = (e, productId) => {
+        if (!checkedProducts[productId]) {
+            // If the product isn't checked yet, simulate a check event
+            setCheckedProducts(prevState => ({
+                ...prevState,
+                [productId]: true
+            }));
+
+            // Initialize the product in dryData
+            const product = products.find(p => p.id === productId);
+            setDryData(prevState => ({
+                ...prevState,
+                products: [
+                    ...prevState.products,
+                    {
+                        id: productId,
+                        productName: product.productName,
+                        quantity: '',
+                        quantityUsedToPack: ''
+                    }
+                ]
+            }));
+        }
+    };
+
     const handleAddSales = async (e) => {
         e.preventDefault();
         if (!window.confirm("Are you sure you want to add this sale?")) return;
@@ -300,42 +338,6 @@ const SalesForm = ({ customers, stages, products }) => {
         });
     };
 
-    const handleCategoryChange = (e) => {
-        const { value } = e.target;
-        setDryData(prevData => ({ ...prevData, category: value }));
-
-        const filtered = customer.filter(c =>
-            c.fullName?.toLowerCase().includes(dryData.fullName?.toLowerCase() || '') &&
-            (!value || c.category === value)
-        );
-
-        setFilteredCustomer(filtered.length ? filtered : []);
-    };
-// New handleFocus event
-    const handleFocus = (e, productId) => {
-        if (!checkedProducts[productId]) {
-            // If the product isn't checked yet, simulate a check event
-            setCheckedProducts(prevState => ({
-                ...prevState,
-                [productId]: true
-            }));
-
-            // Initialize the product in dryData
-            const product = products.find(p => p.id === productId);
-            setDryData(prevState => ({
-                ...prevState,
-                products: [
-                    ...prevState.products,
-                    {
-                        id: productId,
-                        productName: product.productName,
-                        quantity: '',
-                        quantityUsedToPack: ''
-                    }
-                ]
-            }));
-        }
-    };
     return (
         <div>
             {currentStep === 1 && (
@@ -388,7 +390,6 @@ const SalesForm = ({ customers, stages, products }) => {
                                                     onChange={(e) => handleInputChange(e, product.id)}
                                                     onFocus={(e) => handleFocus(e, product.id)}
                                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                                    
                                                 />
                                             </td>
                                             <td className='px-2'>
@@ -401,7 +402,6 @@ const SalesForm = ({ customers, stages, products }) => {
                                                     onChange={(e) => handleInputChange(e, product.id)}
                                                     onFocus={(e) => handleFocus(e, product.id)}
                                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                                    
                                                 />
                                             </td>
                                             <td><p className="text-muted py-2">
@@ -527,7 +527,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                     setDryData((prev) => ({
                                         ...prev,
                                         paymentType: selectedPayment,
-                                        amountPaid: selectedPayment !== "Credit" ?  calculateTotalBalance() : prev.amountPaid, // Ensure amountPaid matches totalBalance for non-credit
+                                        amountPaid: selectedPayment === "Credit" ? '' : prev.amountPaid || calculateTotalBalance(), // Empty for Credit, match totalBalance for others
                                     }));
                                 }}
                                 required
@@ -541,18 +541,18 @@ const SalesForm = ({ customers, stages, products }) => {
                             </Form.Select>
                         </Col>
 
-                        {/* Amount Paid Input (Only for Credit Payment) */}
-                        {dryData.paymentType === "Credit" && (
+                        {/* Amount Paid Input (Only for Credit Payment, empty on Credit selection) */}
+                        {(dryData.paymentType === 'Credit') && (
                             <Col className="mb-4">
                                 <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
                                 <Form.Control
                                     placeholder="Enter amount paid"
                                     type="text"
                                     name="amountPaid"
-                                    value={dryData.amountPaid ? new Intl.NumberFormat().format(dryData.amountPaid) : ''}
+                                    value={dryData.amountPaid !== null && dryData.amountPaid !== '' ? new Intl.NumberFormat().format(dryData.amountPaid) : ''}
                                     onChange={(e) => {
-                                        const value = e.target.value.replace(/,/g, ''); // Remove commas for proper number parsing
-                                        setDryData({ ...dryData, amountPaid: value });
+                                      const value = e.target.value.replace(/,/g, '');
+                                      setDryData({ ...dryData, amountPaid: value ? parseFloat(value) : '' });
                                     }}
                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                 />
@@ -584,7 +584,6 @@ const SalesForm = ({ customers, stages, products }) => {
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
                         </Col>
-
                     </Row>
                     <div className="d-flex justify-content-between">
                         <Button
@@ -605,8 +604,8 @@ const SalesForm = ({ customers, stages, products }) => {
                     </div>
                 </Form>
             )}
-             {/* Receipt Modal */}
-                <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt}/>
+            {/* Receipt Modal */}
+            <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
         </div>
     );
 };
