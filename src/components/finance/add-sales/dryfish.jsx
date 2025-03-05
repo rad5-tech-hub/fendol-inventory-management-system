@@ -359,9 +359,9 @@ const SalesForm = ({ customers, stages, products }) => {
                                     .filter(product => {
                                         const lowerProductName = product.productName?.toLowerCase() || '';
                                         return (
-                                            product.productName &&
-                                            !lowerProductName.includes('fresh fish') &&
-                                            !lowerProductName.includes('fingerlings')
+                                            product.productName && // Ensure productName exists
+                                            !lowerProductName.includes('fresh') && // Exclude "fresh fish"
+                                            !lowerProductName.includes('fingerlings') // Exclude "fingerlings"
                                         );
                                     })
                                     .map((product, index) => (
