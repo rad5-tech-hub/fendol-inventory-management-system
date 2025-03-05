@@ -99,7 +99,9 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
             <thead style={{ backgroundColor: "gray" }}>
               <tr>
                 <th style={{ width: "40%", padding: "2px" }}>PROD</th>
-                <th style={{ width: "15%", padding: "2px" }}>QTY</th>
+                <th style={{ width: "15%", padding: "2px" }}>
+                  {receipt.purchasedItems?.some(item => item.salesCategory === 'fresh-fish') ? 'WT' : 'QTY'}
+                </th>
                 <th style={{ width: "25%", padding: "2px" }}>TOT(₦)</th>
                 <th style={{ width: "20%", padding: "2px" }}>PRC(₦)</th>
               </tr>
@@ -111,14 +113,23 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                     {product.productName}
                   </td>
                   <td style={{ padding: "2px", textAlign: "center" }}>
-                    {product.productName && product.productName.toLowerCase().includes("broken")
-                      ? product.quantityUsedToPack
-                      : product.quantity}
+                    {product.salesCategory === 'fresh-fish' 
+                      ? (
+                        <td style={{ padding: "2px", textAlign: "center" }}>
+                          {product.weight}
+                        </td>
+                      ) 
+                      : (
+                        product.productName && product.productName.toLowerCase().includes("broken")
+                          ? product.quantityUsedToPack
+                          : product.quantity
+                      )
+                    }
                   </td>
-                  <td style={{ padding: "2px", textAlign: "right" }}>
+                  <td style={{ padding: "2px", textAlign: "center" }}>
                     {product.totalPrice?.toLocaleString() || product.total?.toLocaleString()}
                   </td>
-                  <td style={{ padding: "2px", textAlign: "right" }}>
+                  <td style={{ padding: "2px", textAlign: "center" }}>
                     {product.unitPrice?.toLocaleString()}
                   </td>
                 </tr>

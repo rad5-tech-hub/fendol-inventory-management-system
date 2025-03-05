@@ -7,8 +7,7 @@ import ReceiptModal from './receipt';
 
 const FreshForm = ({ customers, stages, products }) => {
   const [freshData, setFreshData] = useState({
-    products: [{ id: '', quantity: 0 }],
-    productWeight: '', // Initialize as empty string, allowing manual entry
+    products: [{ id: '', quantity: 0, productWeight: '' }], // Moved productWeight inside products object
     description: '',
     category: '',
     fullName: '',
@@ -21,6 +20,7 @@ const FreshForm = ({ customers, stages, products }) => {
     paymentType: '',
     basePrice: 0,
     totalPrice: 0,
+    pondQuantity: '', // New state to store the selected pond's quantity
   });
 
   const [receiptData, setReceiptData] = useState({});
@@ -28,11 +28,8 @@ const FreshForm = ({ customers, stages, products }) => {
   const [loader, setLoader] = useState(false);
   const [productList, setProductList] = useState([]);
   const [filteredCustomer, setFilteredCustomer] = useState([]);
-  const [productDetails, setProductDetails] = useState(null);
   const [unit, setUnit] = useState('');
-  const [selectedQuantity, setSelectedQuantity] = useState('');
   const [stage, setStage] = useState([]);
-  const [fishType, setFishType] = useState([]);
   const [customer, setCustomer] = useState([]);
 
   useEffect(() => {
@@ -43,36 +40,57 @@ const FreshForm = ({ customers, stages, products }) => {
 
   // Recalculate totalPrice whenever productWeight, basePrice, or discount changes
   useEffect(() => {
-    const { productWeight, basePrice, discount } = freshData;
-    const weightValue = typeof productWeight === 'string' ? parseFloat(productWeight) || 0 : productWeight || 0;
-    const totalPrice = (basePrice || 0) * weightValue - (discount || 0);
+    const { products, basePrice } = freshData; // Removed discount from dependency and calculation
+    const productWeight = typeof products[0]?.productWeight === 'string' ? parseFloat(products[0]?.productWeight) || 0 : products[0]?.productWeight || 0;
+    const totalPrice = (basePrice || 0) * productWeight;
     setFreshData(prevData => ({
       ...prevData,
       totalPrice: Math.max(totalPrice, 0), // Ensure totalPrice is never negative
     }));
-  }, [freshData.productWeight, freshData.basePrice, freshData.discount]);
+  }, [freshData.products, freshData.basePrice]);
 
-  const handleProductSelect = async (e) => {
+  const handleProductSelect = (e) => {
     const selectedOption = e.target.selectedOptions[0];
     const selectedProductId = selectedOption?.getAttribute('data-id');
 
     if (selectedProductId) {
-      try {
-        const { data } = await Api.get(`/product/${selectedProductId}`);
-        const productData = data.data;
-        setUnit(productData.unit);
-
+      // Find the product directly from the products prop instead of fetching via API
+      const product = productList.find(p => p.id === selectedProductId);
+      if (product) {
+        setUnit(product.unit || ''); // Use unit from products prop
         setFreshData(prevData => ({
           ...prevData,
-          products: [{ id: selectedProductId, quantity: prevData.products[0]?.quantity || 0 }],
-          basePrice: productData.basePrice || 0,
-          productWeight: '', // Set productWeight to empty string, not the product's weight
+          products: [{ id: selectedProductId, quantity: prevData.products[0]?.quantity || 0, productWeight: '' }],
+          basePrice: product.basePrice || 0, // Use basePrice from products prop
         }));
-
-        setProductDetails(productData);
-      } catch (error) {
-        toast.error('Error fetching product details.');
+      } else {
+        toast.error('Product not found in the provided list.');
       }
+    }
+  };
+
+  const handlePondSelect = (e) => {
+    const selectedPondId = e.target.value;
+
+    if (selectedPondId) {
+      // Find the pond directly from the stages prop instead of fetching via API
+      const pond = stage.find(s => s.id === selectedPondId);
+      if (pond) {
+        setFreshData(prevData => ({
+          ...prevData,
+          pondId: selectedPondId,
+          pondQuantity: pond.quantity || '0', // Store and display the pond's quantity
+          salesCategory: 'fresh-fish',
+        }));
+      } else {
+        toast.error('Pond not found in the provided list.');
+      }
+    } else {
+      setFreshData(prevData => ({
+        ...prevData,
+        pondId: '',
+        pondQuantity: '', // Reset quantity if no pond is selected
+      }));
     }
   };
 
@@ -103,38 +121,18 @@ const FreshForm = ({ customers, stages, products }) => {
 
       if (name === 'quantity') {
         newState.products = [
-          { ...prevData.products[0], quantity: numericValue },
+          { ...prevData.products[0], quantity: numericValue, productWeight: prevData.products[0]?.productWeight || '' },
         ];
       }
 
       if (name === 'productWeight') {
-        newState.productWeight = value; // Allow manual entry of productWeight as a string
-      }
-
-      if (name === 'pondId') {
-        newState.pondId = value;
-        getQuantity(value);
+        newState.products = [
+          { ...prevData.products[0], productWeight: value }, // Allow manual entry of productWeight as a string
+        ];
       }
 
       return newState;
     });
-  };
-
-  const getQuantity = async (pondId) => {
-    setSelectedQuantity('loading...');
-    if (pondId) {
-      try {
-        const response = await Api.get(`/active-batch?stageId=${pondId}`);
-        setFishType(response.data.data);
-        setSelectedQuantity('');
-      } catch (error) {
-        console.error('Failed to fetch quantity:', error);
-        setSelectedQuantity('Error getting quantity or empty pond');
-      }
-    } else {
-      console.error('Stage ID from is required.');
-      setSelectedQuantity('Stage ID is required');
-    }
   };
 
   const handleSearchChange = (e) => {
@@ -171,7 +169,7 @@ const FreshForm = ({ customers, stages, products }) => {
   };
 
   const calculateTotalBalance = () => {
-    const discountedPrice = calculateDiscountedPrice();
+    const discountedPrice = calculateDiscountedPrice(); // Apply discount here instead of in totalPrice
     if (freshData.paymentType === 'Credit') {
       return discountedPrice - (freshData.amountPaid || 0);
     }
@@ -231,8 +229,7 @@ const FreshForm = ({ customers, stages, products }) => {
       setShowReceipt(true);
 
       setFreshData({
-        products: [{ id: '', quantity: 0 }],
-        productWeight: '', // Reset to empty string
+        products: [{ id: '', quantity: 0, productWeight: '' }], // Reset productWeight inside products
         description: '',
         category: '',
         fullName: '',
@@ -245,6 +242,7 @@ const FreshForm = ({ customers, stages, products }) => {
         paymentType: '',
         basePrice: 0,
         totalPrice: 0,
+        pondQuantity: '', // Reset pond quantity
       });
     } catch (error) {
       console.error('Error in handleAddSales:', error);
@@ -265,28 +263,29 @@ const FreshForm = ({ customers, stages, products }) => {
     <div>
       <Form onSubmit={handleAddSales}>
         <Row xxl={2} xl={2} lg={2}>
-          {/* Stage From */}
+
+          {/* Pond (No API call, use products prop directly) */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Pond From</Form.Label>
             <Form.Select
               name="pondId"
               required
-              value={freshData.pondId || ''}
-              onChange={handleInputChange}
+              value={freshData.pondId || ""}
+              onChange={handlePondSelect}
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
             >
               <option value="" disabled>Select Pond</option>
               {stages
-                .filter(stage => stage.title !== 'Fingerlings')
+                .filter(stage => !stage.title?.toLowerCase().includes("fingerling")) // Filters out "fingerling" in title
                 .map((stage, index) => (
                   <option key={index} value={stage.id}>
-                    {stage.title || 'No Data Yet'} {freshData.pondId === stage.id ? `- (${stage.quantity || '0'})` : ''}
+                    {stage.title || "No Data Yet"} {freshData.pondId === stage.id ? `- (${stage.quantity || "0"})` : ""}
                   </option>
                 ))}
             </Form.Select>
           </Col>
-
-          {/* Product */}
+          
+          {/* Product (No API call, use products prop directly) */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Product</Form.Label>
             <Form.Select
@@ -301,7 +300,7 @@ const FreshForm = ({ customers, stages, products }) => {
                 .filter(product => product.productName?.toLowerCase().includes('fresh'))
                 .map((product) => (
                   <option key={product.id} value={product.id} data-id={product.id}>
-                    {`${product.productName} - (₦${new Intl.NumberFormat().format(product.basePrice || 0)})`}
+                    {`${product.productName} - (₦${new Intl.NumberFormat().format(product.basePrice || 0)} for ${product.productWeight || '0'} ${product.unit || ''})`}
                   </option>
                 ))}
             </Form.Select>
@@ -314,7 +313,7 @@ const FreshForm = ({ customers, stages, products }) => {
               placeholder="Enter product weight"
               type="number"
               name="productWeight"
-              value={freshData.productWeight || ''} // Empty unless manually entered
+              value={freshData.products[0]?.productWeight || ''} // Access productWeight from products[0]
               onChange={handleInputChange}
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
             />
