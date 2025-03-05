@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
-import 'bootstrap/dist/css/bootstrap.min.css';
-import styles from '../showcase.module.scss';
-import { Spinner, Alert } from 'react-bootstrap'; 
+import "bootstrap/dist/css/bootstrap.min.css";
+import styles from "../showcase.module.scss";
+import { Spinner, Alert } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
-import ReactPaginate from 'react-paginate'; 
+import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function ViewBrokenHistory() {
   const [brokenQuantity, setBrokenQuantity] = useState(null);
   const [tableData, setTableData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0); 
-  const [pageCount, setPageCount] = useState(0); 
-  const [loadingStages, setLoadingStages] = useState(true); 
-  const [loadingTable, setLoadingTable] = useState(true); 
-  const [errorStages, setErrorStages] = useState('');
-  const [errorTable, setErrorTable] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
+  const [loadingStages, setLoadingStages] = useState(true);
+  const [loadingTable, setLoadingTable] = useState(true);
+  const [errorStages, setErrorStages] = useState("");
+  const [errorTable, setErrorTable] = useState("");
 
   const itemsPerPage = 10;
 
@@ -28,48 +28,41 @@ export default function ViewBrokenHistory() {
 
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`;
   };
 
   // Function to fetch table data
   const fetchTableData = async () => {
+    setLoadingStages(true);
     setLoadingTable(true);
+    setErrorStages("");
+    setErrorTable("");
     try {
-      const response = await Api.get('/show-glass/broken');
-      if (response.data && response.data.data) {
-        setTableData(response.data.data); // Wrap in array if it's a single object
-        setPageCount(Math.ceil(1 / itemsPerPage)); // Adjust pagination for a single item
+      const response = await Api.get("/show-glass/broken");
+      if (response.data && Array.isArray(response.data.data)) {
+        const data = response.data.data;
+        setTableData(data);
+        // Set brokenQuantity to the first item's brokenFishQuantity, if it exists
+        setBrokenQuantity(data.length > 0 ? data[0].brokenFishQuantity : 0);
+        setPageCount(Math.ceil(data.length / itemsPerPage)); // Correct pagination
       } else {
-        throw new Error('Expected an object with the data property');
+        throw new Error("Expected an array in data property");
       }
-    } catch (error) {  
-      setErrorTable(error.response?.data?.message ||"Error getting showcase data.");
+    } catch (error) {
+      setErrorTable(error.response?.data?.message || "Error getting showcase data.");
+      setErrorStages(error.response?.data?.message || "Error getting quantity data.");
     } finally {
       setLoadingTable(false);
-    }
-  };
-  
-  // Function to fetch broken quantity data
-  const fetchQuantityData = async () => {
-    setLoadingStages(true);
-    try {
-      const response = await Api.get('/show-glass/total-broken');   
-      setBrokenQuantity(response.data.data.totalBrokenQuantity);
-    } catch (error) {
-      console.error(error);
-      setErrorStages("Error fetching broken quantity data.");
-    } finally {
       setLoadingStages(false);
     }
   };
 
   useEffect(() => {
-    fetchQuantityData();
-    fetchTableData();
+    fetchTableData(); // Fixed: Removed undefined fetchQuantityData
   }, []);
 
   const paginatedData = tableData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-  
+
   return (
     <section className={`d-none d-lg-block ${styles.body}`}>
       <div className="sticky-top">
@@ -86,8 +79,8 @@ export default function ViewBrokenHistory() {
 
             <div className={`d-flex mb-5`}>
               {loadingStages ? (
-                <div className="text-start w-25 shadow py-5 px-3">                
-                    <span className="text-muted">Loading...</span>                
+                <div className="text-start w-25 shadow py-5 px-3">
+                  <span className="text-muted">Loading...</span>
                 </div>
               ) : errorStages ? (
                 <div className="w-100">
@@ -96,18 +89,24 @@ export default function ViewBrokenHistory() {
                     <span className="fw-semibold">{errorStages}</span>
                   </Alert>
                 </div>
-              ) : brokenQuantity ? (
-                <div className="w-50 ">
-                      <div className="w-50 px-3 shadow">
-                      <p className="text-end text-muted fw-semibold" style={{fontSize:'12px'}}>In Stock</p>
-                      <p className="text-start text-muted fw-semibold" style={{fontSize:'14px'}}>Total Quantity</p>
-                      <div className="d-flex pb-3">
-                          <h1>{brokenQuantity}</h1>
-                          <p className="mt-3 fw-semibold" style={{fontSize:'12px'}}>Pieces</p>
-                      </div>
+              ) : (
+                <div className="w-50">
+                  <div className="w-50 px-3 shadow">
+                    <p className="text-end text-muted fw-semibold" style={{ fontSize: "12px" }}>
+                      In Stock
+                    </p>
+                    <p className="text-start text-muted fw-semibold" style={{ fontSize: "14px" }}>
+                      Total Quantity
+                    </p>
+                    <div className="d-flex pb-3">
+                      <h1>{brokenQuantity !== null ? brokenQuantity : "N/A"}</h1>
+                      <p className="mt-3 fw-semibold" style={{ fontSize: "12px" }}>
+                        Pieces
+                      </p>
                     </div>
+                  </div>
                 </div>
-              ) : null}
+              )}
             </div>
 
             {loadingTable ? (
@@ -128,32 +127,34 @@ export default function ViewBrokenHistory() {
                 <table className={styles.styled_table}>
                   <thead className={`rounded-2 ${styles.theader}`}>
                     <tr>
-                      <th>DATE CREATED</th> 
-                      <th className="text-end pe-4">QUANTITY</th>                    
+                      <th>DATE CREATED</th>
+                      <th className="text-end pe-4">QUANTITY</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedData.length > 0 ? (
                       paginatedData.map((data, index) => (
                         <tr key={index}>
-                          <td>{formatDate(data.updatedAt)}</td>                          
-                          <td className="text-end pe-4">{data.brokenFishQuantity}</td>                         
+                          <td>{formatDate(data.updatedAt)}</td>
+                          <td className="text-end pe-4">{data.brokenFishQuantity}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="text-center">No data available</td>
+                        <td colSpan="2" className="text-center">
+                          No data available
+                        </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
 
                 <div className="d-flex justify-content-center mt-4">
-                <ReactPaginate
+                  <ReactPaginate
                     previousLabel={"<"}
                     nextLabel={">"}
                     breakLabel={"..."}
-                    pageCount={Math.ceil(tableData.length / itemsPerPage)} // Use tableData instead of ledgerData
+                    pageCount={pageCount} // Use calculated pageCount
                     marginPagesDisplayed={2}
                     pageRangeDisplayed={3}
                     onPageChange={handlePageChange}
@@ -167,13 +168,13 @@ export default function ViewBrokenHistory() {
                     breakClassName={"page-item disabled"}
                     breakLinkClassName={"page-link"}
                     activeClassName={"active-light"}
-                />
+                  />
                 </div>
               </div>
             )}
           </main>
         </section>
-        <ToastContainer/>
+        <ToastContainer />
       </div>
     </section>
   );
