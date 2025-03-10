@@ -289,7 +289,7 @@ export default function NewBatchFish() {
             <Form onSubmit={handleMoveFishes}>
               <h4 className="my-5">Process Fish</h4>
               <Row>
-                <Col md={12} lg={6} className="mb-4">
+                <Col md={6} lg={6} className="mb-4">
                   <Form.Label className="fw-semibold">Import Harvest</Form.Label>
                   <Form.Control
                     type="text"
@@ -381,7 +381,7 @@ export default function NewBatchFish() {
                               cursor: moveData.stageId_from === stage.id ? 'pointer' : 'not-allowed',
                               textTransform: 'uppercase',
                               textDecoration: 'none',
-                              color: moveData.stageId_from === stage.id ? '#512728' : 'gray', // Custom active/inactive colors
+                              color: moveData.stageId_from === stage.id ? '#5e0d0f' : 'gray', // Custom active/inactive colors
                             }}
                             linkAs="span"
                           >
