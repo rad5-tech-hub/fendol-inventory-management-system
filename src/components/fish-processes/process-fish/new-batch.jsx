@@ -10,18 +10,11 @@ import styles from '../process.module.scss';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function NewBatchFish() {
-  // Navigation
   const navigate = useNavigate();
-
-  // Sidebar state
   const [showSidebar, setShowSidebar] = useState(false);
-
-  // Process stage and fish data states
   const [stages, setStages] = useState({ washing: null });
   const [checkStages, setCheckStages] = useState([]);
-  const [fishType, setFishType] = useState([]); // Unused, consider removing if not needed
-
-  // Move fish form states
+  const [fishType, setFishType] = useState([]);
   const [moveFishData, setMoveFishData] = useState({
     stageId_to: '',
     batch_no: '',
@@ -35,8 +28,6 @@ export default function NewBatchFish() {
     brokenFishQuantity: '',
     damageOrLoss: '',
   });
-
-  // Quantity tracking states
   const [quantity, setQuantity] = useState({
     wholeFish: 0,
     brokenFish: 0,
@@ -44,8 +35,6 @@ export default function NewBatchFish() {
   });
   const [cumulativeBrokenFishQuantity, setCumulativeBrokenFishQuantity] = useState(0);
   const [cumulativeDamageOrLoss, setCumulativeDamageOrLoss] = useState(0);
-
-  // UI control states
   const [loader, setLoader] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -53,9 +42,7 @@ export default function NewBatchFish() {
     const savedValue = sessionStorage.getItem('showSuccessOverlay');
     return savedValue ? JSON.parse(savedValue) : false;
   });
-  const [selectedQuantity, setSelectedQuantity] = useState(true); // Unused, consider removing if not needed
 
-  // Memoized ordered stages
   const orderedStages = useMemo(() => {
     return checkStages.sort((a, b) => {
       const stageOrder = ["Washing", "Smoking", "Drying"];
@@ -63,7 +50,6 @@ export default function NewBatchFish() {
     });
   }, [checkStages]);
 
-  // Fetch washing stage data
   const fetchWashingStage = async () => {
     try {
       const response = await Api.get('/process-stages');
@@ -74,6 +60,7 @@ export default function NewBatchFish() {
         setMoveFishData(prev => ({
           ...prev,
           stageId_to: washingStage ? washingStage.id : '',
+          remarks: prev.actual_quantity ? `Process started with ${prev.actual_quantity}` : ''
         }));
       } else {
         throw new Error('Expected an array of stages for Washing');
@@ -83,7 +70,6 @@ export default function NewBatchFish() {
     }
   };
 
-  // Fetch harvest batch data
   const fetchFishType = async () => {
     try {
       const response = await Api.get('/get-all-active-harvest-batch');
@@ -91,6 +77,7 @@ export default function NewBatchFish() {
         setMoveFishData(prev => ({
           ...prev,
           actual_quantity: response.data.data.quantity,
+          remarks: `Process started with ${response.data.data.quantity}`
         }));
       }
     } catch (err) {
@@ -98,7 +85,6 @@ export default function NewBatchFish() {
     }
   };
 
-  // Effect hooks
   useEffect(() => {
     fetchWashingStage();
     fetchFishType();
@@ -126,12 +112,12 @@ export default function NewBatchFish() {
     }
   }, [orderedStages]);
 
-  // Handlers
   const handleInputChangeMoveFish = (e) => {
     const { name, value } = e.target;
     setMoveFishData(prev => ({
       ...prev,
       [name]: name === 'actual_quantity' ? parseFloat(value) || 0 : value,
+      remarks: name === 'actual_quantity' ? `Process started with ${value} Fishes` : prev.remarks
     }));
   };
 
@@ -273,7 +259,6 @@ export default function NewBatchFish() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  // Render
   return (
     <section className={`${styles.body}`}>
       <div className="sticky-top">
@@ -289,7 +274,7 @@ export default function NewBatchFish() {
             <Form onSubmit={handleMoveFishes}>
               <h4 className="my-5">Process Fish</h4>
               <Row>
-                <Col md={6} lg={6} className="mb-4">
+                <Col md={12} lg={12} className="mb-4">
                   <Form.Label className="fw-semibold">Import Harvest</Form.Label>
                   <Form.Control
                     type="text"
@@ -299,7 +284,7 @@ export default function NewBatchFish() {
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                   />
                 </Col>
-                <Col md={6} lg={6} className="mb-4">
+                <Col md={12} lg={12} className="mb-4">
                   <Form.Label className="fw-semibold">Quantity</Form.Label>
                   <Form.Control
                     type="number"
@@ -314,36 +299,12 @@ export default function NewBatchFish() {
                     </Form.Text>
                   )}
                 </Col>
-                <Col md={12} lg={6} className="mb-4">
-                  <Form.Label className="fw-semibold">Process To</Form.Label>
-                  <Form.Control
-                    value={stages.washing === null ? 'Loading...' : stages.washing?.title || 'No Washing Process Available'}
-                    readOnly
-                    className={`py-2 bg-light-subtle text-muted shadow-none border-1 ${styles.inputs}`}
-                  />
-                  <input
-                    type="hidden"
-                    name="stageId_to"
-                    value={stages.washing?.id || ''}
-                    onChange={handleInputChangeMoveFish}
-                  />
-                </Col>
-                <Col md={12} lg={6} className="mb-4">
-                  <Form.Label className="fw-semibold">Remark</Form.Label>
-                  <Form.Control
-                    placeholder="Enter remark"
-                    as="textarea"
-                    name="remarks"
-                    value={moveFishData.remarks}
-                    onChange={handleInputChangeMoveFish} // Fixed typo here
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  />
-                </Col>
+                {/* Removed Process To and Remark fields */}
               </Row>
               <div className="d-flex justify-content-end my-4">
                 <Button
                   className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-                  disabled={loader}
+                  disabled={loader|| moveFishData.actual_quantity === 0}
                   type="submit"
                 >
                   {loader ? 'Processing' : "Process"}
@@ -366,8 +327,8 @@ export default function NewBatchFish() {
                     <Breadcrumb
                       className="mb-4"
                       listProps={{
-                        className: 'd-flex align-items-center', // Ensure custom styling is applied to the list
-                        style: { gap: '0.5rem' }, // Add spacing between breadcrumb items
+                        className: 'd-flex align-items-center',
+                        style: { gap: '0.5rem' },
                       }}
                     >
                       {orderedStages.length > 0 ? (
@@ -381,7 +342,7 @@ export default function NewBatchFish() {
                               cursor: moveData.stageId_from === stage.id ? 'pointer' : 'not-allowed',
                               textTransform: 'uppercase',
                               textDecoration: 'none',
-                              color: moveData.stageId_from === stage.id ? '#5e0d0f' : 'gray', // Custom active/inactive colors
+                              color: moveData.stageId_from === stage.id ? '#5e0d0f' : 'gray',
                             }}
                             linkAs="span"
                           >

@@ -165,10 +165,7 @@ const FreshForm = ({ customers, stages, products }) => {
 
   const calculateTotalBalance = () => {
     const discountedPrice = calculateDiscountedPrice();
-    if (freshData.paymentType === "Credit") {
-      return discountedPrice - (freshData.amountPaid || 0);
-    }
-    return discountedPrice;
+    return discountedPrice - (freshData.amountPaid || 0);
   };
 
   const handleAddSales = async (e) => {
@@ -417,7 +414,7 @@ const FreshForm = ({ customers, stages, products }) => {
                 setFreshData((prev) => ({
                   ...prev,
                   paymentType: selectedPayment,
-                  amountPaid: selectedPayment === "Credit" ? "" : prev.amountPaid || calculateTotalBalance(),
+                  amountPaid: ""
                 }));
               }}
               required
@@ -426,34 +423,31 @@ const FreshForm = ({ customers, stages, products }) => {
               <option value="" disabled>
                 Select Payment Type
               </option>
-              <option value="Cash">Cash</option>
-              <option value="Credit">Credit</option>
+              <option value="Cash">Cash</option>            
               <option value="Transfer">Transfer</option>
               <option value="Pos">Pos</option>
             </Form.Select>
           </Col>
 
-          {/* Amount Paid Input (Only for Credit Payment) */}
-          {freshData.paymentType === "Credit" && (
-            <Col className="mb-4">
-              <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
-              <Form.Control
-                placeholder="Enter amount paid"
-                type="text"
-                name="amountPaid"
-                value={
-                  freshData.amountPaid !== null && freshData.amountPaid !== ""
-                    ? new Intl.NumberFormat().format(freshData.amountPaid)
-                    : ""
-                }
-                onChange={(e) => {
-                  const value = e.target.value.replace(/,/g, "");
-                  setFreshData({ ...freshData, amountPaid: value ? parseFloat(value) : "" });
-                }}
-                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-              />
-            </Col>
-          )}
+          {/* Amount Paid Input (Only for Credit Payment) */}        
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
+            <Form.Control
+              placeholder="Enter amount paid"
+              type="text"
+              name="amountPaid"
+              value={
+                freshData.amountPaid !== null && freshData.amountPaid !== ""
+                  ? new Intl.NumberFormat().format(freshData.amountPaid)
+                  : ""
+              }
+              onChange={(e) => {
+                const value = e.target.value.replace(/,/g, "");
+                setFreshData({ ...freshData, amountPaid: value ? parseFloat(value) : "" });
+              }}
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
+          </Col>
 
           {/* Total Price (Readonly) */}
           <Col className="mb-4">

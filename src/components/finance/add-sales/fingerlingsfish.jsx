@@ -170,10 +170,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
   // Calculate total balance
   const calculateTotalBalance = () => {
     const discountedPrice = calculateDiscountedPrice();
-    if (fingerlingsData.paymentType === "Credit") {
-      return discountedPrice - (fingerlingsData.amountPaid || 0);
-    }
-    return discountedPrice;
+    return discountedPrice - (fingerlingsData.amountPaid || 0);
   };
 
   // Handle form submission
@@ -408,7 +405,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                 setFingerlingsData((prev) => ({
                   ...prev,
                   paymentType: selectedPayment,
-                  amountPaid: selectedPayment === "Credit" ? "" : prev.amountPaid || calculateTotalBalance(),
+                  amountPaid: "",
                 }));
               }}
               required
@@ -418,14 +415,12 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                 Select Payment Type
               </option>
               <option value="Cash">Cash</option>
-              <option value="Credit">Credit</option>
               <option value="Transfer">Transfer</option>
               <option value="Pos">Pos</option>
             </Form.Select>
           </Col>
 
           {/* Amount Paid Input (Only for Credit Payment) */}
-          {fingerlingsData.paymentType === "Credit" && (
             <Col className="mb-4">
               <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
               <Form.Control
@@ -444,7 +439,6 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
               />
             </Col>
-          )}
 
           {/* Total Price (Readonly) */}
           <Col className="mb-4">

@@ -189,10 +189,3 @@
     display: block; // Ensure body is visible for desktop
   }
 }
-
-// Mobile View (below 768px)
-@media (max-width: 767px) {
-  .body {
-    display: none; // Hide body for mobile as per original requirement
-  }
-}

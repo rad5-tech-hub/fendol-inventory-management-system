@@ -14,10 +14,9 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler, // Import Filler plugin
+  Filler,
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2'; // Ensure imports are at the top
-import { Value } from 'sass'; // Ensure this is moved to the top
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
 
 // Register necessary components
 ChartJS.register(
@@ -30,43 +29,41 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler // Register this plugin for 'fill'
+  Filler
 );
 
-
 export default function Dashboard() {
-    const [dataLine, setDataLine] = useState(() => {
-        const months = [
-          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-        ];
-    
-        return months.map((month) => {
-          const profit = Math.floor(Math.random() * 101); // Random percentage for profit
-          const loss = 100 - profit; // Remaining percentage for loss
-    
-          return {
-            label: month,
-            profit: `${profit}%`,
-            loss: `${loss}%`,
-          };
-        });
-    });
-    
+  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+  const [dataLine] = useState(() => {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    return months.map((month) => ({
+      label: month,
+      profit: Math.floor(Math.random() * 101), // Random profit from 0 to 100
+      loss: Math.floor(Math.random() * 101),   // Random loss from 0 to 100
+    }));
+  });
+
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   return (
-    <section className={styles.body}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        <div className={`${styles.sidebar}`}>
-          <SideBar className={styles.sidebarItem} />
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${styles.content}`}>
           <main>
             <div className={styles.create_form}>
-              <h4 className='fw-semibold my-5'>Dashboard</h4>
-              <Row lg={2} sm={1} md={2} xs={1}>
+              <h4 className="fw-semibold my-5">Dashboard</h4>
+              <Row xs={1} md={1} lg={2} className="g-4">
                 <Col>
                   <div className={`shadow rounded ${styles.board} p-3`}>
                     <Bar
@@ -132,50 +129,56 @@ export default function Dashboard() {
                   </div>
                 </Col>
               </Row>
-              <div className="shadow mt-4 p-4">
+              <Row className="mt-4">
+                <Col xs={12}>
+                  <div className="shadow p-4 rounded">
                     <Line
-                        data={{
-                        labels: dataLine.map((item) => item.label), // Months as labels
+                      data={{
+                        labels: dataLine.map((item) => item.label),
                         datasets: [
-                            {
-                            label: 'Profit (%)',
-                            data: dataLine.map((item) => parseInt(item.profit)), // Profit values
+                          {
+                            label: 'Profit',
+                            data: dataLine.map((item) => item.profit),
                             borderColor: 'rgba(75, 192, 192, 0.6)',
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             fill: true,
-                            tension: 0.4, // Smoothing effect for line
-                            },
-                            {
-                            label: 'Loss (%)',
-                            data: dataLine.map((item) => parseInt(item.loss)), // Loss values
+                            tension: 0.4,
+                          },
+                          {
+                            label: 'Loss',
+                            data: dataLine.map((item) => item.loss),
                             borderColor: 'rgba(255, 99, 132, 0.6)',
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                             fill: true,
                             tension: 0.4,
-                            },
+                          },
                         ],
-                        }}
-                        options={{
+                      }}
+                      options={{
                         responsive: true,
                         plugins: {
-                            legend: {
+                          legend: {
                             position: 'top',
-                            },
-                            title: {
+                          },
+                          title: {
                             display: true,
                             text: 'Monthly Profit and Loss Analysis',
-                            },
+                          },
                         },
                         scales: {
-                            y: {
+                          y: {
                             beginAtZero: true,
-                            max: 100, // Maximum percentage
+                            max: 100, // Maximum value set to 100
+                            ticks: {
+                              stepSize: 20, // Optional: control step size for readability
                             },
+                          },
                         },
-                        }}
+                      }}
                     />
-               </div>
-
+                  </div>
+                </Col>
+              </Row>
             </div>
           </main>
         </section>

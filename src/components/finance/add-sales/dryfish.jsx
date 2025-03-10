@@ -141,11 +141,8 @@ const SalesForm = ({ customers, stages, products }) => {
     };
 
     const calculateTotalBalance = () => {
-        const discountedPrice = calculateDiscountedPrice();
-        if (dryData.paymentType === 'Credit') {
-            return discountedPrice - (dryData.amountPaid || 0);
-        }
-        return discountedPrice;
+        const discountedPrice = calculateDiscountedPrice();    
+        return discountedPrice - (dryData.amountPaid || 0);
     };
 
     const handleNextStep = () => {
@@ -172,7 +169,7 @@ const SalesForm = ({ customers, stages, products }) => {
     };
 
     const handleSelectCustomer = (selectedCustomer) => {
-        const discount = selectedCustomer.category === "Marketer" ? 10 : 0; // Set discount based on category
+        const discount = selectedCustomer.category === "Marketer" ? '10%' : 0; // Set discount based on category
         setDryData(prevData => ({
             ...prevData,
             customerId: selectedCustomer.id,
@@ -470,37 +467,34 @@ const SalesForm = ({ customers, stages, products }) => {
                                     setDryData((prev) => ({
                                         ...prev,
                                         paymentType: selectedPayment,
-                                        amountPaid: selectedPayment === "Credit" ? '' : prev.amountPaid || calculateTotalBalance(),
+                                        amountPaid: '' // Reset amount paid when payment type changes,
                                     }));
                                 }}
                                 required
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             >
                                 <option value="" disabled>Select Payment Type</option>
-                                <option value="Cash">Cash</option>
-                                <option value="Credit">Credit</option>
+                                <option value="Cash">Cash</option>                              
                                 <option value="Transfer">Transfer</option>
                                 <option value="Pos">Pos</option>
                             </Form.Select>
                         </Col>
 
-                        {/* Amount Paid Input (Only for Credit Payment) */}
-                        {dryData.paymentType === 'Credit' && (
-                            <Col className="mb-4">
-                                <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
-                                <Form.Control
-                                    placeholder="Enter amount paid"
-                                    type="text"
-                                    name="amountPaid"
-                                    value={dryData.amountPaid !== null && dryData.amountPaid !== '' ? new Intl.NumberFormat().format(dryData.amountPaid) : ''}
-                                    onChange={(e) => {
-                                        const value = e.target.value.replace(/,/g, '');
-                                        setDryData({ ...dryData, amountPaid: value ? parseFloat(value) : '' });
-                                    }}
-                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                />
-                            </Col>
-                        )}
+                        {/* Amount Paid Input (Only for Credit Payment) */}                      
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
+                            <Form.Control
+                                placeholder="Enter amount paid"
+                                type="text"
+                                name="amountPaid"
+                                value={dryData.amountPaid !== null && dryData.amountPaid !== '' ? new Intl.NumberFormat().format(dryData.amountPaid) : ''}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/,/g, '');
+                                    setDryData({ ...dryData, amountPaid: value ? parseFloat(value) : '' });
+                                }}
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                            />
+                        </Col>
 
                         {/* Total Price (Readonly) */}
                         <Col className="mb-4">

@@ -237,7 +237,15 @@
 
 // Mobile View (below 768px)
 @media (max-width: 767px) {
-  .body {
-    display: none;
+   .body {
+    display: block; // Ensure visibility on desktop
+  }
+
+  .content {
+    width: $content-width; // Restore desktop width
+  }
+
+  .sidebar {
+    display: block; // Visible by default on desktop
   }
 }

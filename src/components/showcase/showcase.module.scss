@@ -6,10 +6,6 @@
   background-color: #f8f9fa;
   display: flex;
   flex-direction: column;
-
-  @media (max-width: 767px) { // Below md (tablet)
-    display: none; // Hide on mobile
-  }
 }
 
 .content {
