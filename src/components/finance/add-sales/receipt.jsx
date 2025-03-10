@@ -102,8 +102,8 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                 <th style={{ width: "15%", padding: "2px" }}>
                   {receipt.purchasedItems?.some(item => item.salesCategory === 'fresh-fish') ? 'WT' : 'QTY'}
                 </th>
-                <th style={{ width: "25%", padding: "2px" }}>TOT(₦)</th>
                 <th style={{ width: "20%", padding: "2px" }}>PRC(₦)</th>
+                <th style={{ width: "25%", padding: "2px" }}>TOT(₦)</th>                
               </tr>
             </thead>
             <tbody>
@@ -127,11 +127,11 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                     }
                   </td>
                   <td style={{ padding: "2px", textAlign: "center" }}>
-                    {product.totalPrice?.toLocaleString() || product.total?.toLocaleString()}
-                  </td>
-                  <td style={{ padding: "2px", textAlign: "center" }}>
                     {product.unitPrice?.toLocaleString()}
                   </td>
+                  <td style={{ padding: "2px", textAlign: "center" }}>
+                    {product.totalPrice?.toLocaleString() || product.total?.toLocaleString()}
+                  </td>                  
                 </tr>
               ))}
             </tbody>

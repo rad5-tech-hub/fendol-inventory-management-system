@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Form, Row, Col, Button, Table, Alert } from 'react-bootstrap';
-import Api from '../../shared/api/apiLink'; // Adjust based on your API import path
-import styles from '../finance.module.scss'; // Adjust the import as needed
+import Api from '../../shared/api/apiLink';
+import styles from '../finance.module.scss';
 import { BsExclamationTriangleFill } from 'react-icons/bs';
-import ReceiptModal from './receipt'; // Import the ReceiptModal component
+import ReceiptModal from './receipt';
 
 const SalesForm = ({ customers, stages, products }) => {
     const [dryData, setDryData] = useState({
@@ -19,7 +19,7 @@ const SalesForm = ({ customers, stages, products }) => {
         amountPaid: null
     });
 
-    const [receiptData, setReceiptData] = useState({}); // Store receipt details
+    const [receiptData, setReceiptData] = useState({});
     const [showReceipt, setShowReceipt] = useState(false);
     const [checkedProducts, setCheckedProducts] = useState({});
     const [currentStep, setCurrentStep] = useState(1);
@@ -30,7 +30,7 @@ const SalesForm = ({ customers, stages, products }) => {
     const [formSubmitted, setFormSubmitted] = useState(false);
 
     useEffect(() => {
-        setCustomer(customers);
+        setCustomer(customers || []);
     }, [customers]);
 
     useEffect(() => {
@@ -39,7 +39,7 @@ const SalesForm = ({ customers, stages, products }) => {
                 const quantity = product?.quantity || 0;
                 const basePrice = products.find(p => p?.id === product?.id)?.basePrice || 0;
                 const isBrokenProduct = product?.productName?.toLowerCase().includes("broken");
-                const quantityUsedToPack = product?.quantityUsedToPack || 0; // default to 0 if undefined
+                const quantityUsedToPack = product?.quantityUsedToPack || 0;
                 let productTotal;
                 if (isBrokenProduct) {
                     productTotal = quantityUsedToPack * basePrice;
@@ -53,7 +53,6 @@ const SalesForm = ({ customers, stages, products }) => {
         setTotalPrice(total);
     }, [dryData.products, checkedProducts, products]);
 
-    // In your handleCheckChange, initialize all required properties
     const handleCheckChange = (e, productId) => {
         const { checked } = e.target;
         setCheckedProducts(prevState => ({
@@ -69,8 +68,8 @@ const SalesForm = ({ customers, stages, products }) => {
                     { 
                         id: productId, 
                         productName: product.productName, 
-                        quantity: '',  // Initialize as empty string to match input
-                        quantityUsedToPack: ''  // Initialize as empty string to match input
+                        quantity: '', 
+                        quantityUsedToPack: '' 
                     }
                 ]
             }));
@@ -121,30 +120,24 @@ const SalesForm = ({ customers, stages, products }) => {
 
     const calculateSubtotal = (productId) => {
         const product = dryData.products.find(product => product.id === productId);
-        if (!product) {
-            return 0; // Return 0 if product is undefined
-        }
+        if (!product) return 0;
 
         const quantity = product?.quantity || 0;
         const quantityUsedToPack = product?.quantityUsedToPack || 0;
         const basePrice = products.find(p => p.id === productId)?.basePrice || 0;
         const isBrokenProduct = product.productName?.toLowerCase().includes("broken");
 
-        if (isBrokenProduct) {
-            return quantityUsedToPack * basePrice;
-        } else {
-            return quantity * basePrice;
-        }
+        return isBrokenProduct ? quantityUsedToPack * basePrice : quantity * basePrice;
     };
 
     const calculateDiscountedPrice = () => {
         let discountedPrice = totalPrice;
         if (dryData.category === 'Marketer') {
-            discountedPrice -= (totalPrice * 0.1);
-        } else {
-            discountedPrice -= (parseFloat(dryData.discount) || 0);
+            discountedPrice -= (totalPrice * 0.1); // 10% discount for Marketers
+        } else if (dryData.discount > 0) {
+            discountedPrice -= parseFloat(dryData.discount) || 0; // Manual discount for Customers
         }
-        return discountedPrice;
+        return Math.max(discountedPrice, 0);
     };
 
     const calculateTotalBalance = () => {
@@ -172,41 +165,30 @@ const SalesForm = ({ customers, stages, products }) => {
         const { value } = e.target;
         setDryData(prevData => ({ ...prevData, fullName: value }));
 
-        const filtered = customer.filter(c =>
-            c.fullName?.toLowerCase().includes(value.toLowerCase()) &&
-            (!dryData.category || c.category === dryData.category)
-        );
-
+        const filtered = value
+            ? customer.filter(c => c.fullName?.toLowerCase().includes(value.toLowerCase()))
+            : customer;
         setFilteredCustomer(filtered.length ? filtered : []);
     };
 
-    const handleSelectCustomer = (customer) => {
-        setDryData(prevData => ({ ...prevData, customerId: customer.id, fullName: customer.fullName }));
-        setFilteredCustomer([]); // Clear suggestions after selection
+    const handleSelectCustomer = (selectedCustomer) => {
+        const discount = selectedCustomer.category === "Marketer" ? 10 : 0; // Set discount based on category
+        setDryData(prevData => ({
+            ...prevData,
+            customerId: selectedCustomer.id,
+            fullName: selectedCustomer.fullName,
+            category: selectedCustomer.category,
+            discount: discount
+        }));
+        setFilteredCustomer([]);
     };
 
-    const handleCategoryChange = (e) => {
-        const { value } = e.target;
-        setDryData(prevData => ({ ...prevData, category: value }));
-
-        const filtered = customer.filter(c =>
-            c.fullName?.toLowerCase().includes(dryData.fullName?.toLowerCase() || '') &&
-            (!value || c.category === value)
-        );
-
-        setFilteredCustomer(filtered.length ? filtered : []);
-    };
-
-    // New handleFocus event
     const handleFocus = (e, productId) => {
         if (!checkedProducts[productId]) {
-            // If the product isn't checked yet, simulate a check event
             setCheckedProducts(prevState => ({
                 ...prevState,
                 [productId]: true
             }));
-
-            // Initialize the product in dryData
             const product = products.find(p => p.id === productId);
             setDryData(prevState => ({
                 ...prevState,
@@ -228,24 +210,16 @@ const SalesForm = ({ customers, stages, products }) => {
         if (!window.confirm("Are you sure you want to add this sale?")) return;
 
         setLoader(true);
-
-        // Toast for sale process
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
 
         try {
-            // Set discount to 10% if category is Marketer
-            const discount = dryData.category === 'Marketer' ? '10%' : dryData.discount;
-
-            // 1. Create sale first
-            const saleResponse = await Api.post('/sales', { ...dryData, discount });
+            const saleResponse = await Api.post('/sales', dryData);
 
             if (saleResponse.status < 200 || saleResponse.status >= 300) {
                 throw new Error(saleResponse.data?.message || "Sale failed!");
             }
 
             const transactionId = saleResponse.data.data?.transactionId;
-            const salesCategory = dryData.salesCategory;
-
             if (!transactionId) {
                 toast.update(salesToast, {
                     render: "Transaction ID not found. Please try again.",
@@ -258,7 +232,6 @@ const SalesForm = ({ customers, stages, products }) => {
                 return;
             }
 
-            // ✅ Sale success toast
             toast.update(salesToast, {
                 render: "Sale added successfully!",
                 type: "success",
@@ -267,20 +240,14 @@ const SalesForm = ({ customers, stages, products }) => {
                 className: 'dark-toast'
             });
 
-            // 2. Toast for fetching receipt
             const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
-
-            // 3. Fetch receipt using transaction ID
             const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
 
             if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
                 throw new Error("Receipt could not be fetched.");
             }
 
-            // 4. Update state with receipt data
             setReceiptData(receiptResponse);
-
-            // ✅ Receipt success toast
             toast.update(receiptToast, {
                 render: "Receipt fetched successfully!",
                 type: "success",
@@ -289,27 +256,24 @@ const SalesForm = ({ customers, stages, products }) => {
                 className: 'dark-toast'
             });
 
-            setShowReceipt(true); // Show receipt modal
+            setShowReceipt(true);
 
-            // 5. Reset form after showing receipt
             setDryData({
                 products: [],
                 category: '',
                 customerId: '',
-                discount: '',
+                discount: 0,
                 description: '',
                 paymentType: '',
-                amountPaid: ''
+                fullName: '',
+                amountPaid: null
             });
-
             setCheckedProducts({});
             setCurrentStep(1);
             setFormSubmitted(false);
 
         } catch (error) {
             console.error("Error in handleAddSales:", error);
-
-            // Handle errors separately for sale and receipt
             toast.update(salesToast, {
                 render: error.response?.data?.message || error.message || 'Sale failed!',
                 type: "error",
@@ -317,8 +281,6 @@ const SalesForm = ({ customers, stages, products }) => {
                 autoClose: 6000,
                 className: 'dark-toast'
             });
-
-            toast.dismiss(); // Ensure no stale loading toasts remain
         } finally {
             setLoader(false);
         }
@@ -326,9 +288,7 @@ const SalesForm = ({ customers, stages, products }) => {
 
     const isNextButtonDisabled = () => {
         const hasCheckedProduct = Object.values(checkedProducts).some(checked => checked);
-        if (!hasCheckedProduct) {
-            return true;
-        }
+        if (!hasCheckedProduct) return true;
         return Object.keys(checkedProducts).some(productId => {
             if (checkedProducts[productId]) {
                 const product = dryData.products.find(p => p.id === productId);
@@ -343,7 +303,7 @@ const SalesForm = ({ customers, stages, products }) => {
             {currentStep === 1 && (
                 products.length > 0 ? (
                     <>
-                        <Table variant="light" className={`bg-light px-2 ${styles.styled_table}`}>
+                        <Table variant="light" className={`bg-light px-2 ${styles.styled_table}`} responsive>
                             <thead className={`rounded-2 px-2`}>
                                 <tr>
                                     <th>PRODUCT</th>
@@ -359,9 +319,9 @@ const SalesForm = ({ customers, stages, products }) => {
                                     .filter(product => {
                                         const lowerProductName = product.productName?.toLowerCase() || '';
                                         return (
-                                            product.productName && // Ensure productName exists
-                                            !lowerProductName.includes('fresh') && // Exclude "fresh fish"
-                                            !lowerProductName.includes('fingerlings') // Exclude "fingerlings"
+                                            product.productName &&
+                                            !lowerProductName.includes('fresh') &&
+                                            !lowerProductName.includes('fingerlings')
                                         );
                                     })
                                     .map((product, index) => (
@@ -372,7 +332,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                                     label={product.productName}
                                                     value={product.productName}
                                                     data-id={product.id}
-                                                    className=" text-uppercase mt-2 fw-semibold"
+                                                    className="text-uppercase mt-2 fw-semibold"
                                                     onChange={(e) => handleCheckChange(e, product.id)}
                                                     checked={checkedProducts[product.id] || false}
                                                 />
@@ -406,11 +366,9 @@ const SalesForm = ({ customers, stages, products }) => {
                                             </td>
                                             <td><p className="text-muted py-2">
                                                 ₦ {new Intl.NumberFormat().format(calculateSubtotal(product.id))}
-                                            </p>
-                                            </td>
+                                            </p></td>
                                         </tr>
-                                    ))
-                                }
+                                    ))}
                             </tbody>
                         </Table>
                         <div className="mt-3">
@@ -437,27 +395,11 @@ const SalesForm = ({ customers, stages, products }) => {
             )}
             {currentStep === 2 && (
                 <Form onSubmit={handleAddSales}>
-                    <Row xxl={2} xl={2} lg={2}>
-                        {/* Buyer Category */}
-                        <Col className="mb-4">
-                            <Form.Label className="fw-semibold">Buyer Category</Form.Label>
-                            <Form.Select
-                                name="category"
-                                value={dryData.category || ''}
-                                onChange={handleCategoryChange}
-                                required
-                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
-                            >
-                                <option value="" disabled>Select Category</option>
-                                <option value="Marketer">Marketer</option>
-                                <option value="Customer">Customer</option>
-                            </Form.Select>
-                        </Col>
-
+                    <Row xxl={2} xl={2} lg={2} md={1}>
                         {/* Customer Name with Suggestions */}
                         <Col className="mb-4">
                             <Form.Group controlId="searchCustomer">
-                                <Form.Label className="fw-semibold">Name</Form.Label>
+                                <Form.Label className="fw-semibold">Customer Name</Form.Label>
                                 <div style={{ position: 'relative', width: '100%' }}>
                                     <Form.Control
                                         type="text"
@@ -467,6 +409,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                         onChange={handleSearchChange}
                                         style={{ width: '100%' }}
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
+                                        required
                                     />
                                     {dryData.fullName && filteredCustomer.length > 0 && (
                                         <div className={`${styles.suggestions_box}`}>
@@ -475,9 +418,9 @@ const SalesForm = ({ customers, stages, products }) => {
                                                     <li
                                                         key={index}
                                                         onClick={() => handleSelectCustomer(customer)}
-                                                        style={{ cursor: 'pointer' }}
+                                                        style={{ cursor: 'pointer', padding: '8px' }}
                                                     >
-                                                        {customer.fullName}
+                                                        {customer.fullName} ({customer.category})
                                                     </li>
                                                 ))}
                                             </ul>
@@ -496,7 +439,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                     type="text"
                                     name="discount"
                                     value={dryData.category === 'Marketer' ? '10%' : dryData.discount || ''}
-                                    onChange={(e) => setDryData({ ...dryData, discount: e.target.value })}
+                                    onChange={(e) => setDryData({ ...dryData, discount: parseFloat(e.target.value) || 0 })}
                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
                                     readOnly={dryData.category === 'Marketer'}
                                 />
@@ -527,7 +470,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                     setDryData((prev) => ({
                                         ...prev,
                                         paymentType: selectedPayment,
-                                        amountPaid: selectedPayment === "Credit" ? '' : prev.amountPaid || calculateTotalBalance(), // Empty for Credit, match totalBalance for others
+                                        amountPaid: selectedPayment === "Credit" ? '' : prev.amountPaid || calculateTotalBalance(),
                                     }));
                                 }}
                                 required
@@ -541,8 +484,8 @@ const SalesForm = ({ customers, stages, products }) => {
                             </Form.Select>
                         </Col>
 
-                        {/* Amount Paid Input (Only for Credit Payment, empty on Credit selection) */}
-                        {(dryData.paymentType === 'Credit') && (
+                        {/* Amount Paid Input (Only for Credit Payment) */}
+                        {dryData.paymentType === 'Credit' && (
                             <Col className="mb-4">
                                 <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
                                 <Form.Control
@@ -551,8 +494,8 @@ const SalesForm = ({ customers, stages, products }) => {
                                     name="amountPaid"
                                     value={dryData.amountPaid !== null && dryData.amountPaid !== '' ? new Intl.NumberFormat().format(dryData.amountPaid) : ''}
                                     onChange={(e) => {
-                                      const value = e.target.value.replace(/,/g, '');
-                                      setDryData({ ...dryData, amountPaid: value ? parseFloat(value) : '' });
+                                        const value = e.target.value.replace(/,/g, '');
+                                        setDryData({ ...dryData, amountPaid: value ? parseFloat(value) : '' });
                                     }}
                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                 />
@@ -604,7 +547,6 @@ const SalesForm = ({ customers, stages, products }) => {
                     </div>
                 </Form>
             )}
-            {/* Receipt Modal */}
             <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
         </div>
     );

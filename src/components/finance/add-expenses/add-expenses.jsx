@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Row, Col, Button } from 'react-bootstrap';
-import styles from '../finance.module.scss'; // Adjust the import as needed
+import styles from '../finance.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
@@ -16,24 +16,23 @@ const AddExpense = () => {
     const [formData, setFormData] = useState({
         price: '',
         description: '',
-        paymentType:''
+        paymentType: ''
     });
     const [unformattedPrice, setUnformattedPrice] = useState(0);
-       const [loader, setLoader] = useState(false);
+    const [loader, setLoader] = useState(false);
+    const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
 
     // Handle input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
-        // Handle price input separately to format it with commas
         if (name === 'price') {
-            // Remove commas to get the pure number
             const numberValue = value.replace(/,/g, '');
             setFormData({
                 ...formData,
-                price: formatNumberWithCommas(numberValue), // Format the price with commas for display
+                price: formatNumberWithCommas(numberValue),
             });
-            setUnformattedPrice(parseFloat(numberValue) || 0); // Store the unformatted number
+            setUnformattedPrice(parseFloat(numberValue) || 0);
         } else {
             setFormData({ ...formData, [name]: value });
         }
@@ -42,27 +41,19 @@ const AddExpense = () => {
     // Handle form submission
     const handleAddExpense = async (e) => {
         e.preventDefault();
-    
-        // Show confirmation dialog
+
         const isConfirmed = window.confirm("Are you sure you want to add this expense?");
-        
-        if (!isConfirmed) {
-            return; // If the user cancels, exit the function
-        }
-    
+        if (!isConfirmed) return;
+
         setLoader(true);
-        const loadingToast = toast.loading("Adding expense...", {
-            className: 'dark-toast'
-        });
-    
+        const loadingToast = toast.loading("Adding expense...", { className: 'dark-toast' });
+
         try {
-            // Post the unformatted number to the API (not the formatted one)
-            const response = await Api.post('/expense', { 
-                ...formData, 
-                price: unformattedPrice // Send unformatted price
+            const response = await Api.post('/expense', {
+                ...formData,
+                price: unformattedPrice
             });
-    
-            // After a successful API call
+
             toast.update(loadingToast, {
                 render: "Expense added successfully!",
                 type: "success",
@@ -70,12 +61,11 @@ const AddExpense = () => {
                 autoClose: 3000,
                 className: 'dark-toast'
             });
-    
-            // Reset form after successful submission
+
             setFormData({
                 price: '',
                 description: '',
-                paymentType:''
+                paymentType: ''
             });
             setUnformattedPrice(0);
         } catch (error) {
@@ -90,37 +80,39 @@ const AddExpense = () => {
             setLoader(false);
         }
     };
-    
+
+    // Sidebar toggle handlers
+    const toggleSidebar = () => setShowSidebar(!showSidebar);
+    const handleCloseSidebar = () => setShowSidebar(false);
 
     return (
-        <section className={`d-none d-lg-block ${styles.body}`}>
+        <section className={`${styles.body}`}>
             <div className="sticky-top">
-                <Header />
+                <Header toggleSidebar={toggleSidebar} />
             </div>
             <div className="d-flex gap-2">
                 <div className={`${styles.sidebar}`}>
-                    <SideBar className={styles.sidebarItem} />
+                    <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
                 </div>
-                <section className={`${styles.content}`}>
+                <section className={`${styles.content} flex-grow-1`}>
                     <main>
                         <ToastContainer />
                         <Form className={styles.create_form} onSubmit={handleAddExpense}>
                             <h4 className="mt-4 mb-5">Add New Expense</h4>
-                            <Row lg={1} xl={1}>
-                                <Col className="mb-4">
+                            <Row lg={1} md={1} className="g-4">
+                                <Col>
                                     <Form.Label className="fw-semibold">Total Price</Form.Label>
                                     <Form.Control
                                         placeholder="Enter total price"
-                                        type="text" // Change input type to text to handle commas
+                                        type="text"
                                         name="price"
-                                        value={formData.price} // Display the formatted price
+                                        value={formData.price}
                                         required
                                         onChange={handleInputChange}
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 </Col>
-                                 {/* Payment Type */}
-                                <Col className="mb-4">
+                                <Col>
                                     <Form.Label className="fw-semibold">Payment Type</Form.Label>
                                     <Form.Select
                                         name="paymentType"
@@ -130,11 +122,11 @@ const AddExpense = () => {
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     >
                                         <option value="" disabled>Select Payment Type</option>
-                                        <option value="Cash">Cash</option>                                        
-                                        <option value="Bank Transfer">Bank Transfer</option>                                        
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
                                     </Form.Select>
                                 </Col>
-                                <Col className="mb-4">
+                                <Col>
                                     <Form.Label className="fw-semibold">Description</Form.Label>
                                     <Form.Control
                                         placeholder="Enter description"
@@ -149,8 +141,12 @@ const AddExpense = () => {
                                 </Col>
                             </Row>
                             <div className="d-flex justify-content-end my-4">
-                                <Button className="btn shadow btn-dark py-2 px-5 fs-6 mb-5 fw-semibold" disabled={loader} type="submit">
-                                    {loader ? ' Adding...' : 'Add Expense'}
+                                <Button
+                                    className={`btn shadow btn-dark py-2 px-5 fs-6 fw-semibold ${styles.submit}`}
+                                    disabled={loader}
+                                    type="submit"
+                                >
+                                    {loader ? 'Adding...' : 'Add Expense'}
                                 </Button>
                             </div>
                         </Form>

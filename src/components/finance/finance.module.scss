@@ -1,76 +1,102 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
 @import '../shared/style.scss';
 
+.body {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
 
-.content {
-  width: $content-width;
+  @media (max-width: 767px) { // Below md (tablet)
+    display: none; // Hide on mobile
+  }
 }
 
 .sidebar {
   width: $sidebar-width;
-}
+  transition: width 0.3s ease;
 
-.create_form {
-  height: 89vh; // Full viewport height
-  padding: 40px;
-  overflow: auto;
-  background-color: #FAFCFF;
-
-
-  h4 {
-      font-size: 20px;
-      font-weight: 500;
-      line-height: 30px;
-      color: #2E3135;
+  @media (max-width: 991px) { // Below lg (tablet range)
+    width: 0; // Hidden unless offcanvas is active
+    overflow: hidden;
   }
 }
 
-.activeView{
+.content {
+  width: $content-width;
+  flex-grow: 1;
+  padding: 15px;
+
+  @media (max-width: 991px) { // md to lg (tablet)
+    margin-left: 0; // No offset when sidebar is hidden
+    width: 100%;
+  }
+}
+
+.create_form {
+  height: 89vh;
+  padding: 20px; // Reduced padding for tablets
+  overflow: auto;
+  background-color: #FAFCFF;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+  h4 {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 30px;
+    color: #2E3135;
+  }
+
+  @media (max-width: 991px) { // Tablet
+    padding: 15px;
+    height: auto; // Allow content to dictate height on tablets
+  }
+}
+
+.activeView {
   border-bottom: #582021 1px solid;
   color: #582021;
 }
 
-.inputs{
+.inputs {
   border: #b79173aa 1px solid;
   &::placeholder {
     opacity: 0.5;
   }
-  &:focus{
+  &:focus {
     border: #896143aa 1px solid;
   }
 }
 
-
 .submit {
-  background-color: #512728;  // Initial background color
-  
+  background-color: #512728;
   &:hover {
-    background-color: #714445; // Background color on hover
+    background-color: #714445;
   }
-
   &:active {
-    background-color: #512728; // Background color when the button is clicked (active)
+    background-color: #512728;
   }
 }
 
-.Pweight{
+.Pweight {
   opacity: 0.8;
-  &::placeholder{
+  &::placeholder {
     opacity: 0.5;
   }
 }
 
-.theader{
+.theader {
   background-color: #D0D5DD;
   th {
     color: #2E3135;
+    padding: 10px 9px;
     &:first-of-type {
-      border-top-left-radius: 8px; // Adjust to desired radius
+      border-top-left-radius: 8px;
       border-bottom-left-radius: 8px;
-      padding: 10px 9px;
     }
     &:last-of-type {
-      border-top-right-radius: 8px; // Adjust to desired radius
+      border-top-right-radius: 8px;
       border-bottom-right-radius: 8px;
       padding: 10px 5px;
     }
@@ -79,42 +105,53 @@
 
 .styled_table {
   width: 100%;
-  position: relative; // Ensure that child elements with absolute positioning are relative to this table
-}
+  position: relative;
+  border-collapse: collapse;
 
-.styled_table th,
-.styled_table td {
-  white-space: nowrap; // Prevent text wrapping
-}
+  th, td {
+    white-space: nowrap;
+    padding: 12px; // Adjusted for consistency
+  }
 
-.styled_table th {
-  color: #2E3135;
-  padding-bottom: 20px;
-  text-align: left; // Optional: align text to the left
-}
+  th {
+    color: #2E3135;
+    text-align: left;
+  }
 
-.styled_table td {
-  padding: 18px 0px;
-  border-bottom:  0.2px solid #d0d6db;
-  font-family: Roboto Flex;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 18.75px;
-   letter-spacing: 0.04em;
-  color: #2E3135;
-  position: relative; // Ensure td can contain absolute positioned elements like the dropdown
+  td {
+    border-bottom: 0.2px solid #d0d6db;
+    font-family: 'Roboto Flex', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 18.75px;
+    letter-spacing: 0.04em;
+    color: #2E3135;
+    position: relative;
+
+    @media (max-width: 991px) { // Tablet
+      font-size: 14px; // Smaller text for tablets
+      padding: 10px; // Reduced padding
+    }
+  }
+
+  &.table_responsive {
+    @media (max-width: 991px) { // Tablet
+      display: block;
+      overflow-x: auto;
+    }
+  }
 }
 
 .dropdownMenu {
   position: absolute;
-  top: 100%; // Position dropdown below the element
+  top: 100%;
   right: 0;
-  background-color: #2E3135; // Background color
-  color: white; // Text color
+  background-color: #2E3135;
+  color: white;
   border-radius: 5px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 10000; // Ensure it is on top of the table
-  min-width: 150px; // Ensures a minimum width for the dropdown
+  z-index: 10000;
+  min-width: 150px;
 }
 
 .menuList {
@@ -129,15 +166,8 @@
   transition: background-color 0.3s ease, color 0.3s ease;
   
   &:hover {
-    background-color: #FAFCFF; // Hover background color
-    color: #2E3135; // Hover text color
-  }
-}
-
-
-@media (max-width: 992) {
-  .body{
-    display: none;
+    background-color: #FAFCFF;
+    color: #2E3135;
   }
 }
 
@@ -156,40 +186,40 @@
 .suggestions_box {
   position: absolute;
   max-height: 170px;
-  width: calc(100% - 2px); /* Adjust for borders */
+  width: calc(100% - 2px);
   overflow-y: auto;
   z-index: 1000;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   background-color: white;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  margin: 0; /* Ensure no margin is applied */
-  padding: 0; /* Reset padding */
-}
-
-.suggestions_box ul {
-  list-style-type: none;
-  padding: 0;
   margin: 0;
-}
-.suggestions_box li {
-  padding: 8px;
-  cursor: pointer;
-}
-.suggestions_box li:hover {
-  background-color: #f0f0f0;
+  padding: 0;
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  li {
+    padding: 8px;
+    cursor: pointer;
+    &:hover {
+      background-color: #f0f0f0;
+    }
+  }
 }
 
 .inputContainer {
-  // Ensure the container is relative for positioning the sign
   position: relative;
 }
 
 .nairaSign {
   position: absolute;
-  right: 10px; // Adjust this value as needed for spacing
+  right: 10px;
   top: 50%;
-  transform: translateY(-50%); // Center it vertically
-  pointer-events: none; // Prevent mouse events on the sign
-  color: #524d4d; // Change color as needed
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #524d4d;
 }

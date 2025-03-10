@@ -1,28 +1,58 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
 @import '../shared/style.scss';
 
+.body {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 767px) { // Below md (tablet)
+    display: none; // Hide on mobile
+  }
+}
 
 .content {
   width: $content-width;
+  flex-grow: 1;
+  padding: 15px;
+
+  @media (max-width: 991px) { // md to lg (tablet)
+    margin-left: 0; // No offset when sidebar is hidden
+    width: 100%;
+    padding: 10px; // Reduced padding for tablet
+  }
 }
 
 .sidebar {
   width: $sidebar-width;
+  transition: width 0.3s ease;
+
+  @media (max-width: 991px) { // Below lg (tablet range)
+    width: 0; // Hidden unless offcanvas is active
+    overflow: hidden;
+  }
 }
 
-
 .create_form {
-  height: 89vh; // Full viewport height
+  height: 89vh;
   padding: 40px;
   overflow: auto;
   background-color: #FAFCFF;
 
-
   h4 {
-      font-size: 20px;
-      font-weight: 500;
-      line-height: 30px;
-      color: #2E3135;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 30px;
+    color: #2E3135;
+  }
+
+  @media (max-width: 991px) { // Tablet
+    padding: 20px; // Reduced padding
+    height: auto; // Allow content to dictate height
+    h4 {
+      font-size: 18px; // Slightly smaller heading
+    }
   }
 }
 
@@ -31,103 +61,140 @@
   border-radius: 8px;
   text-align: center;
   margin-bottom: 15px;
+
   h6 {
     color: #8C949B;
   }
-  
+
   p {
     color: #2E3135;
     font-size: 30px;
     font-weight: 600;
 
     span {
-    color: #8C949B;
+      color: #8C949B;
       font-size: small;
       font-weight: 400;
     }
   }
+
   &:hover {
-    box-shadow: 2px 4px 8px #2E3135; // Increase shadow
-    transform: scale(1.05); // Slightly increase size on hover
+    box-shadow: 2px 4px 8px #2E3135;
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 991px) { // Tablet
+    p {
+      font-size: 24px; // Reduced font size
+    }
   }
 }
 
-.inputs{
+.inputs {
   border: #b79173aa 1px solid;
+
   &::placeholder {
     opacity: 0.5;
   }
-  &:focus{
+
+  &:focus {
     border: #896143aa 1px solid;
   }
+
+  @media (max-width: 991px) { // Tablet
+    font-size: 14px; // Smaller text
+    padding: 6px; // Adjusted padding
+  }
 }
+
 .styled_table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; // Fixed layout for equal column widths
+  table-layout: fixed;
 
   th, td {
     padding: 8px;
     text-align: left;
-    overflow: hidden; // Prevent overflow
-    text-overflow: ellipsis; // Add ellipsis for overflowed text
-    white-space: nowrap; // Prevent text wrapping
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  th {
+    color: #8C949B;
+    padding: 20px 9px;
+  }
+
+  td {
+    padding: 19px 8px;
+    border-bottom: 0.2px solid #d0d6db;
+    font-family: 'Roboto Flex', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 18.75px;
+    letter-spacing: 0.04em;
+    color: #2E3135;
+    position: relative;
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  @media (max-width: 991px) { // Tablet
+    th, td {
+      padding: 6px; // Reduced padding
+      font-size: 14px; // Smaller text
+    }
+
+    th {
+      padding: 15px 6px;
+    }
+
+    td {
+      padding: 15px 6px;
+    }
   }
 }
 
-.styled_table th {
-  color: #8C949B;
-  padding: 20px 9px;
-  text-align: left; // Optional: align text to the left
-}
-
-.theader{
+.theader {
   background-color: #D0D5DD;
+
   th {
     color: #2E3135;
+
     &:first-of-type {
-      border-top-left-radius: 8px; // Adjust to desired radius
+      border-top-left-radius: 8px;
       border-bottom-left-radius: 8px;
     }
+
     &:last-of-type {
-      border-top-right-radius: 8px; // Adjust to desired radius
+      border-top-right-radius: 8px;
       border-bottom-right-radius: 8px;
     }
   }
-
 }
 
-.trow{
-  &:hover{
-    cursor: pointer;
-  }
-}
-
-.styled_table td {
-  padding: 19px 8px;
-  border-bottom:  0.2px solid #d0d6db;
-  font-family: Roboto Flex;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 18.75px;
-  letter-spacing: 0.04em;
-  color: #2E3135;
-  position: relative; // Ensure td can contain absolute positioned elements like the dropdown
-  :hover{
+.trow {
+  &:hover {
     cursor: pointer;
   }
 }
 
 .dropdownMenu {
   position: absolute;
-  top: 100%; // Position dropdown below the element
+  top: 100%;
   right: 0;
-  background-color: #2E3135; // Background color
-  color: white; // Text color
+  background-color: #2E3135;
+  color: white;
   border-radius: 5px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 10000; // Ensure it is on top of the table
-  min-width: 150px; // Ensures a minimum width for the dropdown
+  z-index: 10000;
+  min-width: 150px;
+
+  @media (max-width: 991px) { // Tablet
+    min-width: 120px; // Smaller dropdown width
+  }
 }
 
 .menuList {
@@ -140,34 +207,44 @@
   padding: 10px 20px;
   cursor: pointer;
   transition: background-color 0.3s ease, color 0.3s ease;
-  
+
   &:hover {
-    background-color: #FAFCFF; // Hover background color
-    color: #2E3135; // Hover text color
+    background-color: #FAFCFF;
+    color: #2E3135;
+  }
+
+  @media (max-width: 991px) { // Tablet
+    padding: 8px 15px; // Reduced padding
   }
 }
 
 .border_dot {
-  border-bottom: 2px dotted #616468; /* Adjust thickness and color */
-  width: 100px; /* Adjust this value to control the width */
+  border-bottom: 2px dotted #616468;
+  width: 100px;
   margin: 8px 10px;
+
+  @media (max-width: 991px) { // Tablet
+    width: 80px; // Reduced width
+  }
 }
 
 .border_dote {
-  border-bottom: 2px dotted #616468; /* Adjust thickness and color */
-  width: 100px; /* Adjust this value to control the width */
+  border-bottom: 2px dotted #616468;
+  width: 100px;
   margin: 8px 8px;
+
+  @media (max-width: 991px) { // Tablet
+    width: 80px;
+  }
 }
 
 .border_dots {
-  border-bottom: 2px dotted #616468; /* Adjust thickness and color */
-  width: 94px; /* Adjust this value to control the width */
+  border-bottom: 2px dotted #616468;
+  width: 94px;
   margin: 8px 6px;
-}
 
-@media (max-width: 992) {
-  .body{
-    display: none;
+  @media (max-width: 991px) { // Tablet
+    width: 70px;
   }
 }
 
@@ -177,7 +254,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5); // Shadow effect
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -192,6 +269,11 @@
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
   max-width: 730px;
   width: 100%;
+
+  @media (max-width: 991px) { // Tablet
+    padding: 1.5rem; // Reduced padding
+    max-width: 90%; // Responsive width
+  }
 }
 
 .fade_in {
@@ -214,26 +296,45 @@
     opacity: 1;
     transform: translateY(-1.8px);
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); // Add shadow on hover
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  @media (max-width: 991px) { // Tablet
+    padding: 2.5px; // Slightly smaller padding
   }
 }
 
-
 .submit {
-  background-color: #512728;  // Initial background color
-  
+  background-color: #512728;
+
   &:hover {
-    background-color: #714445; // Background color on hover
+    background-color: #714445;
   }
 
   &:active {
-    background-color: #512728; // Background color when the button is clicked (active)
+    background-color: #512728;
+  }
+
+  @media (max-width: 991px) { // Tablet
+    padding: 8px 20px; // Smaller padding
+    font-size: 14px; // Smaller text
   }
 }
 
 .delete {
   &:hover {
-    padding: 15px; /* Increase padding */
-    font-size: 1.2rem; /* Increase font size */
+    padding: 15px;
+    font-size: 1.2rem;
   }
+
+  @media (max-width: 991px) { // Tablet
+    &:hover {
+      padding: 12px; // Adjusted for tablet
+      font-size: 1.1rem;
+    }
+  }
+}
+
+.breadcrumb-item::before {
+  --bs-breadcrumb-divider: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'><path d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='#your-color'/></svg>");
 }

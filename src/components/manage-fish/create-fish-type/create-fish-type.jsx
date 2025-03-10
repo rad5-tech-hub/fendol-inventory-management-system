@@ -7,7 +7,7 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
 import { FaTrashAlt } from "react-icons/fa";
-import styles from '../product-stages.module.scss'; // Adjust the import as needed
+import styles from '../product-stages.module.scss';
 
 const AddSpecies = () => {
     const [formData, setFormData] = useState({
@@ -21,6 +21,7 @@ const AddSpecies = () => {
     const [error, setError] = useState('');
     const [selectedStage, setSelectedStage] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
 
     // Fetching the stages
     const fetchStages = async () => {
@@ -62,7 +63,7 @@ const AddSpecies = () => {
         const loadingToast = toast.loading("Adding species...", { className: 'dark-toast' });
 
         try {
-            await Api.post('/species', formData);
+            await Api.post('/ gana', formData);
             setFormData({ speciesName: '', description: '' });
             toast.update(loadingToast, {
                 render: "Fish type added successfully!",
@@ -72,9 +73,9 @@ const AddSpecies = () => {
                 className: 'dark-toast',
             });
             fetchStages();
-            setTimeout(()=>{
+            setTimeout(() => {
                 setView(!view);
-            }, 4500)
+            }, 4500);
         } catch (error) {
             toast.update(loadingToast, {
                 render: error.response?.data?.message || "Error adding fish Type. Please try again.",
@@ -93,7 +94,6 @@ const AddSpecies = () => {
         setSelectedStage(stage);
         setShowModal(true);
     };
-
 
     const handleSave = async () => {
         const saveToast = toast.loading('Saving changes...');
@@ -114,31 +114,27 @@ const AddSpecies = () => {
                 isLoading: false,
                 autoClose: 3000,
             });
-        } finally {
         }
     };
 
-    // delete specie or fish type
+    // Delete species or fish type
     const handleDelete = async (stageId) => {
-        const loadingToast = toast.loading("Deleting Fish Type...", {
-            className: 'dark-toast'
-        });
-    
+        const loadingToast = toast.loading("Deleting Fish Type...", { className: 'dark-toast' });
         if (window.confirm("Are you sure you want to delete this Fish Type?")) {
             try {
                 await Api.delete(`/specie/${stageId}`);
                 toast.update(loadingToast, {
                     render: "Fish Type deleted successfully!",
-                    type: "success", // Success type
+                    type: "success",
                     isLoading: false,
                     autoClose: 3000,
                     className: 'dark-toast'
                 });
-                fetchStages(); // Refresh the data after deletion
+                fetchStages();
             } catch (error) {
                 toast.update(loadingToast, {
                     render: "Failed to delete Fish Type. Please try again.",
-                    type: "error", // Error type
+                    type: "error",
                     isLoading: false,
                     autoClose: 3000,
                     className: 'dark-toast'
@@ -146,24 +142,27 @@ const AddSpecies = () => {
             }
         }
     };
-    
+
+    // Sidebar toggle handlers
+    const toggleSidebar = () => setShowSidebar(!showSidebar);
+    const handleCloseSidebar = () => setShowSidebar(false);
 
     return (
-        <section className={`d-none d-lg-block ${styles.body}`}>
+        <section className={`${styles.body}`}>
             <div className="sticky-top">
-                <Header />
+                <Header toggleSidebar={toggleSidebar} />
             </div>
             <div className="d-flex gap-2">
                 <div className={styles.sidebar}>
-                    <SideBar className={styles.sidebarItem} />
+                    <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
                 </div>
-                <section className={styles.content}>
+                <section className={`${styles.content} flex-grow-1`}>
                     <main>
                         {view ? (
                             <div className={styles.create_form}>
                                 <ToastContainer />
-                                <div className="d-flex justify-content-between">
-                                    <h4 className="mt-3 mb-5">View Fish Type</h4>
+                                <div className="d-flex justify-content-between flex-column flex-md-row align-items-md-center mb-3">
+                                    <h4 className="mt-3 mb-3 mb-md-0">View Fish Type</h4>
                                     <span
                                         style={{ cursor: 'pointer' }}
                                         onClick={() => setView(false)}
@@ -180,18 +179,18 @@ const AddSpecies = () => {
                                     </div>
                                 ) : error ? (
                                     <div className="d-flex justify-content-center">
-                                        <Alert variant="danger" className="text-center w-50 py-5">
+                                        <Alert variant="danger" className="text-center w-75 py-5">
                                             <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">{error}</span>
                                         </Alert>
                                     </div>
                                 ) : stages.length === 0 ? (
                                     <div className="d-flex justify-content-center">
-                                        <Alert variant="info" className="text-center w-50 py-5">
+                                        <Alert variant="info" className="text-center w-75 py-5">
                                             No available data
                                         </Alert>
                                     </div>
                                 ) : (
-                                    <table className={styles.styled_table}>
+                                    <table className={`${styles.styled_table} table-responsive`}>
                                         <thead>
                                             <tr>
                                                 <th>DATE CREATED</th>
@@ -208,22 +207,24 @@ const AddSpecies = () => {
                                                 >
                                                     <td>{formatDate(stage.createdAt)}</td>
                                                     <td>{stage.speciesName}</td>
-                                                    <td className="d-flex justify-content-between"> 
-                                                        <span >
+                                                    <td className="d-flex justify-content-between">
+                                                        <span>
                                                             {stage.description.length > 40
-                                                            ? `${stage.description.slice(0, 40)}...`
-                                                            : stage.description}
+                                                                ? `${stage.description.slice(0, 40)}...`
+                                                                : stage.description}
                                                         </span>
-                                                        <span className={`p-2 bg-light rounded-circle shadow-sm ${styles.delete}`} onClick={(e) => {
-                                                                e.stopPropagation(); // Prevent triggering `handleEdit` when clicking the delete icon
+                                                        <span
+                                                            className={`p-2 bg-light rounded-circle shadow-sm ${styles.delete}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
                                                                 handleDelete(stage.id);
-                                                            
-                                                        }} title="Delete Process">
-                                                        <FaTrashAlt
-                                                            
-                                                            style={{ cursor: "pointer", color: "red" }}
+                                                            }}
                                                             title="Delete Process"
-                                                        />
+                                                        >
+                                                            <FaTrashAlt
+                                                                style={{ cursor: "pointer", color: "red" }}
+                                                                title="Delete Process"
+                                                            />
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -235,8 +236,8 @@ const AddSpecies = () => {
                         ) : (
                             <Form className={styles.create_form} onSubmit={handleAddSpecies}>
                                 <ToastContainer />
-                                <div className="d-flex justify-content-between">
-                                    <h4 className="mt-3 mb-5">Add Fish Type</h4>
+                                <div className="d-flex justify-content-between flex-column flex-md-row align-items-md-center mb-3">
+                                    <h4 className="mt-3 mb-3 mb-md-0">Add Fish Type</h4>
                                     <span
                                         style={{ cursor: 'pointer' }}
                                         onClick={() => setView(true)}

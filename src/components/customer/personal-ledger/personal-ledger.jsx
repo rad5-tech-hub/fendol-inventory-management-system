@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import styles from '../customer.module.scss'; 
+import styles from '../customer.module.scss';
 import { BsExclamationTriangleFill, BsPrinter } from "react-icons/bs";
+import { FaArrowLeft } from "react-icons/fa"; // Import back arrow icon
 import { Spinner, Alert, Button, Form, Modal } from 'react-bootstrap';
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
@@ -23,19 +24,23 @@ const PersonalLedger = () => {
   const [fullName, setFullName] = useState('');
   const [category, setCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
+  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
   const itemsPerPage = 5;
   const [balance, setBalance] = useState(0);
   const [selectedDate, setSelectedDate] = useState("");
-  const [receiptData, setReceiptData] = useState({}); // Store receipt details
+  const [receiptData, setReceiptData] = useState({});
   const [showReceipt, setShowReceipt] = useState(false);
-
   const [editingRecord, setEditingRecord] = useState(null);
   const [amountPaid, setAmountPaid] = useState("");
   const [amountPaidB, setAmountPaidB] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
-
   const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate("/customer/view-all");
+  };
 
   useEffect(() => {
     if (id) {
@@ -46,10 +51,8 @@ const PersonalLedger = () => {
   const fetchLedgerData = async () => {
     try {
       const response = await Api.get(`/customer/${id}`);
-      
       if (Array.isArray(response.data.data)) {
         setLedgerData(response.data.data);
-  
         if (response.data.data.length > 0) {
           setFullName(response.data.data[0].fullName);
           setCategory(response.data.data[0].customerCategory);
@@ -120,12 +123,10 @@ const PersonalLedger = () => {
 
   const handleSubmitAmountPaid = async () => {
     const loadingToastId = toast.loading("Updating payment...", { position: "top-center" });
-  
     try {
       const response = await Api.put(`/update-payment/${transactionId}`, {
         amountPaid,
       });
-  
       if (response.status === 200) {
         toast.update(loadingToastId, {
           render: "Payment updated successfully!",
@@ -134,16 +135,13 @@ const PersonalLedger = () => {
           position: "top-center",
           autoClose: 3000,
         });
-  
         setEditingRecord(null);
         setAmountPaid("");
         setShowModal(false);
-        // Force fetch ledger data after update
         fetchLedgerData();
       }
     } catch (error) {
       console.error("Error updating payment", error);
-  
       toast.update(loadingToastId, {
         render: "Failed to update payment",
         type: "error",
@@ -155,25 +153,16 @@ const PersonalLedger = () => {
   };
 
   const handleReceipt = async (record) => {
-    // 2. Toast for fetching receipt
     const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
-  
-    try {           
-      // 3. Fetch receipt using transaction ID
+    try {
       const receiptResponse = await Api.get(`/sales-receipts/${record.transactionId}`);
-  
       if (receiptResponse.status === 404) {
         throw new Error(receiptResponse.data.message || "Receipt not found.");
       }
-  
       if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
         throw new Error("Receipt could not be fetched.");
       }
-  
-      // 4. Update state with receipt data
       setReceiptData(receiptResponse);
-  
-      // ✅ Receipt success toast
       toast.update(receiptToast, {
         render: "Receipt fetched successfully!",
         type: "success",
@@ -181,10 +170,8 @@ const PersonalLedger = () => {
         autoClose: 3000,
         className: 'dark-toast'
       });
-  
-      setShowReceipt(true); // Show receipt modal
+      setShowReceipt(true);
     } catch (error) {
-      // ❌ Receipt error toast
       toast.update(receiptToast, {
         render: error.message,
         type: "error",
@@ -197,21 +184,36 @@ const PersonalLedger = () => {
 
   const pageCount = Math.ceil(filteredLedgerData.length / itemsPerPage);
 
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
         <section className={styles.content}>
           <main className={styles.create_form}>
-            <div className="mt-3 mb-5">
-              <h4>{fullName ?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}</h4>
-              <p className="fw-light">Category: {category}</p>
+            <div className="mt-3 mb-5 d-flex justify-content-between">
+              <div>
+                <h4>{fullName?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}</h4>
+                <p className="fw-light">Category: {category}</p>
+              </div>
+              <div>
+                <button
+                  onClick={handleBack}
+                  className={`border-1  btn btn-light shadow-sm py-2 px-3 fs-6 fw-semibold`} // Consistent styling
+                  style={{ display: "flex", alignItems: "center", gap: "0.5rem" }} // Flex for icon and text alignment
+                >
+                  <FaArrowLeft size={16} /> {/* Back icon */}
+                  Back
+                </button>
+              </div>
             </div>
 
             <div className="d-flex gap-2 justify-content-end">
@@ -244,27 +246,23 @@ const PersonalLedger = () => {
 
             {!loading && !error && filteredLedgerData.length > 0 && (
               <>
-                <div className="table-responsive">
+                <div className={styles.tableWrapper}>
                   <table className={styles.styled_tables}>
                     <thead className={`rounded-2 ${styles.theaders}`}>
                       <tr>
                         <th>DATE</th>
-                        <th>NAME</th>
-                        <th>CATEGORY</th>
-                        <th>PRODUCT</th>                      
+                        <th>PRODUCT</th>
                         <th>PAYMENT</th>
                         <th style={{ color: 'green' }}>CREDIT(₦)</th>
                         <th style={{ color: 'red' }}>DEBIT(₦)</th>
-                        <th>BALANCE(₦)</th>                  
+                        <th>BALANCE(₦)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {displayedLedgerData.map((record, index) => (
-                        <tr key={index} className="text-start">
+                      {displayedLedgerData.map((record) => (
+                        <tr key={record.id} className="text-start">
                           <td>{formatDate(record.date)}</td>
-                          <td>{record.fullName}</td>
-                          <td>{record.customerCategory}</td>
-                          <td>{record.productName}</td>                        
+                          <td>{record.productName}</td>
                           <td>{record.paymentType}</td>
                           <td style={{ color: 'green' }}>{record.credit ? record.credit.toLocaleString() : '-'}</td>
                           <td style={{ color: 'red' }}>{record.debit ? record.debit.toLocaleString() : '-'}</td>
@@ -273,16 +271,21 @@ const PersonalLedger = () => {
                               <span>{record.balance.toLocaleString()}</span>
                               <p
                                 className={`badge p-2 mt-3 ${record.debit === 0 ? 'bg-success' : 'bg-danger'}`}
-                                style={{ cursor: 'pointer' }}
+                                style={{ cursor: record.debit !== 0 ? 'pointer' : 'default' }}
                                 onClick={record.debit !== 0 ? () => handleEditAmount(record) : null}
                               >
-                                {record.debit === 0 ? 'Paid' : 'Credit'}                            
-                              </p>                      
-                              <span className="bg-white p-2 rounded-circle badge ">
-                                <BsPrinter style={{ cursor: 'pointer' }} onClick={() => handleReceipt(record)} className="text-primary" size={28} />
+                                {record.debit === 0 ? 'Paid' : 'Credit'}
+                              </p>
+                              <span className="bg-white p-2 rounded-circle badge">
+                                <BsPrinter
+                                  style={{ cursor: 'pointer' }}
+                                  onClick={() => handleReceipt(record)}
+                                  className="text-primary"
+                                  size={28}
+                                />
                               </span>
                             </div>
-                          </td>                                                                    
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -316,13 +319,13 @@ const PersonalLedger = () => {
       </div>
 
       {/* Modal for Editing Payment */}
-      <Modal show={showModal} size='sm' onHide={() => setShowModal(false)}>
+      <Modal show={showModal} size="sm" onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Pay Up</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p><strong>Amount Paid Before:</strong> ₦{amountPaidB || 0}</p>
-          <p><strong>Balance:</strong> <span className="ps-1">{totalAmount} - {amountPaid || 0}</span> = ₦{(totalAmount - amountPaid).toLocaleString()} </p>
+          <p><strong>Balance:</strong> <span className="ps-1">{totalAmount} - {amountPaid || 0}</span> = ₦{(totalAmount - amountPaid).toLocaleString()}</p>
           <Form.Control
             type="number"
             value={amountPaid}
@@ -331,7 +334,7 @@ const PersonalLedger = () => {
             className="mb-2"
           />
           <div className="text-end">
-            <Button variant="primary" className="px-4" onClick={handleSubmitAmountPaid} block>
+            <Button variant="primary" className="px-4" onClick={handleSubmitAmountPaid}>
               PAY
             </Button>
           </div>
@@ -339,8 +342,7 @@ const PersonalLedger = () => {
       </Modal>
 
       <ToastContainer />
-      {/* Receipt Modal */}
-      <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt}/>
+      <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
     </section>
   );
 };

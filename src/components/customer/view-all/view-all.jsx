@@ -7,24 +7,10 @@ import { BsExclamationTriangleFill } from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { BsThreeDotsVertical } from "react-icons/bs"; // Dropdown icon
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
-import { Spinner, Alert, Modal, Button, Form} from 'react-bootstrap';
+import { FaArrowLeft, FaArrowRight, FaEdit } from "react-icons/fa"; // Added FaEdit for edit icon
+import { Spinner, Alert, Modal, Button, Form } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
-
-const DropdownMenu = ({ show, onClickOutside, onEditClick, onNavigate,  onRemoveClick}) => {
-  if (!show) return null;
-
-  return (
-    <div className={styles.dropdownMenu} onClick={onClickOutside}>
-      <ul className={styles.menuList}>
-        <li className={` mx-2 mt-2 rounded ${styles.menuItem}`} onClick={onEditClick}>Edit </li>
-        <li className={` mx-2 mb-2 rounded ${styles.menuItem}`} onClick={onNavigate}>View Ledger  </li>       
-      </ul>
-    </div>
-  );
-};
 
 export default function ViewAll() {
   const navigate = useNavigate();
@@ -37,13 +23,11 @@ export default function ViewAll() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null); // State to track active dropdown
-
+  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
 
   const fetchData = async () => {
     try {
       const response = await Api.get('/customers');
-      
       if (Array.isArray(response.data.data)) {
         setCustomers(response.data.data);
         setFilteredCustomers(response.data.data);
@@ -122,15 +106,8 @@ export default function ViewAll() {
     setCurrentPage(data.selected);
   };
 
-  // Handle Remove click
-  const handleNavigate = (customer) => {
-    navigate(`/customer/personal-ledger/?id=${customer}`)
-  };
-  
-
-  // Handle dropdown toggle
-  const handleDropdownToggle = (customerId) => {
-    setActiveDropdown(activeDropdown === customerId ? null : customerId); // Toggle active dropdown
+  const handleNavigate = (customerId) => {
+    navigate(`/customer/personal-ledger/?id=${customerId}`);
   };
 
   const handleSearch = (e) => {
@@ -140,28 +117,30 @@ export default function ViewAll() {
         customer.fullName.toLowerCase().includes(searchQuery)
       )
     );
-  };  
+  };
 
-  const handleClickOutside = () => setActiveDropdown(null);
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
         <section className={`${styles.content}`}>
           <main className={styles.create_form}>
             <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
               <h4>All Customers</h4>
-              <div>              
+              <div>
                 <Form.Select
                   onChange={handleCategoryChange}
                   value={selectedCategory}
-                  className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs} ${styles.fadedPlaceholder}`}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} ${styles.fadedPlaceholder}`}
                   aria-label="Filter by Category"
                 >
                   <option value="">All Categories</option>
@@ -205,7 +184,7 @@ export default function ViewAll() {
             )}
 
             {!loading && !error && (
-              <div>
+              <div className={styles.tableWrapper}>
                 <table className={styles.styled_tables}>
                   <thead className={styles.theaders}>
                     <tr>
@@ -217,26 +196,46 @@ export default function ViewAll() {
                     </tr>
                   </thead>
                   <tbody>
-                    {currentCustomers.map((customer, index) => (
-                      <tr key={index} className="text-start">
+                    {currentCustomers.map((customer) => (
+                      <tr 
+                        key={customer.id} 
+                        className="text-start" 
+                        style={{ cursor: 'pointer' }} // Indicate clickable row
+                        onClick={() => handleNavigate(customer.id)} // Navigate to ledger on row click
+                      >
                         <td>{formatDate(customer.createdAt)}</td>
                         <td>{customer.fullName}</td>
                         <td>{customer.phone}</td>
                         <td>{customer.category}</td>
-                        <td className="d-flex justify-content-between"><span>{customer.address}</span>
-                          <div className="position-relative">
-                            <BsThreeDotsVertical
-                              className="me-3 cursor-pointer"
-                              style={{cursor: "pointer"}}
-                              onClick={() => handleDropdownToggle(customer.id)}
+                        <td className="d-flex justify-content-between align-items-center">
+                          <span>{customer.address}</span>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              textAlign: "center",
+                              backgroundColor: "#f8f9fa",
+                              padding: "0.5rem",
+                              borderRadius: "50%",
+                              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = "translateY(-5px)";
+                              e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "translateY(0)";
+                              e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent row click from triggering
+                              handleEdit(customer); // Trigger edit modal
+                            }}
+                          >
+                            <FaEdit
+                              style={{ cursor: "pointer", color: "#512728" }} // Edit icon with custom color
                             />
-                            <DropdownMenu 
-                              show={activeDropdown === customer.id}                              
-                              onClickOutside={handleClickOutside} 
-                              onEditClick={() => handleEdit(customer)}
-                              onNavigate={() => handleNavigate(customer.id)}                     
-                            />
-                          </div>
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -304,15 +303,15 @@ export default function ViewAll() {
 
               <Form.Group className="mb-3 row">
                 <Form.Label className="col-4 fw-semibold">Address</Form.Label>
-                <div className="col-8">                    
-                    <Form.Control
-                      type='text'
-                      name="address"
-                      value={selectedCustomer.address}
-                      onChange={handleInputChange}
-                      required                  
-                      className="py-2 shadow-none border-secondary-subtle border-1"
-                    />                      
+                <div className="col-8">
+                  <Form.Control
+                    type="text"
+                    name="address"
+                    value={selectedCustomer.address}
+                    onChange={handleInputChange}
+                    required
+                    className="py-2 shadow-none border-secondary-subtle border-1"
+                  />
                 </div>
               </Form.Group>
 
@@ -332,12 +331,15 @@ export default function ViewAll() {
                   </Form.Select>
                 </div>
               </Form.Group>
-
             </Form>
           )}
         </Modal.Body>
         <Modal.Footer className="border-0 d-flex justify-content-end mt-5">
-          <Button variant="dark"  className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`} onClick={handleSave}>
+          <Button
+            variant="dark"
+            className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+            onClick={handleSave}
+          >
             Save Changes
           </Button>
         </Modal.Footer>

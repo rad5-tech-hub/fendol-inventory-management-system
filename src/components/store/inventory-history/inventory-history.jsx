@@ -13,16 +13,17 @@ export default function InventoryHistory() {
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(0); // Page starts from 0 for ReactPaginate
-  const itemsPerPage = 10; // Items per page
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
   const [selectedDate, setSelectedDate] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false); // Added for sidebar toggle
 
   useEffect(() => {
     const fetchInventoryHistory = async () => {
       try {
         const response = await Api.get('/stores-histories');
-        setInventoryHistory(response.data.data); // Assuming the response contains an array of history data
-        setFilteredData(response.data.data); // Set the initial filtered data to all data
+        setInventoryHistory(response.data.data);
+        setFilteredData(response.data.data);
       } catch (error) {
         setError("Error fetching inventory history. Please try again.");
       } finally {
@@ -47,16 +48,15 @@ export default function InventoryHistory() {
     if (date) {
       const filtered = inventoryHistory.filter((history) => {
         const createdDate = new Date(history.createdAt);
-        const formattedDate = createdDate.toISOString().split('T')[0]; // Get the date in YYYY-MM-DD format
-        return formattedDate === date; // Filter by the selected date
+        const formattedDate = createdDate.toISOString().split('T')[0];
+        return formattedDate === date;
       });
       setFilteredData(filtered);
     } else {
-      setFilteredData(inventoryHistory); // Reset if no date is selected
+      setFilteredData(inventoryHistory);
     }
   };
 
-  // Calculate pagination data
   const offset = currentPage * itemsPerPage;
   const paginatedData = filteredData.slice(offset, offset + itemsPerPage);
   const pageCount = Math.ceil(filteredData.length / itemsPerPage);
@@ -65,24 +65,23 @@ export default function InventoryHistory() {
     setCurrentPage(event.selected);
   };
 
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        {/* Sidebar */}
-        <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
-        {/* Content */}
-        <section className={`${styles.content}`}>
+        <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
-            <div className="d-flex justify-content-between mt-3 ">
+            <div className="d-flex justify-content-between mt-3">
               <h4 className="mb-4">Store Inventory History</h4>
-              
-              {/* Date Picker for filtering */}
               <div className="mb-4 d-flex gap-2">
                 <span className="fw-semibold fs-6 mt-1">Filter</span>
                 <input
@@ -95,7 +94,6 @@ export default function InventoryHistory() {
               </div>
             </div>
 
-            {/* Table */}
             {loading ? (
               <div className="text-center my-5">
                 <Spinner animation="border" />
@@ -116,45 +114,49 @@ export default function InventoryHistory() {
               </div>
             ) : (
               <>
-                <table className={styles.styled_table}> 
-                  <thead>
-                    <tr>
-                      <th>DATE CREATED</th>
-                      <th>NAME</th>
-                      <th>POND</th>
-                      <th>QUANTITY <br /> ADDED (KG)</th>
-                      <th>QUANTITY <br /> USED (KG)</th>
-                      <th>QUANTITY <br /> REMAINING(KG)</th>
-                      <th>STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.map((history, index) => {
-                      const formattedDate = formatDate(history.createdAt);
-                      return (
-                        <tr key={index}>
-                          <td>{formattedDate}</td>
-                          <td>{history.storeDetails.name}</td>
-                          <td>{history.stage}</td>
-                          <td>{history.stage === null ? history.storeDetails.originalQuantity : '-'}</td>
-                          <td>{history.quantityUsed}</td>
-                          <td>{history.remainingStock}</td>
-                          <td className="text-uppercase fw-semibold d-flex">
-                            <span className={history.status === 'in stock' 
-                              ? 'text-success' 
-                              : history.status === 'out of stock' 
-                              ? 'text-danger' 
-                              : history.status === 'low stock' 
-                              ? 'text-warning' 
-                              : ''}>
-                              {history.status}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div className={styles.tableWrapper}>
+                  <table className={styles.styled_table}>
+                    <thead>
+                      <tr>
+                        <th>DATE CREATED</th>
+                        <th>NAME</th>
+                        <th>POND</th>
+                        <th>QUANTITY <br /> ADDED (KG)</th>
+                        <th>QUANTITY <br /> USED (KG)</th>
+                        <th>QUANTITY <br /> REMAINING (KG)</th>
+                        <th>STATUS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedData.map((history, index) => {
+                        const formattedDate = formatDate(history.createdAt);
+                        return (
+                          <tr key={index}>
+                            <td>{formattedDate}</td>
+                            <td>{history.storeDetails.name}</td>
+                            <td>{history.stage || '-'}</td>
+                            <td>{history.stage === null ? history.storeDetails.originalQuantity : '-'}</td>
+                            <td>{history.quantityUsed || '-'}</td>
+                            <td>{history.remainingStock}</td>
+                            <td className="text-uppercase fw-semibold d-flex">
+                              <span className={
+                                history.status === 'in stock' 
+                                  ? 'text-success' 
+                                  : history.status === 'out of stock' 
+                                  ? 'text-danger' 
+                                  : history.status === 'low stock' 
+                                  ? 'text-warning' 
+                                  : ''
+                              }>
+                                {history.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
                 <div className="d-flex justify-content-center mt-4">
                   <ReactPaginate
                     previousLabel={"<"}
@@ -178,7 +180,7 @@ export default function InventoryHistory() {
                 </div>
               </>
             )}
-          </main>        
+          </main>
         </section>
       </div>
     </section>

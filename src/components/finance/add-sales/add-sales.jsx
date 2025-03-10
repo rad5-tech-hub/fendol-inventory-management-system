@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Row, Col, Button, Dropdown } from 'react-bootstrap';
-import styles from '../finance.module.scss'; // Adjust the import as needed
-import { toast, ToastContainer } from 'react-toastify';
+import { Form } from 'react-bootstrap';
+import styles from '../finance.module.scss';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
@@ -12,9 +12,10 @@ import FingerlingsForm from './fingerlingsfish';
 
 const AddSales = () => {
     const [salesType, setSalesType] = useState('');
-    const [stages, setStages] = useState([]); // Stage data state
-    const [customers, setCustomers] = useState([]); // Customer data state
-    const [products, setProducts] = useState([]); // Products data state
+    const [stages, setStages] = useState([]);
+    const [customers, setCustomers] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
 
     // Fetch stages
     const fetchStages = async () => {
@@ -26,7 +27,7 @@ const AddSales = () => {
                 throw new Error('Expected an array of stages');
             }
         } catch (err) {
-            console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+            console.log(err.response?.data?.message || 'Failed to fetch stages.');
         }
     };
 
@@ -40,7 +41,7 @@ const AddSales = () => {
                 throw new Error('Expected an array of customers');
             }
         } catch (err) {
-            console.log(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+            console.log(err.response?.data?.message || 'Failed to fetch customers.');
         }
     };
 
@@ -48,7 +49,7 @@ const AddSales = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await Api.get('/products'); // Adjust the API endpoint as necessary
+                const response = await Api.get('/products');
                 setProducts(response.data.data);
             } catch (error) {
                 console.error("Error fetching products:", error);
@@ -59,46 +60,51 @@ const AddSales = () => {
         fetchCustomers();
     }, []);
 
+    // Sidebar toggle handlers
+    const toggleSidebar = () => setShowSidebar(!showSidebar);
+    const handleCloseSidebar = () => setShowSidebar(false);
+
     return (
-        <section className={`d-none d-lg-block ${styles.body}`}>
+        <section className={`${styles.body}`}>
             <div className="sticky-top">
-                <Header />
+                <Header toggleSidebar={toggleSidebar} />
             </div>
             <div className="d-flex gap-2">
                 <div className={`${styles.sidebar}`}>
-                    <SideBar className={styles.sidebarItem} />
+                    <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
                 </div>
-                <section className={`${styles.content}`}>
+                <section className={`${styles.content} flex-grow-1`}>
                     <main className={styles.create_form}>
                         <ToastContainer />
-                        <div className='d-flex justify-content-between'>
-                            <h4 className="mt-4 mb-5">Add New Sale</h4>
-                            {(salesType === 'Dry Fish' || salesType === 'Fresh Fish' || salesType === 'Fingerlings Fish') && (
-                                <div style={{ width: '18%' }}>
-                                    <Form.Select
-                                        value={salesType || ''}
-                                        onChange={(e) => setSalesType(e.target.value)}
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                                    >
-                                        <option value="" disabled>Select Sales Type</option>
-                                        <option value="Dry Fish">Dry Fish</option>
-                                        <option value="Fresh Fish">Fresh Fish</option>
-                                        <option value="Fingerlings Fish">Fingerlings Fish</option>
-                                    </Form.Select>
-                                </div>
-                            )}
+                        <div className="d-flex flex-column flex-md-row justify-content-between mt-4 mb-5 align-items-md-center">
+                            <h4 className="mb-3 mb-md-0">Add New Sale</h4>
+                            <div style={{ width: '18%', minWidth: '150px' }}>
+                                <Form.Select
+                                    value={salesType || ''}
+                                    onChange={(e) => setSalesType(e.target.value)}
+                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                >
+                                    <option value="" disabled>Select Sales Type</option>
+                                    <option value="Dry Fish">Dry Fish</option>
+                                    <option value="Fresh Fish">Fresh Fish</option>
+                                    <option value="Fingerlings Fish">Fingerlings Fish</option>
+                                </Form.Select>
+                            </div>
                         </div>
 
-                        {salesType === '' ? (
-                            <div style={{ height: '15vh' }} className='text-muted fs-5 d-flex gap-3 align-items-center justify-content-center fw-semibold'>
-                                <p className='text-muted fs-5 fw-semibold'>
+                        {salesType === '' && (
+                            <div
+                                style={{ height: '15vh' }}
+                                className="text-muted fs-5 d-flex flex-column flex-md-row gap-3 align-items-center justify-content-center fw-semibold"
+                            >
+                                <p className="text-muted fs-5 fw-semibold mb-0">
                                     Please select sales type
                                 </p>
-                                <div style={{ width: '18%' }}>
+                                <div style={{ width: '18%', minWidth: '150px' }}>
                                     <Form.Select
                                         value={salesType || ''}
                                         onChange={(e) => setSalesType(e.target.value)}
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     >
                                         <option value="" disabled>Select Sales Type</option>
                                         <option value="Dry Fish">Dry Fish</option>
@@ -107,7 +113,7 @@ const AddSales = () => {
                                     </Form.Select>
                                 </div>
                             </div>
-                        ) : null}
+                        )}
 
                         {salesType === 'Dry Fish' && (
                             <SalesForm customers={customers} stages={stages} products={products} />

@@ -26,6 +26,7 @@ export default function ViewWholeHistory() {
   const [brokenFishQuantity, setBrokenFishQuantity] = useState("");
   const [damageFishQuantity, setDamageFishQuantity] = useState("");
   const [remarks, setRemarks] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -135,20 +136,21 @@ export default function ViewWholeHistory() {
   };
 
   const paginatedData = tableData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+          <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
         <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+            <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-
-        <section className={`${styles.content}`}>
+        <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
-            <h4 className="mt-3 mb-5">View Whole Fish History</h4>
+            <h4 className="mt-3 mb-5">Whole Fish</h4>
 
             <div className={`d-flex mb-5`}>
               {loadingStages ? (

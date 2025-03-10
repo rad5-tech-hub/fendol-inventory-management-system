@@ -1,59 +1,69 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
 @import '../shared/style.scss';
 
+.body {
+  display: block; // Default visibility
+}
 
 .content {
   width: $content-width;
+  flex-grow: 1;
+  padding: 15px;
 }
 
 .sidebar {
   width: $sidebar-width;
 }
 
-
 .create_form {
   background-color: #FAFCFF;
   height: 89vh; // Full viewport height
   padding: 40px;
   overflow: auto;
+
   h4 {
-      font-size: 20px;
-      font-weight: 500;
-      line-height: 30px;
-      color: #2E3135;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 30px;
+    color: #2E3135;
   }
 }
+
 .stageBox {
   background-color: #FAFCFF;
   border-radius: 8px;
   text-align: center;
   margin-bottom: 15px;
+
   h6 {
     color: #8C949B;
   }
-  
+
   p {
     color: #2E3135;
     font-size: 30px;
     font-weight: 600;
 
     span {
-    color: #8C949B;
+      color: #8C949B;
       font-size: small;
       font-weight: 400;
     }
   }
+
   &:hover {
     box-shadow: 2px 4px 8px #2E3135; // Increase shadow
     transform: scale(1.05); // Slightly increase size on hover
   }
 }
+
 .styled_table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed; // Fixed layout for equal column widths
 
-  th, td {
+  th,
+  td {
     padding: 8px;
     text-align: left;
     overflow: hidden; // Prevent overflow
@@ -68,45 +78,129 @@
   text-align: left; // Optional: align text to the left
 }
 
-.theader{
+.theader {
   background-color: #D0D5DD;
+
   th {
     color: #2E3135;
+
     &:first-of-type {
       border-top-left-radius: 8px; // Adjust to desired radius
       border-bottom-left-radius: 8px;
     }
+
     &:last-of-type {
       border-top-right-radius: 8px; // Adjust to desired radius
       border-bottom-right-radius: 8px;
     }
   }
-
 }
 
-.trow{
-  &:hover{
+.trow {
+  &:hover {
     cursor: pointer;
   }
 }
 
 .styled_table td {
   padding: 19px 8px;
-  border-bottom:  0.2px solid #d0d6db;
-  font-family: Roboto Flex;
+  border-bottom: 0.2px solid #d0d6db;
+  font-family: 'Roboto Flex', sans-serif;
   font-size: 16px;
   font-weight: 500;
   line-height: 18.75px;
   letter-spacing: 0.04em;
   color: #2E3135;
   position: relative; // Ensure td can contain absolute positioned elements like the dropdown
-  :hover{
+
+  &:hover {
     cursor: pointer;
   }
 }
 
-@media (max-width: 992) {
-  .body{
-    display: none;
+// Tablet View (768px - 991px)
+@media (min-width: 768px) and (max-width: 991px) {
+  .body {
+    display: block; // Ensure visibility on tablets
+  }
+
+  .sidebar {
+    display: none; // Hidden by default, toggleable
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1000;
+
+    &.d-block {
+      display: block; // Show when toggled
+    }
+  }
+
+  .content {
+    width: 100%; // Full width on tablets
+    padding: 15px;
+    margin-left: 0; // Remove sidebar offset
+  }
+
+  .create_form {
+    padding: 20px; // Reduced padding
+    height: auto; // Adjust height for content
+    min-height: 89vh; // Fill viewport if needed
+
+    h4 {
+      font-size: 18px; // Smaller heading
+      line-height: 26px;
+    }
+  }
+
+  .styled_table {
+    display: table;
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed; // Evenly distribute columns
+
+    th {
+      font-size: 12px; // Smaller font for headers
+      padding: 8px 4px; // Reduced padding
+      white-space: normal; // Allow wrapping for headers
+      line-height: 1.2; // Adjust line height for wrapped text
+      min-width: 80px; // Minimum width for readability
+    }
+
+    td {
+      font-size: 14px; // Slightly smaller font for data
+      padding: 10px 5px; // Reduced padding
+      white-space: nowrap; // Keep data on one line
+      border-bottom: 0.1px solid #d0d6db;
+    }
+  }
+
+  .tableWrapper {
+    overflow-x: auto; // Horizontal scrolling only
+    overflow-y: visible; // No vertical scrolling
+    max-height: none; // Remove height restriction
+  }
+}
+
+// Desktop View (992px and above)
+@media (min-width: 992px) {
+  .body {
+    display: block; // Ensure visibility on desktop
+  }
+
+  .content {
+    width: $content-width; // Restore desktop width
+  }
+
+  .sidebar {
+    display: block; // Visible by default on desktop
+  }
+}
+
+// Mobile View (below 768px)
+@media (max-width: 767px) {
+  .body {
+    display: none; // Hidden on mobile
   }
 }

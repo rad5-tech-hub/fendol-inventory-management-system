@@ -19,6 +19,7 @@ export default function ViewBrokenHistory() {
   const [loadingTable, setLoadingTable] = useState(true);
   const [errorStages, setErrorStages] = useState("");
   const [errorTable, setErrorTable] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -62,118 +63,119 @@ export default function ViewBrokenHistory() {
   }, []);
 
   const paginatedData = tableData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
-      <div className="sticky-top">
-        <Header />
-      </div>
-      <div className="d-flex gap-2">
-        <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+    <section className={`${styles.body}`}>
+        <div className="sticky-top">
+            <Header toggleSidebar={toggleSidebar} />
         </div>
+        <div className="d-flex gap-2">
+          <div className={styles.sidebar}>
+              <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
+          </div>
+          <section className={`${styles.content} flex-grow-1`}>
+            <main className={styles.create_form}>
+              <h4 className="mt-3 mb-5">Broken Fish</h4>
 
-        <section className={`${styles.content}`}>
-          <main className={styles.create_form}>
-            <h4 className="mt-3 mb-5">View Broken Fish History</h4>
+              <div className={`d-flex mb-5`}>
+                {loadingStages ? (
+                  <div className="text-start w-25 shadow py-5 px-3">
+                    <span className="text-muted">Loading...</span>
+                  </div>
+                ) : errorStages ? (
+                  <div className="w-100">
+                    <Alert variant="danger" className="text-center py-5">
+                      <FaExclamationTriangle size={40} />
+                      <span className="fw-semibold">{errorStages}</span>
+                    </Alert>
+                  </div>
+                ) : (
+                  <div className="w-50">
+                    <div className="w-50 px-3 shadow">
+                      <p className="text-end text-muted fw-semibold" style={{ fontSize: "12px" }}>
+                        In Stock
+                      </p>
+                      <p className="text-start text-muted fw-semibold" style={{ fontSize: "14px" }}>
+                        Total Quantity
+                      </p>
+                      <div className="d-flex pb-3">
+                        <h1>{brokenQuantity !== null ? brokenQuantity : "N/A"}</h1>
+                        <p className="mt-3 fw-semibold" style={{ fontSize: "12px" }}>
+                          Pieces
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-            <div className={`d-flex mb-5`}>
-              {loadingStages ? (
-                <div className="text-start w-25 shadow py-5 px-3">
-                  <span className="text-muted">Loading...</span>
+              {loadingTable ? (
+                <div className="text-center">
+                  <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </Spinner>
                 </div>
-              ) : errorStages ? (
-                <div className="w-100">
-                  <Alert variant="danger" className="text-center py-5">
+              ) : errorTable ? (
+                <div className="d-flex justify-content-center">
+                  <Alert variant="danger" className="text-center w-50 py-5">
                     <FaExclamationTriangle size={40} />
-                    <span className="fw-semibold">{errorStages}</span>
+                    <span className="fw-semibold">{errorTable}</span>
                   </Alert>
                 </div>
               ) : (
-                <div className="w-50">
-                  <div className="w-50 px-3 shadow">
-                    <p className="text-end text-muted fw-semibold" style={{ fontSize: "12px" }}>
-                      In Stock
-                    </p>
-                    <p className="text-start text-muted fw-semibold" style={{ fontSize: "14px" }}>
-                      Total Quantity
-                    </p>
-                    <div className="d-flex pb-3">
-                      <h1>{brokenQuantity !== null ? brokenQuantity : "N/A"}</h1>
-                      <p className="mt-3 fw-semibold" style={{ fontSize: "12px" }}>
-                        Pieces
-                      </p>
-                    </div>
+                <div>
+                  <table className={styles.styled_table}>
+                    <thead className={`rounded-2 ${styles.theader}`}>
+                      <tr>
+                        <th>DATE CREATED</th>
+                        <th className="text-end pe-4">QUANTITY</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedData.length > 0 ? (
+                        paginatedData.map((data, index) => (
+                          <tr key={index}>
+                            <td>{formatDate(data.updatedAt)}</td>
+                            <td className="text-end pe-4">{data.brokenFishQuantity}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="2" className="text-center">
+                            No data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+
+                  <div className="d-flex justify-content-center mt-4">
+                    <ReactPaginate
+                      previousLabel={"<"}
+                      nextLabel={">"}
+                      breakLabel={"..."}
+                      pageCount={pageCount} // Use calculated pageCount
+                      marginPagesDisplayed={2}
+                      pageRangeDisplayed={3}
+                      onPageChange={handlePageChange}
+                      containerClassName={"pagination justify-content-center"}
+                      pageClassName={"page-item"}
+                      pageLinkClassName={"page-link"}
+                      previousClassName={"page-item"}
+                      previousLinkClassName={"page-link"}
+                      nextClassName={"page-item"}
+                      nextLinkClassName={"page-link"}
+                      breakClassName={"page-item disabled"}
+                      breakLinkClassName={"page-link"}
+                      activeClassName={"active-light"}
+                    />
                   </div>
                 </div>
               )}
-            </div>
-
-            {loadingTable ? (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
-            ) : errorTable ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
-                  <FaExclamationTriangle size={40} />
-                  <span className="fw-semibold">{errorTable}</span>
-                </Alert>
-              </div>
-            ) : (
-              <div>
-                <table className={styles.styled_table}>
-                  <thead className={`rounded-2 ${styles.theader}`}>
-                    <tr>
-                      <th>DATE CREATED</th>
-                      <th className="text-end pe-4">QUANTITY</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.length > 0 ? (
-                      paginatedData.map((data, index) => (
-                        <tr key={index}>
-                          <td>{formatDate(data.updatedAt)}</td>
-                          <td className="text-end pe-4">{data.brokenFishQuantity}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="2" className="text-center">
-                          No data available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-
-                <div className="d-flex justify-content-center mt-4">
-                  <ReactPaginate
-                    previousLabel={"<"}
-                    nextLabel={">"}
-                    breakLabel={"..."}
-                    pageCount={pageCount} // Use calculated pageCount
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    containerClassName={"pagination justify-content-center"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item disabled"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active-light"}
-                  />
-                </div>
-              </div>
-            )}
-          </main>
-        </section>
+            </main>
+          </section>
         <ToastContainer />
       </div>
     </section>

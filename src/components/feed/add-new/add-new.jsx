@@ -7,30 +7,31 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
+
 const AddFeed = () => {
     const [formData, setFormData] = useState({
         feedName: '',
         feedType: '',
-        unit:'',
-        threshold: Number,
-        weightPerBag: null
+        unit: '',
+        threshold: '',
+        weightPerBag: ''
     });
     const navigate = useNavigate();
     const [loader, setLoader] = useState(false);
+    const [showSidebar, setShowSidebar] = useState(false); // Added for sidebar toggle
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-                // Handle price input separately to format it with commas
-            if (name === 'weightPerBag') {
-                // Remove commas to get the pure number
-                const numberValue = value.replace(/[^0-9]/g, '');
-                setFormData({
-                    ...formData,
-                    weightPerBag: numberValue, // Format the price with commas for display
-                });            
-            } else {
-                setFormData({ ...formData, [name]: value });
-            }
+        if (name === 'weightPerBag' || name === 'threshold') {
+            // Allow only numbers and ensure proper formatting
+            const numberValue = value.replace(/[^0-9]/g, '');
+            setFormData({
+                ...formData,
+                [name]: numberValue
+            });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleAddFeed = async (e) => {
@@ -41,18 +42,20 @@ const AddFeed = () => {
         });
 
         try {
-            // Make the actual API call
-            const response = await Api.post('/create-feed', formData);
+            const response = await Api.post('/create-feed', {
+                ...formData,
+                threshold: Number(formData.threshold), // Ensure threshold is a number
+                weightPerBag: Number(formData.weightPerBag) // Ensure weightPerBag is a number
+            });
 
-             // Reset form or handle success as needed
             setFormData({
                 feedName: '',
                 unit: '',
                 feedType: '',
-                threshold: Number,
-                weightPerBag: null
+                threshold: '',
+                weightPerBag: ''
             });
-            // After a successful API call
+
             toast.update(loadingToast, {
                 render: "Feed added successfully!",
                 type: "success",
@@ -60,11 +63,11 @@ const AddFeed = () => {
                 autoClose: 5000,
                 className: 'dark-toast'
             });
-           
+
             navigate('/feed/view-all');
         } catch (error) {
             toast.update(loadingToast, {
-                render:error.response?.data?.message || "Error adding feed. Please try again.",
+                render: error.response?.data?.message || "Error adding feed. Please try again.",
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,
@@ -75,22 +78,25 @@ const AddFeed = () => {
         }
     };
 
+    const toggleSidebar = () => setShowSidebar(!showSidebar);
+    const handleCloseSidebar = () => setShowSidebar(false);
+
     return (
-        <section className={`d-none d-lg-block ${styles.body}`}>
+        <section className={`${styles.body}`}>
             <div className="sticky-top">
-                <Header />
+                <Header toggleSidebar={toggleSidebar} />
             </div>
             <div className="d-flex gap-2">
-                <div className={`${styles.sidebar}`}>
-                    <SideBar className={styles.sidebarItem} />
+                <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+                    <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
                 </div>
-                <section className={`${styles.content}`}>
+                <section className={`${styles.content} flex-grow-1`}>
                     <main>
                         <ToastContainer />
                         <Form className={styles.create_form} onSubmit={handleAddFeed}>
                             <h4 className="mt-4 mb-5">Add New Feed</h4>
-                            <Row xxl={2} xl={2} lg={2}>
-                                <Col className="mb-4">
+                            <Row>
+                                <Col md={12} lg={6} className="mb-4">
                                     <Form.Label className="fw-semibold">Feed Name</Form.Label>
                                     <Form.Control
                                         placeholder="Enter feed name"
@@ -99,23 +105,23 @@ const AddFeed = () => {
                                         value={formData.feedName}
                                         onChange={handleInputChange}
                                         required
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 </Col>
-                                <Col className="mb-4">
+                                <Col md={12} lg={6} className="mb-4">
                                     <Form.Label className="fw-semibold">Unit</Form.Label>
                                     <Form.Select
                                         name="unit"
                                         required
                                         value={formData.unit}
                                         onChange={handleInputChange}
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     >
                                         <option value="" disabled>Select Unit</option>
                                         <option value="kg">Kg</option>
                                     </Form.Select>
                                 </Col>
-                                <Col className="mb-4">
+                                <Col md={12} lg={6} className="mb-4">
                                     <Form.Label className="fw-semibold">Feed Type</Form.Label>
                                     <Form.Control
                                         placeholder="Enter feed type"
@@ -124,10 +130,10 @@ const AddFeed = () => {
                                         required
                                         value={formData.feedType}
                                         onChange={handleInputChange}
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
-                                </Col>                         
-                                <Col className="mb-4">
+                                </Col>
+                                <Col md={12} lg={6} className="mb-4">
                                     <Form.Label className="fw-semibold">Threshold Value</Form.Label>
                                     <Form.Control
                                         placeholder="Enter threshold value"
@@ -137,28 +143,32 @@ const AddFeed = () => {
                                         required
                                         min="1"
                                         onChange={handleInputChange}
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 </Col>
-                                <Col className="mb-4">
+                                <Col md={12} lg={6} className="mb-4">
                                     <Form.Label className="fw-semibold">Weight Per Bag</Form.Label>
                                     <div className={`${styles.inputContainer} position-relative`}>
                                         <Form.Control
-                                            placeholder="Enter weight Per Bag"
-                                            type="text" // Change input type to text to handle commas
+                                            placeholder="Enter weight per bag"
+                                            type="number"
                                             name="weightPerBag"
-                                            value={formData.weightPerBag} // Display the formatted price
+                                            value={formData.weightPerBag}
                                             required
                                             onChange={handleInputChange}
-                                            className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                         />
                                         <span className={`${styles.nairaSign} position-absolute end-0 top-50 translate-middle-y pe-2`}>KG</span>
                                     </div>
                                 </Col>
                             </Row>
                             <div className="d-flex justify-content-end my-4">
-                                <Button className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`} disabled={loader} type="submit">
-                                    {loader ? ' Adding...' : 'Add'}
+                                <Button
+                                    className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+                                    disabled={loader}
+                                    type="submit"
+                                >
+                                    {loader ? 'Adding...' : 'Add'}
                                 </Button>
                             </div>
                         </Form>

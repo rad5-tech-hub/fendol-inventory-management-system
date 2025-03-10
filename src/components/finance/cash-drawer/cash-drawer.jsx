@@ -23,6 +23,7 @@ const CashDrawer = () => {
   const [withdrawDescription, setWithdrawDescription] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
   const [modalLoading, setModalLoading] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
   const itemsPerPage = 10;
   const [selectedDate, setSelectedDate] = useState("");
 
@@ -104,9 +105,8 @@ const CashDrawer = () => {
   };
 
   // Filter Data
-  const filterData = (data, dateField) => selectedDate
-    ? data.filter((record) => formatDate(record[dateField]) === selectedDate)
-    : data;
+  const filterData = (data, dateField) =>
+    selectedDate ? data.filter((record) => formatDate(record[dateField]) === selectedDate) : data;
 
   const filteredCashData = filterData(ledgerData, "date");
   const filteredWithdrawData = filterData(withdrawalData, "WithdrawalDate");
@@ -135,25 +135,29 @@ const CashDrawer = () => {
     }
   };
 
+  // Sidebar Toggle Handlers
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   useEffect(() => {
     fetchCashDrawerData(); // Initial fetch
   }, []);
 
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
         <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+          <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
         <section className={`${styles.content}`}>
-          <main className={styles.create_form}>
-            <div className="d-flex justify-content-between mt-3 mb-5">
-              <h4>Cash Drawer</h4>
-              <div className="d-flex gap-2">
+          <main className={`${styles.create_form}`}>
+            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-5 align-items-md-center">
+              <h4 className="mb-3 mb-md-0">Cash Drawer</h4>
+              <div className="d-flex flex-column flex-md-row gap-2">
                 <input
                   type="date"
                   value={selectedDate}
@@ -161,13 +165,16 @@ const CashDrawer = () => {
                   className="form-control"
                   placeholder="Filter By Date"
                 />
-                <Button className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`} onClick={() => setShowModal(true)}>
+                <Button
+                  className={`border-0 btn-dark shadow py-2 px-4 fs-6 fw-semibold ${styles.submit}`}
+                  onClick={() => setShowModal(true)}
+                >
                   Withdraw
                 </Button>
               </div>
             </div>
 
-            <div className="d-flex gap-5 mb-4">
+            <div className="d-flex gap-5 mb-4 flex-wrap">
               <h5
                 className={`fs-6 ${viewMode === "cash" ? styles.activeView : ""}`}
                 onClick={() => handleViewChange("cash")}
@@ -195,25 +202,29 @@ const CashDrawer = () => {
                   </div>
                 )}
                 {!cashLoading && cashError && (
-                  <Alert variant="danger" className="text-center w-50 py-5 mx-auto">
+                  <Alert variant="danger" className="text-center w-75 py-5 mx-auto">
                     <BsExclamationTriangleFill size={40} />{" "}
                     <span className="fw-semibold">{cashError}</span>
                   </Alert>
                 )}
                 {!cashLoading && !cashError && displayedCashData.length === 0 && (
-                  <Alert variant="info" className="text-center w-50 py-5 mx-auto">
+                  <Alert variant="info" className="text-center w-75 py-5 mx-auto">
                     No available cash drawer data
                   </Alert>
                 )}
                 {!cashLoading && !cashError && displayedCashData.length > 0 && (
                   <>
-                    <table className={styles.styled_table}>
+                    <table className={`${styles.styled_table} ${styles.table_responsive}`}>
                       <thead className={`rounded-2 ${styles.theader}`}>
                         <tr>
                           <th>DATE</th>
                           <th className="pt-3">DESCRIPTION</th>
-                          <th style={{ color: "green" }} className="pt-3">CREDIT(₦)</th>
-                          <th style={{ color: "red" }} className="pt-3">DEBIT(₦)</th>
+                          <th style={{ color: "green" }} className="pt-3">
+                            CREDIT(₦)
+                          </th>
+                          <th style={{ color: "red" }} className="pt-3">
+                            DEBIT(₦)
+                          </th>
                           <th>BALANCE(₦)</th>
                         </tr>
                       </thead>
@@ -275,24 +286,26 @@ const CashDrawer = () => {
                   </div>
                 )}
                 {!withdrawLoading && withdrawError && (
-                  <Alert variant="danger" className="text-center w-50 py-5 mx-auto">
+                  <Alert variant="danger" className="text-center w-75 py-5 mx-auto">
                     <BsExclamationTriangleFill size={40} />{" "}
                     <span className="fw-semibold">{withdrawError}</span>
                   </Alert>
                 )}
                 {!withdrawLoading && !withdrawError && displayedWithdrawData.length === 0 && (
-                  <Alert variant="info" className="text-center w-50 py-5 mx-auto">
+                  <Alert variant="info" className="text-center w-75 py-5 mx-auto">
                     No available withdrawal data
                   </Alert>
                 )}
                 {!withdrawLoading && !withdrawError && displayedWithdrawData.length > 0 && (
                   <>
-                    <table className={styles.styled_table}>
+                    <table className={`${styles.styled_table} table-responsive`}>
                       <thead className={`rounded-2 ${styles.theader}`}>
                         <tr>
                           <th>DATE</th>
                           <th className="pt-3">DESCRIPTION</th>
-                          <th style={{ color: "red" }} className="pt-3">AMOUNT(₦)</th>
+                          <th style={{ color: "red" }} className="pt-3">
+                            AMOUNT(₦)
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -370,16 +383,18 @@ const CashDrawer = () => {
               />
             </Form.Group>
             <div className="text-end">
-              <Button 
-                className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-3 fw-semibold ${styles.submit}`} 
-                type="submit" 
+              <Button
+                className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-3 fw-semibold ${styles.submit}`}
+                type="submit"
                 disabled={modalLoading}
               >
                 {modalLoading ? (
                   <>
                     <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> Processing...
                   </>
-                ) : "Withdraw"}
+                ) : (
+                  "Withdraw"
+                )}
               </Button>
             </div>
           </Form>
@@ -405,7 +420,10 @@ const CashDrawer = () => {
             <strong className="me-auto">{toast.variant === "success" ? "Success" : "Error"}</strong>
           </Toast.Header>
           <Toast.Body>{toast.message}</Toast.Body>
-          <div className="toast-progress" style={{ height: "5px", backgroundColor: toast.variant === "success" ? "#28a745" : "#dc3545" }}></div>
+          <div
+            className="toast-progress"
+            style={{ height: "5px", backgroundColor: toast.variant === "success" ? "#28a745" : "#dc3545" }}
+          ></div>
         </Toast>
       </ToastContainer>
     </section>

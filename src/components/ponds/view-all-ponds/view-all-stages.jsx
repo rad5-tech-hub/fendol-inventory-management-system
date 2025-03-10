@@ -9,25 +9,24 @@ import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 
-
-
 const ViewAllStages = () => {
   const [stages, setStages] = useState([]);
   const [note, setNote] = useState([]);
-  const [sampling, setSampling] = useState([]); // Add sampling state
+  const [sampling, setSampling] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [noteLoader, setNoteLoader] = useState(true);
+  const [noteLoader, setNoteLoader] = useState(false); // Start as false, only true during fetch
   const [noteError, setNoteError] = useState('');
-  const [samplingLoader, setSamplingLoader] = useState(true);
+  const [samplingLoader, setSamplingLoader] = useState(false); // Start as false, only true during fetch
   const [samplingError, setSamplingError] = useState('');
   const [modaltype, setModaltype] = useState('view all note');
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showSidebar, setShowSidebar] = useState(false);
   const itemsPerPage = 10;
   const [showModal, setShowModal] = useState(false);
   const [showMdModal, setShowMdModal] = useState(false);
-  const [showSamplingModal, setShowSamplingModal] = useState(false); // Separate modal for sampling
+  const [showSamplingModal, setShowSamplingModal] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [selectedNote, setSelectedNote] = useState(null);
 
@@ -35,14 +34,12 @@ const ViewAllStages = () => {
     setSelectedNote(note);
   };
 
-  // Define the popover content
   const renderPopover = (note) => (
     <Popover id="popover-basic">
       <Popover.Header as="h5">Full Note</Popover.Header>
       <Popover.Body>{note}</Popover.Body>
     </Popover>
   );
-
 
   const fetchStages = async () => {
     try {
@@ -57,10 +54,10 @@ const ViewAllStages = () => {
     } finally {
       setLoading(false);
     }
-  }; 
+  };
 
-  useEffect(() => {  
-    fetchStages();    
+  useEffect(() => {
+    fetchStages();
   }, []);
 
   const formatDate = (isoDate) => {
@@ -78,48 +75,53 @@ const ViewAllStages = () => {
   const startIndex = currentPage * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
 
-  // Filter stages based on the search term
-  const filteredStages = stages.filter(stage => 
+  const filteredStages = stages.filter(stage =>
     (stage.title?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
-  // Handle stage edit
-  const handleEditStage = (stage) => {      
-      setSelectedStage(stage);
-      setShowModal(true);       
-  };
-    // Handle stage edit
-    const handleAddNote = () => {    
-      setShowMdModal(true);
+  const handleEditStage = (stage) => {
+    setSelectedStage(stage);
+    setShowModal(true);
+    setModaltype('view all note'); // Default to notes view
+    setNoteLoader(true); // Trigger note fetch
+    fetchnote(stage.id);
   };
 
-  // save edit function
-  const handleSave = async () => {
-      const saveToast = toast.loading('Saving changes...');
-      try {
-          await Api.put(`/fish-stage/${selectedStage.id}`, selectedStage);
-          toast.update(saveToast, {
-              render: 'Pond updated successfully!',
-              type: 'success',
-              isLoading: false,
-              autoClose: 3000,
-          });
-          fetchStages();
-          setShowModal(false);
-      } catch (error) {
-          toast.update(saveToast, {
-              render: 'Failed to update pond. Please try again.',
-              type: 'error',
-              isLoading: false,
-              autoClose: 3000,
-          });
-      } finally {
-      }
+  const handleAddNote = () => {
+    setShowMdModal(true);
   };
-  
-  const fetchnote = async (stage) => {
+
+  const handleAddSampling = () => {
+    setShowSamplingModal(true);
+  };
+
+  const handleSave = async () => {
+    const saveToast = toast.loading('Saving changes...');
     try {
-      const response = await Api.get(`/note/${stage}`);  
+      await Api.put(`/fish-stage/${selectedStage.id}`, selectedStage);
+      toast.update(saveToast, {
+        render: 'Pond updated successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+      fetchStages(); // Refresh stages
+      setShowModal(false);
+    } catch (error) {
+      toast.update(saveToast, {
+        render: 'Failed to update pond. Please try again.',
+        type: 'error',
+        isLoading: false,
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const fetchnote = async (stageId) => {
+    setNoteLoader(true);
+    setNoteError(''); // Reset error before fetch
+    try {
+      const response = await Api.get(`/note/${stageId}`);
       if (Array.isArray(response.data.data)) {
         setNote(response.data.data);
       } else {
@@ -133,24 +135,23 @@ const ViewAllStages = () => {
     }
   };
 
-  // save note function
   const handleAddNoteSubmit = async (note) => {
     const noteToast = toast.loading('Adding note...');
     try {
       await Api.post(`/note/${selectedStage.id}`, note);
       toast.update(noteToast, { render: 'Note added successfully!', type: 'success', isLoading: false, autoClose: 3000 });
       setShowMdModal(false);
+      fetchnote(selectedStage.id); // Fetch notes immediately after success
     } catch (err) {
       toast.update(noteToast, { render: 'Failed to add note. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
     }
-    finally {
-      fetchnote(selectedStage.id); // Always fetch samples after the request
-    }
   };
 
-  const fetchSampling = async (stage) => {
+  const fetchSampling = async (stageId) => {
+    setSamplingLoader(true);
+    setSamplingError(''); // Reset error before fetch
     try {
-      const response = await Api.get(`/sample/${stage}`);  
+      const response = await Api.get(`/sample/${stageId}`);
       if (Array.isArray(response.data.data)) {
         setSampling(response.data.data);
       } else {
@@ -164,40 +165,25 @@ const ViewAllStages = () => {
     }
   };
 
-  const handleAddSampling = () => {
-    setShowSamplingModal(true);
-  };
-
   const handleAddSamplingSubmit = async (sampling) => {
     const samplingToast = toast.loading('Adding sampling...');
     try {
       await Api.post(`/sample/${selectedStage.id}`, sampling);
       toast.update(samplingToast, { render: 'Sampling added successfully!', type: 'success', isLoading: false, autoClose: 3000 });
       setShowSamplingModal(false);
-      
+      fetchSampling(selectedStage.id); // Fetch sampling immediately after success
     } catch (err) {
       toast.update(samplingToast, { render: 'Failed to add sampling. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
     }
-    finally {
-      fetchSampling(selectedStage.id); // Always fetch samples after the request
-    }
-  };  
+  };
 
-  // delete pond function
   const DeletePond = async () => {
     const userConfirmed = window.confirm("Are you sure you want to delete this pond?");
-    
-    if (!userConfirmed) {
-      return; // Exit if the user cancels the action
-    }
-    
-    // Show loading toast
-    const loadingToast = toast.loading('Deleting pond...'); // Shows loading toast
+    if (!userConfirmed) return;
 
+    const loadingToast = toast.loading('Deleting pond...');
     try {
-      const response = await Api.delete(`/fish-stage/${selectedStage.id}`);
-      
-      // Show success toast if the pond is successfully deleted
+      await Api.delete(`/fish-stage/${selectedStage.id}`);
       toast.update(loadingToast, {
         render: 'Pond deleted successfully!',
         type: 'success',
@@ -206,8 +192,7 @@ const ViewAllStages = () => {
       });
       fetchStages();
       setShowModal(false);
-    } catch (err) {      
-      // Show error toast if there is an error
+    } catch (err) {
       toast.update(loadingToast, {
         render: err.response?.data?.message || 'Failed to delete pond. Please try again.',
         type: 'error',
@@ -215,44 +200,43 @@ const ViewAllStages = () => {
         autoClose: 3000,
       });
     } finally {
-      setLoading(false); // End loading
+      setLoading(false);
     }
   };
 
-  // Get the stages to be displayed based on current page
   const displayedStages = filteredStages.slice(startIndex, endIndex);
 
-  // Fetch sampling data when modaltype changes to 'view all sampling'
   useEffect(() => {
     if (modaltype === 'view all sampling' && selectedStage) {
       fetchSampling(selectedStage.id);
-    } else if  (modaltype === 'view all note' && selectedStage){
+    } else if (modaltype === 'view all note' && selectedStage) {
       fetchnote(selectedStage.id);
     }
   }, [modaltype, selectedStage]);
 
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
         <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+          <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${styles.content}`}>
+        <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
-            <div className="d-flex justify-content-between">
-              <h4 className="mt-3 mb-5">View Ponds</h4>
-
-              {/* Search input field */}
-              <div className="w-50s">
-              <input
+            <div className="d-flex justify-content-between flex-column flex-md-row align-items-md-center mb-3">
+              <h4 className="mt-3 mb-3 mb-md-0">View Ponds</h4>
+              <div className="w-50 w-md-25">
+                <input
                   type="text"
-                  className="form-control mb-3 shadow-none border-secondary"
+                  className="form-control shadow-none border-secondary"
                   placeholder="Search by Pond...."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)} // Update search term
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
@@ -267,7 +251,7 @@ const ViewAllStages = () => {
 
             {error && (
               <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
+                <Alert variant="danger" className="text-center w-75 py-5">
                   <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">{error}</span>
                 </Alert>
               </div>
@@ -275,7 +259,7 @@ const ViewAllStages = () => {
 
             {!loading && !error && filteredStages.length === 0 && (
               <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-50 py-5">
+                <Alert variant="info" className="text-center w-75 py-5">
                   No available Pond
                 </Alert>
               </div>
@@ -283,24 +267,29 @@ const ViewAllStages = () => {
 
             {!loading && !error && displayedStages.length > 0 && (
               <>
-                <table className={styles.styled_table}>
+                <table className={`${styles.styled_table} table-responsive`}>
                   <thead>
                     <tr>
                       <th>DATE CREATED</th>
                       <th>NAME</th>
                       <th>QUANTITY</th>
-                      <th>Description</th>                                     
+                      <th>DESCRIPTION</th>
                     </tr>
                   </thead>
                   <tbody>
                     {displayedStages.map((stage) => {
                       const formattedCreatedAt = formatDate(stage.createdAt);
                       return (
-                        <tr key={stage.id} style={{cursor: 'pointer'}} title={`View ${stage.title}`} onClick={()=>{handleEditStage(stage); fetchnote(stage.id)}}>
+                        <tr
+                          key={stage.id}
+                          style={{ cursor: 'pointer' }}
+                          title={`View ${stage.title}`}
+                          onClick={() => handleEditStage(stage)}
+                        >
                           <td>{formattedCreatedAt}</td>
                           <td>{stage.title}</td>
                           <td>{stage.quantity}</td>
-                          <td>{stage.description}</td>                                                             
+                          <td>{stage.description}</td>
                         </tr>
                       );
                     })}
@@ -333,13 +322,19 @@ const ViewAllStages = () => {
           </main>
         </section>
       </div>
-      {/* Edit Modal */}
-      <ToastContainer/>
+
+      <ToastContainer />
       <Modal
         show={showModal}
         onHide={() => {
           setShowModal(false);
-          setModaltype('view all note'); // Set your default modalType here
+          setModaltype('view all note');
+          setNote([]); // Clear notes on close
+          setSampling([]); // Clear sampling on close
+          setNoteLoader(false);
+          setSamplingLoader(false);
+          setNoteError('');
+          setSamplingError('');
         }}
         size="lg"
         aria-labelledby="contained-modal-title-vcenter"
@@ -351,15 +346,15 @@ const ViewAllStages = () => {
               <Modal.Title id="contained-modal-title-vcenter" className="fw-semibold">
                 Name: {selectedStage?.title}
               </Modal.Title>
-            </div>            
-            <div className="col-9">
+            </div>
+            <div className="col-9 col-md-9">
               <p className="mb-0 fs-5 fw-semibold">Quantity: {selectedStage?.quantity}</p>
             </div>
-            <div  className="col-3 mb-2 text-end">
+            <div className="col-3 col-md-3 mb-2 text-end">
               <span className={`bg-light rounded-circle ${styles.action}`} title="Edit pond" onClick={() => setModaltype('edit pond')}>
-                <BsPencilFill size={18} className="text-dark text-center"/>
+                <BsPencilFill size={18} className="text-dark text-center" />
               </span>
-              <span className={`bg-light rounded-circle ${styles.action}`} onClick={()=>DeletePond()} title="Delete Pond">
+              <span className={`bg-light rounded-circle ${styles.action}`} onClick={() => DeletePond()} title="Delete Pond">
                 <BsTrash size={18} className="text-danger text-center" />
               </span>
             </div>
@@ -367,49 +362,44 @@ const ViewAllStages = () => {
         </Modal.Header>
 
         <Modal.Body style={{ height: '40vh', overflowX: 'auto', overflowY: 'auto' }} className="mx-4">
-
-          {/* View Note base on  for Modal Type */}
-          <div className={` d-flex m-2  ${modaltype === 'edit pond' ? 'justify-content-end' : 'justify-content-start '}`}>
-          {modaltype === 'edit pond' ? (
-            <div className="d-flex gap-3">
-              <span 
-                onClick={() => setModaltype('view all note')} 
-                style={{ cursor: "pointer" }} 
-                className="text-muted text-decoration-underline fw-semibold"
-              >
-                View Notes
-              </span>
-              <span 
-                onClick={() => setModaltype('view all sampling')} 
-                style={{ cursor: "pointer", marginLeft: "10px" }} 
-                className="text-muted text-decoration-underline fw-semibold"
-              >
-                View Sampling
-              </span>
-            </div>
-          ) : (
-            <div className="d-flex gap-3">
-              <h5
-                className={`fw-semibold text-dark ${modaltype === 'view all note' ? 'border-bottom border-danger-subtle' : ''}`}
-                style={{ cursor: "pointer" }}
-                onClick={() => setModaltype('view all note')}
-              >
-                Notes
-              </h5>
-              <h5
-                className={`fw-semibold text-dark ${modaltype === 'view all sampling' ? 'border-bottom border-danger-subtle' : ''}`}
-                style={{ cursor: "pointer" }}
-                onClick={() => setModaltype('view all sampling')}
-              >
-                Sampling
-              </h5>
-            </div>
-
-          )}
-
+          <div className={`d-flex m-2 ${modaltype === 'edit pond' ? 'justify-content-end' : 'justify-content-start'}`}>
+            {modaltype === 'edit pond' ? (
+              <div className="d-flex gap-3">
+                <span
+                  onClick={() => setModaltype('view all note')}
+                  style={{ cursor: "pointer" }}
+                  className="text-muted text-decoration-underline fw-semibold"
+                >
+                  View Notes
+                </span>
+                <span
+                  onClick={() => setModaltype('view all sampling')}
+                  style={{ cursor: "pointer", marginLeft: "10px" }}
+                  className="text-muted text-decoration-underline fw-semibold"
+                >
+                  View Sampling
+                </span>
+              </div>
+            ) : (
+              <div className="d-flex gap-3">
+                <h5
+                  className={`fw-semibold text-dark ${modaltype === 'view all note' ? 'border-bottom border-danger-subtle' : ''}`}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setModaltype('view all note')}
+                >
+                  Notes
+                </h5>
+                <h5
+                  className={`fw-semibold text-dark ${modaltype === 'view all sampling' ? 'border-bottom border-danger-subtle' : ''}`}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setModaltype('view all sampling')}
+                >
+                  Sampling
+                </h5>
+              </div>
+            )}
           </div>
 
-          {/* Conditional Rendering Based on Modal Type */}
           <div>
             {modaltype === 'edit pond' && (
               <>
@@ -448,7 +438,6 @@ const ViewAllStages = () => {
 
             {modaltype === 'view all note' && (
               <>
-                {/* Loading Spinner */}
                 {noteLoader && (
                   <div className="text-center">
                     <Spinner animation="border" role="status">
@@ -457,28 +446,25 @@ const ViewAllStages = () => {
                   </div>
                 )}
 
-                {/* Error Message */}
-                {noteError && (
+                {!noteLoader && noteError && (
                   <div className="d-flex justify-content-center">
-                    <Alert variant="danger" className="text-center w-50 py-5">
+                    <Alert variant="danger" className="text-center w-75 py-5">
                       <BsExclamationTriangleFill size={40} />{' '}
-                      <span className="fw-semibold">{noteError || 'No available Note'}</span>
+                      <span className="fw-semibold">{noteError}</span>
                     </Alert>
                   </div>
                 )}
 
-                {/* No Data Message */}
                 {!noteLoader && !noteError && note.length === 0 && (
                   <div className="d-flex justify-content-center">
-                    <Alert variant="info" className="text-center w-50 py-5">
-                      No available data
+                    <Alert variant="info" className="text-center w-75 py-5">
+                      No available notes
                     </Alert>
                   </div>
                 )}
 
-                {/* Notes Table */}
                 {!noteLoader && !noteError && note.length > 0 && (
-                  <table className={styles.styled_table}>
+                  <table className={`${styles.styled_table} table-responsive`}>
                     <thead>
                       <tr>
                         <th>DATE CREATED</th>
@@ -490,23 +476,20 @@ const ViewAllStages = () => {
                       {note.map((stage) => {
                         const formattedCreatedAt = formatDate(stage.createdAt);
                         return (
-                          <tr
-                            key={stage.id}                            
-                          >
-                            <td >{formattedCreatedAt}</td>
+                          <tr key={stage.id}>
+                            <td>{formattedCreatedAt}</td>
                             <td className="text-center">{stage.fullName}</td>
-                            {/* Use OverlayTrigger to display the popover */}
                             <OverlayTrigger
-                              trigger="click" // Show the popover on click
-                              placement="right" // Position the popover to the right
-                              overlay={renderPopover(stage.note)} // Pass the full note as popover content
+                              trigger="click"
+                              placement="right"
+                              overlay={renderPopover(stage.note)}
                             >
                               <td
-                                style={{cursor: 'pointer'}}
+                                style={{ cursor: 'pointer' }}
                                 className="text-end"
                                 onClick={() => handleNoteClick(stage.note)}
                               >
-                                {stage.note.length > 50 ? `${stage.note.substring(0, 50)}...` : stage.note}                                
+                                {stage.note.length > 50 ? `${stage.note.substring(0, 50)}...` : stage.note}
                               </td>
                             </OverlayTrigger>
                           </tr>
@@ -520,7 +503,6 @@ const ViewAllStages = () => {
 
             {modaltype === 'view all sampling' && (
               <>
-                {/* Loading Spinner */}
                 {samplingLoader && (
                   <div className="text-center">
                     <Spinner animation="border" role="status">
@@ -529,28 +511,25 @@ const ViewAllStages = () => {
                   </div>
                 )}
 
-                {/* Error Message */}
-                {samplingError && (
+                {!samplingLoader && samplingError && (
                   <div className="d-flex justify-content-center">
-                    <Alert variant="danger" className="text-center w-50 py-5">
+                    <Alert variant="danger" className="text-center w-75 py-5">
                       <BsExclamationTriangleFill size={40} />{' '}
                       <span className="fw-semibold">{samplingError}</span>
                     </Alert>
                   </div>
                 )}
 
-                {/* No Data Message */}
                 {!samplingLoader && !samplingError && sampling.length === 0 && (
                   <div className="d-flex justify-content-center">
-                    <Alert variant="info" className="text-center w-50 py-5">
-                      No available data
+                    <Alert variant="info" className="text-center w-75 py-5">
+                      No available sampling data
                     </Alert>
                   </div>
                 )}
 
-                {/* Sampling Table */}
                 {!samplingLoader && !samplingError && sampling.length > 0 && (
-                  <table className={styles.styled_table}>
+                  <table className={`${styles.styled_table} table-responsive`}>
                     <thead>
                       <tr>
                         <th>DATE</th>
@@ -572,7 +551,6 @@ const ViewAllStages = () => {
                 )}
               </>
             )}
-
           </div>
         </Modal.Body>
 
@@ -581,32 +559,30 @@ const ViewAllStages = () => {
             <Button
               variant="dark"
               onClick={handleAddNote}
-              className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+              className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}
             >
               ADD NOTE
             </Button>
-            ) : modaltype === 'view all sampling' ? (
-              <Button
-                variant="dark"
-                onClick={handleAddSampling}
-                className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-              >
-                ADD SAMPLING
-              </Button>
-              ) : (
-              <Button
-                variant="dark"
-                onClick={handleSave}
-                className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-              >
-                Save Changes
-              </Button>
-            )}
-
+          ) : modaltype === 'view all sampling' ? (
+            <Button
+              variant="dark"
+              onClick={handleAddSampling}
+              className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}
+            >
+              ADD SAMPLING
+            </Button>
+          ) : (
+            <Button
+              variant="dark"
+              onClick={handleSave}
+              className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}
+            >
+              Save Changes
+            </Button>
+          )}
         </Modal.Footer>
       </Modal>
 
-      {/* Add Note Modal */}
       <Modal show={showMdModal} className="border-0" onHide={() => setShowMdModal(false)}>
         <Modal.Header closeButton className="border-0">
           <Modal.Title className="fw-semibold">Add Note</Modal.Title>
@@ -637,7 +613,7 @@ const ViewAllStages = () => {
               <Form.Control as="textarea" name="note" placeholder="Write Note" rows={3} required />
             </Form.Group>
             <div className="text-end">
-              <Button type="submit" className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}>
+              <Button type="submit" className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}>
                 ADD
               </Button>
             </div>
@@ -645,7 +621,6 @@ const ViewAllStages = () => {
         </Modal.Body>
       </Modal>
 
-      {/* Add Sampling Modal */}
       <Modal show={showSamplingModal} className="border-0" onHide={() => setShowSamplingModal(false)}>
         <Modal.Header closeButton className="border-0">
           <Modal.Title className="fw-semibold">Add Sampling</Modal.Title>
@@ -666,15 +641,13 @@ const ViewAllStages = () => {
               <Form.Control as="textarea" name="sample_labeling" placeholder="Write sampling comment" rows={3} required />
             </Form.Group>
             <div className="text-end">
-              <Button type="submit" className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}>
+              <Button type="submit" className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}>
                 ADD
               </Button>
             </div>
           </Form>
         </Modal.Body>
       </Modal>
-
-
     </section>
   );
 };
