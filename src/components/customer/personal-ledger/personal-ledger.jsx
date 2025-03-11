@@ -111,7 +111,7 @@ const PersonalLedger = () => {
 
   const handleEditAmount = (record) => {
     setEditingRecord(record.id);
-    setAmountPaidB(record.amountPaid || "");
+    setAmountPaidB(record.debit || "");
     setTransactionId(record.salesId || "");
     setTotalAmount(record.balance); // Set total amount due
     setShowModal(true);
@@ -323,9 +323,8 @@ const PersonalLedger = () => {
         <Modal.Header closeButton>
           <Modal.Title>Pay Up</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <p><strong>Amount Paid Before:</strong> ₦{amountPaidB || 0}</p>
-          <p><strong>Balance:</strong> <span className="ps-1">{totalAmount} - {amountPaid || 0}</span> = ₦{(totalAmount - amountPaid).toLocaleString()}</p>
+        <Modal.Body>          
+          <p><strong>Balance:</strong> <span className="ps-1">{amountPaidB || 0} - {totalAmount} </span> = ₦{(totalAmount - amountPaid).toLocaleString()}</p>
           <Form.Control
             type="number"
             value={amountPaid}

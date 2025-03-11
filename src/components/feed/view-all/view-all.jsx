@@ -67,7 +67,7 @@ export default function UpdateFeedInventory() {
   const [feedPrice, setFeedPrice] = useState(null);
   const [weightPerBag, setWeightPerBag] = useState(null);
   const [stage, setStage] = useState('');
-  const [thresholdValue, setThresholdValue] = useState(null);
+  const [threshold, setThreshold] = useState(null);
   const [unit, setUnit] = useState('');
   const [disabled, setDisabled] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -92,9 +92,10 @@ export default function UpdateFeedInventory() {
     try {
       let response;
       if (modalType === 'add') {
-        response = await Api.post(`/add?feedName=${feedName}&feedType=${feedType}`, {
+        response = await Api.post(`/add`, {
           noOfBag,
-          feedPrice
+          feedPrice,
+          feedId: id
         });
         toast.update(loadingToast, {
           render: "Feed added successfully!",
@@ -116,8 +117,8 @@ export default function UpdateFeedInventory() {
           className: 'dark-toast'
         });
       } else if (modalType === 'edit') {
-        response = await Api.put(`/feed/edit-threshold/${id}`, {
-          thresholdValue,
+        response = await Api.put(`/edit-threshold/${id}`, {
+          threshold,
           weightPerBag
         });
         toast.update(loadingToast, {
@@ -132,7 +133,7 @@ export default function UpdateFeedInventory() {
       setNoOfBag(null);
       setFeedPrice(null);
       setStage('');
-      setThresholdValue(null);
+      setThreshold(null);
       setUnit('');
       setWeightPerBag(null);
       setPondSearch(''); // Reset search
@@ -168,9 +169,7 @@ export default function UpdateFeedInventory() {
       try {
         const response = await Api.get('/fish-stages');
         if (Array.isArray(response.data.data)) {
-          const filteredStages = response.data.data.filter(stage => 
-            !["washing", "smoking", "drying"].includes(stage.title.toLowerCase())
-          );
+          const filteredStages = response.data.data.filter(pond => pond.quantity >= 1);
           setStages(filteredStages);
         } else {
           throw new Error('Expected an array of stages');
@@ -428,7 +427,7 @@ export default function UpdateFeedInventory() {
                 </Form.Group>
 
                 <Form.Group className="mb-3 row">
-                  <Form.Label className="col-4">Quantity (kg)</Form.Label>
+                  <Form.Label className="col-4">Weight In kg</Form.Label>
                   <div className="col-8">
                     <Form.Control
                       type="number"
@@ -521,8 +520,8 @@ export default function UpdateFeedInventory() {
                       type="number"
                       placeholder="Threshold Value"
                       required
-                      value={thresholdValue ?? ''}
-                      onChange={(e) => setThresholdValue(Number(e.target.value) || null)}
+                      value={threshold ?? ''}
+                      onChange={(e) => setThreshold(Number(e.target.value) || null)}
                       className={`py-2 shadow-none border-1 ${styles.inputs}`}
                     />
                   </div>

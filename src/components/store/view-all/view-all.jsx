@@ -131,7 +131,7 @@ export default function UpdateStoreInventory() {
       try {
         const response = await Api.get('/fish-stages');
         if (Array.isArray(response.data.data)) {
-          const filteredStages = response.data.data.filter(stage => !['damage', 'loss', 'damages'].includes(stage.title.toLowerCase()));
+          const filteredStages = response.data.data.filter(pond => pond.quantity >= 1);
           setStages(filteredStages);
         } else {
           throw new Error('Expected an array of stages');

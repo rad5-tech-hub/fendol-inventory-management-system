@@ -63,7 +63,7 @@ const AddSpecies = () => {
         const loadingToast = toast.loading("Adding species...", { className: 'dark-toast' });
 
         try {
-            await Api.post('/ gana', formData);
+            await Api.post('/species', formData);
             setFormData({ speciesName: '', description: '' });
             toast.update(loadingToast, {
                 render: "Fish type added successfully!",

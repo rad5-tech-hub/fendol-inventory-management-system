@@ -253,9 +253,7 @@ export default function MoveFish() {
                     placeholder="Enter quantity"
                     type="number"
                     name="actual_quantity"
-                    value={moveFishData.actual_quantity}
-                    min="1"
-                    max={selectedQuantityFrom}
+                    value={moveFishData.actual_quantity}                                  
                     required
                     onChange={handleInputChangeMoveFish}
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
