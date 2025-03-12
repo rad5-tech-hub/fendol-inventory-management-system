@@ -370,37 +370,37 @@ const Dashboard = () => {
         <section className={`${styles.content}`}>
           <main>
             <div className={styles.create_form}>
-              <h4 className="fw-semibold my-5">Dashboard Overview</h4>
+              <h4 className="fw-semibold my-4">Dashboard Overview</h4>
               {/* Dashboard Cards */}
               <Row className="g-4 mb-4">
                 <Col lg={3} md={6} sm={12} xs={12}>
-                  <Card className={`shadow rounded ${styles.board} ${styles.salesCard}`}>
+                  <Card className={`shadow rounded-0 border-0 ${styles.board} ${styles.salesCard}`}>
                     <Card.Body>
-                      <Card.Title className="fw-semibold">Total Sales</Card.Title>
+                      <Card.Title className="fw-semibold mb-3  fs-6">Total Sales</Card.Title>
                       <Card.Text className="fs-4 fw-bold text-white">{totalSalesFormatted}</Card.Text>
                     </Card.Body>
                   </Card>
                 </Col>
                 <Col lg={3} md={6} sm={12} xs={12}>
-                  <Card className={`shadow rounded ${styles.board}`}>
+                  <Card className={`shadow rounded-0  border-0 ${styles.board}`}>
                     <Card.Body>
-                      <Card.Title className="fw-semibold">Total Customers</Card.Title>
+                      <Card.Title className="fw-semibold mb-3 fs-6">Total Customers</Card.Title>
                       <Card.Text className="fs-4 fw-bold">{totalCustomers}</Card.Text>
                     </Card.Body>
                   </Card>
                 </Col>
                 <Col lg={3} md={6} sm={12} xs={12}>
-                  <Card className={`shadow rounded ${styles.board}`}>
+                  <Card className={`shadow rounded-0 border-0 ${styles.board}`}>
                     <Card.Body>
-                      <Card.Title className="fw-semibold">Total Marketers</Card.Title>
+                      <Card.Title className="fw-semibold mb-3 fs-6">Total Marketers</Card.Title>
                       <Card.Text className="fs-4 fw-bold">{totalMarketers}</Card.Text>
                     </Card.Body>
                   </Card>
                 </Col>
                 <Col lg={3} md={6} sm={12} xs={12}>
-                  <Card className={`shadow rounded ${styles.board}`}>
+                  <Card className={`shadow rounded-0 border-0 ${styles.board}`}>
                     <Card.Body>
-                      <Card.Title className="fw-semibold">Total Ponds</Card.Title>
+                      <Card.Title className="fw-semibold mb-3 fs-6">Total Ponds</Card.Title>
                       <Card.Text className="fs-4 fw-bold">{totalPonds}</Card.Text>
                     </Card.Body>
                   </Card>
