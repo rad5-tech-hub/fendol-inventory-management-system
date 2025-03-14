@@ -415,6 +415,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                 Select Payment Type
               </option>
               <option value="Cash">Cash</option>
+              <option value="Credit">Credit</option>
               <option value="Transfer">Transfer</option>
               <option value="Pos">Pos</option>
             </Form.Select>

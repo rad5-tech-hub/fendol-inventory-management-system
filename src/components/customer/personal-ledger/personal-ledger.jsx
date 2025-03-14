@@ -5,7 +5,7 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../customer.module.scss';
 import { BsExclamationTriangleFill, BsPrinter } from "react-icons/bs";
-import { FaArrowLeft } from "react-icons/fa"; // Import back arrow icon
+import { FaArrowLeft } from "react-icons/fa";
 import { Spinner, Alert, Button, Form, Modal } from 'react-bootstrap';
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
@@ -24,7 +24,7 @@ const PersonalLedger = () => {
   const [fullName, setFullName] = useState('');
   const [category, setCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+  const [showSidebar, setShowSidebar] = useState(false);
   const itemsPerPage = 5;
   const [balance, setBalance] = useState(0);
   const [selectedDate, setSelectedDate] = useState("");
@@ -35,6 +35,7 @@ const PersonalLedger = () => {
   const [amountPaidB, setAmountPaidB] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
+  const [salesType, setSalesType] = useState(""); // New state for sales type
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
@@ -76,12 +77,12 @@ const PersonalLedger = () => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`; // YYYY-MM-DD format
+    return `${year}-${month}-${day}`;
   };
 
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
-    setCurrentPage(0); // Reset page when date changes
+    setCurrentPage(0);
   };
 
   const filteredLedgerData = React.useMemo(() => {
@@ -113,7 +114,9 @@ const PersonalLedger = () => {
     setEditingRecord(record.id);
     setAmountPaidB(record.debit - Math.abs(record.balance) || "");
     setTransactionId(record.salesId || "");
-    setTotalAmount(Math.abs(record.balance) || ""); // Set total amount due
+    setTotalAmount(Math.abs(record.balance) || "");
+    setSalesType(record.paymentType || ""); // Pre-fill with existing payment type if available
+    setAmountPaid(""); // Reset amount paid
     setShowModal(true);
   };
 
@@ -121,11 +124,21 @@ const PersonalLedger = () => {
     setAmountPaid(e.target.value);
   };
 
+  const handleSalesTypeChange = (e) => {
+    setSalesType(e.target.value);
+  };
+
   const handleSubmitAmountPaid = async () => {
+    if (!salesType) {
+      toast.error("Please select a payment method.", { position: "top-center" });
+      return;
+    }
+
     const loadingToastId = toast.loading("Updating payment...", { position: "top-center" });
     try {
       const response = await Api.put(`/update-payment/${transactionId}`, {
         amountPaid,
+        salesType, // Include salesType in the API request
       });
       if (response.status === 200) {
         toast.update(loadingToastId, {
@@ -137,6 +150,7 @@ const PersonalLedger = () => {
         });
         setEditingRecord(null);
         setAmountPaid("");
+        setSalesType(""); // Reset sales type
         setShowModal(false);
         fetchLedgerData();
       }
@@ -199,7 +213,7 @@ const PersonalLedger = () => {
 
         <section className={styles.content}>
           <main className={styles.create_form}>
-            <div className="mt-3 mb-5 d-flex justify-content-between">
+            <div className="mt-3 mb-2 d-flex justify-content-between">
               <div>
                 <h4>{fullName?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}</h4>
                 <p className="fw-light">Category: {category}</p>
@@ -207,10 +221,10 @@ const PersonalLedger = () => {
               <div>
                 <button
                   onClick={handleBack}
-                  className={`border-1  btn btn-light shadow-sm py-2 px-3 fs-6 fw-semibold`} // Consistent styling
-                  style={{ display: "flex", alignItems: "center", gap: "0.5rem" }} // Flex for icon and text alignment
+                  className={`border-1 btn btn-light shadow-sm py-2 px-3 fs-6 fw-semibold`}
+                  style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
                 >
-                  <FaArrowLeft size={16} /> {/* Back icon */}
+                  <FaArrowLeft size={16} />
                   Back
                 </button>
               </div>
@@ -314,6 +328,13 @@ const PersonalLedger = () => {
                 </div>
               </>
             )}
+            {!loading && !error && filteredLedgerData.length < 1 && (
+              <Alert variant="info" className="text-center w-100 py-5">
+                <p className="text-center fw-semibold">
+                  No Ledger found
+                </p>
+              </Alert>
+            )}
           </main>
         </section>
       </div>
@@ -323,16 +344,31 @@ const PersonalLedger = () => {
         <Modal.Header closeButton>
           <Modal.Title>Pay Up</Modal.Title>
         </Modal.Header>
-        <Modal.Body>   
-          <p><strong>Amount Paid Before:</strong> ₦{(amountPaidB).toLocaleString()}</p> 
-          <p><strong>Balance:</strong> <span className="ps-1">{totalAmount} - {amountPaid || 0} </span> = ₦{(totalAmount - amountPaid).toLocaleString()}</p>
-          <Form.Control
-            type="number"
-            value={amountPaid}
-            onChange={handleAmountChange}
-            placeholder="Enter amount"
-            className="mb-2"
-          />
+        <Modal.Body>
+          <p><strong>Amount Paid Before:</strong> ₦{(amountPaidB).toLocaleString()}</p>
+          <p><strong>Balance:</strong> <span className="ps-1">{totalAmount} - {amountPaid || 0} </span> = ₦{(totalAmount - (amountPaid || 0)).toLocaleString()}</p>
+          <Form.Group className="mb-2">
+            <Form.Label>Amount Paid</Form.Label>
+            <Form.Control
+              type="number"
+              value={amountPaid}
+              onChange={handleAmountChange}
+              placeholder="Enter amount"
+            />
+          </Form.Group>
+          <Form.Group className="mb-2">
+            <Form.Label>Payment Type</Form.Label>
+            <Form.Select
+              value={salesType}
+              onChange={handleSalesTypeChange}
+              required
+            >
+              <option value="">Select Payment Method</option>
+              <option value="Cash">Cash</option>
+              <option value="Transfer">Transfer</option>
+              <option value="POS">POS</option>
+            </Form.Select>
+          </Form.Group>
           <div className="text-end">
             <Button variant="primary" className="px-4" onClick={handleSubmitAmountPaid}>
               PAY

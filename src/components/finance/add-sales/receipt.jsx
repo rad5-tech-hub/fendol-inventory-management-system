@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import styles from "../finance.module.scss";
-import Logo from "../../../assests/logo.png"; // Already imported
+import Logo from "../../../assests/logo.png";
 
 const ReceiptModal = ({ receiptData, onClose, show }) => {
   const printRef = useRef();
@@ -10,22 +10,11 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
       const printContainer = document.createElement("div");
       printContainer.id = "printable-content";
       
-      // Styles for 80mm thermal printer
-      printContainer.style.position = "fixed";
-      printContainer.style.top = "0";
-      printContainer.style.left = "0";
-      printContainer.style.width = "300px"; // 80mm ~= 300px at 96 DPI
-      printContainer.style.backgroundColor = "white";
-      printContainer.style.color = "black";
-      printContainer.style.padding = "5px";
-      printContainer.style.fontSize = "12px";
-      printContainer.style.lineHeight = "1.3";
-      printContainer.style.zIndex = "9999";
-
+      // Clone the content to print
       printContainer.innerHTML = printRef.current.innerHTML;
-      
       document.body.appendChild(printContainer);
       
+      // Trigger print and clean up
       setTimeout(() => {
         window.print();
         document.body.removeChild(printContainer);
@@ -33,7 +22,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
     }
   };
 
-  if (!show) return null; // Don't render if not shown
+  if (!show) return null;
 
   if (!receiptData || !receiptData.data) {
     return (
@@ -50,12 +39,12 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
   }
 
   const receipt = receiptData.data.data;
-  const formattedDate = new Date(receipt.date).toLocaleDateString('en-GB');
+  const formattedDate = new Date(receipt.date).toLocaleDateString("en-GB");
 
   return (
     <div className="custom-receipt-overlay">
       <div className="custom-receipt-container">
-        <div ref={printRef} style={{ width: "350px", fontSize: "12px", lineHeight: "1.3" }}>
+        <div ref={printRef} className="receipt-content">
           {/* Header */}
           <div style={{ textAlign: "center", marginBottom: "5px" }}>
             <img src={Logo} alt="logo" style={{ maxWidth: "80px", margin: "0 auto", display: "block" }} />
@@ -100,38 +89,31 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
               <tr>
                 <th style={{ width: "40%", padding: "2px" }}>PROD</th>
                 <th style={{ width: "15%", padding: "2px" }}>
-                  {receipt.purchasedItems?.some(item => item.salesCategory === 'fresh-fish') ? 'WT' : 'QTY'}
+                  {receipt.purchasedItems?.some(item => item.salesCategory === "fresh-fish") ? "WT" : "QTY"}
                 </th>
                 <th style={{ width: "20%", padding: "2px" }}>PRC(₦)</th>
-                <th style={{ width: "25%", padding: "2px" }}>TOT(₦)</th>                
+                <th style={{ width: "25%", padding: "2px" }}>TOT(₦)</th>
               </tr>
             </thead>
             <tbody>
-              {receipt.purchasedItems && receipt.purchasedItems.map((product, index) => (
+              {receipt.purchasedItems?.map((product, index) => (
                 <tr key={index}>
                   <td style={{ padding: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {product.productName}
                   </td>
                   <td style={{ padding: "2px", textAlign: "center" }}>
-                    {product.salesCategory === 'fresh-fish' 
-                      ? (
-                        <td style={{ padding: "2px", textAlign: "center" }}>
-                          {product.weight}
-                        </td>
-                      ) 
-                      : (
-                        product.productName && product.productName.toLowerCase().includes("broken")
-                          ? product.quantityUsedToPack
-                          : product.quantity
-                      )
-                    }
+                    {product.salesCategory === "fresh-fish"
+                      ? product.weight
+                      : product.productName?.toLowerCase().includes("broken")
+                      ? product.quantityUsedToPack
+                      : product.quantity}
                   </td>
                   <td style={{ padding: "2px", textAlign: "center" }}>
                     {product.unitPrice?.toLocaleString()}
                   </td>
                   <td style={{ padding: "2px", textAlign: "center" }}>
                     {product.totalPrice?.toLocaleString() || product.total?.toLocaleString()}
-                  </td>                  
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -173,7 +155,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
   );
 };
 
-// Custom CSS for overlay and container
+// Inject custom styles
 const customStyles = `
   .custom-receipt-overlay {
     position: fixed;
@@ -188,21 +170,46 @@ const customStyles = `
     z-index: 1000;
   }
   .custom-receipt-container {
-    width: 300px;
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     padding: 10px;
     max-height: 80vh;
     overflow-y: auto;
+    width: fit-content; /* Fit content width for modal display */
+    min-width: 300px; /* Minimum width for readability */
+    max-width: 90vw; /* Prevent overflow on small screens */
+  }
+  .receipt-content {
+    font-size: 12px;
+    line-height: 1.3;
   }
   @media print {
-    .custom-receipt-overlay,
-    .custom-receipt-container {
-      display: none; /* Hide overlay and container during print */
+    /* Hide everything except the printable content */
+    body > *:not(#printable-content) {
+      display: none;
+    }
+    #printable-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 300px; /* 80mm width for thermal printer */
+      background-color: white;
+      color: black;
+      padding: 5px;
+      font-size: 12px;
+      line-height: 1.3;
     }
     .d-print-none {
       display: none; /* Hide buttons during print */
+    }
+    /* Ensure table fits within 80mm */
+    #printable-content table {
+      width: 100%;
+      table-layout: fixed;
+    }
+    #printable-content td, #printable-content th {
+      word-break: break-all;
     }
   }
 `;
