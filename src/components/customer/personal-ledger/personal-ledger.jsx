@@ -364,14 +364,14 @@ const PersonalLedger = () => {
                           <td>
                             <div className="d-flex gap-3 align-items-center">
                               <span>{record.balance.toLocaleString()}</span>
-                              {record.debit ? <span className="bg-white p-2 rounded-circle badge">
+                              <span className="bg-white p-2 rounded-circle badge">
                                 <BsPrinter
                                   style={{ cursor: 'pointer' }}
                                   onClick={() => handleReceipt(record)}
                                   className="text-primary"
                                   size={28}
                                 />
-                              </span> : ''}
+                              </span>
                             </div>
                           </td>
                         </tr>
