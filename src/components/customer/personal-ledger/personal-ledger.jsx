@@ -364,14 +364,14 @@ const PersonalLedger = () => {
                           <td>
                             <div className="d-flex gap-3 align-items-center">
                               <span>{record.balance.toLocaleString()}</span>
-                              <span className="bg-white p-2 rounded-circle badge">
+                              {record.productName && (<span className="bg-white p-2 rounded-circle badge">
                                 <BsPrinter
                                   style={{ cursor: 'pointer' }}
                                   onClick={() => handleReceipt(record)}
                                   className="text-primary"
                                   size={28}
                                 />
-                              </span>
+                              </span>)}
                             </div>
                           </td>
                         </tr>
@@ -500,7 +500,7 @@ const PersonalLedger = () => {
               value={description}
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
               onChange={handleDescriptionChange}
-              placeholder="Enter payment description (optional)"
+              placeholder="Enter payment description"
             />
           </Form.Group>
           <div className="text-end">

@@ -210,8 +210,6 @@ const DamageFish = () => {
                     type="number"
                     name="actual_quantity"
                     value={formData.actual_quantity}
-                    min="1"
-                    max={selectedQuantity}
                     onChange={handleInputChange}
                     required
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
