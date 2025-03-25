@@ -196,7 +196,7 @@
 }
 
 // Tablet View (768px - 991px)
-@media (min-width: 768px) and (max-width: 991px) {
+@media (max-width: 991px) {
   .body {
     display: block; // Ensure visibility on tablets
   }
@@ -258,8 +258,7 @@
 
     td {
       font-size: 14px; // Slightly smaller font for data
-      padding: 10px 5px; // Reduced padding
-      white-space: nowrap; // Keep data on one line
+      padding: 10px 5px; // Reduced padding      
       border-bottom: 0.1px solid #ddd;
     }
   }

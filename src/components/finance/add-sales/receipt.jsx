@@ -64,13 +64,13 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
           {/* Customer and Receipt Info */}
           <div style={{ marginBottom: "5px" }}>
             <p style={{ margin: "0" }}>
-              <strong>{receipt.customerCategory} Name:</strong> {receipt.customerName}
+              <strong>{receipt.customer.category} Name:</strong> {receipt.customer.fullName}
             </p>
             <p style={{ margin: "0" }}>
-              <strong>Address:</strong> {receipt.customerAddress}
+              <strong>Address:</strong> {receipt.customer.address}
             </p>
             <p style={{ margin: "0" }}>
-              <strong>Served by:</strong> {receipt.servedBy}
+              <strong>Served by:</strong> {receipt.customer.servedBy}
             </p>
             <p style={{ margin: "0", fontStyle: "italic", textAlign: "right" }}>
               Receipt No: {receipt.transactionId}
@@ -89,7 +89,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
               <tr>
                 <th style={{ width: "40%", padding: "2px" }}>PROD</th>
                 <th style={{ width: "15%", padding: "2px" }}>
-                  {receipt.purchasedItems?.some(item => item.salesCategory === "fresh-fish") ? "WT" : "QTY"}
+                  {receipt.salesCategory === "fresh-fish" ? "WT" : "QTY"}
                 </th>
                 <th style={{ width: "20%", padding: "2px" }}>PRC(₦)</th>
                 <th style={{ width: "25%", padding: "2px" }}>TOT(₦)</th>
@@ -102,14 +102,14 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                     {product.productName}
                   </td>
                   <td style={{ padding: "2px", textAlign: "center" }}>
-                    {product.salesCategory === "fresh-fish"
+                    {product.salesCategory == "fresh-fish"
                       ? product.weight
                       : product.productName?.toLowerCase().includes("broken")
                       ? product.quantityUsedToPack
                       : product.quantity}
                   </td>
                   <td style={{ padding: "2px", textAlign: "center" }}>
-                    {product.unitPrice?.toLocaleString()}
+                    {product.basePrice?.toLocaleString()}
                   </td>
                   <td style={{ padding: "2px", textAlign: "center" }}>
                     {product.totalPrice?.toLocaleString() || product.total?.toLocaleString()}
@@ -122,16 +122,16 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
           {/* Totals */}
           <div style={{ textAlign: "right", marginBottom: "5px" }}>
             <p style={{ margin: "0" }}>
-              <strong>Grand Total:</strong> ₦{receipt.totalAmount?.toLocaleString()}
+              <strong>Grand Total:</strong> ₦{receipt.totalPrice?.toLocaleString()}
             </p>
             <p style={{ margin: "0" }}>
-              <strong>Paid:</strong> ₦{receipt.amountPaid?.toLocaleString()}
+              <strong>Paid:</strong> ₦{receipt.totalPaid?.toLocaleString()}
             </p>
             <p style={{ margin: "0" }}>
               <strong>Amount Due:</strong> ₦{receipt.remainingBalance?.toLocaleString()}
             </p>
             <p style={{ margin: "0" }}>
-              <strong>Payment Type:</strong> {receipt.paymentMethod}
+              <strong>Payment Type:</strong> {receipt.paymentType}
             </p>
             <p style={{ margin: "0" }}>
               <strong>Your Total Savings:</strong> ₦{receipt.discount?.toLocaleString()}
