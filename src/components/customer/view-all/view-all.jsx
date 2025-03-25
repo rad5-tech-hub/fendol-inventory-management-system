@@ -184,8 +184,8 @@ export default function ViewAll() {
             )}
 
             {!loading && !error && (
-              <div className={styles.tableWrapper}>
-                <table className={styles.styled_tables}>
+              <div className='table-responsive'>
+                <table className={`table ${styles.styled_tables}`}>
                   <thead className={styles.theaders}>
                     <tr>
                       <th>DATE</th>

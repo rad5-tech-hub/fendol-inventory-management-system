@@ -32,6 +32,7 @@ const FreshForm = ({ customers, stages, products }) => {
   const [stage, setStage] = useState([]);
   const [customer, setCustomer] = useState([]);
   const [pondSearch, setPondSearch] = useState("");
+  const [balance, setBalance] = useState();
   const [filteredPonds, setFilteredPonds] = useState([]);
   const [showPondDropdown, setShowPondDropdown] = useState(false);
   const [customerSearch, setCustomerSearch] = useState(""); // New state for customer search
@@ -121,6 +122,7 @@ const FreshForm = ({ customers, stages, products }) => {
       category: selectedCustomer.category,
       discount: discount,
     }));
+    setBalance(selectedCustomer.balance)
     setCustomerSearch(`${selectedCustomer.fullName}`);
     setShowCustomerDropdown(false);
     setFilteredCustomer([]);
@@ -355,7 +357,7 @@ const FreshForm = ({ customers, stages, products }) => {
                 onFocus={() => setShowCustomerDropdown(true)}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                 required
-              />
+              />{balance && balance > 0 ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
               {showCustomerDropdown && filteredCustomer.length > 0 && (
                 <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
                   <ul style={{ listStyle: "none" }}>
@@ -403,6 +405,19 @@ const FreshForm = ({ customers, stages, products }) => {
             </div>
           </Col>
 
+          {/* Total Price (Readonly) */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
+            <Form.Control
+              placeholder="Total price"
+              type="text"
+              name="totalPrice"
+              value={freshData.totalPrice ? `₦${new Intl.NumberFormat().format(freshData.totalPrice)}` : ""}
+              readOnly
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
+          </Col>          
+          
           {/* Payment Type */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Payment Type</Form.Label>
@@ -427,11 +442,12 @@ const FreshForm = ({ customers, stages, products }) => {
               <option value="Credit">Credit</option>          
               <option value="Transfer">Transfer</option>
               <option value="Pos">Pos</option>
+              {balance > 0 && <option value="customer_balance">Customer Balance</option>}
             </Form.Select>
           </Col>
 
           {/* Amount Paid Input (Only for Credit Payment) */}        
-          <Col className="mb-4">
+          {freshData.paymentType !== 'customer_balance' &&  <Col className="mb-4">
             <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
             <Form.Control
               placeholder="Enter amount paid"
@@ -448,20 +464,7 @@ const FreshForm = ({ customers, stages, products }) => {
               }}
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
             />
-          </Col>
-
-          {/* Total Price (Readonly) */}
-          <Col className="mb-4">
-            <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
-            <Form.Control
-              placeholder="Total price"
-              type="text"
-              name="totalPrice"
-              value={freshData.totalPrice ? `₦${new Intl.NumberFormat().format(freshData.totalPrice)}` : ""}
-              readOnly
-              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            />
-          </Col>
+          </Col>}       
 
           {/* Discounted Price (Readonly) */}
           <Col className="mb-4">

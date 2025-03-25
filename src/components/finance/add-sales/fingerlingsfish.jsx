@@ -25,6 +25,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
   const [showReceipt, setShowReceipt] = useState(false);
   const [loader, setLoader] = useState(false);
   const [productList, setProductList] = useState([]);
+  const [balance, setBalance] = useState();
   const [filteredCustomer, setFilteredCustomer] = useState([]);
   const [productDetails, setProductDetails] = useState(null);
   const [unit, setUnit] = useState("");
@@ -129,6 +130,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
       category: selectedCustomer.category,
       discount: discount,
     }));
+    setBalance(selectedCustomer.balance)
     setCustomerSearch(`${selectedCustomer.fullName}`);
     setShowCustomerDropdown(false);
     setFilteredCustomer([]);
@@ -361,7 +363,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                 onFocus={() => setShowCustomerDropdown(true)}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                 required
-              />
+              />{balance && balance > 0 ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
               {showCustomerDropdown && filteredCustomer.length > 0 && (
                 <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
                   <ul style={{ listStyle: "none" }}>
@@ -394,35 +396,49 @@ const FingerlingsForm = ({ customers, stages, products }) => {
             />
           </Col>
 
-          {/* Payment Type */}
+          {/* Total Price (Readonly) */}
           <Col className="mb-4">
-            <Form.Label className="fw-semibold">Payment Type</Form.Label>
-            <Form.Select
-              name="paymentType"
-              value={fingerlingsData.paymentType || ""}
-              onChange={(e) => {
-                const selectedPayment = e.target.value;
-                setFingerlingsData((prev) => ({
-                  ...prev,
-                  paymentType: selectedPayment,
-                  amountPaid: "",
-                }));
-              }}
-              required
+            <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
+            <Form.Control
+              placeholder="Total price"
+              type="text"
+              name="totalPrice"
+              value={fingerlingsData.totalPrice ? `₦${new Intl.NumberFormat().format(fingerlingsData.totalPrice)}` : ""}
+              readOnly
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            >
-              <option value="" disabled>
-                Select Payment Type
-              </option>
-              <option value="Cash">Cash</option>
-              <option value="Credit">Credit</option>
-              <option value="Transfer">Transfer</option>
-              <option value="Pos">Pos</option>
-            </Form.Select>
+            />
           </Col>
 
-          {/* Amount Paid Input (Only for Credit Payment) */}
+          {/* Payment Type */}
             <Col className="mb-4">
+              <Form.Label className="fw-semibold">Payment Type</Form.Label>
+              <Form.Select
+                name="paymentType"
+                value={fingerlingsData.paymentType || ""}
+                onChange={(e) => {
+                  const selectedPayment = e.target.value;
+                  setFingerlingsData((prev) => ({
+                    ...prev,
+                    paymentType: selectedPayment,
+                    amountPaid: "",
+                  }));
+                }}
+                required
+                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+              >
+                <option value="" disabled>
+                  Select Payment Type
+                </option>
+                <option value="Cash">Cash</option>
+                <option value="Credit">Credit</option>
+                <option value="Transfer">Transfer</option>
+                <option value="Pos">Pos</option>
+                {balance > 0 && <option value="customer_balance">Customer Balance</option>}
+              </Form.Select>
+            </Col>  
+
+          {/* Amount Paid Input (Only for Credit Payment) */}
+            {fingerlingsData.paymentType !== 'customer_balance' &&  <Col className="mb-4">
               <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
               <Form.Control
                 placeholder="Enter amount paid"
@@ -439,33 +455,20 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                 }}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
               />
+            </Col>}                      
+
+            {/* Total Balance (Readonly) */}
+            <Col className="mb-4">
+              <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
+              <Form.Control
+                placeholder="Total balance"
+                type="text"
+                name="totalBalance"
+                value={new Intl.NumberFormat().format(calculateTotalBalance())}
+                readOnly
+                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+              />
             </Col>
-
-          {/* Total Price (Readonly) */}
-          <Col className="mb-4">
-            <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
-            <Form.Control
-              placeholder="Total price"
-              type="text"
-              name="totalPrice"
-              value={fingerlingsData.totalPrice ? `₦${new Intl.NumberFormat().format(fingerlingsData.totalPrice)}` : ""}
-              readOnly
-              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            />
-          </Col>
-
-          {/* Total Balance (Readonly) */}
-          <Col className="mb-4">
-            <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
-            <Form.Control
-              placeholder="Total balance"
-              type="text"
-              name="totalBalance"
-              value={new Intl.NumberFormat().format(calculateTotalBalance())}
-              readOnly
-              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            />
-          </Col>
         </Row>
         <div className="text-end">
           <Button

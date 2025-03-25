@@ -28,6 +28,7 @@ const SalesForm = ({ customers, stages, products }) => {
     const [customer, setCustomer] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
     const [formSubmitted, setFormSubmitted] = useState(false);
+    const [balance, setBalance] = useState();    
 
     useEffect(() => {
         setCustomer(customers || []);
@@ -178,6 +179,7 @@ const SalesForm = ({ customers, stages, products }) => {
             discount: discount
         }));
         setFilteredCustomer([]);
+        setBalance(selectedCustomer.balance)
     };
 
     const handleFocus = (e, productId) => {
@@ -407,7 +409,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                         style={{ width: '100%' }}
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
                                         required
-                                    />
+                                    />{balance && balance > 0 ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
                                     {dryData.fullName && filteredCustomer.length > 0 && (
                                         <div className={`${styles.suggestions_box}`}>
                                             <ul>
@@ -453,6 +455,19 @@ const SalesForm = ({ customers, stages, products }) => {
                                 value={dryData.description || ''}
                                 onChange={(e) => setDryData({ ...dryData, description: e.target.value })}
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                            />                        
+                        </Col>
+
+                         {/* Total Price (Readonly) */}
+                         <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
+                            <Form.Control
+                                placeholder="Total price"
+                                type="text"
+                                name="totalPrice"
+                                value={new Intl.NumberFormat().format(totalPrice)}
+                                readOnly
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
                         </Col>
 
@@ -478,11 +493,12 @@ const SalesForm = ({ customers, stages, products }) => {
                                 <option value="Credit">Credit</option>                              
                                 <option value="Transfer">Transfer</option>
                                 <option value="Pos">Pos</option>
+                                {balance > 0 && <option value="customer_balance">Customer Balance</option>}
                             </Form.Select>
-                        </Col>
-
+                        </Col>   
+                        
                         {/* Amount Paid Input (Only for Credit Payment) */}                      
-                        <Col className="mb-4">
+                        {dryData.paymentType !== "customer_balance" &&<Col className="mb-4">
                             <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
                             <Form.Control
                                 placeholder="Enter amount paid"
@@ -495,20 +511,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                 }}
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
-                        </Col>
-
-                        {/* Total Price (Readonly) */}
-                        <Col className="mb-4">
-                            <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
-                            <Form.Control
-                                placeholder="Total price"
-                                type="text"
-                                name="totalPrice"
-                                value={new Intl.NumberFormat().format(totalPrice)}
-                                readOnly
-                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                            />
-                        </Col>
+                        </Col>}                                      
 
                         {/* Total Balance (Readonly) */}
                         <Col className="mb-4">

@@ -246,14 +246,12 @@
     display: table;
     width: 100%;
     max-width: 100%;
-    table-layout: fixed; // Evenly distribute columns
 
     th {
       font-size: 12px; // Smaller font for headers
       padding: 8px 4px; // Reduced padding
       white-space: normal; // Allow wrapping for headers
       line-height: 1.2; // Adjust line height for wrapped text
-      min-width: 80px; // Minimum width for readability
     }
 
     td {
@@ -263,11 +261,6 @@
     }
   }
 
-  .tableWrapper {
-    overflow-x: auto; // Horizontal scrolling only
-    overflow-y: visible; // No vertical scrolling
-    max-height: none; // Remove height restriction
-  }
 }
 
 

@@ -341,8 +341,8 @@ const PersonalLedger = () => {
 
             {!loading && !error && filteredLedgerData.length > 0 && (
               <>
-                <div className={styles.tableWrapper}>
-                  <table className={styles.styled_tables}>
+                <div  className='table-responsive'>
+                  <table className={`table ${styles.styled_tables}`}>
                     <thead className={`rounded-2 ${styles.theaders}`}>
                       <tr>
                         <th>DATE</th>
