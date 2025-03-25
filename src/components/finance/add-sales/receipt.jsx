@@ -70,7 +70,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
               <strong>Address:</strong> {receipt.customer.address}
             </p>
             <p style={{ margin: "0" }}>
-              <strong>Served by:</strong> {receipt.customer.servedBy}
+              <strong>Served by:</strong> {receipt.servedBy}
             </p>
             <p style={{ margin: "0", fontStyle: "italic", textAlign: "right" }}>
               Receipt No: {receipt.transactionId}
