@@ -256,7 +256,7 @@ const FreshForm = ({ customers, stages, products }) => {
   return (
     <div>
       <Form onSubmit={handleAddSales}>
-        <Row xxl={2} xl={2} lg={2} md={1}>
+        <Row xxl={2} xl={2} lg={2} md={1} sm={1} xs={1}>
           {/* Searchable Pond Input */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Pond From</Form.Label>

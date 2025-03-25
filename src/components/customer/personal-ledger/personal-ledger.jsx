@@ -228,7 +228,7 @@ const PersonalLedger = () => {
     } catch (error) {
       console.error("Error recording payment:", error);
       toast.update(loadingToastId, {
-        render: error.response?.data?.message || "Failed to add payment. Please try again.",
+        render: error.response?.data?.response_message || "Failed to add payment. Please try again.",
         type: "error",
         isLoading: false,
         position: "top-center",

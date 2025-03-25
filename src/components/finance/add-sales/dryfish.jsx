@@ -392,7 +392,7 @@ const SalesForm = ({ customers, stages, products }) => {
             )}
             {currentStep === 2 && (
                 <Form onSubmit={handleAddSales}>
-                    <Row xxl={2} xl={2} lg={2} md={1}>
+                    <Row xxl={2} xl={2} lg={2} md={1} sm={1} xs={1}>
                         {/* Customer Name with Suggestions */}
                         <Col className="mb-4">
                             <Form.Group controlId="searchCustomer">
