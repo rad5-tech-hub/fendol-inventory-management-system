@@ -56,7 +56,10 @@ const FingerlingsForm = ({ customers, stages, products }) => {
       ...prevData,
       totalPrice: Math.max(totalPrice, 0),
     }));
-  }, [fingerlingsData.products, fingerlingsData.basePrice]);
+    if (fingerlingsData.paymentType === 'customer_balance') {
+      setFingerlingsData((prev) => ({ ...prev, amountPaid: 0 }));
+    }
+  }, [fingerlingsData.products, fingerlingsData.basePrice, fingerlingsData.paymentType]);
 
   // Handle product selection
   const handleProductSelect = async (e) => {
@@ -363,7 +366,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                 onFocus={() => setShowCustomerDropdown(true)}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                 required
-              />{balance && balance > 0 ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
+              />{balance && balance > 0 && fingerlingsData.customerId ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
               {showCustomerDropdown && filteredCustomer.length > 0 && (
                 <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
                   <ul style={{ listStyle: "none" }}>

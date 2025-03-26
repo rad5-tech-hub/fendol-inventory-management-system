@@ -25,7 +25,7 @@ const PersonalLedger = () => {
   const [category, setCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   const [balance, setBalance] = useState(0);
   const [selectedDate, setSelectedDate] = useState("");
   const [receiptData, setReceiptData] = useState({});
@@ -346,7 +346,7 @@ const PersonalLedger = () => {
                     <thead className={`rounded-2 ${styles.theaders}`}>
                       <tr>
                         <th>DATE</th>
-                        <th>PRODUCT</th>
+                        <th>DESCRIPTION</th>
                         <th>PAYMENT</th>
                         <th style={{ color: 'green' }}>CREDIT(₦)</th>
                         <th style={{ color: 'red' }}>DEBIT(₦)</th>
@@ -357,7 +357,7 @@ const PersonalLedger = () => {
                       {displayedLedgerData.map((record) => (
                         <tr key={record.id} className="text-start">
                           <td>{formatDate(record.date)}</td>
-                          <td>{record.productName}</td>
+                          <td>{record.productName || record.description}</td>
                           <td>{record.paymentType}</td>
                           <td style={{ color: 'green' }}>{record.credit ? record.credit.toLocaleString() : '-'}</td>
                           <td style={{ color: 'red' }}>{record.debit ? record.debit.toLocaleString() : '-'}</td>

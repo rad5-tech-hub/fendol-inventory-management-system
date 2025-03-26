@@ -57,7 +57,10 @@ const FreshForm = ({ customers, stages, products }) => {
       ...prevData,
       totalPrice: Math.max(totalPrice, 0),
     }));
-  }, [freshData.products, freshData.basePrice]);
+    if (freshData.paymentType === 'customer_balance') {
+      setFreshData((prev) => ({ ...prev, amountPaid: 0 }));
+    }
+  }, [freshData.products, freshData.basePrice,freshData.paymentType]);
 
   const handleProductSelect = (e) => {
     const selectedOption = e.target.selectedOptions[0];
@@ -357,7 +360,7 @@ const FreshForm = ({ customers, stages, products }) => {
                 onFocus={() => setShowCustomerDropdown(true)}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                 required
-              />{balance && balance > 0 ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
+              />{balance && balance > 0 && freshData.customerId ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
               {showCustomerDropdown && filteredCustomer.length > 0 && (
                 <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
                   <ul style={{ listStyle: "none" }}>
@@ -456,7 +459,7 @@ const FreshForm = ({ customers, stages, products }) => {
               value={
                 freshData.amountPaid !== null && freshData.amountPaid !== ""
                   ? new Intl.NumberFormat().format(freshData.amountPaid)
-                  : ""
+                  : "" 
               }
               onChange={(e) => {
                 const value = e.target.value.replace(/,/g, "");

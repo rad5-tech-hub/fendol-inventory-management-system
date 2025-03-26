@@ -51,8 +51,11 @@ const SalesForm = ({ customers, stages, products }) => {
             }
             return total;
         }, 0);
+        if (dryData.paymentType === 'customer_balance') {
+            setDryData((prev) => ({ ...prev, amountPaid: 0 }));
+        }
         setTotalPrice(total);
-    }, [dryData.products, checkedProducts, products]);
+    }, [dryData.products, checkedProducts, products,dryData.paymentType]);
 
     const handleCheckChange = (e, productId) => {
         const { checked } = e.target;
@@ -409,7 +412,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                         style={{ width: '100%' }}
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
                                         required
-                                    />{balance && balance > 0 ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
+                                    />{balance && balance > 0 && dryData.customerId ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
                                     {dryData.fullName && filteredCustomer.length > 0 && (
                                         <div className={`${styles.suggestions_box}`}>
                                             <ul>

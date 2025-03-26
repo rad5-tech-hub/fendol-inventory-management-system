@@ -147,7 +147,7 @@ const Dashboard = () => {
   };
 
   const topSellingProductsData = {
-    labels: dashboardData.topProducts.map((item) => item.salesCategory),
+    labels: dashboardData.topProducts.map((item) => item.productName),
     datasets: [
       // {
       //   label: 'Unit Sold',
