@@ -243,6 +243,7 @@ export default function ViewWholeHistory() {
                   <thead className={`rounded-2 ${styles.theader}`}>
                     <tr>
                       <th>DATE CREATED</th>
+                      <th>DESCRIPTION</th>
                       <th className="text-end pe-4">QUANTITY</th>
                     </tr>
                   </thead>
@@ -251,6 +252,7 @@ export default function ViewWholeHistory() {
                       paginatedData.map((data, index) => (
                         <tr key={index}>
                           <td>{formatDate(data.updatedAt)}</td>
+                          <td className="text-end pe-4">{data.description}</td>
                           <td className="text-end pe-4">{data.wholeFishQuantity}</td>
                         </tr>
                       ))
