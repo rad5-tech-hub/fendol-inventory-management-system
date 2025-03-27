@@ -40,10 +40,8 @@ export default function ViewBrokenHistory() {
     try {
       const response = await Api.get("/show-glass/broken");
       if (response.data && Array.isArray(response.data.data)) {
-        const data = response.data.data;
-        setTableData(data);
-        setBrokenQuantity(data.length > 0 ? data[0].brokenFishQuantity : 0);
-        setPageCount(Math.ceil(data.length / itemsPerPage));
+        const data = response.data.data;      
+        setBrokenQuantity(data.length > 0 ? data[0].brokenFishQuantity : 0);        
       } else {
         throw new Error("Expected an array in data property");
       }
@@ -56,8 +54,29 @@ export default function ViewBrokenHistory() {
     }
   };
 
+  const fetchData = async () => {
+    setLoadingTable(true);
+    setErrorTable("");
+    try {
+      const response = await Api.get("/get-all-broken-histories");
+      if (response.data && Array.isArray(response.data.data)) {
+        const data = response.data.data;
+        setTableData(data);      
+        setPageCount(Math.ceil(data.length / itemsPerPage));
+      } else {
+        throw new Error("Expected an array in data property");
+      }
+    } catch (error) {
+      setErrorTable(error.response?.data?.message || "Error getting showcase data.");      
+    } finally {
+      setLoadingTable(false);      
+    }
+  };
+
+
   useEffect(() => {
     fetchTableData();
+    fetchData();
   }, []);
 
   const handleShowModal = () => {
@@ -100,7 +119,7 @@ export default function ViewBrokenHistory() {
     }
 
     try {
-      const endpoint = "/delete";
+      const endpoint = "/move-broken-to-damage";
       const payload = { damagedFishQuantity: Number(damageFishQuantity), remarks };
 
       await Api.post(endpoint, payload);
@@ -167,7 +186,7 @@ export default function ViewBrokenHistory() {
                 </div>
               ) : (
                 <div className="w-50">
-                  <div className="w-50 px-3 shadow">
+                  <div className="shadow w-50 px-3">
                     <div className="d-flex justify-content-between pt-2">
                       <p className="text-muted fw-semibold" style={{ fontSize: "12px" }}>
                         In Stock

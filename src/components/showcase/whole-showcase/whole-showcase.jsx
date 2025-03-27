@@ -61,8 +61,30 @@ export default function ViewWholeHistory() {
     }
   };
 
+  const fetchTable = async () => {    
+    setLoadingTable(true);
+    setErrorTable("");
+    try {
+      const response = await Api.get("/get-all-whole-histories");
+      console.log("API Response:", response.data); // Log to inspect structure
+      if (response.data && Array.isArray(response.data.data)) {
+        const data = response.data.data;
+        setTableData(data);
+        setPageCount(Math.ceil(data.length / itemsPerPage));
+      } else {
+        throw new Error("Expected an array in data property");
+      }
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      setErrorTable(error.response?.data?.message || "Error getting showcase data.");     
+    } finally {
+      setLoadingTable(false);  
+    }
+  };
+
   useEffect(() => {
     fetchTableData();
+    fetchTable();
   }, []);
 
   const handleShowModal = (type) => {
@@ -166,7 +188,7 @@ export default function ViewWholeHistory() {
                 </div>
               ) : (
                 <div className="w-50">
-                  <div className="w-50 px-3 shadow">
+                  <div className="px-3 w-50 shadow">
                     <div className="d-flex justify-content-between pt-2">
                       <p className="text-muted fw-semibold" style={{ fontSize: "12px" }}>
                         In Stock
