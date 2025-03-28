@@ -120,7 +120,13 @@ export default function ViewAllHistory() {
 
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
-    return date.toLocaleDateString("en-GB", { timeZone: 'UTC' });
+    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+    return `${formattedDate} ${formattedTime}`;
   };
 
   const truncateRemark = (text) => {

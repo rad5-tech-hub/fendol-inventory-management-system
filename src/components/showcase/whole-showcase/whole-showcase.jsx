@@ -252,7 +252,7 @@ export default function ViewWholeHistory() {
                       paginatedData.map((data, index) => (
                         <tr key={index}>
                           <td>{formatDate(data.date)}</td>
-                          <td className="text-end pe-4">{data.description}</td>
+                          <td className="text-end pe-4" title={data.description}>{data.description}</td>
                           <td className="text-end pe-4">{data.quantity}</td>
                         </tr>
                       ))

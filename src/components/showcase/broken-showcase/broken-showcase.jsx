@@ -73,7 +73,6 @@ export default function ViewBrokenHistory() {
     }
   };
 
-
   useEffect(() => {
     fetchTableData();
     fetchData();
@@ -133,7 +132,8 @@ export default function ViewBrokenHistory() {
 
       setDamageFishQuantity("");
       setRemarks("");
-      fetchTableData();
+      // Fetch both data sets after successful move
+      await Promise.all([fetchTableData(), fetchData()]);
       handleCloseModal();
     } catch (error) {
       toast.update(loadingToast, {
@@ -148,11 +148,16 @@ export default function ViewBrokenHistory() {
     }
   };
 
+  // Updated formatDate function to include time
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
-    return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
       .toString()
       .padStart(2, "0")}/${date.getFullYear()}`;
+    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+    return `${formattedDate} ${formattedTime}`;
   };
 
   const paginatedData = tableData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
@@ -233,13 +238,13 @@ export default function ViewBrokenHistory() {
                 </Alert>
               </div>
             ) : (
-              <div>
-                <table className={styles.styled_table}>
+              <div className="table-responsive">
+                <table className={`${styles.styled_table} table table-striped w-100`}>
                   <thead className={`rounded-2 ${styles.theader}`}>
                     <tr>
-                      <th>DATE CREATED</th>
-                      <th>DESCRIPTION</th>
-                      <th className="text-end pe-4">QUANTITY</th>
+                      <th scope="col">DATE & TIME</th>
+                      <th scope="col">DESCRIPTION</th>
+                      <th scope="col" className="text-end pe-4">QUANTITY</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -247,13 +252,13 @@ export default function ViewBrokenHistory() {
                       paginatedData.map((data, index) => (
                         <tr key={index}>
                           <td>{formatDate(data.date)}</td>
-                          <td className="text-end pe-4">{data.description}</td>
+                          <td title={data.description}>{data.description}</td>
                           <td className="text-end pe-4">{data.quantity}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="2" className="text-center">
+                        <td colSpan="3" className="text-center">
                           No data available
                         </td>
                       </tr>
@@ -314,7 +319,7 @@ export default function ViewBrokenHistory() {
                   rows={3}
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  className="py-2 shadow-none border-secondary-subtle border-1"
+                  className="py-2 shadow-none border-none border-1"
                 />
               </Form.Group>
             </Form>
