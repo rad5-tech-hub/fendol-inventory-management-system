@@ -111,7 +111,7 @@ const Dashboard = () => {
   const totalMarketers = dashboardData?.totalMarketers ?? 0;
   const totalPonds = dashboardData?.totalPonds ?? 0;
 
-  // Ensure chart data exists with fallbacks
+  // Chart data with fallbacks
   const salesSummaryData = {
     labels: dashboardData?.salesSummary?.data?.map((item) => item.date) || [],
     datasets: [
@@ -187,7 +187,7 @@ const Dashboard = () => {
     ],
   };
 
-  // Chart options (unchanged for brevity, but ensure they handle empty data gracefully)
+  // Chart options
   const chartOptions = (title, type) => {
     const baseOptions = {
       responsive: true,
@@ -252,8 +252,6 @@ const Dashboard = () => {
             stacked: true,
             beginAtZero: true,
             title: { display: true, text: 'TOTAL REVENUE (₦)' },
-            min: 0,
-            max: 15000,
             ticks: { callback: (value) => `₦${value.toLocaleString()}` },
           },
           y: {
@@ -282,7 +280,11 @@ const Dashboard = () => {
 
   const renderChart = (data, title, type = 'bar') => {
     const chartType = type === 'line' ? 'line' : type === 'doughnut' ? 'doughnut' : 'bar';
-    return <Chart type={chartType} data={data} options={chartOptions(title, type)} />;
+    return (
+      <div style={{ position: 'relative', width: '100%', minWidth: '300px', height: '400px' }}>
+        <Chart type={chartType} data={data} options={chartOptions(title, type)} />
+      </div>
+    );
   };
 
   return (
