@@ -137,6 +137,7 @@ export default function ViewWholeHistory() {
       setRemarks("");
       fetchTableData(); // Refresh data after submission
       handleCloseModal();
+      await Promise.all([fetchTableData(), fetchData()]);
     } catch (error) {
       toast.update(loadingToast, {
         render: error.response?.data?.message || "An error occurred while performing the action.",
