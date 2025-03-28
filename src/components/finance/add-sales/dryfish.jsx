@@ -33,6 +33,20 @@ const SalesForm = ({ customers, stages, products }) => {
     useEffect(() => {
         setCustomer(customers || []);
     }, [customers]);
+    
+    // Fetch customers
+    const fetchCustomers = async () => {
+        try {
+            const response = await Api.get('/customers');
+            if (Array.isArray(response.data.data)) {
+                setCustomer(response.data.data);
+            } else {
+                throw new Error('Expected an array of customers');
+            }
+        } catch (err) {
+            console.log(err.response?.data?.message || 'Failed to fetch customers.');
+        }
+    };
 
     useEffect(() => {
         const total = dryData.products.reduce((total, product) => {
@@ -273,7 +287,7 @@ const SalesForm = ({ customers, stages, products }) => {
             setCheckedProducts({});
             setCurrentStep(1);
             setFormSubmitted(false);
-
+            fetchCustomers();
         } catch (error) {
             console.error("Error in handleAddSales:", error);
             toast.update(salesToast, {

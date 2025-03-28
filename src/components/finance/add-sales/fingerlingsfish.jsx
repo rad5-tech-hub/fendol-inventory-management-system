@@ -178,6 +178,21 @@ const FingerlingsForm = ({ customers, stages, products }) => {
     return discountedPrice - (fingerlingsData.amountPaid || 0);
   };
 
+  // Fetch customers
+  const fetchCustomers = async () => {
+      try {
+          const response = await Api.get('/customers');
+          if (Array.isArray(response.data.data)) {
+              setCustomer(response.data.data);
+          } else {
+              throw new Error('Expected an array of customers');
+          }
+      } catch (err) {
+          console.log(err.response?.data?.message || 'Failed to fetch customers.');
+      }
+  };
+  
+
   // Handle form submission
   const handleAddSales = async (e) => {
     e.preventDefault();
@@ -247,6 +262,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
       setPondSearch("");
       setCustomerSearch("");
       setFilteredPonds(stage);
+      fetchCustomers();
     } catch (error) {
       console.error("Error in handleAddSales:", error);
       toast.update(salesToast, {

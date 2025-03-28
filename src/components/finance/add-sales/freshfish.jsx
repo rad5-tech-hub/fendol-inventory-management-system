@@ -173,6 +173,20 @@ const FreshForm = ({ customers, stages, products }) => {
     return discountedPrice - (freshData.amountPaid || 0);
   };
 
+  // Fetch customers
+  const fetchCustomers = async () => {
+      try {
+          const response = await Api.get('/customers');
+          if (Array.isArray(response.data.data)) {
+              setCustomer(response.data.data);
+          } else {
+              throw new Error('Expected an array of customers');
+          }
+      } catch (err) {
+          console.log(err.response?.data?.message || 'Failed to fetch customers.');
+      }
+  };
+
   const handleAddSales = async (e) => {
     e.preventDefault();
     if (!window.confirm("Are you sure you want to add this sale?")) return;
@@ -244,6 +258,7 @@ const FreshForm = ({ customers, stages, products }) => {
       setPondSearch("");
       setCustomerSearch("");
       setFilteredPonds(stage);
+      fetchCustomers();
     } catch (error) {
       console.error("Error in handleAddSales:", error);
       toast.update(salesToast, {
