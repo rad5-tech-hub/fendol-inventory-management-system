@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Spinner, Alert, Modal } from 'react-bootstrap';
+import { Form, Button, Spinner, Alert, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { BsExclamationTriangleFill } from "react-icons/bs";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -15,6 +15,7 @@ const AddSpecies = () => {
         description: '',
     });
     const [loader, setLoader] = useState(false);
+    const [loaderEdit, setLoaderEdit] = useState(false);
     const [view, setView] = useState(false);
     const [stages, setStages] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -96,6 +97,7 @@ const AddSpecies = () => {
     };
 
     const handleSave = async () => {
+        setLoaderEdit(true)
         const saveToast = toast.loading('Saving changes...');
         try {
             await Api.put(`/specie/${selectedStage.id}`, selectedStage);
@@ -114,6 +116,9 @@ const AddSpecies = () => {
                 isLoading: false,
                 autoClose: 3000,
             });
+        }
+        finally{
+            setLoaderEdit(false)
         }
     };
 
@@ -200,34 +205,37 @@ const AddSpecies = () => {
                                         </thead>
                                         <tbody>
                                             {stages.map((stage) => (
+                                                <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-view-all">Click on {stage.speciesName} to edit</Tooltip>}>
                                                 <tr
                                                     key={stage.id}
                                                     style={{ cursor: 'pointer' }}
-                                                    onClick={() => handleEditStage(stage)}
-                                                >
-                                                    <td>{formatDate(stage.createdAt)}</td>
-                                                    <td>{stage.speciesName}</td>
-                                                    <td className="d-flex justify-content-between">
-                                                        <span>
-                                                            {stage.description.length > 40
-                                                                ? `${stage.description.slice(0, 40)}...`
-                                                                : stage.description}
-                                                        </span>
-                                                        <span
-                                                            className={`p-2 bg-light rounded-circle shadow-sm ${styles.delete}`}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDelete(stage.id);
-                                                            }}
-                                                            title="Delete Process"
-                                                        >
-                                                            <FaTrashAlt
-                                                                style={{ cursor: "pointer", color: "red" }}
+                                                    onClick={() => handleEditStage(stage)}                                                    
+                                                >                                                    
+                                                        <td>{formatDate(stage.createdAt)}</td>
+                                                        <td>{stage.speciesName}</td>
+                                                        <td className="d-flex justify-content-between">
+                                                            <span>
+                                                                {stage.description.length > 40
+                                                                    ? `${stage.description.slice(0, 40)}...`
+                                                                    : stage.description}
+                                                            </span>
+                                                            <span
+                                                                className={`p-2 bg-light rounded-circle shadow-sm ${styles.delete}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDelete(stage.id);
+                                                                }}
                                                                 title="Delete Process"
-                                                            />
-                                                        </span>
-                                                    </td>
+                                                            >
+                                                                <FaTrashAlt
+                                                                    style={{ cursor: "pointer", color: "red" }}
+                                                                    title="Delete Process"
+                                                                />
+                                                            </span>
+                                                        </td>
                                                 </tr>
+                                                </OverlayTrigger>
+
                                             ))}
                                         </tbody>
                                     </table>
@@ -314,6 +322,7 @@ const AddSpecies = () => {
                             <Button
                                 variant="dark"
                                 onClick={handleSave}
+                                disabled={loaderEdit}
                                 className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
                             >
                                 Save Changes

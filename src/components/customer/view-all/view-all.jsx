@@ -8,15 +8,17 @@ import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaArrowLeft, FaArrowRight, FaEdit } from "react-icons/fa"; // Added FaEdit for edit icon
-import { Spinner, Alert, Modal, Button, Form } from 'react-bootstrap';
+import { Spinner, Alert, Modal, Button, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
+import { FaTrash } from "react-icons/fa6";
 
 export default function ViewAll() {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [customersPerPage] = useState(10);
@@ -56,6 +58,7 @@ export default function ViewAll() {
   };
 
   const handleSave = async () => {
+    setLoadingEdit(true);
     const loadingToast = toast.loading("Saving Customer...");
     try {
       await Api.put(`/customer/${selectedCustomer.id}`, selectedCustomer);
@@ -77,6 +80,8 @@ export default function ViewAll() {
         autoClose: 6000
       });
     }
+    finally {
+      setLoadingEdit(false);}
   };
 
   useEffect(() => {
@@ -141,8 +146,11 @@ export default function ViewAll() {
         <section className={`${styles.content}`}>
           <main className={styles.create_form}>
             <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
-              <h4>All Customers</h4>
               <div>
+                <h4>All Customers</h4>                
+              </div>
+
+              <div className="d-flex gap-2">
                 <Form.Select
                   onChange={handleCategoryChange}
                   value={selectedCategory}
@@ -152,6 +160,16 @@ export default function ViewAll() {
                   <option value="">All Categories</option>
                   <option value="Marketer">Marketer</option>
                   <option value="Customer">Customer</option>
+                </Form.Select>
+                <Form.Select
+                  onChange={handleCategoryChange}
+                  value={selectedCategory}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} ${styles.fadedPlaceholder}`}
+                  aria-label="Filter by Category"
+                >
+                  <option value="">Sort for Debtors</option>
+                  <option value="Marketer">Debtors</option>
+                  <option value="">All Customers</option>
                 </Form.Select>
               </div>
             </div>
@@ -203,47 +221,104 @@ export default function ViewAll() {
                   </thead>
                   <tbody>
                     {currentCustomers.map((customer) => (
-                      <tr 
-                        key={customer.id} 
-                        className="text-start" 
-                        style={{ cursor: 'pointer' }} // Indicate clickable row
-                        onClick={() => handleNavigate(customer.id)} // Navigate to ledger on row click
-                      >
-                        <td>{formatDate(customer.createdAt)}</td>
-                        <td>{customer.fullName}</td>
-                        <td>{customer.phone}</td>
-                        <td>{customer.category}</td>
-                        <td className="d-flex justify-content-between align-items-center">
-                          <span>{customer.address}</span>
-                          <span
-                            style={{
-                              display: "inline-block",
-                              textAlign: "center",
-                              backgroundColor: "#f8f9fa",
-                              padding: "0.5rem",
-                              borderRadius: "50%",
-                              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                              transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "translateY(-5px)";
-                              e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent row click from triggering
-                              handleEdit(customer); // Trigger edit modal
-                            }}
-                          >
-                            <FaEdit
-                              style={{ cursor: "pointer", color: "#512728" }} // Edit icon with custom color
-                            />
-                          </span>
-                        </td>
-                      </tr>
+                      <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-view-all">Click on {customer.fullName} to View the Ledger.</Tooltip>}>
+                        <tr 
+                          key={customer.id} 
+                          className="text-start" 
+                          style={{ cursor: 'pointer' }} // Indicate clickable row
+                          onClick={() => handleNavigate(customer.id)} // Navigate to ledger on row click
+                        >
+                          <td>{formatDate(customer.createdAt)}</td>
+                          <td>{customer.fullName}</td>
+                          <td>{customer.phone}</td>
+                          <td>{customer.category}</td>
+                          <td className="d-flex justify-content-between align-items-center">
+                            <span>{customer.address}</span>
+                            <div className="d-flex gap-2">
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  textAlign: "center",
+                                  backgroundColor: "#f8f9fa",
+                                  padding: "0.5rem",
+                                  borderRadius: "50%",
+                                  boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-5px)";
+                                  e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0)";
+                                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent row click from triggering
+                                  handleEdit(customer); // Trigger edit modal
+                                }}
+                              >
+                                <FaEdit
+                                  style={{ cursor: "pointer", color: "#512728" }} // Edit icon with custom color
+                                />
+                              </span>
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  textAlign: "center",
+                                  backgroundColor: "#f8f9fa",
+                                  padding: "0.5rem",
+                                  borderRadius: "50%",
+                                  boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-5px)";
+                                  e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0)";
+                                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
+                                }}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+
+                                  const confirmDelete = window.confirm("Are you sure you want to delete this customer?");
+                                  if (!confirmDelete) return;
+
+                                  const loadingToast = toast.loading("Deleting Customer...");
+                                  try {
+                                    const response = await Api.delete(`/delete-customer/${customer.id}`);
+
+                                    if (!response.ok) {
+                                      throw new Error("Failed to delete customer");
+                                    }
+
+                                    toast.update(loadingToast, {
+                                      render: "Customer deleted successfully!",
+                                      type: "success",
+                                      isLoading: false,
+                                      autoClose: 3000,
+                                    });
+
+                                    fetchData(); // Refresh table data
+                                  } catch (error) {
+                                    console.error("Error deleting customer:", error);
+                                    toast.update(loadingToast, {
+                                      render: "Failed to delete customer. Please try again.",
+                                      type: "error",
+                                      isLoading: false,
+                                      autoClose: 6000,
+                                    });
+                                  }
+                                }}
+                              >
+                                <FaTrash style={{ cursor: "pointer", color: "red" }} />
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      </OverlayTrigger>
                     ))}
                   </tbody>
                 </table>
@@ -345,6 +420,7 @@ export default function ViewAll() {
             variant="dark"
             className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
             onClick={handleSave}
+            disabled={loadingEdit}
           >
             Save Changes
           </Button>

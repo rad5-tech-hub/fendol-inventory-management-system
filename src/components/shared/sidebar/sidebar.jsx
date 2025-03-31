@@ -220,7 +220,7 @@ export default function SideBar({ show, handleClose }) {
                       className={`${location.pathname === "/manage-fish/create-fish-type" ? styles.activeLink : styles.nonactiveLink}`}
                       style={{ cursor: "pointer" }}
                     >
-                      <FaRegCircle size={16} className="me-1" /> Create Fish Type
+                      <FaRegCircle size={16} className="me-1" /> Manage Fish Type
                     </div>
                   </Nav.Item>
                   <Nav.Item className="my-3">

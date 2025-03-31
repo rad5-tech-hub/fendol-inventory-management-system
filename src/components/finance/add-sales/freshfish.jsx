@@ -57,7 +57,7 @@ const FreshForm = ({ customers, stages, products }) => {
       ...prevData,
       totalPrice: Math.max(totalPrice, 0),
     }));
-    if (freshData.paymentType === 'customer_balance') {
+    if (freshData.paymentType === 'customer_balance' || freshData.paymentType !== 'credit') {
       setFreshData((prev) => ({ ...prev, amountPaid: 0 }));
     }
   }, [freshData.products, freshData.basePrice,freshData.paymentType]);
@@ -324,9 +324,7 @@ const FreshForm = ({ customers, stages, products }) => {
               <option value="" disabled>
                 Select Fresh Fish Products
               </option>
-              {products
-                .filter((product) => product.productName?.toLowerCase().includes("fresh"))
-                .map((product) => (
+              {products.map((product) => (
                   <option key={product.id} value={product.id} data-id={product.id}>
                     {`${product.productName} - (₦${new Intl.NumberFormat().format(product.basePrice || 0)} for ${
                       product.productWeight || "0"
@@ -436,6 +434,19 @@ const FreshForm = ({ customers, stages, products }) => {
             />
           </Col>          
           
+          {/* Discounted Price (Readonly) */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
+            <Form.Control
+              placeholder="Total balance"
+              type="text"
+              name="totalBalance"
+              value={new Intl.NumberFormat().format(calculateTotalBalance())}
+              readOnly
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
+          </Col>
+
           {/* Payment Type */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Payment Type</Form.Label>
@@ -465,7 +476,7 @@ const FreshForm = ({ customers, stages, products }) => {
           </Col>
 
           {/* Amount Paid Input (Only for Credit Payment) */}        
-          {freshData.paymentType !== 'customer_balance' &&  <Col className="mb-4">
+          {(freshData.paymentType !== 'customer_balance' || freshData.paymentType !== 'credit') &&  <Col className="mb-4">
             <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
             <Form.Control
               placeholder="Enter amount paid"
@@ -483,19 +494,7 @@ const FreshForm = ({ customers, stages, products }) => {
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
             />
           </Col>}       
-
-          {/* Discounted Price (Readonly) */}
-          <Col className="mb-4">
-            <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
-            <Form.Control
-              placeholder="Total balance"
-              type="text"
-              name="totalBalance"
-              value={new Intl.NumberFormat().format(calculateTotalBalance())}
-              readOnly
-              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            />
-          </Col>
+          
         </Row>
         <div className="text-end">
           <Button

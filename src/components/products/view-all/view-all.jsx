@@ -26,6 +26,7 @@ const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick }) => {
 export default function ViewAllProducts() {
   const [products, setProducts] = useState([]); // State for products
   const [loading, setLoading] = useState(true); // Loader state
+  const [loadingEdit, setLoadingEdit] = useState(false); // Loader state
   const [error, setError] = useState(''); // Error state
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -74,6 +75,7 @@ export default function ViewAllProducts() {
 
   // Handle Save click in Modal
   const handleSaveClick = async () => {
+    setLoadingEdit(true)
     const loadingToast = toast.loading("Editing Product...",{
       className: 'dark-toast'});
     try {
@@ -99,6 +101,8 @@ export default function ViewAllProducts() {
         autoClose: 3000,
         className: 'dark-toast'
     });
+    }finally{
+      setLoadingEdit(false);
     }
   };
 
@@ -187,7 +191,7 @@ export default function ViewAllProducts() {
                         <td>{product.productWeight}</td>
                         <td>{product.unit}</td>
                         <td className="d-flex justify-content-between">
-                          <span>{product.basePrice}</span>
+                          <span>{product.basePrice.toLocaleString() }</span>
                           <div>
                             <span
                               style={{
@@ -276,7 +280,7 @@ export default function ViewAllProducts() {
 
               {/* Product Weight */}
               <Form.Group className="mb-3 row">
-                <Form.Label className="col-4 fw-semibold">Product Weight</Form.Label>
+                <Form.Label className="col-4 fw-semibold">Base Weight</Form.Label>
                 <div className="col-8">
                   <Form.Control
                     type="text"
@@ -298,8 +302,9 @@ export default function ViewAllProducts() {
                     onChange={handleInputChange}
                     className="py-2 shadow-none border-secondary-subtle border-1"
                   >
-                    <option value="">Select Unit</option>
-                    <option value="kg">kg</option>
+                    <option value="" disabled>Select Unit</option>
+                    <option value="KG">Kilogram</option>
+                    <option value="G">Gram</option>
                   </Form.Select>
                 </div>
               </Form.Group>
@@ -324,6 +329,7 @@ export default function ViewAllProducts() {
           <Button
             className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`} 
             onClick={handleSaveClick}
+            disabled={loadingEdit}
           >
             Save
           </Button>

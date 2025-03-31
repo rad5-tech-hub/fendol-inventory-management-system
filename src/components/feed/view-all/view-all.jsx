@@ -43,7 +43,7 @@ const DropdownMenu = ({ show, onClickOutside, onAddClick, onRemoveClick, onEditC
     >
       <ul className={styles.menuList}>
         <li className={`mx-2 mt-2 rounded ${styles.menuItem}`} onClick={onAddClick}>Top Up Feed</li>
-        <li className={`mx-2 rounded ${styles.menuItem}`} onClick={onRemoveClick}>Remove Feed</li>
+        <li className={`mx-2 rounded ${styles.menuItem}`} onClick={onRemoveClick}>Use Feed</li>
         <li className={`mx-2 mb-2 rounded ${styles.menuItem}`} onClick={onEditClick}>Edit Feed</li>
       </ul>
     </div>
@@ -388,7 +388,7 @@ export default function UpdateFeedInventory() {
         <Modal show={showModal} onHide={() => setShowModal(false)} className="rounded-0">
           <Modal.Header closeButton className="border-0">
             <Modal.Title className="fw-semibold">
-              {modalType === 'add' ? 'Top Up Feed' : modalType === 'remove' ? 'Remove Feed' : 'Edit Feed'}
+              {modalType === 'add' ? 'Top Up Feed' : modalType === 'remove' ? 'Use Feed' : 'Edit Feed'}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body className="mt-5">

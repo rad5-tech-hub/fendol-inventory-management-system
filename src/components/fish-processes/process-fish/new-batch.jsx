@@ -12,6 +12,7 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function NewBatchFish() {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
   const [stages, setStages] = useState({ washing: null });
   const [checkStages, setCheckStages] = useState([]);
   const [fishType, setFishType] = useState([]);
@@ -71,6 +72,7 @@ export default function NewBatchFish() {
   };
 
   const fetchFishType = async () => {
+    setShowLoading(true);
     try {
       const response = await Api.get('/get-all-active-harvest-batch');
       if (response.data.data.quantity) {
@@ -82,6 +84,8 @@ export default function NewBatchFish() {
       }
     } catch (err) {
       console.error(err.response?.data?.message || 'Failed to fetch harvest data.');
+    }finally{
+      setShowLoading(false);
     }
   };
 
@@ -289,14 +293,18 @@ export default function NewBatchFish() {
                   <Form.Control
                     type="number"
                     name="actual_quantity"
-                    value={moveFishData.actual_quantity || ''}
+                    value={moveFishData.actual_quantity || ""}
                     readOnly
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                   />
-                  {(!moveFishData.actual_quantity || moveFishData.actual_quantity === 0) && (
-                    <Form.Text className="text-danger mt-1 d-block">
-                      No harvested quantity available. Please add fish to harvest to start processing.
-                    </Form.Text>
+                  {showLoading ? (
+                    <Form.Text className="text-success mt-1 d-block">Loading...</Form.Text>
+                  ) : (
+                    (!moveFishData.actual_quantity || moveFishData.actual_quantity === 0) && (
+                      <Form.Text className="text-danger mt-1 d-block">
+                        No harvested quantity available. Please add fish to harvest to start processing.
+                      </Form.Text>
+                    )
                   )}
                 </Col>
                 {/* Removed Process To and Remark fields */}
@@ -317,43 +325,59 @@ export default function NewBatchFish() {
                 <div className={`${styles.successBox}`}>
                   <Form>
                     <div className="d-flex justify-content-end">
-                      <span className={styles.refresh} title="Refresh The Process" onClick={handleRefresh}>
+                      {/* <span className={styles.refresh} title="Refresh The Process" onClick={handleRefresh}>
                         <MdOutlineRefresh size={25} />
-                      </span>
+                      </span> */}
                     </div>
-                    <h5 className={`text-end px-2 py-3 ${message ? styles.fade_in : styles.fade_out}`}>
+
+                    <h5
+                      className={`text-end px-2 py-3 ${
+                        message ? styles.fade_in : styles.fade_out
+                      }`}
+                    >
                       {message}
                     </h5>
+
                     <Breadcrumb
                       className="mb-4"
                       listProps={{
-                        className: 'd-flex align-items-center',
-                        style: { gap: '0.5rem' },
+                        className: "d-flex align-items-center",
+                        style: { gap: "0.5rem" },
                       }}
                     >
                       {orderedStages.length > 0 ? (
-                        orderedStages.map((stage, index) => (
+                        orderedStages.map((stage) => (
                           <Breadcrumb.Item
                             key={stage.id}
                             active={moveData.stageId_from === stage.id}
-                            onClick={moveData.stageId_from === stage.id ? () => handleStageSelect(stage.id) : undefined}
+                            onClick={
+                              moveData.stageId_from === stage.id
+                                ? () => handleStageSelect(stage.id)
+                                : undefined
+                            }
                             className="fw-semibold"
                             style={{
-                              cursor: moveData.stageId_from === stage.id ? 'pointer' : 'not-allowed',
-                              textTransform: 'uppercase',
-                              textDecoration: 'none',
-                              color: moveData.stageId_from === stage.id ? '#5e0d0f' : 'gray',
+                              cursor:
+                                moveData.stageId_from === stage.id
+                                  ? "pointer"
+                                  : "not-allowed",
+                              textTransform: "uppercase",
+                              textDecoration: "none",
+                              color:
+                                moveData.stageId_from === stage.id ? "#5e0d0f" : "gray",
                             }}
                             linkAs="span"
                           >
-                            {stage.title}    
+                            {stage.title}
                           </Breadcrumb.Item>
                         ))
                       ) : (
                         <p className="text-muted fw-semibold">Loading...</p>
                       )}
                     </Breadcrumb>
+
                     <div className="mt-5 mb-4">
+                      {/* Whole Fish Section */}
                       <div className="d-flex flex-column flex-md-row align-items-md-center mb-4">
                         <div className="d-flex align-items-center mb-2 mb-md-0">
                           <p className="fw-semibold me-2 mb-0">WHOLE FISH</p>
@@ -361,25 +385,41 @@ export default function NewBatchFish() {
                         </div>
                         <div className="d-flex flex-column flex-md-row justify-content-md-center align-items-md-center gap-3">
                           <Form.Group>
-                            <Form.Label className="fw-semibold mb-3 text-dark">Before</Form.Label>
+                            <Form.Label className="fw-semibold mb-3 text-dark">
+                              Before
+                            </Form.Label>
                             <Form.Control
                               type="number"
                               value={quantity.wholeFish}
-                              onChange={(e) => setQuantity(prev => ({
-                                ...prev,
-                                wholeFish: parseFloat(e.target.value) || 0,
-                              }))}
+                              onChange={(e) =>
+                                setQuantity((prev) => ({
+                                  ...prev,
+                                  wholeFish: parseFloat(e.target.value) || 0,
+                                }))
+                              }
+                              readOnly
                               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
                           </Form.Group>
                           <Form.Group>
-                            <Form.Label className="fw-semibold mb-3 text-dark">After</Form.Label>
+                            <Form.Label className="fw-semibold mb-3 text-dark">
+                              After
+                            </Form.Label>
                             <Form.Control
                               name="wholeFishQuantity"
                               value={moveData.wholeFishQuantity}
                               onChange={handleMoveFish}
                               type="number"
-                              placeholder="Enter Whole Fish Qty"
+                              placeholder={`Enter Whole Quantity after ${
+                                orderedStages.find(
+                                  (stage) => stage.id === moveData.stageId_from
+                                )?.title || "Stage"
+                              }`}
+                              title={`Enter Whole Quantity after ${
+                                orderedStages.find(
+                                  (stage) => stage.id === moveData.stageId_from
+                                )?.title || "Stage"
+                              }`}
                               required
                               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
@@ -387,6 +427,7 @@ export default function NewBatchFish() {
                         </div>
                       </div>
 
+                      {/* Broken Fish Section */}
                       <div className="d-flex flex-column flex-md-row align-items-md-center mb-4">
                         <div className="d-flex align-items-center mb-2 mb-md-0">
                           <p className="fw-semibold me-2 mb-0">BROKEN FISH</p>
@@ -396,24 +437,37 @@ export default function NewBatchFish() {
                           <Form.Control
                             type="number"
                             value={quantity.brokenFish}
-                            onChange={(e) => setQuantity(prev => ({
-                              ...prev,
-                              brokenFish: parseFloat(e.target.value) || 0,
-                            }))}
+                            onChange={(e) =>
+                              setQuantity((prev) => ({
+                                ...prev,
+                                brokenFish: parseFloat(e.target.value) || 0,
+                              }))
+                            }
+                            readOnly
                             className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                           />
                           <Form.Control
                             type="number"
-                            placeholder="Enter Broken Fish Qty"
+                            placeholder={`Enter Broken Quantity after ${
+                              orderedStages.find(
+                                (stage) => stage.id === moveData.stageId_from
+                              )?.title || "Stage"
+                            }`}
                             name="brokenFishQuantity"
                             value={moveData.brokenFishQuantity}
                             onChange={handleMoveFish}
                             required
+                            title={`Enter Broken Quantity after ${
+                              orderedStages.find(
+                                (stage) => stage.id === moveData.stageId_from
+                              )?.title || "Stage"
+                            }`}
                             className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                           />
                         </div>
                       </div>
 
+                      {/* Damage/Loss Section */}
                       <div className="d-flex flex-column flex-md-row align-items-md-center">
                         <div className="d-flex align-items-center mb-2 mb-md-0">
                           <p className="fw-semibold me-2 mb-0">DAMAGE/LOSS</p>
@@ -423,16 +477,28 @@ export default function NewBatchFish() {
                           <Form.Control
                             type="number"
                             value={quantity.damage}
-                            onChange={(e) => setQuantity(prev => ({
-                              ...prev,
-                              damage: parseFloat(e.target.value) || 0,
-                            }))}
+                            onChange={(e) =>
+                              setQuantity((prev) => ({
+                                ...prev,
+                                damage: parseFloat(e.target.value) || 0,
+                              }))
+                            }
+                            readOnly
                             className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                           />
                           <Form.Control
                             required
-                            placeholder="Enter Damage/Loss Qty"
+                            placeholder={`Enter Damage Quantity after ${
+                              orderedStages.find(
+                                (stage) => stage.id === moveData.stageId_from
+                              )?.title || "Stage"
+                            }`}
                             type="number"
+                            title={`Enter Damage Quantity after ${
+                              orderedStages.find(
+                                (stage) => stage.id === moveData.stageId_from
+                              )?.title || "Stage"
+                            }`}
                             name="damageOrLoss"
                             value={moveData.damageOrLoss}
                             onChange={handleMoveFish}
@@ -441,13 +507,23 @@ export default function NewBatchFish() {
                         </div>
                       </div>
                     </div>
+
                     <div className="d-flex justify-content-end">
                       <Button
                         onClick={handleNext}
-                        disabled={loading || moveData.wholeFishQuantity === '' || moveData.brokenFishQuantity === '' || moveData.damageOrLoss === ''}
+                        disabled={
+                          loading ||
+                          moveData.wholeFishQuantity === "" ||
+                          moveData.brokenFishQuantity === "" ||
+                          moveData.damageOrLoss === ""
+                        }
                         className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
                       >
-                        {moveData.stageId_from && orderedStages.find(stage => stage.id === moveData.stageId_from)?.title !== "Drying" ? 'Next' : 'Move To Showcase'}
+                        {moveData.stageId_from &&
+                        orderedStages.find((stage) => stage.id === moveData.stageId_from)
+                          ?.title !== "Drying"
+                          ? "Next"
+                          : "Move To Showcase"}
                       </Button>
                     </div>
                   </Form>

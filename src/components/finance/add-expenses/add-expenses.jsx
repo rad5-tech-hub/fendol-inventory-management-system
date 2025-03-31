@@ -101,7 +101,7 @@ const AddExpense = () => {
                             <h4 className="mt-4 mb-5">Add New Expense</h4>
                             <Row lg={1} md={1} className="g-4">
                                 <Col>
-                                    <Form.Label className="fw-semibold">Total Price</Form.Label>
+                                    <Form.Label className="fw-semibold">Amount/Total Price</Form.Label>
                                     <Form.Control
                                         placeholder="Enter total price"
                                         type="text"

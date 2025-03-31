@@ -8,12 +8,13 @@ import { BsExclamationTriangleFill} from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Spinner, Alert, Modal, Button, Form, InputGroup } from 'react-bootstrap';
+import { Spinner, Alert, Modal, Button, Form, InputGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { FaEye, FaEyeSlash, FaTrashAlt  } from "react-icons/fa";
 
 export default function ViewAll() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [adminsPerPage] = useState(10);
@@ -57,6 +58,7 @@ export default function ViewAll() {
   };
 
   const handleSave = async () => {
+    setLoadingEdit(true);
     const loadingToast = toast.loading("Saving Admin...", { className: 'dark-toast' });
     try {
       await Api.put(`/edit-admin/${selectedAdmin.id}`, selectedAdmin);
@@ -77,6 +79,9 @@ export default function ViewAll() {
         autoClose: 6000,
         className: 'dark-toast'
       });
+    }
+    finally {
+      setLoadingEdit(false);
     }
   };
 
@@ -134,7 +139,7 @@ export default function ViewAll() {
         <section className={`${styles.content}`}>
           <main className={styles.create_form}>
             <ToastContainer />
-            <h4 className="mt-3 mb-5">All Admins</h4>
+            <h4 className="mt-3">All Admins</h4>           
 
             {loading ? (
               <div className="text-center">
@@ -166,41 +171,43 @@ export default function ViewAll() {
                   </thead>
                   <tbody>
                     {displayAdmins.map((admin) => (
-                      <tr key={admin.id} onClick={() => handleEdit(admin)} title="Edit Admin">
-                        <td>{admin.fullName}</td>
-                        <td>{admin.email}</td>
-                        <td className="d-flex justify-content-between">
-                          <span>{admin.role?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}</span>
-                          <span
-                            style={{
-                              display: "inline-block",
-                              textAlign: "center",
-                              backgroundColor: "#f8f9fa",
-                              padding: "0.5rem",
-                              borderRadius: "50%",
-                              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                              transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "translateY(-5px)";
-                              e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
-                            }}
-                          >
-                            <FaTrashAlt
-                              style={{ cursor: "pointer", color: "red" }}
-                              title="Delete Admin"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(admin.id);
+                      <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-view-all">Click on {admin.fullName} to Edit</Tooltip>}>
+                        <tr key={admin.id} onClick={() => handleEdit(admin)} title="Edit Admin">
+                          <td>{admin.fullName}</td>
+                          <td>{admin.email}</td>
+                          <td className="d-flex justify-content-between">
+                            <span>{admin.role?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}</span>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                textAlign: "center",
+                                backgroundColor: "#f8f9fa",
+                                padding: "0.5rem",
+                                borderRadius: "50%",
+                                boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                                transition: "transform 0.2s ease, box-shadow 0.2s ease",
                               }}
-                            />
-                          </span>
-                        </td>
-                      </tr>
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-5px)";
+                                e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
+                              }}
+                            >
+                              <FaTrashAlt
+                                style={{ cursor: "pointer", color: "red" }}
+                                title="Delete Admin"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(admin.id);
+                                }}
+                              />
+                            </span>
+                          </td>
+                        </tr>
+                      </OverlayTrigger>
                     ))}
                   </tbody>
                 </table>
@@ -290,7 +297,7 @@ export default function ViewAll() {
                       <Form.Select
                         name="role"
                         value={
-                          ["admin", "super_admin"].includes(selectedAdmin.role)
+                          ["admin", "super_admin", "sales_manager"].includes(selectedAdmin.role)
                             ? selectedAdmin.role
                             : ""
                         }
@@ -300,6 +307,7 @@ export default function ViewAll() {
                         <option value="" disabled>Select Role</option>
                         <option value="admin">Admin</option>
                         <option value="super_admin">Super Admin</option>
+                        <option value="sales_manager">Sales Manager</option>
                       </Form.Select>
                     </div>
                   </Form.Group>
@@ -307,7 +315,7 @@ export default function ViewAll() {
               )}
             </Modal.Body>
             <Modal.Footer className="border-0 mt-5" style={{ height: '200px' }}>
-              <Button variant="dark" className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`} onClick={handleSave}>
+              <Button variant="dark" disabled={loadingEdit} className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`} onClick={handleSave}>
                 Save
               </Button>
             </Modal.Footer>

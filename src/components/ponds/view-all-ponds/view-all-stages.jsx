@@ -4,7 +4,7 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product-stages.module.scss';
 import { BsExclamationTriangleFill, BsPencilFill, BsTrash } from "react-icons/bs";
-import { Form, Button, Spinner, Alert, Modal, Popover, OverlayTrigger } from 'react-bootstrap';
+import { Form, Button, Spinner, Alert, Modal, Popover, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
@@ -14,6 +14,9 @@ const ViewAllStages = () => {
   const [note, setNote] = useState([]);
   const [sampling, setSampling] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [loadingNote, setLoadingNote] = useState(false);
+  const [loadingSamp, setLoadingSamp] = useState(false);
   const [error, setError] = useState('');
   const [noteLoader, setNoteLoader] = useState(false); // Start as false, only true during fetch
   const [noteError, setNoteError] = useState('');
@@ -99,6 +102,7 @@ const ViewAllStages = () => {
   };
 
   const handleSave = async () => {
+    setLoadingEdit(true)
     const saveToast = toast.loading('Saving changes...');
     try {
       await Api.put(`/fish-stage/${selectedStage.id}`, selectedStage);
@@ -117,6 +121,8 @@ const ViewAllStages = () => {
         isLoading: false,
         autoClose: 3000,
       });
+    }finally{
+      setLoadingEdit(false)
     }
   };
 
@@ -139,6 +145,7 @@ const ViewAllStages = () => {
   };
 
   const handleAddNoteSubmit = async (note) => {
+    setLoadingNote(true)
     const noteToast = toast.loading('Adding note...');
     try {
       await Api.post(`/note/${selectedStage.id}`, note);
@@ -147,6 +154,8 @@ const ViewAllStages = () => {
       fetchnote(selectedStage.id); // Fetch notes immediately after success
     } catch (err) {
       toast.update(noteToast, { render: 'Failed to add note. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
+    }finally{
+      setLoadingNote(false)
     }
   };
 
@@ -169,6 +178,7 @@ const ViewAllStages = () => {
   };
 
   const handleAddSamplingSubmit = async (sampling) => {
+    setLoadingSamp(true);
     const samplingToast = toast.loading('Adding sampling...');
     try {
       await Api.post(`/sample/${selectedStage.id}`, sampling);
@@ -177,6 +187,8 @@ const ViewAllStages = () => {
       fetchSampling(selectedStage.id); // Fetch sampling immediately after success
     } catch (err) {
       toast.update(samplingToast, { render: 'Failed to add sampling. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
+    }finally{
+      setLoadingSamp(false);
     }
   };
 
@@ -232,7 +244,9 @@ const ViewAllStages = () => {
         <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
             <div className="d-flex justify-content-between flex-column flex-md-row align-items-md-center mb-3">
-              <h4 className="mt-3 mb-3 mb-md-0">View Ponds</h4>
+              <div className="mb-3">
+                <h4 className="mt-3 mb-1">View Ponds</h4>                
+              </div>
               <div className="w-50 w-md-25">
                 <input
                   type="text"
@@ -283,6 +297,7 @@ const ViewAllStages = () => {
                     {displayedStages.map((stage) => {
                       const formattedCreatedAt = formatDate(stage.createdAt);
                       return (
+                        <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-view-all">Click on {stage.title} to view its details</Tooltip>}>
                         <tr
                           key={stage.id}
                           style={{ cursor: 'pointer' }}
@@ -294,6 +309,8 @@ const ViewAllStages = () => {
                           <td>{stage.quantity}</td>
                           <td>{stage.description}</td>
                         </tr>
+                        </OverlayTrigger>
+                        
                       );
                     })}
                   </tbody>
@@ -578,6 +595,7 @@ const ViewAllStages = () => {
             <Button
               variant="dark"
               onClick={handleSave}
+              disabled={loadingEdit}
               className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}
             >
               Save Changes
@@ -616,7 +634,7 @@ const ViewAllStages = () => {
               <Form.Control as="textarea" name="note" placeholder="Write Note" rows={3} required />
             </Form.Group>
             <div className="text-end">
-              <Button type="submit" className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}>
+              <Button type="submit" disabled={loadingNote} className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}>
                 ADD
               </Button>
             </div>
@@ -644,7 +662,7 @@ const ViewAllStages = () => {
               <Form.Control as="textarea" name="sample_labeling" placeholder="Write sampling comment" rows={3} required />
             </Form.Group>
             <div className="text-end">
-              <Button type="submit" className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}>
+              <Button type="submit" disabled={loadingSamp} className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}>
                 ADD
               </Button>
             </div>

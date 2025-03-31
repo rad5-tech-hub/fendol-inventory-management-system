@@ -132,7 +132,7 @@ export default function CreateProducts() {
                                     />
                                 </Col>
                                 <Col className="mb-4">
-                                    <Form.Label className="fw-semibold">Product Weight</Form.Label>
+                                    <Form.Label className="fw-semibold">Base Weight</Form.Label>
                                     <Form.Control
                                         placeholder="Enter product weight"
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}

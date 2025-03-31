@@ -488,6 +488,19 @@ const SalesForm = ({ customers, stages, products }) => {
                             />
                         </Col>
 
+                        {/* Total Balance (Readonly) */}
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
+                            <Form.Control
+                                placeholder="Total balance"
+                                type="text"
+                                name="totalBalance"
+                                value={new Intl.NumberFormat().format(calculateTotalBalance())}
+                                readOnly
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                            />
+                        </Col>
+
                         {/* Payment Type */}
                         <Col className="mb-4">
                             <Form.Label className="fw-semibold">Payment Type</Form.Label>
@@ -529,19 +542,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
                         </Col>}                                      
-
-                        {/* Total Balance (Readonly) */}
-                        <Col className="mb-4">
-                            <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
-                            <Form.Control
-                                placeholder="Total balance"
-                                type="text"
-                                name="totalBalance"
-                                value={new Intl.NumberFormat().format(calculateTotalBalance())}
-                                readOnly
-                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                            />
-                        </Col>
+                        
                     </Row>
                     <div className="d-flex justify-content-between">
                         <Button

@@ -56,7 +56,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
       ...prevData,
       totalPrice: Math.max(totalPrice, 0),
     }));
-    if (fingerlingsData.paymentType === 'customer_balance') {
+    if (fingerlingsData.paymentType === 'customer_balance'  || fingerlingsData.paymentType === 'credit') {
       setFingerlingsData((prev) => ({ ...prev, amountPaid: 0 }));
     }
   }, [fingerlingsData.products, fingerlingsData.basePrice, fingerlingsData.paymentType]);
@@ -330,9 +330,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
               <option value="" disabled>
                 Select Fingerlings Product
               </option>
-              {products
-                .filter((product) => product.productName?.toLowerCase().includes("fingerlings"))
-                .map((product) => (
+              {products.map((product) => (
                   <option key={product.id} value={product.id} data-id={product.id}>
                     {`${product.productName} - (₦${new Intl.NumberFormat().format(product.basePrice || 0)} for ${
                       product.productWeight || "0"
@@ -428,6 +426,19 @@ const FingerlingsForm = ({ customers, stages, products }) => {
             />
           </Col>
 
+          {/* Total Balance (Readonly) */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
+            <Form.Control
+              placeholder="Total balance"
+              type="text"
+              name="totalBalance"
+              value={new Intl.NumberFormat().format(calculateTotalBalance())}
+              readOnly
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
+          </Col>
+
           {/* Payment Type */}
             <Col className="mb-4">
               <Form.Label className="fw-semibold">Payment Type</Form.Label>
@@ -457,7 +468,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
             </Col>  
 
           {/* Amount Paid Input (Only for Credit Payment) */}
-            {fingerlingsData.paymentType !== 'customer_balance' &&  <Col className="mb-4">
+            {fingerlingsData.paymentType !== 'customer_balance' || fingerlingsData.pondId !== 'credit' &&  <Col className="mb-4">
               <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
               <Form.Control
                 placeholder="Enter amount paid"
@@ -474,20 +485,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
                 }}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
               />
-            </Col>}                      
-
-            {/* Total Balance (Readonly) */}
-            <Col className="mb-4">
-              <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
-              <Form.Control
-                placeholder="Total balance"
-                type="text"
-                name="totalBalance"
-                value={new Intl.NumberFormat().format(calculateTotalBalance())}
-                readOnly
-                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-              />
-            </Col>
+            </Col>}                                  
         </Row>
         <div className="text-end">
           <Button
