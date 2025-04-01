@@ -44,8 +44,11 @@ export default function ViewWholeHistory() {
       ]);
 
       // Handle whole fish quantity response
-      const wholeData = wholeResponse.data.data || [];
-      setWholeQuantity(wholeData.length > 0 ? wholeData[0].wholeFishQuantity : 0);
+      if (wholeResponse.data?.success && wholeResponse.data.data) {
+        setWholeQuantity(wholeResponse.data.data.wholeFishQuantity|| 0); // Use wholeFishQuantity
+      } else {
+        throw new Error("Invalid data structure");
+      }
 
       // Handle history table data response
       const historyData = historyResponse.data.data || [];

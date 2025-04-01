@@ -57,10 +57,10 @@ const FreshForm = ({ customers, stages, products }) => {
       ...prevData,
       totalPrice: Math.max(totalPrice, 0),
     }));
-    if (freshData.paymentType === 'customer_balance' || freshData.paymentType !== 'credit') {
+    if (freshData.paymentType === "customer_balance" || freshData.paymentType === "Credit") {
       setFreshData((prev) => ({ ...prev, amountPaid: 0 }));
     }
-  }, [freshData.products, freshData.basePrice,freshData.paymentType]);
+  }, [freshData.products, freshData.basePrice, freshData.paymentType]);
 
   const handleProductSelect = (e) => {
     const selectedOption = e.target.selectedOptions[0];
@@ -72,7 +72,9 @@ const FreshForm = ({ customers, stages, products }) => {
         setUnit(product.unit || "");
         setFreshData((prevData) => ({
           ...prevData,
-          products: [{ id: selectedProductId, quantity: prevData.products[0]?.quantity || 0, productWeight: "" }],
+          products: [
+            { id: selectedProductId, quantity: prevData.products[0]?.quantity || 0, productWeight: "" },
+          ],
           basePrice: product.basePrice || 0,
         }));
       } else {
@@ -85,14 +87,18 @@ const FreshForm = ({ customers, stages, products }) => {
     const searchTerm = e.target.value;
     setPondSearch(searchTerm);
     const filtered = searchTerm
-      ? stage.filter((s) => s.title?.toLowerCase().includes(searchTerm.toLowerCase()))
-      : stage;
+      ? stage.filter(
+          (s) =>
+            s.title?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            (parseFloat(s.quantity || 0) >= 1)
+        )
+      : stage.filter((s) => parseFloat(s.quantity || 0) >= 1);
     setFilteredPonds(filtered);
     setShowPondDropdown(true);
   };
 
   const handlePondSelect = (pond) => {
-    if (pond) {
+    if (pond && (parseFloat(pond.quantity || 0) >= 0)) {
       setFreshData((prevData) => ({
         ...prevData,
         pondId: pond.id,
@@ -101,6 +107,8 @@ const FreshForm = ({ customers, stages, products }) => {
       }));
       setPondSearch(`${pond.title || "No Data Yet"} - (${pond.quantity || "0"})`);
       setShowPondDropdown(false);
+    } else {
+      console.log("Pond not selected: Quantity less than 0 or invalid pond", pond);
     }
   };
 
@@ -125,7 +133,7 @@ const FreshForm = ({ customers, stages, products }) => {
       category: selectedCustomer.category,
       discount: discount,
     }));
-    setBalance(selectedCustomer.balance)
+    setBalance(selectedCustomer.balance);
     setCustomerSearch(`${selectedCustomer.fullName}`);
     setShowCustomerDropdown(false);
     setFilteredCustomer([]);
@@ -175,16 +183,16 @@ const FreshForm = ({ customers, stages, products }) => {
 
   // Fetch customers
   const fetchCustomers = async () => {
-      try {
-          const response = await Api.get('/customers');
-          if (Array.isArray(response.data.data)) {
-              setCustomer(response.data.data);
-          } else {
-              throw new Error('Expected an array of customers');
-          }
-      } catch (err) {
-          console.log(err.response?.data?.message || 'Failed to fetch customers.');
+    try {
+      const response = await Api.get("/customers");
+      if (Array.isArray(response.data.data)) {
+        setCustomer(response.data.data);
+      } else {
+        throw new Error("Expected an array of customers");
       }
+    } catch (err) {
+      console.log(err.response?.data?.message || "Failed to fetch customers.");
+    }
   };
 
   const handleAddSales = async (e) => {
@@ -195,25 +203,18 @@ const FreshForm = ({ customers, stages, products }) => {
     const salesToast = toast.loading("Adding sale...", { className: "dark-toast" });
 
     try {
+      // Step 1: Add the sale
       const saleResponse = await Api.post("/sales", freshData);
       if (saleResponse.status < 200 || saleResponse.status >= 300) {
         throw new Error(saleResponse.data?.message || "Sale failed!");
       }
 
       const transactionId = saleResponse.data.data?.transactionId;
-
       if (!transactionId) {
-        toast.update(salesToast, {
-          render: "Transaction ID not found. Please try again.",
-          type: "error",
-          isLoading: false,
-          autoClose: 3000,
-          className: "dark-toast",
-        });
-        setLoader(false);
-        return;
+        throw new Error("Transaction ID not found. Please try again.");
       }
 
+      // Update sales toast to success
       toast.update(salesToast, {
         render: "Sale added successfully!",
         type: "success",
@@ -222,23 +223,35 @@ const FreshForm = ({ customers, stages, products }) => {
         className: "dark-toast",
       });
 
+      // Step 2: Fetch receipt with separate toast and error handling
       const receiptToast = toast.loading("Fetching receipt...", { className: "dark-toast" });
-      const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
-      if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
-        throw new Error("Receipt could not be fetched.");
+      try {
+        const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
+        if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+          throw new Error("Receipt could not be fetched.");
+        }
+
+        setReceiptData(receiptResponse);
+        toast.update(receiptToast, {
+          render: "Receipt fetched successfully!",
+          type: "success",
+          isLoading: false,
+          autoClose: 3000,
+          className: "dark-toast",
+        });
+        setShowReceipt(true);
+      } catch (receiptError) {
+        console.error("Error fetching receipt:", receiptError);
+        toast.update(receiptToast, {
+          render: receiptError.message || "Failed to fetch receipt!",
+          type: "error",
+          isLoading: false,
+          autoClose: 6000,
+          className: "dark-toast",
+        });
       }
 
-      setReceiptData(receiptResponse);
-      toast.update(receiptToast, {
-        render: "Receipt fetched successfully!",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000,
-        className: "dark-toast",
-      });
-
-      setShowReceipt(true);
-
+      // Reset form after successful sale
       setFreshData({
         products: [{ id: "", quantity: 0, productWeight: "" }],
         description: "",
@@ -262,7 +275,7 @@ const FreshForm = ({ customers, stages, products }) => {
     } catch (error) {
       console.error("Error in handleAddSales:", error);
       toast.update(salesToast, {
-        render: error.response?.data?.message || error.message || "Sale failed!",
+        render: error.message || error.response?.data?.message || "Sale failed!",
         type: "error",
         isLoading: false,
         autoClose: 6000,
@@ -325,12 +338,12 @@ const FreshForm = ({ customers, stages, products }) => {
                 Select Fresh Fish Products
               </option>
               {products.map((product) => (
-                  <option key={product.id} value={product.id} data-id={product.id}>
-                    {`${product.productName} - (₦${new Intl.NumberFormat().format(product.basePrice || 0)} for ${
-                      product.productWeight || "0"
-                    } ${product.unit || ""})`}
-                  </option>
-                ))}
+                <option key={product.id} value={product.id} data-id={product.id}>
+                  {`${product.productName} - (₦${new Intl.NumberFormat().format(
+                    product.basePrice || 0
+                  )} for ${product.productWeight || "0"} ${product.unit || ""})`}
+                </option>
+              ))}
             </Form.Select>
           </Col>
 
@@ -373,7 +386,12 @@ const FreshForm = ({ customers, stages, products }) => {
                 onFocus={() => setShowCustomerDropdown(true)}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                 required
-              />{balance && balance > 0 && freshData.customerId ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
+              />
+              {balance && balance > 0 && freshData.customerId ? (
+                <p className="p-2">Balance: ₦{balance.toLocaleString()}</p>
+              ) : (
+                ""
+              )}
               {showCustomerDropdown && filteredCustomer.length > 0 && (
                 <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
                   <ul style={{ listStyle: "none" }}>
@@ -432,8 +450,8 @@ const FreshForm = ({ customers, stages, products }) => {
               readOnly
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
             />
-          </Col>          
-          
+          </Col>
+
           {/* Discounted Price (Readonly) */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
@@ -458,7 +476,7 @@ const FreshForm = ({ customers, stages, products }) => {
                 setFreshData((prev) => ({
                   ...prev,
                   paymentType: selectedPayment,
-                  amountPaid: ""
+                  amountPaid: "",
                 }));
               }}
               required
@@ -467,34 +485,40 @@ const FreshForm = ({ customers, stages, products }) => {
               <option value="" disabled>
                 Select Payment Type
               </option>
-              <option value="Cash">Cash</option>  
-              <option value="Credit">Credit</option>          
+              <option value="Cash">Cash</option>
+              <option value="Credit">Credit</option>
               <option value="Transfer">Transfer</option>
               <option value="Pos">Pos</option>
               {balance > 0 && <option value="customer_balance">Customer Balance</option>}
             </Form.Select>
           </Col>
 
-          {/* Amount Paid Input (Only for Credit Payment) */}        
-          {(freshData.paymentType !== 'customer_balance' || freshData.paymentType !== 'credit') &&  <Col className="mb-4">
-            <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
-            <Form.Control
-              placeholder="Enter amount paid"
-              type="text"
-              name="amountPaid"
-              value={
-                freshData.amountPaid !== null && freshData.amountPaid !== ""
-                  ? new Intl.NumberFormat().format(freshData.amountPaid)
-                  : "" 
-              }
-              onChange={(e) => {
-                const value = e.target.value.replace(/,/g, "");
-                setFreshData({ ...freshData, amountPaid: value ? parseFloat(value) : "" });
-              }}
-              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            />
-          </Col>}       
-          
+          {/* Amount Paid Input (Only for Non-Credit and Non-Customer Balance Payments) */}
+          {["customer_balance", "Credit"].includes(freshData.paymentType) ? (
+            ""
+          ) : (
+            <Col className="mb-4">
+              <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
+              <Form.Control
+                placeholder="Enter amount paid"
+                type="text"
+                name="amountPaid"
+                value={
+                  freshData.amountPaid !== null && freshData.amountPaid !== ""
+                    ? new Intl.NumberFormat().format(freshData.amountPaid)
+                    : ""
+                }
+                onChange={(e) => {
+                  const value = e.target.value.replace(/,/g, "");
+                  setFreshData({
+                    ...freshData,
+                    amountPaid: value ? parseFloat(value) : "",
+                  });
+                }}
+                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+              />
+            </Col>
+          )}
         </Row>
         <div className="text-end">
           <Button

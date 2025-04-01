@@ -130,7 +130,7 @@ export default function LogIn() {
                                 </InputGroup.Text>
                             </InputGroup>
 
-                            <a href="#pasword" className="text-white border-0 fw-semibold">Forgot Password?</a>
+                            {/* <a href="#pasword" className="text-white border-0 fw-semibold">Forgot Password?</a> */}
                             <Button type="submit" className={`w-100 ${styles.btn} shadow-sm btn-dark py-2 fs-5 mt-5 fw-semibold`} disabled={loader}>
                                 {loader ? 'Logging In' : "Log in"}
                             </Button>

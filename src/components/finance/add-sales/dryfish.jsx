@@ -65,7 +65,7 @@ const SalesForm = ({ customers, stages, products }) => {
             }
             return total;
         }, 0);
-        if (dryData.paymentType === 'customer_balance') {
+        if (dryData.paymentType === 'customer_balance' || dryData.paymentType === 'Credit') {
             setDryData((prev) => ({ ...prev, amountPaid: 0 }));
         }
         setTotalPrice(total);
@@ -220,34 +220,27 @@ const SalesForm = ({ customers, stages, products }) => {
             }));
         }
     };
-
     const handleAddSales = async (e) => {
         e.preventDefault();
         if (!window.confirm("Are you sure you want to add this sale?")) return;
-
+    
         setLoader(true);
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
-
+    
         try {
+            // Step 1: Add the sale
             const saleResponse = await Api.post('/sales', dryData);
-
+    
             if (saleResponse.status < 200 || saleResponse.status >= 300) {
                 throw new Error(saleResponse.data?.message || "Sale failed!");
             }
-
+    
             const transactionId = saleResponse.data.data?.transactionId;
             if (!transactionId) {
-                toast.update(salesToast, {
-                    render: "Transaction ID not found. Please try again.",
-                    type: "error",
-                    isLoading: false,
-                    autoClose: 3000,
-                    className: 'dark-toast'
-                });
-                setLoader(false);
-                return;
+                throw new Error("Transaction ID not found. Please try again.");
             }
-
+    
+            // Update sales toast to success
             toast.update(salesToast, {
                 render: "Sale added successfully!",
                 type: "success",
@@ -255,25 +248,37 @@ const SalesForm = ({ customers, stages, products }) => {
                 autoClose: 3000,
                 className: 'dark-toast'
             });
-
+    
+            // Step 2: Fetch receipt with separate toast and error handling
             const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
-            const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
-
-            if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
-                throw new Error("Receipt could not be fetched.");
+            try {
+                const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
+    
+                if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+                    throw new Error("Receipt could not be fetched.");
+                }
+    
+                setReceiptData(receiptResponse);
+                toast.update(receiptToast, {
+                    render: "Receipt fetched successfully!",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 3000,
+                    className: 'dark-toast'
+                });
+                setShowReceipt(true);
+            } catch (receiptError) {
+                console.error("Error fetching receipt:", receiptError);
+                toast.update(receiptToast, {
+                    render: receiptError.message || "Failed to fetch receipt!",
+                    type: "error",
+                    isLoading: false,
+                    autoClose: 6000,
+                    className: 'dark-toast'
+                });
             }
-
-            setReceiptData(receiptResponse);
-            toast.update(receiptToast, {
-                render: "Receipt fetched successfully!",
-                type: "success",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
-            });
-
-            setShowReceipt(true);
-
+    
+            // Reset form after successful sale
             setDryData({
                 products: [],
                 category: '',
@@ -291,7 +296,7 @@ const SalesForm = ({ customers, stages, products }) => {
         } catch (error) {
             console.error("Error in handleAddSales:", error);
             toast.update(salesToast, {
-                render: error.response?.data?.message || error.message || 'Sale failed!',
+                render: error.message || error.response?.data?.message || 'Sale failed!',
                 type: "error",
                 isLoading: false,
                 autoClose: 6000,
@@ -527,22 +532,31 @@ const SalesForm = ({ customers, stages, products }) => {
                             </Form.Select>
                         </Col>   
                         
-                        {/* Amount Paid Input (Only for Credit Payment) */}                      
-                        {dryData.paymentType !== "customer_balance" &&<Col className="mb-4">
+                       {/* Amount Paid Input (Only for Non-Credit and Non-Customer Balance Payments) */}
+                        {["customer_balance", "Credit"].includes(dryData.paymentType) ? null : (
+                        <Col className="mb-4">
                             <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
                             <Form.Control
-                                placeholder="Enter amount paid"
-                                type="text"
-                                name="amountPaid"
-                                value={dryData.amountPaid !== null && dryData.amountPaid !== '' ? new Intl.NumberFormat().format(dryData.amountPaid) : ''}
-                                onChange={(e) => {
-                                    const value = e.target.value.replace(/,/g, '');
-                                    setDryData({ ...dryData, amountPaid: value ? parseFloat(value) : '' });
-                                }}
-                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                            placeholder="Enter amount paid"
+                            type="text"
+                            name="amountPaid"
+                            value={
+                                dryData.amountPaid !== null && dryData.amountPaid !== ""
+                                ? new Intl.NumberFormat().format(dryData.amountPaid)
+                                : ""
+                            }
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/,/g, "");
+                                setDryData({
+                                ...dryData,
+                                amountPaid: value ? parseFloat(value) : "",
+                                });
+                            }}
+                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />
-                        </Col>}                                      
-                        
+                        </Col>
+                        )}                                      
+                                                
                     </Row>
                     <div className="d-flex justify-content-between">
                         <Button

@@ -47,12 +47,14 @@ const AddSales = () => {
 
     // Fetch products
     useEffect(() => {
+        setProducts(['LOADING....']); // Reset products state when component mounts
         const fetchProducts = async () => {
             try {
                 const response = await Api.get('/products');
                 setProducts(response.data.data);
             } catch (error) {
                 console.error("Error fetching products:", error);
+                setProducts([error || 'Error geting products']); // Reset products state in case of error   
             }
         };
         fetchProducts();

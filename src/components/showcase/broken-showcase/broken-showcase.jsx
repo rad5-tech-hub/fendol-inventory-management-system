@@ -32,28 +32,25 @@ export default function ViewBrokenHistory() {
     setCurrentPage(selectedPage.selected);
   };
 
+  // Fetch current stock data for broken fish
   const fetchTableData = async () => {
     setLoadingStages(true);
-    setLoadingTable(true);
     setErrorStages("");
-    setErrorTable("");
     try {
       const response = await Api.get("/show-glass/broken");
-      if (response.data && Array.isArray(response.data.data)) {
-        const data = response.data.data;      
-        setBrokenQuantity(data.length > 0 ? data[0].brokenFishQuantity : 0);        
+      if (response.data?.success && response.data.data) {
+        setBrokenQuantity(response.data.data.brokenFishQuantity|| 0); // Use wholeFishQuantity
       } else {
-        throw new Error("Expected an array in data property");
+        throw new Error("Invalid data structure");
       }
     } catch (error) {
-      setErrorTable(error.response?.data?.message || "Error getting showcase data.");
-      setErrorStages(error.response?.data?.message || "Error getting quantity data.");
+      setErrorStages(error.response?.data?.message || "Error getting broken fish quantity.");
     } finally {
-      setLoadingTable(false);
       setLoadingStages(false);
     }
   };
 
+  // Fetch history data for the table
   const fetchData = async () => {
     setLoadingTable(true);
     setErrorTable("");
@@ -61,15 +58,15 @@ export default function ViewBrokenHistory() {
       const response = await Api.get("/get-all-broken-histories");
       if (response.data && Array.isArray(response.data.data)) {
         const data = response.data.data;
-        setTableData(data);      
+        setTableData(data);
         setPageCount(Math.ceil(data.length / itemsPerPage));
       } else {
         throw new Error("Expected an array in data property");
       }
     } catch (error) {
-      setErrorTable(error.response?.data?.message || "Error getting showcase data.");      
+      setErrorTable(error.response?.data?.message || "Error getting broken history data.");
     } finally {
-      setLoadingTable(false);      
+      setLoadingTable(false);
     }
   };
 
@@ -132,7 +129,6 @@ export default function ViewBrokenHistory() {
 
       setDamageFishQuantity("");
       setRemarks("");
-      // Fetch both data sets after successful move
       await Promise.all([fetchTableData(), fetchData()]);
       handleCloseModal();
     } catch (error) {
@@ -148,7 +144,6 @@ export default function ViewBrokenHistory() {
     }
   };
 
-  // Updated formatDate function to include time
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
     const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
@@ -170,14 +165,15 @@ export default function ViewBrokenHistory() {
         <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        <div className={styles.sidebar}>
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? "d-block" : "d-none"}`}>
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
             <h4 className="mt-3 mb-5">Broken Fish</h4>
 
-            <div className={`d-flex mb-5`}>
+            {/* Stock Card */}
+            <div className="d-flex mb-5">
               {loadingStages ? (
                 <div className="text-start w-25 shadow py-5 px-3">
                   <span className="text-muted">Loading...</span>
@@ -224,6 +220,7 @@ export default function ViewBrokenHistory() {
               )}
             </div>
 
+            {/* History Table */}
             {loadingTable ? (
               <div className="text-center">
                 <Spinner animation="border" role="status">
@@ -251,15 +248,15 @@ export default function ViewBrokenHistory() {
                     {paginatedData.length > 0 ? (
                       paginatedData.map((data, index) => (
                         <tr key={index}>
-                          <td>{formatDate(data.date)}</td>
+                          <td>{formatDate(data.createdAt)}</td> {/* Assuming createdAt exists */}
                           <td title={data.description}>{data.description}</td>
-                          <td className="text-end pe-4">{data.quantity}</td>
+                          <td className="text-end pe-4">{data.quantity}</td> {/* Adjust based on actual field */}
                         </tr>
                       ))
                     ) : (
                       <tr>
                         <td colSpan="3" className="text-center">
-                          No data available
+                          No broken history available
                         </td>
                       </tr>
                     )}
@@ -319,7 +316,7 @@ export default function ViewBrokenHistory() {
                   rows={3}
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  className="py-2 shadow-none border-none border-1"
+                  className="py-2 shadow-none border-secondary-subtle border-1"
                 />
               </Form.Group>
             </Form>
