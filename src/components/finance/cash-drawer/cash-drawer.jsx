@@ -18,12 +18,15 @@ const CashDrawer = () => {
   const [cashPage, setCashPage] = useState(0);
   const [withdrawPage, setWithdrawPage] = useState(0);
   const [viewMode, setViewMode] = useState("cash"); // "cash" or "withdrawals"
-  const [showModal, setShowModal] = useState(false);
+  const [showAddCashModal, setShowAddCashModal] = useState(false); // New modal for adding cash
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false); // Modal for withdrawals
+  const [addCashAmount, setAddCashAmount] = useState("");
+  const [addCashDescription, setAddCashDescription] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawDescription, setWithdrawDescription] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
   const [modalLoading, setModalLoading] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+  const [showSidebar, setShowSidebar] = useState(false);
   const itemsPerPage = 10;
   const [selectedDate, setSelectedDate] = useState("");
 
@@ -68,6 +71,29 @@ const CashDrawer = () => {
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
+  // Handle Add Cash Submission
+  const handleAddCash = async (e) => {
+    e.preventDefault();
+    setModalLoading(true);
+    try {
+      const cashData = {
+        amount: parseFloat(addCashAmount.replace(/,/g, "")),
+        description: addCashDescription,
+      };
+      const response = await Api.post("/add-cash-to-drawer", cashData); // Assuming this endpoint exists
+      setLedgerData([response.data.data, ...ledgerData]);
+      setToast({ show: true, message: "Cash added successfully!", variant: "success" });
+      setShowAddCashModal(false);
+      setAddCashAmount("");
+      setAddCashDescription("");
+      if (viewMode === "cash") fetchCashDrawerData();
+    } catch (err) {
+      setToast({ show: true, message: err.response?.data?.message || "Failed to add cash!", variant: "danger" });
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
   // Handle Withdraw Submission
   const handleWithdraw = async (e) => {
     e.preventDefault();
@@ -80,7 +106,7 @@ const CashDrawer = () => {
       const response = await Api.post("/withdraw", withdrawData);
       setWithdrawalData([response.data.data, ...withdrawalData]);
       setToast({ show: true, message: "Withdrawal successful!", variant: "success" });
-      setShowModal(false);
+      setShowWithdrawModal(false);
       setWithdrawAmount("");
       setWithdrawDescription("");
       if (viewMode === "withdrawals") fetchWithdrawalData();
@@ -132,12 +158,12 @@ const CashDrawer = () => {
   };
 
   // Handle Amount Input with Commas
-  const handleAmountChange = (e) => {
+  const handleAmountChange = (e, setAmount) => {
     const value = e.target.value.replace(/,/g, "");
     if (!isNaN(value) && value !== "") {
-      setWithdrawAmount(formatNumberWithCommas(value));
+      setAmount(formatNumberWithCommas(value));
     } else {
-      setWithdrawAmount("");
+      setAmount("");
     }
   };
 
@@ -161,22 +187,33 @@ const CashDrawer = () => {
 
         <section className={`${styles.content}`}>
           <main className={`${styles.create_form}`}>
-            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-5 align-items-md-center">
+            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-5 gap-3 align-items-md-center">
               <h4 className="mb-3 mb-md-0">Cash Drawer</h4>
-              <div className="d-flex flex-column flex-md-row gap-2">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  className="form-control"
-                  placeholder="Filter By Date"
-                />
-                <Button
-                  className={`border-0 btn-dark shadow py-2 px-4 fs-6 fw-semibold ${styles.submit}`}
-                  onClick={() => setShowModal(true)}
-                >
-                  Withdraw
-                </Button>
+              <div className="d-flex flex-column justify-content-end align-items-center flex-md-row gap-2">
+                <div>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={handleDateChange}
+                    className="form-control"
+                    placeholder="Filter By Date"
+                  />
+                </div>
+                <div>
+                  <Button
+                    className={`border-0 btn-dark shadow py-2 px-4 my-2 fs-6 fw-semibold ${styles.submit}`}
+                    onClick={() => setShowAddCashModal(true)}
+                  >
+                    Add Cash
+                  </Button>
+                  <br />
+                  <Button
+                    className={`border-0 btn-dark shadow py-2 px-4 fs-6 fw-semibold ${styles.submit}`}
+                    onClick={() => setShowWithdrawModal(true)}
+                  >
+                    Withdraw
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -360,8 +397,55 @@ const CashDrawer = () => {
         </section>
       </div>
 
+      {/* Add Cash Modal */}
+      <Modal show={showAddCashModal} onHide={() => setShowAddCashModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add Cash To Drawer</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="border-0">
+          <Form onSubmit={handleAddCash}>
+            <Form.Group className="mb-3">
+              <Form.Label>Amount to Add (₦)</Form.Label>
+              <Form.Control
+                type="text"
+                value={addCashAmount}
+                onChange={(e) => handleAmountChange(e, setAddCashAmount)}
+                placeholder="Enter amount"
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={addCashDescription}
+                onChange={(e) => setAddCashDescription(e.target.value)}
+                placeholder="Enter description"
+                required
+              />
+            </Form.Group>
+            <div className="text-end">
+              <Button
+                className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-3 fw-semibold ${styles.submit}`}
+                type="submit"
+                disabled={modalLoading}
+              >
+                {modalLoading ? (
+                  <>
+                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> Processing...
+                  </>
+                ) : (
+                  "Add Cash"
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
       {/* Withdraw Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showWithdrawModal} onHide={() => setShowWithdrawModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Make a Withdrawal</Modal.Title>
         </Modal.Header>
@@ -372,7 +456,7 @@ const CashDrawer = () => {
               <Form.Control
                 type="text"
                 value={withdrawAmount}
-                onChange={handleAmountChange}
+                onChange={(e) => handleAmountChange(e, setWithdrawAmount)}
                 placeholder="Enter amount"
                 required
               />
@@ -405,11 +489,6 @@ const CashDrawer = () => {
             </div>
           </Form>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)} disabled={modalLoading}>
-            Cancel
-          </Button>
-        </Modal.Footer>
       </Modal>
 
       {/* Toast Notification */}
