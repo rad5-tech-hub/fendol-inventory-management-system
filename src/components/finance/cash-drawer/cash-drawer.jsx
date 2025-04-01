@@ -18,8 +18,8 @@ const CashDrawer = () => {
   const [cashPage, setCashPage] = useState(0);
   const [withdrawPage, setWithdrawPage] = useState(0);
   const [viewMode, setViewMode] = useState("cash"); // "cash" or "withdrawals"
-  const [showAddCashModal, setShowAddCashModal] = useState(false); // New modal for adding cash
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false); // Modal for withdrawals
+  const [showAddCashModal, setShowAddCashModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [addCashAmount, setAddCashAmount] = useState("");
   const [addCashDescription, setAddCashDescription] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -80,7 +80,7 @@ const CashDrawer = () => {
         amount: parseFloat(addCashAmount.replace(/,/g, "")),
         description: addCashDescription,
       };
-      const response = await Api.post("/add-cash-to-drawer", cashData); // Assuming this endpoint exists
+      const response = await Api.post("/add-cash-to-drawer", cashData);
       setLedgerData([response.data.data, ...ledgerData]);
       setToast({ show: true, message: "Cash added successfully!", variant: "success" });
       setShowAddCashModal(false);
@@ -117,7 +117,7 @@ const CashDrawer = () => {
     }
   };
 
-  // Format Date
+  // Format Date for Display
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
     const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
@@ -129,16 +129,27 @@ const CashDrawer = () => {
     return `${formattedDate} ${formattedTime}`;
   };
 
+  // Format Date to YYYY-MM-DD for Comparison
+  const formatDateForComparison = (isoDate) => {
+    const date = new Date(isoDate);
+    return date.toISOString().split("T")[0]; // Returns YYYY-MM-DD
+  };
+
   // Handle Date Filter
   const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
+    setSelectedDate(e.target.value); // Value will be in YYYY-MM-DD format
     setCashPage(0);
     setWithdrawPage(0);
   };
 
-  // Filter Data
-  const filterData = (data, dateField) =>
-    selectedDate ? data.filter((record) => formatDate(record[dateField]) === selectedDate) : data;
+  // Filter Data by Date (ignoring time)
+  const filterData = (data, dateField) => {
+    if (!selectedDate) return data;
+    return data.filter((record) => {
+      const recordDate = formatDateForComparison(record[dateField]);
+      return recordDate === selectedDate;
+    });
+  };
 
   const filteredCashData = filterData(ledgerData, "date");
   const filteredWithdrawData = filterData(withdrawalData, "WithdrawalDate");
