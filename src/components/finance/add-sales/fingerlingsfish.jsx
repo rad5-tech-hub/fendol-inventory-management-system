@@ -273,7 +273,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
     } catch (error) {
       console.error("Error in handleAddSales:", error);
       toast.update(salesToast, {
-        render: error.message || error.response?.data?.message || "Sale failed!",
+        render: error.response?.message || error.response?.data?.message || "Sale failed!",
         type: "error",
         isLoading: false,
         autoClose: 6000,
