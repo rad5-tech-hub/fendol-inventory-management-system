@@ -15,13 +15,15 @@ import { FaTrash } from "react-icons/fa6";
 
 export default function ViewAll() {
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState([]);
-  const [filteredCustomers, setFilteredCustomers] = useState([]);
+  const [allCustomers, setAllCustomers] = useState([]); // State for all customers
+  const [filteredAllCustomers, setFilteredAllCustomers] = useState([]); // Filtered state for all customers
+  const [debtors, setDebtors] = useState([]); // State for debtors
   const [loadingAll, setLoadingAll] = useState(true); // Loading state for All Customers
   const [loadingDebtors, setLoadingDebtors] = useState(false); // Loading state for Debtors
   const [errorAll, setErrorAll] = useState(''); // Error state for All Customers
   const [errorDebtors, setErrorDebtors] = useState(''); // Error state for Debtors
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPageAll, setCurrentPageAll] = useState(0); // Pagination for All Customers
+  const [currentPageDebtors, setCurrentPageDebtors] = useState(0); // Pagination for Debtors
   const [customersPerPage] = useState(10);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -37,8 +39,8 @@ export default function ViewAll() {
       setErrorAll('');
       const response = await Api.get('/customers');
       if (Array.isArray(response.data.data)) {
-        setCustomers(response.data.data);
-        setFilteredCustomers(response.data.data);
+        setAllCustomers(response.data.data);
+        setFilteredAllCustomers(response.data.data);
       } else {
         throw new Error("Expected an array of customers");
       }
@@ -57,7 +59,7 @@ export default function ViewAll() {
       setErrorDebtors('');
       const response = await Api.get('/customers-owing');
       if (Array.isArray(response.data.data)) {
-        setFilteredCustomers(response.data.data);
+        setDebtors(response.data.data);
       } else {
         throw new Error("Expected an array of debtors");
       }
@@ -75,7 +77,8 @@ export default function ViewAll() {
 
   const handleTabSelect = (key) => {
     setActiveTab(key);
-    setCurrentPage(0);
+    setCurrentPageAll(0); // Reset pagination for All Customers
+    setCurrentPageDebtors(0); // Reset pagination for Debtors
     setSelectedCategory('');
     if (key === 'debtors') {
       fetchDebtors();
@@ -87,15 +90,15 @@ export default function ViewAll() {
   const handleCategoryChange = (e) => {
     const value = e.target.value;
     setSelectedCategory(value);
-    setCurrentPage(0);
+    setCurrentPageAll(0);
     applyCategoryFilter(value);
   };
 
   const applyCategoryFilter = (category) => {
     if (category === '') {
-      setFilteredCustomers(customers);
+      setFilteredAllCustomers(allCustomers);
     } else {
-      setFilteredCustomers(customers.filter(customer => customer.category === category));
+      setFilteredAllCustomers(allCustomers.filter(customer => customer.category === category));
     }
   };
 
@@ -123,7 +126,8 @@ export default function ViewAll() {
         isLoading: false,
         autoClose: 3000
       });
-      fetchAllCustomers();
+      fetchAllCustomers(); // Refresh All Customers
+      fetchDebtors(); // Refresh Debtors in case the edited customer affects debtor status
       setShowModal(false);
       setSelectedCustomer(null);
     } catch (error) {
@@ -150,11 +154,20 @@ export default function ViewAll() {
     return `${formattedDate} ${formattedTime}`;
   };
 
-  const indexOfFirstCustomer = currentPage * customersPerPage;
-  const currentCustomers = filteredCustomers.slice(indexOfFirstCustomer, indexOfFirstCustomer + customersPerPage);
+  // Pagination for All Customers
+  const indexOfFirstCustomerAll = currentPageAll * customersPerPage;
+  const currentCustomersAll = filteredAllCustomers.slice(indexOfFirstCustomerAll, indexOfFirstCustomerAll + customersPerPage);
 
-  const handlePageClick = (data) => {
-    setCurrentPage(data.selected);
+  // Pagination for Debtors
+  const indexOfFirstDebtor = currentPageDebtors * customersPerPage;
+  const currentDebtors = debtors.slice(indexOfFirstDebtor, indexOfFirstDebtor + customersPerPage);
+
+  const handlePageClickAll = (data) => {
+    setCurrentPageAll(data.selected);
+  };
+
+  const handlePageClickDebtors = (data) => {
+    setCurrentPageDebtors(data.selected);
   };
 
   const handleNavigate = (customerId) => {
@@ -163,12 +176,12 @@ export default function ViewAll() {
 
   const handleSearch = (e) => {
     const searchQuery = e.target.value.toLowerCase();
-    setFilteredCustomers(
-      customers.filter((customer) =>
+    setFilteredAllCustomers(
+      allCustomers.filter((customer) =>
         customer.fullName.toLowerCase().includes(searchQuery)
       )
     );
-    setCurrentPage(0);
+    setCurrentPageAll(0);
   };
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
@@ -221,7 +234,7 @@ export default function ViewAll() {
               onSelect={handleTabSelect}
               id="customer-tabs"
               className="mb-3"
-              style={{ border: 'none' }} // Remove default border
+              style={{ border: 'none' }}
             >
               <Tab eventKey="all" title="All Customers" />
               <Tab eventKey="debtors" title="Debtors" />
@@ -229,15 +242,14 @@ export default function ViewAll() {
 
             <style jsx>{`
               .nav-tabs .nav-link {
-                color: #333; /* Inactive tab color (dark) */
-                border: none; /* Remove border */
+                color: #333;
+                border: none;
               }
               .nav-tabs .nav-link.active {
-
-                color: #B06426; /* Active tab color */
-                border: none; /* Remove border */
-                background-color: transparent; /* No background */
-                font-weight: bold; /* Optional: make active tab bold */
+                color: #B06426;
+                border: none;
+                background-color: transparent;
+                font-weight: bold;
                 text-decoration: underline;
               }
             `}</style>
@@ -261,7 +273,7 @@ export default function ViewAll() {
                   </div>
                 )}
 
-                {!loadingAll && !errorAll && filteredCustomers.length === 0 && (
+                {!loadingAll && !errorAll && filteredAllCustomers.length === 0 && (
                   <div className="d-flex justify-content-center">
                     <Alert variant="info" className="text-center w-50 py-5">
                       <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">No available Customer!</span>
@@ -269,7 +281,7 @@ export default function ViewAll() {
                   </div>
                 )}
 
-                {!loadingAll && !errorAll && filteredCustomers.length > 0 && (
+                {!loadingAll && !errorAll && filteredAllCustomers.length > 0 && (
                   <div className='table-responsive'>
                     <table className={`table ${styles.styled_tables}`}>
                       <thead className={styles.theaders}>
@@ -282,7 +294,7 @@ export default function ViewAll() {
                         </tr>
                       </thead>
                       <tbody>
-                        {currentCustomers.map((customer) => (
+                        {currentCustomersAll.map((customer) => (
                           <OverlayTrigger
                             key={customer.id}
                             placement="bottom"
@@ -359,6 +371,7 @@ export default function ViewAll() {
                                           autoClose: 3000,
                                         });
                                         fetchAllCustomers();
+                                        fetchDebtors(); // Refresh Debtors in case the deleted customer was a debtor
                                       } catch (error) {
                                         console.error("Error deleting customer:", error);
                                         toast.update(loadingToast, {
@@ -384,10 +397,10 @@ export default function ViewAll() {
                         previousLabel={<FaArrowLeft />}
                         nextLabel={<FaArrowRight />}
                         breakLabel="..."
-                        pageCount={Math.ceil(filteredCustomers.length / customersPerPage)}
+                        pageCount={Math.ceil(filteredAllCustomers.length / customersPerPage)}
                         marginPagesDisplayed={2}
                         pageRangeDisplayed={3}
-                        onPageChange={handlePageClick}
+                        onPageChange={handlePageClickAll}
                         containerClassName={"pagination"}
                         pageClassName={"page-item"}
                         pageLinkClassName={"page-link"}
@@ -424,7 +437,7 @@ export default function ViewAll() {
                   </div>
                 )}
 
-                {!loadingDebtors && !errorDebtors && filteredCustomers.length === 0 && (
+                {!loadingDebtors && !errorDebtors && debtors.length === 0 && (
                   <div className="d-flex justify-content-center">
                     <Alert variant="info" className="text-center w-50 py-5">
                       <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">No available Debtors!</span>
@@ -432,21 +445,21 @@ export default function ViewAll() {
                   </div>
                 )}
 
-                {!loadingDebtors && !errorDebtors && filteredCustomers.length > 0 && (
+                {!loadingDebtors && !errorDebtors && debtors.length > 0 && (
                   <div className='table-responsive'>
                     <table className={`table ${styles.styled_tables}`}>
                       <thead className={styles.theaders}>
                         <tr>
                           <th>DATE AND TIME</th>
-                          <th>FULL NAME</th>                    
+                          <th>FULL NAME</th>
                           <th>DEBT</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {currentCustomers.map((debtor) => (
+                        {currentDebtors.map((debtor) => (
                           <tr key={debtor.id} className="text-start">
                             <td>{formatDate(debtor.customerCreatedAt)}</td>
-                            <td>{debtor.fullName}</td>                            
+                            <td>{debtor.fullName}</td>
                             <td>{debtor.lastLedgerBalance ? `₦${new Intl.NumberFormat().format(debtor.lastLedgerBalance)}` : '0'}</td>
                           </tr>
                         ))}
@@ -457,10 +470,10 @@ export default function ViewAll() {
                         previousLabel={<FaArrowLeft />}
                         nextLabel={<FaArrowRight />}
                         breakLabel="..."
-                        pageCount={Math.ceil(filteredCustomers.length / customersPerPage)}
+                        pageCount={Math.ceil(debtors.length / customersPerPage)}
                         marginPagesDisplayed={2}
                         pageRangeDisplayed={3}
-                        onPageChange={handlePageClick}
+                        onPageChange={handlePageClickDebtors}
                         containerClassName={"pagination"}
                         pageClassName={"page-item"}
                         pageLinkClassName={"page-link"}
