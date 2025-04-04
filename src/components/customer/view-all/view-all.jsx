@@ -438,20 +438,16 @@ export default function ViewAll() {
                       <thead className={styles.theaders}>
                         <tr>
                           <th>DATE AND TIME</th>
-                          <th>FULL NAME</th>
-                          <th>TRANSACTION ID</th>
-                          <th>PAYMENT TYPE</th>
-                          <th>DEBIT</th>
+                          <th>FULL NAME</th>                    
+                          <th>DEBT</th>
                         </tr>
                       </thead>
                       <tbody>
                         {currentCustomers.map((debtor) => (
                           <tr key={debtor.id} className="text-start">
                             <td>{formatDate(debtor.createdAt)}</td>
-                            <td>{debtor.fullName}</td>
-                            <td>{debtor.transactionId || '-'}</td>
-                            <td>{debtor.paymentType || '-'}</td>
-                            <td>{debtor.debit ? `₦${new Intl.NumberFormat().format(debtor.debit)}` : '0'}</td>
+                            <td>{debtor.fullName}</td>                            
+                            <td>{debtor.totalOwed ? `₦${new Intl.NumberFormat().format(debtor.totalOwed)}` : '0'}</td>
                           </tr>
                         ))}
                       </tbody>
