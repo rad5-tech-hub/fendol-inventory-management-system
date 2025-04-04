@@ -445,9 +445,9 @@ export default function ViewAll() {
                       <tbody>
                         {currentCustomers.map((debtor) => (
                           <tr key={debtor.id} className="text-start">
-                            <td>{formatDate(debtor.createdAt)}</td>
+                            <td>{formatDate(debtor.customerCreatedAt)}</td>
                             <td>{debtor.fullName}</td>                            
-                            <td>{debtor.totalOwed ? `₦${new Intl.NumberFormat().format(debtor.totalOwed)}` : '0'}</td>
+                            <td>{debtor.lastLedgerBalance ? `₦${new Intl.NumberFormat().format(debtor.lastLedgerBalance)}` : '0'}</td>
                           </tr>
                         ))}
                       </tbody>
