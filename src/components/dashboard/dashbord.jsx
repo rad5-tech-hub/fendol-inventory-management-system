@@ -1,182 +1,369 @@
-import React, { useState } from 'react';
-import { Row, Col } from 'react-bootstrap';
-import styles from './dashboard.module.scss'; // Adjust the import as needed
+import React, { useState, useEffect } from 'react';
+import { Row, Col, Card } from 'react-bootstrap';
+import styles from './dashboard.module.scss';
+import Api from '../shared/api/apiLink';
 import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement, // Add this for Line chart
-    LineElement,  // Add this for Line chart
-    BarElement,
-    ArcElement, // Add this for Doughnut chart
-    Title,
-    Tooltip,
-    Legend,
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  BarController,
+  DoughnutController,
+  LineController,
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2'; // Ensure imports are at the top
-import { Value } from 'sass'; // Ensure this is moved to the top
+import { Chart } from 'react-chartjs-2';
 
-// Register necessary components
+// Register necessary Chart.js components
 ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    ArcElement,
-    Title,
-    Tooltip,
-    Legend
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  BarController,
+  DoughnutController,
+  LineController,
 );
 
-export default function Dashboard() {
-    const [dataLine, setDataLine] = useState(() => {
-        const months = [
-          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-        ];
-    
-        return months.map((month) => {
-          const profit = Math.floor(Math.random() * 101); // Random percentage for profit
-          const loss = 100 - profit; // Remaining percentage for loss
-    
-          return {
-            label: month,
-            profit: `${profit}%`,
-            loss: `${loss}%`,
-          };
-        });
-    });
-    
+const Dashboard = () => {
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await Api.get('/dashboard');
+        setDashboardData(response.data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to fetch dashboard data.');
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className={`${styles.body}`}>
+        <div className="sticky-top">
+          <Header toggleSidebar={() => setShowSidebar(!showSidebar)} />
+        </div>
+        <div className="d-flex gap-2">
+          <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+            <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={() => setShowSidebar(false)} />
+          </div>
+          <section className={`${styles.content}`}>
+            <main>
+              <div className={styles.create_form}>
+                <h4 className="fw-semibold my-5">Loading...</h4>
+              </div>
+            </main>
+          </section>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className={`${styles.body}`}>
+        <div className="sticky-top">
+          <Header toggleSidebar={() => setShowSidebar(!showSidebar)} />
+        </div>
+        <div className="d-flex gap-2">
+          <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+            <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={() => setShowSidebar(false)} />
+          </div>
+          <section className={`${styles.content}`}>
+            <main>
+              <div className={styles.create_form}>
+                <h4 className="fw-semibold my-5 text-danger">Error: {error}</h4>
+              </div>
+            </main>
+          </section>
+        </div>
+      </section>
+    );
+  }
+
+  // Safeguard against null or undefined values with fallback defaults
+  const totalSalesFormatted = dashboardData?.totalSales != null ? `₦${dashboardData.totalSales.toLocaleString()}` : '₦0';
+  const totalCustomers = dashboardData?.totalCustomers ?? 0;
+  const totalMarketers = dashboardData?.totalMarketers ?? 0;
+  const totalPonds = dashboardData?.totalPonds ?? 0;
+
+  // Chart data with fallbacks
+  const salesSummaryData = {
+    labels: dashboardData?.salesSummary?.data?.map((item) => item.date) || [],
+    datasets: [
+      {
+        label: 'Sales',
+        data: dashboardData?.salesSummary?.data?.map((item) => item.totalSales) || [],
+        borderColor: '#2E3135',
+        backgroundColor: 'rgba(46, 49, 53, 0.2)',
+        tension: 0.4,
+        fill: false,
+      },
+    ],
+  };
+
+  const financeSummaryData = {
+    labels: dashboardData?.financeSummary?.salesByMonth?.map((item) => item.month) || [],
+    datasets: [
+      {
+        label: 'Sales',
+        data: dashboardData?.financeSummary?.salesByMonth?.map((item) => item.totalSales) || [],
+        backgroundColor: '#2E3135',
+      },
+      {
+        label: 'Expenses',
+        data: dashboardData?.financeSummary?.expensesByMonth?.map((item) => item.totalExpenses || 0) || [],
+        backgroundColor: '#B06426',
+      },
+    ],
+  };
+
+  const topSellingProductsData = {
+    labels: dashboardData?.topProducts?.map((item) => item.productName) || [],
+    datasets: [
+      {
+        label: 'Total Revenue',
+        data: dashboardData?.topProducts?.map((item) => item.totalRevenue) || [],
+        backgroundColor: 'rgba(0, 128, 0, 0.6)',
+        stack: 'Stack 0',
+      },
+    ],
+  };
+
+  const processSummaryData = {
+    labels: dashboardData?.processSummary?.map((item) => item.date) || [],
+    datasets: [
+      {
+        label: 'Whole Fish',
+        data: dashboardData?.processSummary?.map((item) => parseInt(item.wholeFish) || 0) || [],
+        borderColor: '#2E3135',
+        backgroundColor: 'rgba(46, 49, 53, 0.6)',
+        fill: true,
+        tension: 0.4,
+        stack: 'Stack 0',
+      },
+      {
+        label: 'Broken Fish',
+        data: dashboardData?.processSummary?.map((item) => parseInt(item.brokenFish) || 0) || [],
+        borderColor: '#B06426',
+        backgroundColor: 'rgba(176, 100, 38, 0.6)',
+        fill: true,
+        tension: 0.4,
+        stack: 'Stack 0',
+      },
+      {
+        label: 'Damaged Fish',
+        data: dashboardData?.processSummary?.map((item) => parseInt(item.damagedFish) || 0) || [],
+        borderColor: '#FF0000',
+        backgroundColor: 'rgba(255, 0, 0, 0.6)',
+        fill: true,
+        tension: 0.4,
+        stack: 'Stack 0',
+      },
+    ],
+  };
+
+  // Chart options
+  const chartOptions = (title, type) => {
+    const baseOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' },
+        title: { display: true, text: title },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const label = context.dataset.label || '';
+              let value = context.raw || 0;
+              if (
+                (title === 'Finance Summary' && (label === 'Sales' || label === 'Expenses')) ||
+                (title === 'Top Selling Products' && label === 'Total Revenue') ||
+                (title === 'Sales Summary' && label === 'Sales')
+              ) {
+                value = `₦${value.toLocaleString()}`;
+              }
+              return `${label}: ${value}`;
+            },
+          },
+        },
+      },
+    };
+
+    if (type === 'line') {
+      if (title === 'Sales Summary') {
+        return {
+          ...baseOptions,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'SALES (₦)' },
+              ticks: { callback: (value) => `₦${value.toLocaleString()}` },
+            },
+            x: { title: { display: true, text: 'PERIOD OF TIME' } },
+          },
+        };
+      }
+      return {
+        ...baseOptions,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'FISH COUNT' },
+            stacked: true,
+          },
+          x: { title: { display: true, text: 'PERIOD OF TIME' } },
+        },
+      };
+    }
+
+    if (title === 'Top Selling Products') {
+      return {
+        ...baseOptions,
+        indexAxis: 'y',
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'top',
+            stacked: true,
+            beginAtZero: true,
+            title: { display: true, text: 'TOTAL REVENUE (₦)' },
+            ticks: { callback: (value) => `₦${value.toLocaleString()}` },
+          },
+          y: {
+            stacked: true,
+            title: { display: true, text: 'PRODUCTS' },
+          },
+        },
+      };
+    }
+
+    return {
+      ...baseOptions,
+      scales: {
+        x: { title: { display: true, text: 'PERIOD OF TIME' } },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'SALES (₦)' },
+          ticks: { callback: (value) => `₦${value.toLocaleString()}` },
+        },
+      },
+    };
+  };
+
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
+  const renderChart = (data, title, type = 'bar') => {
+    const chartType = type === 'line' ? 'line' : type === 'doughnut' ? 'doughnut' : 'bar';
+    return (
+      <div style={{ position: 'relative', width: '100%', minWidth: '300px', height: '400px' }}>
+        <Chart type={chartType} data={data} options={chartOptions(title, type)} />
+      </div>
+    );
+  };
+
   return (
-    <section className={styles.body}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        <div className={`${styles.sidebar}`}>
-          <SideBar className={styles.sidebarItem} />
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${styles.content}`}>
           <main>
             <div className={styles.create_form}>
-              <h4 className='fw-semibold my-5'>Dashboard</h4>
-              <Row lg={2} sm={1} md={2} xs={1}>
-                <Col>
-                  <div className={`shadow rounded ${styles.board} p-3`}>
-                    <Bar
-                      data={{
-                        labels: ['Feeds', 'Stocks', 'Ponds'],
-                        datasets: [
-                          {
-                            label: 'Analysis',
-                            data: [300, 400, 500],
-                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                          },
-                          {
-                            label: 'Loss',
-                            data: [30, 40, 50],
-                            backgroundColor: 'rgba(176, 100, 39, 0.6)',
-                          },
-                        ],
-                      }}
-                      options={{
-                        responsive: true,
-                        plugins: {
-                          legend: {
-                            position: 'top',
-                          },
-                          title: {
-                            display: true,
-                            text: 'Data Analysis',
-                          },
-                        },
-                      }}
-                    />
+              <h4 className="fw-semibold my-4">Dashboard Overview</h4>
+              <Row className="g-4 mb-4">
+                <Col lg={3} md={6} sm={12} xs={12}>
+                  <Card className={`shadow rounded-0 border-0 ${styles.board} ${styles.salesCard}`}>
+                    <Card.Body>
+                      <Card.Title className="fw-semibold mb-3 fs-6">Total Sales</Card.Title>
+                      <Card.Text className="fs-4 fw-bold text-white">{totalSalesFormatted}</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col lg={3} md={6} sm={12} xs={12}>
+                  <Card className={`shadow rounded-0 border-0 ${styles.board}`}>
+                    <Card.Body>
+                      <Card.Title className="fw-semibold mb-3 fs-6">Total Customers</Card.Title>
+                      <Card.Text className="fs-4 fw-bold">{totalCustomers}</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col lg={3} md={6} sm={12} xs={12}>
+                  <Card className={`shadow rounded-0 border-0 ${styles.board}`}>
+                    <Card.Body>
+                      <Card.Title className="fw-semibold mb-3 fs-6">Total Marketers</Card.Title>
+                      <Card.Text className="fs-4 fw-bold">{totalMarketers}</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col lg={3} md={6} sm={12} xs={12}>
+                  <Card className={`shadow rounded-0 border-0 ${styles.board}`}>
+                    <Card.Body>
+                      <Card.Title className="fw-semibold mb-3 fs-6">Total Ponds</Card.Title>
+                      <Card.Text className="fs-4 fw-bold">{totalPonds}</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+              <Row className="g-4 mb-4">
+                <Col lg={6} md={12} sm={12} xs={12}>
+                  <div className={`shadow rounded ${styles.chartDash}`}>
+                    {renderChart(salesSummaryData, 'Sales Summary', 'line')}
                   </div>
                 </Col>
-                <Col>
-                  <div className={`shadow rounded d-flex justify-content-center ${styles.board} p-3`}>
-                    <Doughnut
-                      data={{
-                        labels: ['Feeds', 'Stocks', 'Ponds'],
-                        datasets: [
-                          {
-                            data: [300, 400, 500],
-                            backgroundColor: [
-                              'rgba(75, 192, 192, 0.6)',
-                              'rgba(176, 100, 39, 0.4)',
-                              'rgba(255, 205, 86, 0.6)',
-                            ],
-                          },
-                        ],
-                      }}
-                      options={{
-                        responsive: true,
-                        plugins: {
-                          legend: {
-                            position: 'top',
-                          },
-                          title: {
-                            display: true,
-                            text: 'Data Analysis',
-                          },
-                        },
-                      }}
-                    />
+                <Col lg={6} md={12} sm={12} xs={12}>
+                  <div className={`shadow rounded ${styles.chartDash}`}>
+                    {renderChart(financeSummaryData, 'Finance Summary', 'bar')}
                   </div>
                 </Col>
               </Row>
-              <div className="shadow mt-4 p-4">
-                    <Line
-                        data={{
-                        labels: dataLine.map((item) => item.label), // Months as labels
-                        datasets: [
-                            {
-                            label: 'Profit (%)',
-                            data: dataLine.map((item) => parseInt(item.profit)), // Profit values
-                            borderColor: 'rgba(75, 192, 192, 0.6)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            fill: true,
-                            tension: 0.4, // Smoothing effect for line
-                            },
-                            {
-                            label: 'Loss (%)',
-                            data: dataLine.map((item) => parseInt(item.loss)), // Loss values
-                            borderColor: 'rgba(255, 99, 132, 0.6)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            fill: true,
-                            tension: 0.4,
-                            },
-                        ],
-                        }}
-                        options={{
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                            position: 'top',
-                            },
-                            title: {
-                            display: true,
-                            text: 'Monthly Profit and Loss Analysis',
-                            },
-                        },
-                        scales: {
-                            y: {
-                            beginAtZero: true,
-                            max: 100, // Maximum percentage
-                            },
-                        },
-                        }}
-                    />
-               </div>
-
+              <Row className="g-4">
+                <Col lg={6} md={12} sm={12} xs={12}>
+                  <div className={`shadow rounded ${styles.chartDash}`}>
+                    {renderChart(topSellingProductsData, 'Top Selling Products', 'bar')}
+                  </div>
+                </Col>
+                <Col lg={6} md={12} sm={12} xs={12}>
+                  <div className={`shadow rounded ${styles.chartDash}`}>
+                    {renderChart(processSummaryData, 'Process Summary', 'line')}
+                  </div>
+                </Col>
+              </Row>
             </div>
           </main>
         </section>
       </div>
     </section>
   );
-}
+};
+
+export default Dashboard;

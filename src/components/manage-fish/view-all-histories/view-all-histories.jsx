@@ -7,7 +7,7 @@ import { Spinner, Alert, Form } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
-import styled from "styled-components"; // For custom navigation styles
+import styled from "styled-components";
 
 const NavTab = styled.div`
   display: flex;
@@ -28,7 +28,13 @@ const NavTab = styled.div`
       color: #b06426;
       border-bottom: 3px solid #b06426;
     }
-  }`
+
+    @media (max-width: 991px) { // Tablet
+      padding: 0.4rem 0.8rem;
+      font-size: 14px;
+    }
+  }
+`;
 
 export default function ViewAllHistory() {
   const [activeTab, setActiveTab] = useState("#add-histories");
@@ -36,7 +42,8 @@ export default function ViewAllHistory() {
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedDate, setSelectedDate] = useState(""); // State for selected date
+  const [selectedDate, setSelectedDate] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
 
   // Separate pagination state for each tab
   const [pagination, setPagination] = useState({
@@ -51,26 +58,26 @@ export default function ViewAllHistory() {
     "#add-histories": {
       label: "Added Fish",
       endpoint: "fishes",
-      headers: ["Date", "Pond", "Quantity", "Fish Type", "Fish Batch"],
-      dataKeys: ["createdAt", "stageTitle", "quantity", "speciesName", "batch_no"],
+      headers: ["Date", "Pond", "Quantity", "Fish Type"],
+      dataKeys: ["createdAt", "stageTitle", "quantity", "speciesName"],
     },
     "#move-fish": {
       label: "Moved Fish",
       endpoint: "fish-movements",
-      headers: ["Date", "Pond From", "Fish Batch", "Pond To", "Quantity", "Remark"],
-      dataKeys: ["createdAt", "sourcePond", "batch_no", "destinationPond", "actual_quantity", "remarks"],
+      headers: ["Date", "Pond From", "Pond To", "Quantity", "Remark"],
+      dataKeys: ["createdAt", "sourcePond", "destinationPond", "actual_quantity", "remarks"],
     },
     "#harvest-fish": {
       label: "Harvested Fish",
       endpoint: "harvested-fish",
-      headers: ["Date", "Pond From", "Quantity", "Fish Batch", "Remark"],
-      dataKeys: ["createdAt", "FishStage", "quantity", "batch_no", "remarks"],
+      headers: ["Date", "Pond From", "Quantity", "Remark"],
+      dataKeys: ["createdAt", "pondName", "actual_quantity", "remarks"],
     },
     "#damage-fish": {
       label: "Damaged Fish",
       endpoint: "damaged-fish",
-      headers: ["Date", "Pond From", "Quantity", "Fish Batch", "Remark"],
-      dataKeys: ["createdAt", "sourcePond", "quantity", "batch_no", "remarks"],
+      headers: ["Date", "Pond From", "Quantity", "Remark"],
+      dataKeys: ["createdAt", "sourcePond", "quantity", "remarks"],
     },
   };
 
@@ -82,16 +89,14 @@ export default function ViewAllHistory() {
       const response = await Api.get(endpoint);
       const { data } = response.data;
 
-      // If it's the "harvest-fish" tab, use 'harvested' instead of 'data'
       const responseData = activeTab === "#harvest-fish" ? response.data.harvested : data;
 
-      // Perform local pagination
       const ITEMS_PER_PAGE = 10;
       const offset = currentPage * ITEMS_PER_PAGE;
       const paginatedData = responseData.slice(offset, offset + ITEMS_PER_PAGE);
 
-      setData(responseData); // Save all data for filtering purposes
-      setFilteredData(paginatedData); // Set initial filtered data based on pagination
+      setData(responseData);
+      setFilteredData(paginatedData);
       setPagination((prev) => ({
         ...prev,
         [activeTab]: {
@@ -106,25 +111,33 @@ export default function ViewAllHistory() {
     }
   };
 
-
   useEffect(() => {
     const currentConfig = tabConfig[activeTab];
     if (currentConfig) {
-      // Fetch the data based on the selected tab and pagination
       fetchData(currentConfig.endpoint, pagination[activeTab].currentPage);
     }
-  }, [activeTab, pagination[activeTab].currentPage]);  // Add currentPage for each tab to the dependency array
-  
+  }, [activeTab, pagination[activeTab].currentPage]);
+
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
-    return date.toLocaleDateString("en-GB", { timeZone: 'UTC' }); // Format the date to UTC
+    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+    return `${formattedDate} ${formattedTime}`;
   };
-  
+
+  const truncateRemark = (text) => {
+    if (typeof text !== 'string') return '-';
+    return text.length > 40 ? `${text.substring(0, 40)}....` : text;
+  };
+
   const handleDateChange = (e) => {
     const selected = e.target.value;
     setSelectedDate(selected);
     if (selected === "") {
-      // Reset to original data if no date is selected
       setFilteredData(data.slice(pagination[activeTab].currentPage * 10, (pagination[activeTab].currentPage + 1) * 10));
     } else {
       const formattedSelectedDate = new Date(selected).toISOString().split('T')[0];
@@ -141,105 +154,106 @@ export default function ViewAllHistory() {
     if (!currentConfig) return null;
 
     return (
-      <table className={styles.styled_table}>
-        <thead>
-          <tr>
-            {currentConfig.headers.map((header, index) => (
-              <th key={index} className="text-uppercase">{header}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {filteredData.length === 0 ? (
+      <div className="table-responsive">
+        <table className={styles.styled_table}>
+          <thead>
             <tr>
-              <td colSpan={currentConfig.headers.length} className="text-center border-none">
-                <Alert variant="info" className="py-5">No available history data.</Alert>
-              </td>
+              {currentConfig.headers.map((header, index) => (
+                <th key={index} className="text-uppercase" style={{ cursor: 'pointer' }}>
+                  {header}
+                </th>
+              ))}
             </tr>
-          ) : (
-            filteredData.map((item, index) => (
-              <tr key={index}>
-                {currentConfig.dataKeys.map((key, idx) => (
-                  <td key={idx}>
-                    {key === "createdAt"
-                      ? formatDate(item[key])
-                      : key === "destinationPond" && item.destinationPond?.title
-                      ? item.destinationPond.title
-                      : key === "sourcePond" && item.sourcePond?.title
-                      ? item.sourcePond.title
-                      : key === "FishStage" && item.FishStage?.title
-                      ? item.FishStage.title
-                      : item[key] !== null && item[key] !== undefined
-                      ? item[key]
-                      : "-"}
-                  </td>
-                ))}
+          </thead>
+          <tbody>
+            {filteredData.length === 0 ? (
+              <tr>
+                <td colSpan={currentConfig.headers.length} className="text-center border-none">
+                  <Alert variant="info" className="py-5">No available history data.</Alert>
+                </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              filteredData.map((item, index) => (
+                <tr key={index}>
+                  {currentConfig.dataKeys.map((key, idx) => (
+                    <td key={idx}>
+                      {key === "createdAt"
+                        ? formatDate(item[key])
+                        : key === "destinationPond" && item.destinationPond?.title
+                        ? item.destinationPond.title
+                        : key === "sourcePond" && item.sourcePond?.title
+                        ? item.sourcePond.title
+                        : key === "FishStage" && item.FishStage?.title
+                        ? item.FishStage.title
+                        : key === "remarks"
+                        ? truncateRemark(item[key])
+                        : item[key] !== null && item[key] !== undefined
+                        ? item[key]
+                        : "-"}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     );
   };
 
-
+  // Sidebar toggle handlers
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        {/* Sidebar */}
         <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+          <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-
-        {/* Content */}
-        <section className={`${styles.content}`}>
+        <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
             <h4 className="mt-3 mb-5">View All Histories</h4>
-
-            {/* Custom Nav Tabs */}
-            <div className="d-flex justify-content-between">
-              <div>
-                <NavTab>
-                  {Object.entries(tabConfig).map(([key, { label }]) => (
-                    <a
-                      key={key}
-                      href={key}
-                      className={`tab ${activeTab === key ? "active" : ""}`}
-                      onClick={() => {
-                        setActiveTab(key);
-                        setPagination((prev) => ({
-                          ...prev,
-                          [key]: { currentPage: 0, totalPages: 0 },
-                        })); // Reset pagination when switching tabs
-                      }}
-                    >
-                      {label}
-                    </a>
-                  ))}
-                </NavTab>
-              </div>
-              <div>
+            <div className="d-flex justify-content-between flex-column flex-md-row align-items-md-center mb-3">
+              <NavTab>
+                {Object.entries(tabConfig).map(([key, { label }]) => (
+                  <a
+                    key={key}
+                    href={key}
+                    className={`tab ${activeTab === key ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setActiveTab(key);
+                      setPagination((prev) => ({
+                        ...prev,
+                        [key]: { currentPage: 0, totalPages: 0 },
+                      }));
+                    }}
+                  >
+                    {label}
+                  </a>
+                ))}
+              </NavTab>
+              <div className="mt-3 mt-md-0">
                 <Form.Control
                   type="date"
                   className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                   value={selectedDate}
-                  onChange={handleDateChange} // Handle date change to filter
+                  onChange={handleDateChange}
                 />
               </div>
             </div>
 
-            {/* Table or Error/Loader */}
             {loading ? (
               <div className="text-center my-5">
                 <Spinner animation="border" />
               </div>
             ) : error ? (
               <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
+                <Alert variant="danger" className="text-center w-75 py-5">
                   <FaExclamationTriangle size={40} />
                   <span className="ms-2">{error}</span>
                 </Alert>
@@ -248,7 +262,6 @@ export default function ViewAllHistory() {
               renderTable()
             )}
 
-            {/* Pagination Controls */}
             {filteredData.length > 0 && pagination[activeTab].totalPages > 1 && (
               <div className="mt-4">
                 <ReactPaginate

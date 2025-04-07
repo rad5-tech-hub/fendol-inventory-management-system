@@ -13,14 +13,15 @@ const FinanceLedger = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10; // Adjust this number as needed
+  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+  const itemsPerPage = 10;
   const [balance, setBalance] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(""); // State for date filter
+  const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
     const fetchLedgerData = async () => {
       try {
-        const response = await Api.get("/ledger"); // Replace with your API URL
+        const response = await Api.get("/ledger");
         if (Array.isArray(response.data.data)) {
           setLedgerData(response.data.data);
         } else {
@@ -28,9 +29,7 @@ const FinanceLedger = () => {
         }
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError(
-          err.response?.data?.message || "Failed to fetch data. Please try again."
-        );
+        setError(err.response?.data?.message || "Failed to fetch data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -42,22 +41,24 @@ const FinanceLedger = () => {
   // Format date function
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`; // Return ISO 8601 format for input[type="date"]
+    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+    return `${formattedDate} ${formattedTime}`;
   };
 
   // Handle date change for filtering
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
+    setCurrentPage(0); // Reset to first page when filtering
   };
 
   // Filter ledger data based on selected date
   const filteredLedgerData = selectedDate
-    ? ledgerData.filter((record) =>
-        formatDate(record.date) === selectedDate
-      )
+    ? ledgerData.filter((record) => formatDate(record.date) === selectedDate)
     : ledgerData;
 
   // Pagination logic
@@ -71,29 +72,31 @@ const FinanceLedger = () => {
 
   useEffect(() => {
     if (displayedLedgerData.length > 0) {
-      // Set the balance from the first entry (or any logic you'd prefer)
       setBalance(displayedLedgerData[0].balanceWithRollover);
     }
   }, [displayedLedgerData]);
 
+  // Sidebar toggle handlers
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
         {/* Sidebar */}
         <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+          <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
         {/* Content */}
-        <section className={`${styles.content}`}>
+        <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
-            <div className="d-flex justify-content-between mt-3 mb-5 ">
-              <h4 className="">Finance Ledger</h4>
-              {/* Date Picker for filtering */}
-              <div className="d-flex gap-2">                
+            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-5 align-items-md-center">
+              <h4 className="mb-3 mb-md-0">Finance Ledger</h4>
+              <div className="d-flex gap-2">
                 <input
                   type="date"
                   value={selectedDate}
@@ -116,32 +119,30 @@ const FinanceLedger = () => {
             {/* Error Message */}
             {error && (
               <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
+                <Alert variant="danger" className="text-center w-75 py-5">
                   <BsExclamationTriangleFill size={40} />{" "}
                   <span className="fw-semibold">{error}</span>
                 </Alert>
               </div>
             )}
 
-          {!loading && !error && displayedLedgerData.length === 0 && (
-            <div className="d-flex justify-content-center">
-              <Alert variant="info" className="text-center w-50 py-5">
-                No available data
-              </Alert>
-            </div>
-          )}
-
+            {!loading && !error && displayedLedgerData.length === 0 && (
+              <div className="d-flex justify-content-center">
+                <Alert variant="info" className="text-center w-75 py-5">
+                  No available data
+                </Alert>
+              </div>
+            )}
 
             {/* Ledger Table */}
             {!loading && !error && displayedLedgerData.length > 0 && (
               <>
-                <table className={styles.styled_table}>
+                <table className={`${styles.styled_table} ${styles.table_responsive}`}>
                   <thead className={`rounded-2 ${styles.theader}`}>
                     <tr>
                       <th>DATE</th>
-                      <th className="pt-3">PRODUCT</th>
+                      <th>PRODUCT</th>
                       <th className="pt-3">DESCRIPTION</th>
-                      <th className="pt-3">QUANTITY</th>
                       <th style={{ color: "green" }} className="pt-3">
                         CREDIT(₦)
                       </th>
@@ -151,25 +152,37 @@ const FinanceLedger = () => {
                       <th>BALANCE(₦)</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody style={{ cursor: "pointer" }}>
                     {displayedLedgerData.map((record, index) => (
                       <tr key={index}>
                         <td>{formatDate(record.date)}</td>
-                        <td>{record.productName}</td>
-                        <td>
+                        <td
+                          title={record.productName}
+                          style={{
+                            cursor: record.productName && record.productName.length > 40 ? "pointer" : "normal",
+                          }}
+                        >
+                          {record.productName
+                            ? record.productName.slice(0, 40) + (record.productName.length > 40 ? "..." : "")
+                            : "-"}
+                        </td>
+                        <td
+                          title={record.description}
+                          style={{
+                            cursor: record.description && record.description.length > 40 ? "pointer" : "normal",
+                          }}
+                        >
                           {record.description
-                            ? record.description.slice(0, 40) +
-                              (record.description.length > 40 ? "..." : "")
+                            ? record.description.slice(0, 40) + (record.description.length > 40 ? "..." : "")
                             : ""}
                         </td>
-                        <td>{record.quantity}</td>
                         <td style={{ color: "green" }}>
-                          {record.credit ? `₦${record.credit}` : "-"}
+                          {record.credit ? `₦${new Intl.NumberFormat().format(record.credit)}` : "-"}
                         </td>
                         <td style={{ color: "red" }}>
-                          {record.debit ? `₦${record.debit}` : "-"}
+                          {record.debit ? `₦${new Intl.NumberFormat().format(record.debit)}` : "-"}
                         </td>
-                        <td>{`₦${record.balance}`}</td>
+                        <td>{`₦${new Intl.NumberFormat().format(record.balance)}`}</td>
                       </tr>
                     ))}
                   </tbody>

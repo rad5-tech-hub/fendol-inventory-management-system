@@ -5,7 +5,6 @@ import Header from "../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from './damge.module.scss';
 import { BsThreeDotsVertical } from "react-icons/bs";
-import axios from 'axios';
 import { Spinner, Alert } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import Api from '../shared/api/apiLink';
@@ -15,12 +14,13 @@ export default function DamageLoss() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0); // Current page
+  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
   const itemsPerPage = 10; // Number of items per page
 
   useEffect(() => {
     const fetchMoveFishHistory = async () => {
       try {
-        const response = await Api.get('/damage-loss'); 
+        const response = await Api.get('/damage-loss');
         setMoveFishHistory(response.data.data); // Assuming the response contains an array of history data
       } catch (error) {
         setError("Error fetching move fish history. Please try again.");
@@ -33,10 +33,13 @@ export default function DamageLoss() {
 
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+    return `${formattedDate} ${formattedTime}`;
   };
 
   // Calculate Paginated Data
@@ -48,22 +51,25 @@ export default function DamageLoss() {
     setCurrentPage(selected);
   };
 
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
         {/* Sidebar */}
-        <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
         {/* Content */}
-        <section className={`${styles.content}`}>
+        <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
             <h4 className="mt-3 mb-5">Damage/Loss</h4>
-            
+
             {/* Table */}
             {loading ? (
               <div className="text-center my-5">
@@ -83,38 +89,48 @@ export default function DamageLoss() {
               </div>
             ) : (
               <>
-                <table className={styles.styled_table}>
-                  <thead>
-                    <tr>
-                      <th>DATE CREATED</th>
-                      <th>POND FROM</th>
-                      <th>PROCESS FROM</th>
-                      <th>QUANTITY</th>
-                      <th>REMARK</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentItems.map((history, index) => {
-                      const formattedDate = formatDate(history.createdAt);
-                      return (
-                        <tr key={index}>
-                          <td>{formattedDate}</td>
-                          <td>{history.process_from === null ? history.stageTitle_from : '-'}</td>
-                          <td>{history.stageId_from === null ? history.stageTitle_from : '-'}</td>
-                          <td>{history.quantity}</td>
-                          <td>
-                            {history.stageId_from === null
-                              ? history.description.replace(
-                                  'Damage or loss recorded during movement from stage',
-                                  ''
-                                ).trim()
-                              : history.description}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div className={styles.tableWrapper}>
+                  <table className={styles.styled_table}>
+                    <thead>
+                      <tr>
+                        <th>DATE CREATED</th>
+                        <th>POND FROM</th>
+                        <th>PROCESS FROM</th>
+                        <th>QUANTITY</th>
+                        <th>REMARK</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentItems.map((history, index) => {
+                        const formattedDate = formatDate(history.createdAt);
+                        return (
+                          <tr key={index}>
+                            <td>{formattedDate}</td>
+                            <td>{history.process_from === null ? history.stageTitle_from : '-'}</td>
+                            <td>{history.stageId_from === null ? history.stageTitle_from : '-'}</td>
+                            <td>{history.quantity}</td>
+                            <td
+                              title={history.description}
+                              style={{
+                                cursor:
+                                  history.description && history.description.length > 40
+                                    ? "pointer"
+                                    : "normal",
+                              }}
+                            >
+                              {history.stageId_from === null
+                                ? history.description.replace(
+                                    'Damage or loss recorded during movement from stage',
+                                    ''
+                                  ).trim()
+                                : history.description}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
                 {/* Pagination */}
                 <ReactPaginate
                   previousLabel={"<"}

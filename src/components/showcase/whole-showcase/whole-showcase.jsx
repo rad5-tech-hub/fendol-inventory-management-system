@@ -1,101 +1,174 @@
 import React, { useState, useEffect } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
-import 'bootstrap/dist/css/bootstrap.min.css';
-import styles from '../showcase.module.scss';
-import { Spinner, Alert } from 'react-bootstrap'; 
+import "bootstrap/dist/css/bootstrap.min.css";
+import styles from "../showcase.module.scss";
+import { Spinner, Alert, Button, Modal, Form, Dropdown } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
-import ReactPaginate from 'react-paginate'; 
+import { BsThreeDotsVertical } from "react-icons/bs";
+import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function ViewWholeHistory() {
-  const [brokenQuantity, setBrokenQuantity] = useState(null);
+  const [wholeQuantity, setWholeQuantity] = useState(null);
   const [tableData, setTableData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0); 
-  const [pageCount, setPageCount] = useState(0); 
-  const [loadingStages, setLoadingStages] = useState(true); 
-  const [loadingTable, setLoadingTable] = useState(true); 
-  const [errorStages, setErrorStages] = useState(''); 
-  const [errorTable, setErrorTable] = useState(''); 
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
+  const [loadingStages, setLoadingStages] = useState(true);
+  const [loadingTable, setLoadingTable] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [errorStages, setErrorStages] = useState("");
+  const [errorTable, setErrorTable] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState("");
+  const [brokenFishQuantity, setBrokenFishQuantity] = useState("");
+  const [damageFishQuantity, setDamageFishQuantity] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const itemsPerPage = 10;
 
-  const handlePageChange = (selectedPage) => {
-    setCurrentPage(selectedPage.selected);
-  };
-
-// Function to fetch table data
-const fetchTableData = async () => {
+  // Fetch all data and handle pagination based on it
+  const fetchTableData = async () => {
+    setLoadingStages(true);
     setLoadingTable(true);
+    setErrorStages("");
+    setErrorTable("");
+
     try {
-      const response = await Api.get('/show-glass/whole');
-      if (response.data && response.data.data) {
-        // Assuming response.data.data is an object containing the details you need
-        setTableData(response.data.data); // Wrap in array if it's a single object
-        setPageCount(Math.ceil(1 / itemsPerPage)); // Adjust pagination for a single item
+      const [wholeResponse, historyResponse] = await Promise.all([
+        Api.get("/show-glass/whole"),
+        Api.get("/get-all-whole-histories"),
+      ]);
+
+      // Handle whole fish quantity response
+      if (wholeResponse.data?.success && wholeResponse.data.data) {
+        setWholeQuantity(wholeResponse.data.data.wholeFishQuantity|| 0); // Use wholeFishQuantity
       } else {
-        throw new Error('Expected an object with the data property');
+        throw new Error("Invalid data structure");
       }
+
+      // Handle history table data response
+      const historyData = historyResponse.data.data || [];
+      setTableData(historyData);
+      setPageCount(Math.ceil(historyData.length / itemsPerPage));
     } catch (error) {
-      console.error(error);
-      setErrorTable(error.response?.data?.message || "Error getting showcase data.");
+      console.error("Fetch Error:", error);
+      const errorMsg = error.response?.data?.message || "Error fetching data.";
+      setErrorStages(errorMsg);
+      setErrorTable(errorMsg);
     } finally {
+      setLoadingStages(false);
       setLoadingTable(false);
     }
   };
-  
-  // Function to fetch broken quantity data
-  const fetchQuantityData = async () => {
-    setLoadingStages(true);
-    try {
-      const response = await Api.get('/show-glass/total-whole');
-      if (response.data && typeof response.data.data.totalWholeQuantity === "number") {
-        setBrokenQuantity(response.data.data.totalWholeQuantity); // Use the numeric value
-      } else {
-        throw new Error('Expected totalWholeQuantity to be a number');
-      }
-    } catch (error) {
-      console.error(error);
-      setErrorStages("Error fetching broken quantity data.");
-    } finally {
-      setLoadingStages(false);
-    }
-  };
-  
+
   useEffect(() => {
-    fetchQuantityData();
     fetchTableData();
   }, []);
 
-  // format Date
-  const formatDate = (isoDate) => { 
-    const date = new Date(isoDate);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
   };
-  
 
-  const paginatedData = tableData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-  console.log(tableData);
-  
+  const handleShowModal = (type) => {
+    setModalType(type);
+    setBrokenFishQuantity("");
+    setDamageFishQuantity("");
+    setRemarks("");
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    const loadingToast = toast.loading("Moving...");
+
+    const quantity = modalType === "damage" ? damageFishQuantity : brokenFishQuantity;
+    if (!quantity || !remarks) {
+      toast.update(loadingToast, {
+        render: "Please fill in all fields.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+        className: "dark-toast",
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const endpoint = modalType === "damage" ? "/move-to-damage" : "/move-to-broken";
+      const payload =
+        modalType === "damage"
+          ? { damagedFishQuantity: Number(damageFishQuantity), remarks }
+          : { brokenFishQuantity: Number(brokenFishQuantity), remarks };
+
+      await Api.post(endpoint, payload);
+      toast.update(loadingToast, {
+        render: "Operation Successful!",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+        className: "dark-toast",
+      });
+
+      setDamageFishQuantity("");
+      setBrokenFishQuantity("");
+      setRemarks("");
+      handleCloseModal();
+      await fetchTableData(); // Refresh data after submission
+    } catch (error) {
+      toast.update(loadingToast, {
+        render: error.response?.data?.message || "An error occurred while performing the action.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+        className: "dark-toast",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (isoDate) => {
+    const date = new Date(isoDate);
+    return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+  };
+
+  // Paginate data based on current page
+  const paginatedData = tableData.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
+
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
+    <section className={styles.body}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
         <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+          <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-
-        <section className={`${styles.content}`}>
+        <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
-            <h4 className="mt-3 mb-5">View Whole Fish History</h4>
+            <h4 className="mt-3 mb-5">Whole Fish</h4>
 
-    
-            <div className={`d-flex mb-5`}>
+            <div className="d-flex mb-5">
               {loadingStages ? (
-                <div className="text-start w-25 shadow py-5 px-3">                
-                    <span className="text-muted">Loading...</span>                
+                <div className="text-start w-25 shadow py-5 px-3">
+                  <span className="text-muted">Loading...</span>
                 </div>
               ) : errorStages ? (
                 <div className="w-100">
@@ -104,18 +177,57 @@ const fetchTableData = async () => {
                     <span className="fw-semibold">{errorStages}</span>
                   </Alert>
                 </div>
-              ) : brokenQuantity ? (
-                <div className="w-50 ">
-                    <div className="w-50 px-3 shadow">
-                      <p className="text-end text-muted fw-semibold" style={{fontSize:'12px'}}>In Stock</p>
-                      <p className="text-start text-muted fw-semibold" style={{fontSize:'14px'}}>Total Quantity</p>
-                      <div className="d-flex pb-3">
-                          <h1>{brokenQuantity}</h1>
-                          <p className="mt-3 fw-semibold" style={{fontSize:'12px'}}>piece</p>
-                      </div>
+              ) : (
+                <div className="w-25">
+                  <div className="px-3 shadow">
+                    <div className="d-flex justify-content-between pt-2">
+                      <p
+                        className="text-muted fw-semibold"
+                        style={{ fontSize: "12px" }}
+                      >
+                        In Stock
+                      </p>
+                      <Dropdown>
+                        <Dropdown.Toggle as="span" id="dropdown-custom-components">
+                          <BsThreeDotsVertical
+                            className="m-1 cursor-pointer"
+                            style={{ cursor: "pointer" }}
+                          />
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item
+                            variant="light"
+                            onClick={() => handleShowModal("damage")}
+                          >
+                            Move to Damage
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            variant="light"
+                            onClick={() => handleShowModal("broken")}
+                          >
+                            Move to Broken
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
                     </div>
+                    <p
+                      className="text-start text-muted fw-semibold"
+                      style={{ fontSize: "14px" }}
+                    >
+                      Total Quantity
+                    </p>
+                    <div className="d-flex pb-3">
+                      <h1>{wholeQuantity !== null ? wholeQuantity : "N/A"}</h1>
+                      <p
+                        className="mt-3 fw-semibold"
+                        style={{ fontSize: "12px" }}
+                      >
+                        pieces
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              ) : null}
+              )}
             </div>
 
             {loadingTable ? (
@@ -132,27 +244,34 @@ const fetchTableData = async () => {
                 </Alert>
               </div>
             ) : (
-              <div>
+              <>
                 <table className={styles.styled_table}>
                   <thead className={`rounded-2 ${styles.theader}`}>
                     <tr>
                       <th>DATE CREATED</th>
-                      <th>FISH BATCH</th> 
-                      <th>QUANTITY</th>                      
+                      <th>DESCRIPTION</th>
+                      <th className="text-end pe-4">QUANTITY</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedData.length > 0 ? (
                       paginatedData.map((data, index) => (
-                        <tr key={index}>
-                          <td>{formatDate(data.updatedAt)}</td>
-                          <td>{data.batch_no}</td>      
-                          <td>{data.wholeFishQuantity}</td>                                            
+                        <tr key={data.id || index}>
+                          <td>{formatDate(data.date)}</td>
+                          <td
+                            className="text-end pe-4"
+                            title={data.description}
+                          >
+                            {data.description}
+                          </td>
+                          <td className="text-end pe-4">{data.quantity}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="text-center">No data available</td>
+                        <td colSpan="3" className="text-center">
+                          No data available
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -163,7 +282,7 @@ const fetchTableData = async () => {
                     previousLabel={"<"}
                     nextLabel={">"}
                     breakLabel={"..."}
-                    pageCount={Math.ceil(tableData.length / itemsPerPage)} // Use tableData instead of ledgerData
+                    pageCount={pageCount}
                     marginPagesDisplayed={2}
                     pageRangeDisplayed={3}
                     onPageChange={handlePageChange}
@@ -177,15 +296,65 @@ const fetchTableData = async () => {
                     breakClassName={"page-item disabled"}
                     breakLinkClassName={"page-link"}
                     activeClassName={"active-light"}
-                />
+                  />
                 </div>
-              </div>
+              </>
             )}
           </main>
         </section>
 
+        <Modal show={showModal} onHide={handleCloseModal}>
+          <ToastContainer />
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>
+              {modalType === "damage" ? "Move to Damage" : "Move to Broken"}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="border-0">
+            <h5 className="text-end fw-semibold">
+              <span className="fs-6 fw-semibold">Total Quantity: </span>
+              {wholeQuantity !== null ? wholeQuantity : "N/A"}
+            </h5>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Quantity</Form.Label>
+                <Form.Control
+                  type="number"
+                  value={
+                    modalType === "damage" ? damageFishQuantity : brokenFishQuantity
+                  }
+                  onChange={(e) =>
+                    modalType === "damage"
+                      ? setDamageFishQuantity(e.target.value)
+                      : setBrokenFishQuantity(e.target.value)
+                  }
+                  className="py-2 shadow-none border-secondary-subtle border-1"
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Remarks</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  className="py-2 shadow-none border-secondary-subtle border-1"
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="dark"
+              className={`border-0 btn-dark shadow py-2 px-3 fs-6 fw-semibold ${styles.submit}`}
+              onClick={handleSubmit}
+              disabled={loading}
+            >
+              Move
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </div>
     </section>
   );
 }
-

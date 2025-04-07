@@ -1,74 +1,78 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
 @import '../shared/style.scss';
 
+.body {
+  display: block; // Default visibility
+}
 
 .content {
   width: $content-width;
-  height: 89vh;
+  height: 85vh;
+  flex-grow: 1;
+  padding: 10px;
 }
 
 .sidebar {
   width: $sidebar-width;
 }
 
-
 .create_form {
-  height: 89vh; // Full viewport height
+  height: 89vh; //xFull viewport height
   padding: 40px;
   overflow: auto;
   background-color: #FAFCFF;
 
-
   h4 {
-      font-size: 20px;
-      font-weight: 500;
-      line-height: 30px;
-      color: #2E3135;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 30px;
+    color: #2E3135;
   }
 }
 
-.inputs{
+.inputs {
   border: #b79173aa 1px solid;
+
   &::placeholder {
     opacity: 0.5;
   }
-  &:focus{
+
+  &:focus {
     border: #896143aa 1px solid;
   }
 }
 
 .styled_table {
   width: 100%;
-}
 
-.styled_table th {
-  color: #8C949B;
-  padding-bottom: 20px;
+  th {
+    color: #8C949B;
+    padding-bottom: 20px;
+  }
+
+  tbody tr {
+    border-bottom: 0.2px solid #d0d6db;
+
+    &:hover {
+      cursor: pointer;
+    }
+
+    td {
+      padding: 18px 0px;
+      font-family: 'Roboto Flex', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      text-align: left;
+      line-height: 18.75px;
+      letter-spacing: 0.04em;
+      color: #2E3135;
+      cursor: auto;
+    }
+  }
 }
 
 .fadedPlaceholder::placeholder {
   opacity: 0.5;
-}
-
-
-.styled_table tbody tr{
-  border-bottom:  0.2px solid #d0d6db;
-
-  &:hover{
-    cursor: pointer;
-  }
-
-  td{
-    padding: 18px 0px;
-    font-family: Roboto Flex;
-    font-size: 16px;
-    font-weight: 500;
-    text-align: left;
-    line-height: 18.75px;
-    letter-spacing: 0.04em;
-    color: #2E3135;
-    cursor: auto;
-  }
 }
 
 .dropdownMenu {
@@ -93,22 +97,16 @@
   padding: 10px 20px;
   cursor: pointer;
   transition: background-color 0.3s ease, color 0.3s ease;
-  
+
   &:hover {
     background-color: #FAFCFF; // Hover background color
     color: #2E3135; // Hover text color
   }
 }
 
-@media (max-width: 992) {
-  .body{
-    display: none;
-  }
-}
-
 .pagination {
   .page-item.active .page-link {
-    background-color: #343a40; 
+    background-color: #343a40;
     border-color: #343a40;
   }
 }
@@ -125,26 +123,28 @@
   border: 1px solid rgba(0, 0, 0, 0.1);
   margin: 0; /* Ensure no margin is applied */
   padding: 0; /* Reset padding */
-}
 
-.suggestions_box ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-.suggestions_box li {
-  padding: 8px;
-  cursor: pointer;
-}
-.suggestions_box li:hover {
-  background-color: #f0f0f0;
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  li {
+    padding: 8px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #f0f0f0;
+    }
+  }
 }
 
 .styled_tables {
   width: 100%;
   border-collapse: collapse;
   table-layout: auto; /* Remove fixed to allow for natural column sizing */
-  
+
   td {
     padding: 16px;
     text-align: left;
@@ -165,16 +165,17 @@
     background-color: #f5f5f5;
     cursor: auto; /* Make sure it's clear that the rows are clickable */
   }
-
 }
 
 .theaders {
   th {
     padding: 12px;
+
     &:first-of-type {
       border-top-left-radius: 8px;
       border-bottom-left-radius: 8px;
     }
+
     &:last-of-type {
       border-top-right-radius: 8px;
       border-bottom-right-radius: 8px;
@@ -183,13 +184,152 @@
 }
 
 .submit {
-  background-color: #512728;  // Initial background color
-  
+  background-color: #512728; // Initial background color
+
   &:hover {
     background-color: #714445; // Background color on hover
   }
 
   &:active {
     background-color: #512728; // Background color when the button is clicked (active)
+  }
+}
+
+// Tablet View (768px - 991px)
+@media (max-width: 991px) {
+  .body {
+    display: block; // Ensure visibility on tablets
+  }
+
+  .sidebar {
+    display: none; // Hidden by default, toggleable
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1000;
+
+    &.d-block {
+      display: block; // Show when toggled
+    }
+  }
+
+  .content {
+    width: 100%; // Full width on tablets
+    padding: 10px;
+    margin-left: 0; // Remove sidebar offset
+    height: auto; // Adjust height for content
+    min-height: 89vh; // Fill viewport if needed
+  }
+
+  .create_form {
+    padding: 20px; // Reduced padding
+    height: auto; // Adjust height for content
+    min-height: 89vh; // Fill viewport if needed
+
+    h4 {
+      font-size: 18px; // Smaller heading
+      line-height: 26px;
+    }
+  }
+
+  .inputs {
+    font-size: 14px; // Smaller font for inputs
+  }
+
+  .submit {
+    padding: 8px 20px; // Smaller button
+    font-size: 14px;
+  }
+
+  .styled_tables {
+    display: table;
+    width: 100%;
+    max-width: 100%;
+
+    th {
+      font-size: 12px; // Smaller font for headers
+      padding: 8px 4px; // Reduced padding
+      white-space: normal; // Allow wrapping for headers
+      line-height: 1.2; // Adjust line height for wrapped text
+    }
+
+    td {
+      font-size: 14px; // Slightly smaller font for data
+      padding: 10px 5px; // Reduced padding      
+      border-bottom: 0.1px solid #ddd;
+    }
+  }
+
+}
+
+
+.position-relative {
+  position: relative;
+}
+
+.position_absolute {
+  position: absolute;
+  right: 0;
+  padding-right: 2rem;
+  top: 50px;
+  transform: translateY(-50%);
+}
+
+.suggestions_box {
+  position: absolute;
+  max-height: 170px;
+  width: calc(100% - 2px);
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 0;
+  padding: 0;
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  li {
+    padding: 8px;
+    cursor: pointer;
+    &:hover {
+      background-color: #f0f0f0;
+    }
+  }
+}
+
+// Desktop View (992px and above)
+@media (min-width: 992px) {
+  .body {
+    display: block; // Ensure visibility on desktop
+  }
+
+  .content {
+    width: $content-width; // Restore desktop width
+  }
+
+  .sidebar {
+    display: block; // Visible by default on desktop
+  }
+}
+
+// Mobile View (below 768px)
+@media (max-width: 767px) {
+  .body {
+    display: block; // Ensure visibility on desktop
+  }
+
+  .content {
+    width: $content-width; // Restore desktop width
+  }
+
+  .sidebar {
+    display: block; // Visible by default on desktop
   }
 }

@@ -1,336 +1,530 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import { Form, Row, Col, Button, Dropdown } from 'react-bootstrap';
-import Api from '../../shared/api/apiLink'; // Adjust based on your API import path
-import styles from '../finance.module.scss'; // Adjust the import as needed
+import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import { Form, Row, Col, Button } from "react-bootstrap";
+import Api from "../../shared/api/apiLink";
+import styles from "../finance.module.scss";
+import ReceiptModal from "./receipt";
 
-const FingerlingsForm = ({ customers, stages, products}) => {
-    const [fingerlingsData, setFingerlingsData] = useState(
-        {
-            productName:"",
-            quantity: 0,
-            category: '',
-            fullName: '',
-            description:"",
-            discount: 0,
-            stageId_from : "",
-            paymentType:''
+const FingerlingsForm = ({ customers, stages, products }) => {
+  const [fingerlingsData, setFingerlingsData] = useState({
+    products: [{ id: "", quantity: 0 }],
+    category: "",
+    fullName: "",
+    customerId: "",
+    description: "",
+    discount: 0,
+    salesCategory: "",
+    pondId: "",
+    paymentType: "",
+    amountPaid: null,
+    basePrice: 0,
+    totalPrice: 0,
+  });
+
+  const [receiptData, setReceiptData] = useState({});
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [loader, setLoader] = useState(false);
+  const [productList, setProductList] = useState([]);
+  const [balance, setBalance] = useState();
+  const [filteredCustomer, setFilteredCustomer] = useState([]);
+  const [productDetails, setProductDetails] = useState(null);
+  const [unit, setUnit] = useState("");
+  const [stage, setStage] = useState([]);
+  const [customer, setCustomer] = useState([]);
+  const [pondSearch, setPondSearch] = useState("");
+  const [filteredPonds, setFilteredPonds] = useState([]);
+  const [showPondDropdown, setShowPondDropdown] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+
+  // Initialize data from props
+  useEffect(() => {
+    console.log("Stages prop received:", stages); // Debug: Check incoming stages data
+    const validStages = Array.isArray(stages) ? stages : [];
+    setCustomer(customers || []);
+    setStage(validStages); // Ensure stage is always an array
+    setProductList(products || []);
+    setFilteredPonds(validStages); // Initialize filteredPonds with stages
+  }, [customers, stages, products]);
+
+  // Recalculate totalPrice when quantity or basePrice changes
+  useEffect(() => {
+    const { products, basePrice } = fingerlingsData;
+    const quantity = products[0]?.quantity || 0;
+    const totalPrice = (basePrice || 0) * quantity;
+    setFingerlingsData((prevData) => ({
+      ...prevData,
+      totalPrice: Math.max(totalPrice, 0),
+    }));
+    if (fingerlingsData.paymentType === "customer_balance" || fingerlingsData.paymentType === "Credit") {
+      setFingerlingsData((prev) => ({ ...prev, amountPaid: 0 }));
+    }
+  }, [fingerlingsData.products, fingerlingsData.basePrice, fingerlingsData.paymentType]);
+
+  // Handle product selection
+  const handleProductSelect = async (e) => {
+    const selectedOption = e.target.selectedOptions[0];
+    const selectedProductId = selectedOption?.getAttribute("data-id");
+
+    if (selectedProductId) {
+      try {
+        const { data } = await Api.get(`/product/${selectedProductId}`);
+        const productData = data.data;
+        setUnit(productData.unit || "");
+        setFingerlingsData((prevData) => ({
+          ...prevData,
+          products: [{ id: selectedProductId, quantity: prevData.products[0]?.quantity || 0 }],
+          basePrice: productData.basePrice || 0,
+        }));
+        setProductDetails(productData);
+      } catch (error) {
+        toast.error("Error fetching product details.");
+      }
+    }
+  };
+
+  const handlePondSearchChange = (e) => {
+    const searchTerm = e.target.value;
+    setPondSearch(searchTerm);
+    const filtered = searchTerm
+      ? stage.filter(
+          (s) =>
+            s.title?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            (parseFloat(s.quantity || 0) >= 1)
+        )
+      : stage.filter((s) => parseFloat(s.quantity || 0) >= 1);
+    setFilteredPonds(filtered);
+    setShowPondDropdown(true);
+  };
+
+  const handlePondSelect = (pond) => {
+    if (pond && (parseFloat(pond.quantity || 0) >= 0)) {
+      setFingerlingsData((prevData) => ({
+        ...prevData,
+        pondId: pond.id,
+        salesCategory: "fingerlings",
+      }));
+      const displayText = `${pond.title || "No Data Yet"} - (${pond.quantity !== undefined ? pond.quantity : "0"})`;
+      setPondSearch(displayText);
+      setShowPondDropdown(false);
+    } else {
+      console.log("Pond not selected: Quantity less than 0 or invalid pond", pond);
+    }
+  };
+
+  // Handle customer search input change
+  const handleCustomerSearchChange = (e) => {
+    const searchTerm = e.target.value;
+    setCustomerSearch(searchTerm);
+    setFingerlingsData((prevData) => ({ ...prevData, fullName: searchTerm }));
+
+    const filtered = searchTerm
+      ? customer.filter((c) => c.fullName?.toLowerCase().includes(searchTerm.toLowerCase()))
+      : customer;
+    setFilteredCustomer(filtered);
+    setShowCustomerDropdown(true);
+  };
+
+  // Handle customer selection
+  const handleSelectCustomer = (selectedCustomer) => {
+    const discount = selectedCustomer.category === "Marketer" ? 10 : 0;
+    setFingerlingsData((prevData) => ({
+      ...prevData,
+      customerId: selectedCustomer.id,
+      fullName: selectedCustomer.fullName,
+      category: selectedCustomer.category,
+      discount: discount,
+    }));
+    setBalance(selectedCustomer.balance);
+    setCustomerSearch(`${selectedCustomer.fullName}`);
+    setShowCustomerDropdown(false);
+    setFilteredCustomer([]);
+  };
+
+  // Handle input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    setFingerlingsData((prevData) => {
+      const numericFields = ["discount", "amountPaid", "quantity"];
+      const updatedValue = numericFields.includes(name) ? parseFloat(value) || 0 : value;
+
+      let updatedData = {
+        ...prevData,
+        [name]: updatedValue,
+        salesCategory: "fingerlings",
+      };
+
+      if (name === "quantity") {
+        updatedData.products = [{ ...prevData.products[0], quantity: updatedValue }];
+      }
+
+      return updatedData;
+    });
+  };
+
+  // Calculate discounted price
+  const calculateDiscountedPrice = () => {
+    let discountedPrice = fingerlingsData.totalPrice;
+    if (fingerlingsData.category === "Marketer") {
+      discountedPrice -= fingerlingsData.totalPrice * 0.1; // 10% discount for Marketers
+    } else if (fingerlingsData.discount > 0) {
+      discountedPrice -= fingerlingsData.discount; // Fixed discount for Customers
+    }
+    return Math.max(discountedPrice, 0);
+  };
+
+  // Calculate total balance
+  const calculateTotalBalance = () => {
+    const discountedPrice = calculateDiscountedPrice();
+    return discountedPrice - (fingerlingsData.amountPaid || 0);
+  };
+
+  // Fetch customers
+  const fetchCustomers = async () => {
+    try {
+      const response = await Api.get("/customers");
+      if (Array.isArray(response.data.data)) {
+        setCustomer(response.data.data);
+      } else {
+        throw new Error("Expected an array of customers");
+      }
+    } catch (err) {
+      console.log(err.response?.data?.message || "Failed to fetch customers.");
+    }
+  };
+
+  // Handle form submission with separate toasts for sales and receipt
+  const handleAddSales = async (e) => {
+    e.preventDefault();
+    if (!window.confirm("Are you sure you want to add this sale?")) return;
+
+    setLoader(true);
+    const salesToast = toast.loading("Adding sale...", { className: "dark-toast" });
+
+    try {
+      // Step 1: Add the sale
+      const saleResponse = await Api.post("/sales", fingerlingsData);
+      if (saleResponse.status < 200 || saleResponse.status >= 300) {
+        throw new Error(saleResponse.data?.message || "Sale failed!");
+      }
+
+      const transactionId = saleResponse.data.data?.transactionId;
+      if (!transactionId) {
+        throw new Error("Transaction ID not found. Please try again.");
+      }
+
+      // Update sales toast to success
+      toast.update(salesToast, {
+        render: "Sale added successfully!",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+        className: "dark-toast",
+      });
+
+      // Step 2: Fetch receipt with separate toast and error handling
+      const receiptToast = toast.loading("Fetching receipt...", { className: "dark-toast" });
+      try {
+        const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
+        if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+          throw new Error("Receipt could not be fetched.");
         }
-    )
 
-    const [loader, setLoader] = useState(false);
-    const [product, setProduct] = useState([]);
-    const [filteredCustomer, setFilteredCustomer] = useState([]);
-    const [productDetails, setProductDetails] = useState(null);
-    const [unit, setUnit] = useState('');
-    const [stage, setStage] = useState([]);
-    const [customer, setCustomer] = useState([]);
-
-    // Fetch products
-    useEffect(() => {
-        setCustomer(customers);
-        setStage(stages);
-        setProduct(products)
-    }, []);
-
-    // Product selection handler
-    const handleProductSelect = async (e) => {
-        const selectedOption = e.target.selectedOptions[0];
-        const selectedProductId = selectedOption?.getAttribute('data-id');
-        const productName = e.target.value;        
-    
-        setFingerlingsData(prevData => ({ ...prevData, productName }));
-    
-        if (selectedProductId) {
-            try {
-                const { data } = await Api.get(`/product/${selectedProductId}`);
-                const productData = data.data;
-                setUnit(productData.unit)
-                setFingerlingsData(prevData => {
-                    const quantity = prevData.quantity || 1;  // Default to 1 if quantity is undefined
-                    const discount = prevData.discount || 0; // Default to 0 if discount is undefined
-                    const basePrice = productData.basePrice || 0;  // Default to 0 if basePrice is undefined
-                    const totalPrice = basePrice * quantity;  // Calculate total price before discount            
-    
-                    // Ensure totalPrice is not negative
-                    return {
-                        ...prevData,
-                        basePrice,
-                        totalPrice: Math.max(totalPrice, 0),                                                
-                    };
-                });
-    
-                setProductDetails(productData); // Store the fetched product details
-            } catch (error) {
-                toast.error('Error fetching product details.');
-            }
-        }
-    };
-    
-    // Handle input change for dryData
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        const numericValue = name === 'quantity' || name === 'discount' ? parseFloat(value) || 0 : value;
-
-        setFingerlingsData(prevData => {
-            const quantity = name === 'quantity' ? numericValue : prevData.quantity || 1;
-            const discount = name === 'discount' ? numericValue : prevData.discount || 0;
-            const basePrice = prevData.basePrice || 0;
-            const totalPrice = (basePrice || 0) * quantity - discount;
-
-            return {
-                ...prevData,
-                [name]: numericValue,
-                totalPrice: Math.max(totalPrice, 0),
-            };
+        setReceiptData(receiptResponse);
+        toast.update(receiptToast, {
+          render: "Receipt fetched successfully!",
+          type: "success",
+          isLoading: false,
+          autoClose: 3000,
+          className: "dark-toast",
         });
-    };
+        setShowReceipt(true);
+      } catch (receiptError) {
+        console.error("Error fetching receipt:", receiptError);
+        toast.update(receiptToast, {
+          render: receiptError.message || "Failed to fetch receipt!",
+          type: "error",
+          isLoading: false,
+          autoClose: 6000,
+          className: "dark-toast",
+        });
+      }
 
-    const handleSearchChange = (e) => {
-        const { value } = e.target;
-    
-        setFingerlingsData(prevData => ({ ...prevData, fullName: value }));
-    
-        const filtered = value
-            ? customer.filter(c => 
-                c.fullName?.toLowerCase().includes(value.toLowerCase()) && c.category === fingerlingsData.category
-            )
-            : customer.filter(c => c.category === fingerlingsData.category);
-    
-        setFilteredCustomer(filtered.length ? filtered : []);
-    };    
+      // Reset form after successful sale
+      setFingerlingsData({
+        products: [{ id: "", quantity: 0 }],
+        category: "",
+        fullName: "",
+        customerId: "",
+        description: "",
+        discount: 0,
+        salesCategory: "",
+        pondId: "",
+        paymentType: "",
+        amountPaid: null,
+        basePrice: 0,
+        totalPrice: 0,
+      });
+      setPondSearch("");
+      setCustomerSearch("");
+      setFilteredPonds(stage);
+      fetchCustomers();
+    } catch (error) {
+      console.error("Error in handleAddSales:", error);
+      toast.update(salesToast, {
+        render: error.response?.message || error.response?.data?.message || "Sale failed!",
+        type: "error",
+        isLoading: false,
+        autoClose: 6000,
+        className: "dark-toast",
+      });
+    } finally {
+      setLoader(false);
+    }
+  };
 
-    // Handle customer selection
-    const handleSelectCustomer = (name) => {
-        setFingerlingsData(prevData => ({ ...prevData, fullName: name }));
-        setFilteredCustomer([]); // Clear suggestions after selection
-    };
-    
-    const handleAddSales = async (e) => {
-        e.preventDefault();
-    
-        // Show confirmation dialog
-        const isConfirmed = window.confirm("Are you sure you want to add this sale?");
-        
-        if (!isConfirmed) {
-            return; // If the user cancels, exit the function
-        }
-    
-        setLoader(true);
-        const loadingToast = toast.loading("Adding sale...", { className: 'dark-toast' });
-    
-        try {
-            const response = await Api.post('//sales-fingerlings', fingerlingsData);
-            
-            toast.update(loadingToast, {
-                render: "Sale added successfully!",
-                type: "success",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
-            });
-            
-            setFingerlingsData({
-                productName: "",
-                quantity: 0,
-                category: '',
-                fullName: '',
-                description: "",
-                discount: 0,
-                stageId_from: "",
-                paymentType: ''
-            });
-        } catch (error) {
-            toast.update(loadingToast, {
-                render: error.response ? error.response.data.message : 'Something went wrong',
-                type: "error",
-                isLoading: false,
-                autoClose: 3000,
-                className: 'dark-toast'
-            });
-        } finally {
-            setLoader(false);
-        }
-    };
-    
-
-    return (
-        <Form onSubmit={handleAddSales}>
-            <Row xxl={2} xl={2} lg={2}>
-                <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Product Name</Form.Label>
-                    <Form.Select
-                        name="productName"
-                        required
-                        value={fingerlingsData.productName || ''}
-                        onChange={handleProductSelect}
-                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                    >
-                        <option value="" disabled>Select Fingerlings Product</option>
-                        {products
-                            .filter(product => product.productName?.toLowerCase().includes('fingerlings'))
-                            .map((product) => (
-                                <option key={product.id} value={product.productName} data-id={product.id}>
-                                    {`${product.productName} - (₦${new Intl.NumberFormat().format(product.basePrice || 0)})`}
-                                </option>
-                            ))
-                        }
-                    </Form.Select>
-                </Col>
-
-                {/* Stage From */}
-                <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Pond From</Form.Label>
-                    <Form.Select
-                        name="stageId_from"
-                        required
-                        value={fingerlingsData.stageId_from || ''}
-                        onChange={handleInputChange}
-                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                    >
-                        <option value="" disabled>Select Pond</option>
-                        {stages
-                            .filter(stage => stage.title.toLowerCase().includes('fingerlings'))
-                            .map((stage, index) => (
-                                <option key={index} value={stage.id}>
-                                    {stage.title || 'No Data Yet'}
-                                </option>
-                            ))}
-                    </Form.Select>
-                </Col>
-
-                {/* Quantity */}
-                <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Quantity</Form.Label>
-                    <Form.Control
-                        placeholder="Enter quantity"
-                        type="number"
-                        name="quantity"
-                        value={fingerlingsData.quantity || ''}
-                        min="0"
-                        required
-                        onChange={handleInputChange}
-                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                    />
-                </Col>
-
-                {/* Discount */}
-                <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Discount</Form.Label>
-                    <div className="position-relative">
-                        <Form.Control
-                            placeholder="Enter discount"
-                            type="text"
-                            name="discount"
-                            value={fingerlingsData.discount || ''}                
-                            onChange={handleInputChange}
-                            className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs} pe-5`} 
-                        />
-                        <span className="position-absolute end-0 top-50 translate-middle-y pe-2">₦</span>
-                    </div>
-                </Col>
-
-                {/* Buyer Category */}
-                <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Buyer Category</Form.Label>
-                    <Form.Select
-                        name="category"
-                        value={fingerlingsData.category || ''}
-                        onChange={handleInputChange}
-                        required
-                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                    >
-                        <option value="" disabled>Select Category</option>
-                        <option value="Marketer">Marketer</option>
-                        <option value="Customer">Customer</option>
-                    </Form.Select>
-                </Col>
-
-                {/* Name of Customer */}
-                <Col className="mb-4">
-                    <Form.Group controlId="searchCustomer">
-                        <Form.Label className="fw-semibold">Name</Form.Label>
-                        <div style={{ position: 'relative', width: '100%' }}>
-                            <Form.Control
-                                type="text"
-                                placeholder="Search Name..."
-                                name="fullName"
-                                value={fingerlingsData.fullName || ''}
-                                onChange={handleSearchChange}
-                                style={{ width: '100%' }} 
-                                className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                            />
-                            {fingerlingsData.fullName && filteredCustomer.length > 0 && (
-                                <div className={`${styles.suggestions_box}`}>
-                                    <ul>
-                                        {filteredCustomer.map((customer, index) => (
-                                            <li key={index} onClick={() => handleSelectCustomer(customer.fullName)}>
-                                                {customer.fullName}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    </Form.Group>
-                </Col>
-
-                {/* Description */}
-                <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Description</Form.Label>
-                    <Form.Control
-                    placeholder="Enter description"
-                    as="textarea"
-                    name="description"
-                    value={fingerlingsData.description || ''}
-                    onChange={handleInputChange}
-                    className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                    />
-                </Col>
-
-                {/* Payment Type */}
-                <Col className='mb-4'>
-                    <Form.Label className="fw-semibold">Payment Type</Form.Label>
-                    <Form.Select
-                    name='paymentType'
-                    value={fingerlingsData.paymentType || ''}
-                    onChange={handleInputChange}
-                    className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                    >
-                    <option value="" disabled>Select Payment Type</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Credit">Credit</option>
-                    <option value="Transfer">Transfer</option>
-                    <option value="Pos">Pos</option>
-                    </Form.Select>
-                </Col>  
-
-                {/* Total Price */}
-                <Col className="mb-4">
-                    <Form.Label className="fw-semibold">Total Price</Form.Label>
-                    <Form.Control
-                    placeholder="Total price"
-                    type="text"
-                    name="totalPrice"
-                    value={fingerlingsData.totalPrice ? `₦${new Intl.NumberFormat().format(fingerlingsData.totalPrice)}` : ''}
-                    readOnly
-                    className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
-                    />
-                </Col>
-
-            </Row>
-            <div className='text-end'>
-                <Button
-                    variant='dark'
-                    disabled={loader}
-                    className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-                    type='submit'
-                >
-                    {loader ? ' Adding Sale...' : 'Add Sale'}
-                </Button>
+  return (
+    <div>
+      <Form onSubmit={handleAddSales}>
+        <Row xxl={2} xl={2} lg={2} md={1} sm={1} xs={1}>
+          {/* Searchable Pond Input */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Pond From</Form.Label>
+            <div style={{ position: "relative" }}>
+              <Form.Control
+                type="text"
+                placeholder="Search Pond..."
+                value={pondSearch}
+                onChange={handlePondSearchChange}
+                onFocus={() => setShowPondDropdown(true)}
+                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+              />
+              {showPondDropdown && (
+                <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
+                  <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                    {filteredPonds.length > 0 ? (
+                      filteredPonds.map((pond, index) => (
+                        <li
+                          key={index}
+                          onClick={() => handlePondSelect(pond)}
+                          style={{ cursor: "pointer", padding: "8px", borderBottom: "1px solid #ddd" }}
+                        >
+                          {pond.title || "No Data Yet"} - (
+                          {pond.quantity !== undefined ? pond.quantity : "0"})
+                        </li>
+                      ))
+                    ) : (
+                      <li style={{ padding: "8px" }}>
+                        {stage.length === 0 ? "Loading ponds..." : "No ponds found"}
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
-        </Form>
-    );
+          </Col>
+
+          {/* Product Selection */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Product</Form.Label>
+            <Form.Select
+              name="id"
+              required
+              value={fingerlingsData.products[0]?.id || ""}
+              onChange={handleProductSelect}
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            >
+              <option value="" disabled>
+                Select Fingerlings Product
+              </option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id} data-id={product.id}>
+                  {`${product.productName} - (₦${new Intl.NumberFormat().format(
+                    product.basePrice || 0
+                  )} for ${product.productWeight || "0"} ${product.unit || ""})`}
+                </option>
+              ))}
+            </Form.Select>
+          </Col>
+
+          {/* Quantity */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Quantity</Form.Label>
+            <Form.Control
+              placeholder="Enter quantity"
+              type="number"
+              name="quantity"
+              value={fingerlingsData.products[0]?.quantity || ""}
+              min="0"
+              required
+              onChange={handleInputChange}
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
+          </Col>
+
+          {/* Description */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Description</Form.Label>
+            <Form.Control
+              placeholder="Enter description"
+              as="textarea"
+              name="description"
+              value={fingerlingsData.description || ""}
+              onChange={handleInputChange}
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
+          </Col>
+
+          {/* Searchable Customer Input */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Customer Name</Form.Label>
+            <div style={{ position: "relative" }}>
+              <Form.Control
+                type="text"
+                placeholder="Search Customer..."
+                value={customerSearch}
+                onChange={handleCustomerSearchChange}
+                onFocus={() => setShowCustomerDropdown(true)}
+                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                required
+              />
+              {balance && balance > 0 && fingerlingsData.customerId ? (
+                <p className="p-2">Balance: ₦{balance.toLocaleString()}</p>
+              ) : (
+                ""
+              )}
+              {showCustomerDropdown && filteredCustomer.length > 0 && (
+                <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
+                  <ul style={{ listStyle: "none" }}>
+                    {filteredCustomer.map((customer, index) => (
+                      <li
+                        key={index}
+                        onClick={() => handleSelectCustomer(customer)}
+                        style={{ cursor: "pointer", padding: "8px" }}
+                      >
+                        {customer.fullName} ({customer.category})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </Col>
+
+          {/* Discount */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Discount</Form.Label>
+            <Form.Control
+              placeholder="Enter discount"
+              type="text"
+              name="discount"
+              value={fingerlingsData.category === "Marketer" ? "10%" : fingerlingsData.discount || ""}
+              onChange={(e) =>
+                setFingerlingsData({ ...fingerlingsData, discount: parseFloat(e.target.value) || 0 })
+              }
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
+              readOnly={fingerlingsData.category === "Marketer"}
+            />
+          </Col>
+
+          {/* Total Price (Readonly) */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
+            <Form.Control
+              placeholder="Total price"
+              type="text"
+              name="totalPrice"
+              value={
+                fingerlingsData.totalPrice ? `₦${new Intl.NumberFormat().format(fingerlingsData.totalPrice)}` : ""
+              }
+              readOnly
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
+          </Col>
+
+          {/* Total Balance (Readonly) */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
+            <Form.Control
+              placeholder="Total balance"
+              type="text"
+              name="totalBalance"
+              value={new Intl.NumberFormat().format(calculateTotalBalance())}
+              readOnly
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            />
+          </Col>
+
+          {/* Payment Type */}
+          <Col className="mb-4">
+            <Form.Label className="fw-semibold">Payment Type</Form.Label>
+            <Form.Select
+              name="paymentType"
+              value={fingerlingsData.paymentType || ""}
+              onChange={(e) => {
+                const selectedPayment = e.target.value;
+                setFingerlingsData((prev) => ({
+                  ...prev,
+                  paymentType: selectedPayment,
+                  amountPaid: "",
+                }));
+              }}
+              required
+              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+            >
+              <option value="" disabled>
+                Select Payment Type
+              </option>
+              <option value="Cash">Cash</option>
+              <option value="Credit">Credit</option>
+              <option value="Transfer">Transfer</option>
+              <option value="Pos">Pos</option>
+              {balance > 0 && <option value="customer_balance">Customer Balance</option>}
+            </Form.Select>
+          </Col>
+
+          {/* Amount Paid Input (Only for Non-Credit and Non-Customer Balance Payments) */}
+          {["customer_balance", "Credit"].includes(fingerlingsData.paymentType) ? (
+            ""
+          ) : (
+            <Col className="mb-4">
+              <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
+              <Form.Control
+                placeholder="Enter amount paid"
+                type="text"
+                name="amountPaid"
+                value={
+                  fingerlingsData.amountPaid !== null && fingerlingsData.amountPaid !== ""
+                    ? new Intl.NumberFormat().format(fingerlingsData.amountPaid)
+                    : ""
+                }
+                onChange={(e) => {
+                  const value = e.target.value.replace(/,/g, "");
+                  setFingerlingsData({
+                    ...fingerlingsData,
+                    amountPaid: value ? parseFloat(value) : "",
+                  });
+                }}
+                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+              />
+            </Col>
+          )}
+        </Row>
+        <div className="text-end">
+          <Button
+            variant="dark"
+            disabled={loader}
+            className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+            type="submit"
+          >
+            {loader ? "Adding Sale..." : "Add Sale"}
+          </Button>
+        </div>
+      </Form>
+      <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
+    </div>
+  );
 };
 
 export default FingerlingsForm;

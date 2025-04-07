@@ -4,19 +4,19 @@
   "icons": [
     {
       "src": "logos.png",
-      "sizes": "64x64 32x32 24x24 16x16",
+      "sizes": "60x60",
       "type": "image/png"
     },
     {
       "src": "logos.png",
-      "sizes": "192x192",
+      "sizes": "60x60",
       "type": "image/png"
     },
     {
       "src": "logos.png",
-      "sizes": "512x512",
+      "sizes": "60x60",
       "type": "image/png"
-    }
+    } 
   ],
   "start_url": "/",
   "display": "standalone",

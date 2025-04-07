@@ -1,91 +1,97 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
 @import '../shared/style.scss';
 
-
 .content {
   width: $content-width;
+  flex-grow: 1;
+  padding: 15px;
+
+  @media (max-width: 991px) { // md to lg (tablet)
+    margin-left: 0; // No offset when sidebar is hidden
+    width: 100%;
+    padding: 10px; // Reduced padding for tablet
+  }
 }
 
 .sidebar {
   width: $sidebar-width;
 }
 
-
 .create_form {
-  height: 89vh; // Full viewport height
+  height: 89vh;
   padding: 40px;
   overflow: auto;
   background-color: #FAFCFF;
 
   h4 {
-      font-size: 20px;
-      font-weight: 500;
-      line-height: 30px;
-      color: #2E3135;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 30px;
+    color: #2E3135;
   }
 }
 
-.inputs{
+.inputs {
   border: #b79173aa 1px solid;
   &::placeholder {
     opacity: 0.5;
   }
-  &:focus{
+  &:focus {
     border: #896143aa 1px solid;
   }
 }
 
-
 .submit {
-  background-color: #512728;  // Initial background color
+  background-color: #512728;
   
   &:hover {
-    background-color: #714445; // Background color on hover
+    background-color: #714445;
   }
 
   &:active {
-    background-color: #512728; // Background color when the button is clicked (active)
+    background-color: #512728;
   }
 }
 
 .styled_table {
   width: 100%;
-  position: relative; // Ensure that child elements with absolute positioning are relative to this table
+  position: relative;
+  border-collapse: collapse; // Ensure no gaps between cells
 }
 
 .styled_table th,
 .styled_table td {
-  white-space: nowrap; // Prevent text wrapping
+  white-space: nowrap;
 }
 
 .styled_table th {
   color: #8C949B;
   padding-bottom: 20px;
-  text-align: left; // Optional: align text to the left
+  text-align: left;
 }
 
 .styled_table td {
   padding: 18px 0px;
-  border-bottom:  0.2px solid #d0d6db;
-  font-family: Roboto Flex;
+  border-bottom: 0.2px solid #d0d6db;
+  font-family: 'Roboto Flex', sans-serif;
   font-size: 16px;
   font-weight: 500;
   line-height: 18.75px;
   letter-spacing: 0.04em;
   color: #2E3135;
-  position: relative; // Ensure td can contain absolute positioned elements like the dropdown
+  position: relative;
 }
 
 .dropdownMenu {
   position: absolute;
-  top: 100%; // Position dropdown below the element
+  top: 100%;
   right: 0;
-  background-color: #2E3135; // Background color
-  color: white; // Text color
+  background-color: #2E3135;
+  color: white;
   border-radius: 5px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 10000; // Ensure it is on top of the table
-  min-width: 150px; // Ensures a minimum width for the dropdown
+  z-index: 10000;
+  min-width: 150px;
 }
 
 .menuList {
@@ -100,14 +106,86 @@
   transition: background-color 0.3s ease, color 0.3s ease;
   
   &:hover {
-    background-color: #FAFCFF; // Hover background color
-    color: #2E3135; // Hover text color
+    background-color: #FAFCFF;
+    color: #2E3135;
   }
 }
 
-@media (max-width: 992) {
-  .body{
-    display: none;
+// Tablet View (768px - 991px)
+@media (min-width: 768px) and (max-width: 991px) {
+  .body {
+    display: block; // Show the body for tablet view
+  }
+
+  .sidebar {
+    display: none; // Hidden by default, toggleable via JS
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1000;
+    &.d-block {
+      display: block; // Show when toggled
+    }
+  }
+
+  .content {
+    width: 100%; // Full width on tablets
+    padding: 15px; // Consistent padding
+  }
+
+  .create_form {
+    padding: 20px; // Reduced padding for tablet
+    height: auto; // Adjust height for scrolling content
+    min-height: 89vh;
+
+    h4 {
+      font-size: 18px; // Slightly smaller heading
+      line-height: 26px;
+    }
+  }
+
+  .inputs {
+    font-size: 14px; // Adjust input size
+  }
+
+  .submit {
+    padding: 8px 20px; // Smaller button
+    font-size: 14px;
+  }
+
+  .styled_table {
+    display: table; // Use table display for proper layout
+    width: 100%; // Ensure full width
+    max-width: 100%; // Prevent overflow beyond container
+    overflow-x: auto; // Enable horizontal scrolling if needed
+    white-space: nowrap; // Prevent wrapping
+    table-layout: fixed; // Fix column widths to distribute evenly
+
+    th, td {
+      font-size: 14px; // Smaller text for tablet
+      padding: 10px 5px; // Reduced padding for better fit
+      width: auto; // Allow natural width distribution
+    }
+
+    th {
+      padding-bottom: 15px;
+    }
+
+    td {
+      border-bottom: 0.1px solid #d0d6db; // Thinner border
+    }
+  }
+
+  .dateInput {
+    width: 100%; // Full width for date input
+    max-width: 200px; // Cap the width
   }
 }
 
+// Desktop View (992px and above)
+@media (min-width: 992px) {
+  .body {
+    display: block; // Ensure body is visible for desktop
+  }
+}

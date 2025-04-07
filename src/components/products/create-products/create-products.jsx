@@ -11,11 +11,12 @@ import { useNavigate } from "react-router-dom";
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
     const navigate = useNavigate();
+    const [showSidebar, setShowSidebar] = useState(false);
 
     // Form fields state
     const [formData, setFormData] = useState({
         productName: "",
-        productWeight: null,
+        productWeight: "",
         unit: "",
         basePrice: ""
     });
@@ -84,7 +85,7 @@ export default function CreateProducts() {
                 className: 'dark-toast'
             });
 
-            setTimeout(()=>{
+            setTimeout(() => {
                 navigate('/products/view-all');
             }, 2500)
         } catch (error) {
@@ -100,17 +101,19 @@ export default function CreateProducts() {
         }
     };
 
+    const toggleSidebar = () => setShowSidebar(!showSidebar);
+    const handleCloseSidebar = () => setShowSidebar(false);
+
     return (
-        <section className={`d-none d-lg-block ${styles.body}`}>
+        <section className={`${styles.body}`}>
             <div className="sticky-top">
-                <Header />
+                <Header toggleSidebar={toggleSidebar} />
             </div>
             <div className="d-flex gap-2">
                 <div className={styles.sidebar}>
-                    <SideBar className={styles.sidebarItem} />
+                    <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
                 </div>
-
-                <section className={`${styles.content}`}>
+                <section className={`${styles.content} flex-grow-1`}>
                     <main>
                         <ToastContainer />
                         <Form className={styles.create_form} onSubmit={handleSubmit}>
@@ -120,7 +123,7 @@ export default function CreateProducts() {
                                     <Form.Label className="fw-semibold">Product Name</Form.Label>
                                     <Form.Control
                                         placeholder="Enter product name"
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                         type="text"
                                         name="productName"
                                         value={formData.productName}
@@ -129,10 +132,10 @@ export default function CreateProducts() {
                                     />
                                 </Col>
                                 <Col className="mb-4">
-                                    <Form.Label className="fw-semibold">Product Weight</Form.Label>
+                                    <Form.Label className="fw-semibold">Base Weight</Form.Label>
                                     <Form.Control
                                         placeholder="Enter product weight"
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                         type="number"
                                         name="productWeight"
                                         value={formData.productWeight}
@@ -147,7 +150,7 @@ export default function CreateProducts() {
                                         value={formData.unit}
                                         required
                                         onChange={handleInputChange}
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     >
                                         <option value="" disabled>Select Unit</option>
                                         <option value="KG">Kilogram</option>
@@ -158,7 +161,7 @@ export default function CreateProducts() {
                                     <Form.Label className="fw-semibold">Base Price (₦)</Form.Label>
                                     <Form.Control
                                         placeholder="Enter base price"
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                         type="text" // Text to allow commas
                                         name="basePrice"
                                         value={formData.basePrice}
@@ -169,7 +172,7 @@ export default function CreateProducts() {
                             </Row>
 
                             <div className="d-flex justify-content-end mt-5">
-                                <Button className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}  disabled={loader} type="submit">
+                                <Button className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`} disabled={loader} type="submit">
                                     {loader ? 'Creating...' : 'Create'}
                                 </Button>
                             </div>

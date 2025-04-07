@@ -12,14 +12,15 @@ const AddStock = () => {
     const [formData, setFormData] = useState({
         name: '',
         unit: '',
-        threshold: Number,
+        threshold: '', // Changed to empty string for controlled input
     });
     const navigate = useNavigate();
     const [loader, setLoader] = useState(false);
+    const [showSidebar, setShowSidebar] = useState(false); // Added for sidebar toggle
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData({ ...formData, [name]: name === 'threshold' ? (value === '' ? '' : Number(value)) : value });
     };
 
     const handleAddStock = async (e) => {
@@ -30,13 +31,12 @@ const AddStock = () => {
         });
 
         try {
-            // Replace 'YOUR_API_ENDPOINT' with your actual endpoint URL
             const response = await Api.post('/create-store', formData);
 
             setFormData({
                 name: '',
                 unit: '',
-                threshold: Number,
+                threshold: '',
             });
 
             toast.update(loadingToast, {
@@ -48,10 +48,9 @@ const AddStock = () => {
             });
 
             navigate('/store/view-all');
-          
         } catch (error) {
             toast.update(loadingToast, {
-                render: error.response?.data?.message ||  "Error adding stock. Please try again.",
+                render: error.response?.data?.message || "Error adding stock. Please try again.",
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,
@@ -62,31 +61,34 @@ const AddStock = () => {
         }
     };
 
+    const toggleSidebar = () => setShowSidebar(!showSidebar);
+    const handleCloseSidebar = () => setShowSidebar(false);
+
     return (
-        <section className={`d-none d-lg-block ${styles.body}`}>
+        <section className={`${styles.body}`}>
             <div className="sticky-top">
-                <Header />
+                <Header toggleSidebar={toggleSidebar} />
             </div>
             <div className="d-flex gap-2">
-                <div className={`${styles.sidebar}`}>
-                    <SideBar className={styles.sidebarItem} />
+                <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+                    <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
                 </div>
-                <section className={`${styles.content}`}>
+                <section className={`${styles.content} flex-grow-1`}>
                     <main>
                         <ToastContainer />
                         <Form className={styles.create_form} onSubmit={handleAddStock}>
-                            <h4 className="mt-4 mb-5">Add New </h4>
-                            <Row xxl={2} xl={2} lg={2}>
+                            <h4 className="mt-4 mb-5">Add New</h4>
+                            <Row xxl={2} xl={2} lg={2} md={1} sm={1}>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Name</Form.Label>
                                     <Form.Control
                                         placeholder="Enter stock name"
                                         type="text"
-                                        name="name"                                        
+                                        name="name"
                                         value={formData.name}
                                         onChange={handleInputChange}
                                         required
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 </Col>
                                 <Col className="mb-4">
@@ -96,7 +98,7 @@ const AddStock = () => {
                                         required
                                         value={formData.unit}
                                         onChange={handleInputChange}
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     >
                                         <option value="" disabled>Select Unit</option>
                                         <option value="kg">Kg</option>
@@ -114,13 +116,17 @@ const AddStock = () => {
                                         required
                                         min="0"
                                         onChange={handleInputChange}
-                                        className={`py-2 bg-light-subtle shadow-none  border-1 ${styles.inputs}`}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 </Col>
                             </Row>
                             <div className="d-flex justify-content-end my-4">
-                                <Button className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`} disabled={loader} type="submit">
-                                    {loader ? ' Adding...' : 'Add'}
+                                <Button
+                                    className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+                                    disabled={loader}
+                                    type="submit"
+                                >
+                                    {loader ? 'Adding...' : 'Add'}
                                 </Button>
                             </div>
                         </Form>

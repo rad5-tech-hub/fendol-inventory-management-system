@@ -26,11 +26,13 @@ const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick }) => {
 export default function ViewAllProducts() {
   const [products, setProducts] = useState([]); // State for products
   const [loading, setLoading] = useState(true); // Loader state
+  const [loadingEdit, setLoadingEdit] = useState(false); // Loader state
   const [error, setError] = useState(''); // Error state
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(0); // State for current page
   const itemsPerPage = 10; // Define how many items per page
+  const [showSidebar, setShowSidebar] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null); // State to track active dropdown
 
   // Fetch data from API
@@ -73,6 +75,7 @@ export default function ViewAllProducts() {
 
   // Handle Save click in Modal
   const handleSaveClick = async () => {
+    setLoadingEdit(true)
     const loadingToast = toast.loading("Editing Product...",{
       className: 'dark-toast'});
     try {
@@ -98,12 +101,20 @@ export default function ViewAllProducts() {
         autoClose: 3000,
         className: 'dark-toast'
     });
+    }finally{
+      setLoadingEdit(false);
     }
   };
 
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+    return `${formattedDate} ${formattedTime}`;
   };
 
   // Handle dropdown toggle
@@ -121,20 +132,19 @@ export default function ViewAllProducts() {
 
   // Calculate current products to display based on current page
   const currentProducts = products.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`d-none d-lg-block ${styles.body}`}>
-      <div className="sticky-top">
-        <Header />
-      </div>
-      <div className="d-flex gap-2">
-        {/* Sidebar */}
-        <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
-        </div>        
-
-        {/* Content */}
-        <section className={`${styles.content}`}>
+      <section className={`${styles.body}`}>
+          <div className="sticky-top">
+              <Header toggleSidebar={toggleSidebar} />
+          </div>
+          <div className="d-flex gap-2">
+              <div className={styles.sidebar}>
+                  <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
+              </div>
+              <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
             <h4 className="mt-3 mb-5">All Products</h4>
             <ToastContainer/>            
@@ -181,12 +191,32 @@ export default function ViewAllProducts() {
                         <td>{product.productWeight}</td>
                         <td>{product.unit}</td>
                         <td className="d-flex justify-content-between">
-                          <span>{product.basePrice}</span>
+                          <span>{product.basePrice.toLocaleString() }</span>
                           <div>
-                            <BsThreeDotsVertical
-                              className="me-3 cursor-pointer"
-                              onClick={() => handleDropdownToggle(product.id)}
-                            />
+                            <span
+                              style={{
+                                display: "inline-block",
+                                textAlign: "center",
+                                backgroundColor: "#f8f9fa",
+                                padding: "0.5rem",
+                                borderRadius: "50%",
+                                boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-5px)";
+                                e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
+                              }}
+                            >
+                              <BsThreeDotsVertical
+                                className="cursor-pointer"
+                                onClick={() => handleDropdownToggle(product.id)}
+                              />
+                            </span>
                             <DropdownMenu 
                               show={activeDropdown === product.id} 
                               onClickOutside={handleClickOutside} 
@@ -250,7 +280,7 @@ export default function ViewAllProducts() {
 
               {/* Product Weight */}
               <Form.Group className="mb-3 row">
-                <Form.Label className="col-4 fw-semibold">Product Weight</Form.Label>
+                <Form.Label className="col-4 fw-semibold">Base Weight</Form.Label>
                 <div className="col-8">
                   <Form.Control
                     type="text"
@@ -272,8 +302,9 @@ export default function ViewAllProducts() {
                     onChange={handleInputChange}
                     className="py-2 shadow-none border-secondary-subtle border-1"
                   >
-                    <option value="">Select Unit</option>
-                    <option value="kg">kg</option>
+                    <option value="" disabled>Select Unit</option>
+                    <option value="KG">Kilogram</option>
+                    <option value="G">Gram</option>
                   </Form.Select>
                 </div>
               </Form.Group>
@@ -298,6 +329,7 @@ export default function ViewAllProducts() {
           <Button
             className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`} 
             onClick={handleSaveClick}
+            disabled={loadingEdit}
           >
             Save
           </Button>

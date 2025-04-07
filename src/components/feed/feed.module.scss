@@ -1,93 +1,92 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
 @import '../shared/style.scss';
 
-
 .content {
   width: $content-width;
+  flex-grow: 1;
+  padding: 15px;
 }
 
 .sidebar {
   width: $sidebar-width;
 }
 
-
 .create_form {
-  height: 89vh; // Full viewport height
+  height: 89vh;
   padding: 40px;
   overflow: auto;
   background-color: #FAFCFF;
 
-
   h4 {
-      font-size: 20px;
-      font-weight: 500;
-      line-height: 30px;
-      color: #2E3135;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 30px;
+    color: #2E3135;
   }
 }
 
-
-.inputs{
+.inputs {
   border: #b79173aa 1px solid;
   &::placeholder {
     opacity: 0.5;
   }
-  &:focus{
+  &:focus {
     border: #896143aa 1px solid;
   }
 }
 
-
 .submit {
-  background-color: #512728;  // Initial background color
-  
+  background-color: #512728;
   &:hover {
-    background-color: #714445; // Background color on hover
+    background-color: #714445;
   }
-
   &:active {
-    background-color: #512728; // Background color when the button is clicked (active)
+    background-color: #512728;
   }
 }
 
 .styled_table {
   width: 100%;
-  position: relative; // Ensure that child elements with absolute positioning are relative to this table
+  position: relative;
+  border-collapse: collapse;
 }
 
 .styled_table th,
 .styled_table td {
-  white-space: nowrap; // Prevent text wrapping
+  white-space: nowrap; // Default: prevent wrapping for desktop
 }
 
 .styled_table th {
   color: #8C949B;
   padding-bottom: 20px;
-  text-align: left; // Optional: align text to the left
+  text-align: left;
+  font-weight: 600;
 }
 
 .styled_table td {
   padding: 18px 0px;
-  border-bottom:  0.2px solid #d0d6db;
-  font-family: Roboto Flex;
+  border-bottom: 0.2px solid #d0d6db;
+  font-family: 'Roboto Flex', sans-serif;
   font-size: 16px;
   font-weight: 500;
   line-height: 18.75px;
   letter-spacing: 0.04em;
   color: #2E3135;
-  position: relative; // Ensure td can contain absolute positioned elements like the dropdown
+  position: relative;
+}
+
+.tableWrapper {
+  overflow-x: auto;
 }
 
 .dropdownMenu {
-  position: absolute;
-  top: 100%; // Position dropdown below the element
-  right: 0;
-  background-color: #2E3135; // Background color
-  color: white; // Text color
+  position: fixed; // Changed to fixed for screen layer
+  background-color: #2E3135;
+  color: white;
   border-radius: 5px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 10000; // Ensure it is on top of the table
-  min-width: 150px; // Ensures a minimum width for the dropdown
+  z-index: 10001; // Higher than other elements (e.g., modal at 10000)
+  min-width: 150px;
 }
 
 .menuList {
@@ -102,28 +101,151 @@
   transition: background-color 0.3s ease, color 0.3s ease;
   
   &:hover {
-    background-color: #FAFCFF; // Hover background color
-    color: #2E3135; // Hover text color
+    background-color: #FAFCFF;
+    color: #2E3135;
   }
 }
 
 
-@media (max-width: 992) {
-  .body{
-    display: none;
+.position-relative {
+  position: relative;
+}
+
+.position_absolute {
+  position: absolute;
+  right: 0;
+  padding-right: 2rem;
+  top: 50px;
+  transform: translateY(-50%);
+}
+
+.suggestions_box {
+  position: absolute;
+  max-height: 170px;
+  width: calc(100% - 2px);
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 0;
+  padding: 0;
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  li {
+    padding: 8px;
+    cursor: pointer;
+    &:hover {
+      background-color: #f0f0f0;
+    }
   }
 }
 
 .inputContainer {
-  // Ensure the container is relative for positioning the sign
   position: relative;
 }
 
-.nairaSign {
-  position: absolute;
-  right: 10px; // Adjust this value as needed for spacing
-  top: 50%;
-  transform: translateY(-50%); // Center it vertically
-  pointer-events: none; // Prevent mouse events on the sign
-  color: #524d4d; // Change color as needed
+
+// Tablet View (768px - 991px)
+@media (min-width: 768px) and (max-width: 991px) {
+  .body {
+    display: block;
+  }
+
+  .sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1000;
+    &.d-block {
+      display: block;
+    }
+  }
+
+  .content {
+    width: 100%;
+    padding: 15px;
+    margin-left: 0;
+  }
+
+  .create_form {
+    padding: 20px;
+    height: auto;
+    min-height: 89vh;
+
+    h4 {
+      font-size: 18px;
+      line-height: 26px;
+    }
+  }
+
+  .inputs {
+    font-size: 14px;
+  }
+
+  .submit {
+    padding: 8px 20px;
+    font-size: 14px;
+  }
+
+  .styled_table {
+    display: table;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    table-layout: fixed;
+
+    th {
+      font-size: 12px;
+      padding: 8px 4px;
+      white-space: normal;
+      line-height: 1.2;
+      min-width: 80px;
+    }
+
+    td {
+      font-size: 14px;
+      padding: 10px 5px;
+      white-space: nowrap;
+      border-bottom: 0.1px solid #d0d6db;
+    }
+  }
+
+  .tableWrapper {
+    overflow-x: auto;
+  }
+
+  .dropdownMenu {
+    position: fixed; // Ensure fixed positioning on tablet
+  }
+}
+
+// Desktop View (992px and above)
+@media (min-width: 992px) {
+  .body {
+    display: block;
+  }
+}
+
+// Mobile View (below 768px)
+@media (max-width: 767px) {
+   .body {
+    display: block; // Ensure visibility on desktop
+  }
+
+  .content {
+    width: $content-width; // Restore desktop width
+  }
+
+  .sidebar {
+    display: block; // Visible by default on desktop
+  }
 }

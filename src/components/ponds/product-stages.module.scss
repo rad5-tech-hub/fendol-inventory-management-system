@@ -1,27 +1,50 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
 @import '../shared/style.scss';
 
-
-.content {
-  width: $content-width;
+.body {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar {
   width: $sidebar-width;
+  transition: width 0.3s ease;
+
+  @media (max-width: 991px) { // Below lg (tablet range)
+    width: 0; // Hidden unless offcanvas is active
+    overflow: hidden;
+  }
 }
 
+.content {
+  width: $content-width;
+  flex-grow: 1;
+  padding: 15px;
+
+  @media (max-width: 991px) { // md to lg (tablet)
+    margin-left: 0; // No offset when sidebar is hidden
+    width: 100%;
+  }
+}
 
 .create_form {
-  height: 89vh; // Full viewport height
+  height: 89vh;
   padding: 40px;
   overflow: auto;
   background-color: #FAFCFF;
 
   h4 {
-      font-size: 20px;
-      font-weight: 500;
-      line-height: 30px;
-      color: #2E3135;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 30px;
+    color: #2E3135;
+  }
+
+  @media (max-width: 991px) { // Tablet
+    padding: 20px; // Reduced padding
+    height: auto; // Allow content to dictate height
   }
 }
 
@@ -30,33 +53,43 @@
   border-radius: 8px;
   text-align: center;
   margin-bottom: 15px;
+
   h6 {
     color: #8C949B;
   }
-  
+
   p {
     color: #2E3135;
     font-size: 30px;
     font-weight: 600;
 
     span {
-    color: #8C949B;
+      color: #8C949B;
       font-size: small;
       font-weight: 400;
     }
   }
+
   &:hover {
-    box-shadow: 2px 4px 8px #2E3135; // Increase shadow
-    transform: scale(1.05); // Slightly increase size on hover
+    box-shadow: 2px 4px 8px #2E3135;
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 991px) { // Tablet
+    p {
+      font-size: 24px; // Smaller text on tablets
+    }
   }
 }
 
-.inputs{
+.inputs {
   border: #b79173aa 1px solid;
+
   &::placeholder {
     opacity: 0.5;
   }
-  &:focus{
+
+  &:focus {
     border: #896143aa 1px solid;
   }
 }
@@ -64,70 +97,92 @@
 .styled_table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; // Fixed layout for equal column widths
+  table-layout: fixed;
 
   th, td {
     padding: 8px;
     text-align: left;
-    overflow: hidden; // Prevent overflow
-    text-overflow: ellipsis; // Add ellipsis for overflowed text
-    white-space: nowrap; // Prevent text wrapping
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  th {
+    color: #8C949B;
+    padding: 20px 9px;
+  }
+
+  td {
+    padding: 19px 8px;
+    border-bottom: 0.2px solid #d0d6db;
+    font-family: 'Roboto Flex', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 18.75px;
+    letter-spacing: 0.04em;
+    color: #2E3135;
+    position: relative;
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  @media (max-width: 991px) { // Tablet
+    th, td {
+      padding: 6px; // Reduced padding
+      font-size: 14px; // Smaller text
+    }
+
+    th {
+      padding: 15px 6px; // Adjusted for header
+    }
+
+    td {
+      padding: 15px 6px;
+    }
+
+    &.table-responsive {
+      display: block;
+      overflow-x: auto; // Enable horizontal scrolling
+    }
   }
 }
 
-.styled_table th {
-  color: #8C949B;
-  padding: 20px 9px;
-  text-align: left; // Optional: align text to the left
-}
-
-.theader{
+.theader {
   background-color: #D0D5DD;
+
   th {
     color: #2E3135;
+
     &:first-of-type {
-      border-top-left-radius: 8px; // Adjust to desired radius
+      border-top-left-radius: 8px;
       border-bottom-left-radius: 8px;
     }
+
     &:last-of-type {
-      border-top-right-radius: 8px; // Adjust to desired radius
+      border-top-right-radius: 8px;
       border-bottom-right-radius: 8px;
     }
   }
-
 }
 
-.trow{
-  &:hover{
-    cursor: pointer;
-  }
-}
-
-.styled_table td {
-  padding: 19px 8px;
-  border-bottom:  0.2px solid #d0d6db;
-  font-family: Roboto Flex;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 18.75px;
-  letter-spacing: 0.04em;
-  color: #2E3135;
-  position: relative; // Ensure td can contain absolute positioned elements like the dropdown
-  :hover{
+.trow {
+  &:hover {
     cursor: pointer;
   }
 }
 
 .dropdownMenu {
   position: absolute;
-  top: 100%; // Position dropdown below the element
+  top: 100%;
   right: 0;
-  background-color: #2E3135; // Background color
-  color: white; // Text color
+  background-color: #2E3135;
+  color: white;
   border-radius: 5px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 10000; // Ensure it is on top of the table
-  min-width: 150px; // Ensures a minimum width for the dropdown
+  z-index: 10000;
+  min-width: 150px;
 }
 
 .menuList {
@@ -140,34 +195,32 @@
   padding: 10px 20px;
   cursor: pointer;
   transition: background-color 0.3s ease, color 0.3s ease;
-  
+
   &:hover {
-    background-color: #FAFCFF; // Hover background color
-    color: #2E3135; // Hover text color
+    background-color: #FAFCFF;
+    color: #2E3135;
   }
 }
 
 .border_dot {
-  border-bottom: 2px dotted #616468; /* Adjust thickness and color */
-  width: 100px; /* Adjust this value to control the width */
+  border-bottom: 2px dotted #616468;
+  width: 100px;
   margin: 8px 10px;
-}
 
-@media (max-width: 992) {
-  .body{
-    display: none;
+  @media (max-width: 991px) { // Tablet
+    width: 80px; // Slightly smaller on tablets
   }
 }
 
 .submit {
-  background-color: #512728;  // Initial background color
-  
+  background-color: #512728;
+
   &:hover {
-    background-color: #714445; // Background color on hover
+    background-color: #714445;
   }
 
   &:active {
-    background-color: #512728; // Background color when the button is clicked (active)
+    background-color: #512728;
   }
 }
 
@@ -175,23 +228,29 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px; /* Adjust size as needed */
-  height: 40px; /* Ensure a perfect circle */
-  margin: 0 5px; /* Add spacing between icons */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-  transition: all 0.3s ease; /* Smooth transition for hover effects */
+  width: 40px;
+  height: 40px;
+  margin: 0 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   cursor: pointer;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.1); /* Light hover background */
-    transform: scale(1.1); /* Slight zoom effect */
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Enhance shadow on hover */
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
   }
 
-  /* Icon Styling */
   .text-center {
     font-size: 18px;
   }
+
+  @media (max-width: 991px) { // Tablet
+    width: 35px; // Slightly smaller
+    height: 35px;
+
+    .text-center {
+      font-size: 16px; // Adjusted icon size
+    }
+  }
 }
-
-

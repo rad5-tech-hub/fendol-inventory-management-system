@@ -23,8 +23,169 @@
   }
 }
 
-.board{
-  height: 300px;
+.board {
+  height: 100px;
+  background-color: #F6F4F4; // Light background for cards
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  &:hover {
+    background-color: rgba(139, 69, 19, 0.8); // Brown color from chart (slightly darker for hover)
+    color: #FFFFFF; // White text on hover for readability
+
+    .card-title,
+    .card-text {
+      color: #FFFFFF; // Ensure title and text are white on hover
+    }
+  }
+
+  .card-title {
+    color: #2E3135; // Default dark color for title
+  }
+
+  .card-text {
+    color: #2E3135; // Default dark color for text
+  }
+}
+
+.salesCard {
+  background-color: #B06426; // Use chart's brown color for the sales card
+  color: #FFFFFF; // White text for contrast
+
+  .card-title,
+  .card-text {
+    color: #FFFFFF; // Ensure title and text are white
+  }
+
+  &:hover {
+    background-color: rgba(139, 69, 19, 1); // Darker brown on hover
+    color: #FFFFFF;
+
+    .card-title,
+    .card-text {
+      color: #FFFFFF;
+    }
+  }
+}
+
+.chartDash {
+  height: 500px;
+  background-color: #F6F4F4; // Light background to match cards
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: rgba(0, 128, 0, 0.1); // Light green (from chart) on hover for subtle effect
+  }
+
+  // Ensure chart labels and text remain readable
+  canvas {
+    .chart-labels,
+    .chart-title {
+      color: #2E3135 !important; // Keep chart labels dark for readability
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  .content {
+    width: 100%; // Full width when the sidebar is hidden
+    display: block; // Ensure it takes up the entire layout
+  }
+
+  .sidebar {
+    display: none; // Hide sidebar on tablet and smaller screens
+  }
+
+  .create_form {
+    padding: 20px; // Adjust padding for smaller screens
+    height: auto; // Dynamic height
+    overflow-y: auto; // Enable vertical scrolling
+  }
+}@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
+@import '../shared/style.scss';
+
+.content {
+  width: $content-width; // Default width
+}
+
+.sidebar {
+  width: $sidebar-width; // Default width
+}
+
+.create_form {
+  height: 89vh; // Full viewport height
+  padding: 40px;
+  background-color: #FAFCFF;
+  overflow: auto;
+
+  h4 {
+    font-size: 25px;
+    font-weight: 500;
+    line-height: 60px;
+    color: #2E3135;
+  }
+}
+
+.board {
+  height: 115px;
+  background-color: #F6F4F4; // Light background for cards
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  &:hover {
+    background-color: rgba(139, 69, 19, 1); // Brown color from chart (slightly darker for hover)
+    color: #FFFFFF; // White text on hover for readability
+
+    .card-title,
+    .card-text {
+      color: #FFFFFF; // Ensure title and text are white on hover
+    }
+  }
+
+  .card-title {
+    color: #2E3135; // Default dark color for title
+  }
+
+  .card-text {
+    color: #2E3135; // Default dark color for text
+  }
+}
+
+.salesCard {
+  background-color: rgba(140, 69,  0.5); // Use chart's brown color for the sales card
+  color: #FFFFFF; // White text for contrast
+
+  .card-title,
+  .card-text {
+    color: #FFFFFF; // Ensure title and text are white
+  }
+
+  &:hover {
+    background-color: rgba(139, 69, 19, 1); // Darker brown on hover
+    color: #FFFFFF;
+
+    .card-title,
+    .card-text {
+      color: #FFFFFF;
+    }
+  }
+}
+
+.chartDash {
+  height: 500px;
+  background-color: #F6F4F4; // Light background to match cards
+  transition: background-color 0.3s ease;
+  overflow: auto;
+
+  &:hover {
+    background-color: rgba(0, 128, 0, 0.1); // Light green (from chart) on hover for subtle effect
+  }
+
+  // Ensure chart labels and text remain readable
+  canvas {
+    .chart-labels,
+    .chart-title {
+      color: #2E3135 !important; // Keep chart labels dark for readability
+    }
+  }
 }
 
 @media (max-width: 992px) {

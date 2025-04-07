@@ -13,16 +13,17 @@ export default function InventoryHistory() {
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(0); // Page starts from 0 for ReactPaginate
-  const itemsPerPage = 10; // Items per page
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
   const [selectedDate, setSelectedDate] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false); // Added for sidebar toggle
 
   useEffect(() => {
     const fetchInventoryHistory = async () => {
       try {
         const response = await Api.get('/feeds-histories');
-        setInventoryHistory(response.data.data); // Assuming the response contains an array of history data
-        setFilteredData(response.data.data); // Set the initial filtered data to all data
+        setInventoryHistory(response.data.data);
+        setFilteredData(response.data.data);
       } catch (error) {
         setError("Error fetching inventory history. Please try again.");
       } finally {
@@ -34,10 +35,13 @@ export default function InventoryHistory() {
 
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+    return `${formattedDate} ${formattedTime}`;
   };
 
   const handleDateChange = (event) => {
@@ -47,16 +51,15 @@ export default function InventoryHistory() {
     if (date) {
       const filtered = inventoryHistory.filter((history) => {
         const createdDate = new Date(history.createdAt);
-        const formattedDate = createdDate.toISOString().split('T')[0]; // Get the date in YYYY-MM-DD format
-        return formattedDate === date; // Filter by the selected date
+        const formattedDate = createdDate.toISOString().split('T')[0];
+        return formattedDate === date;
       });
       setFilteredData(filtered);
     } else {
-      setFilteredData(inventoryHistory); // Reset if no date is selected
+      setFilteredData(inventoryHistory);
     }
   };
 
-  // Calculate pagination data
   const offset = currentPage * itemsPerPage;
   const paginatedData = filteredData.slice(offset, offset + itemsPerPage);
   const pageCount = Math.ceil(filteredData.length / itemsPerPage);
@@ -65,84 +68,132 @@ export default function InventoryHistory() {
     setCurrentPage(event.selected);
   };
 
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
   return (
-    <section className={`d-none d-lg-block ${styles.body}`} >
+    <section className={`${styles.body}`}>
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        {/* Sidebar */}
-        <div className={styles.sidebar}>
-          <SideBar className={styles.sidebarItem} />
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-
-        {/* Content */}
-        <section className={`${styles.content}`}>
+        <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
-            <div className="d-flex justify-content-between mt-3 ">
+            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 align-items-md-center">
               <h4 className="mb-4">Feed Inventory History</h4>
-              
-              {/* Date Picker for filtering */}
-              <div className="mb-4 d-flex gap-2">
-                <span className="fw-semibold fs-6 mt-1">Filter</span>
+              <div className="mb-4 d-flex gap-2 align-items-center">
+                <span className="fw-semibold fs-6">Filter</span>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={handleDateChange}
-                  className="form-control"
+                  className={`form-control ${styles.dateInput}`}
                   placeholder="Filter By Date"
                 />
               </div>
             </div>
 
-            {/* Table */}
             {loading ? (
               <div className="text-center my-5">
                 <Spinner animation="border" />
               </div>
             ) : error ? (
               <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
+                <Alert variant="danger" className="text-center w-75 py-5">
                   <FaExclamationTriangle size={40} />
                   <span className="fw-semibold">{error}</span>
                 </Alert>
               </div>
             ) : filteredData.length === 0 ? (
               <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-50 py-5">
+                <Alert variant="info" className="text-center w-75 py-5">
                   <FaExclamationTriangle size={40} />
                   <span className="fw-semibold">No data available.</span>
                 </Alert>
               </div>
             ) : (
               <>
-                <table className={styles.styled_table}> 
-                  <thead>
-                    <tr>
-                      <th>DATE CREATED</th>
-                      <th>FEED NAME</th>
-                      <th>FEED TYPE</th>
-                      <th>POND</th>
-                      <th>QUANTITY <br /> ADDED (KG)</th>
-                      <th>QUANTITY <br /> USED (KG)</th>
-                      <th>QUANTITY <br /> REMAINING(KG)</th>
-                      <th>STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.map((history, index) => {
-                      const formattedDate = formatDate(history.createdAt);
-                      return (
-                        <tr key={index}>
-                          <td>{formattedDate}</td>
-                          <td>{history.feedDetails.feedName}</td>
-                          <td>{history.feedDetails.feedType}</td>
-                          <td>{history.stage || '-'}</td>
-                          <td>{history.originalQuantity}</td>                        
-                          <td>{history.quantityUsed}</td>
-                          <td>{history.remainingFeed}</td>
-                          <td className="text-uppercase fw-semibold d-flex">
-                            <span className={
+                {/* Table for Desktop */}
+                <div className={`d-none d-lg-block ${styles.tableWrapper}`}>
+                  <table className={styles.styled_table}>
+                    <thead>
+                      <tr>
+                        <th>DATE CREATED</th>
+                        <th>FEED NAME</th>
+                        <th>FEED TYPE</th>
+                        <th>POND</th>
+                        <th>QUANTITY <br /> ADDED (KG)</th>
+                        <th>QUANTITY <br /> USED (KG)</th>
+                        <th>QUANTITY <br /> REMAINING (KG)</th>
+                        <th>STATUS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedData.map((history, index) => {
+                        const formattedDate = formatDate(history.createdAt);
+                        return (
+                          <tr key={index}>
+                            <td>{formattedDate}</td>
+                            <td>{history.feedDetails.feedName}</td>
+                            <td>{history.feedDetails.feedType}</td>
+                            <td>{history.stage || '-'}</td>
+                            <td>{history.stage === null ? history.feedDetails.originalQuantity : '-'}</td>
+                            <td>{history.quantityUsed}</td>
+                            <td>{history.remainingFeed}</td>
+                            <td className="text-uppercase fw-semibold">
+                              <span className={
+                                history.status === 'in stock'
+                                  ? 'text-success'
+                                  : history.status === 'out of stock'
+                                  ? 'text-danger'
+                                  : history.status === 'low stock'
+                                  ? 'text-warning'
+                                  : ''
+                              }>
+                                {history.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Card Layout for Tablet and Below */}
+                <div className={`d-lg-none ${styles.cardContainer}`}>
+                  {paginatedData.map((history, index) => {
+                    const formattedDate = formatDate(history.createdAt);
+                    return (
+                      <div key={index} className={`${styles.card} mb-3 p-3 border rounded`}>
+                        <div className="d-flex flex-column">
+                          <div className="mb-2">
+                            <strong>Date Created:</strong> {formattedDate}
+                          </div>
+                          <div className="mb-2">
+                            <strong>Feed Name:</strong> {history.feedDetails.feedName}
+                          </div>
+                          <div className="mb-2">
+                            <strong>Feed Type:</strong> {history.feedDetails.feedType}
+                          </div>
+                          <div className="mb-2">
+                            <strong>Pond:</strong> {history.stage || '-'}
+                          </div>
+                          <div className="mb-2">
+                            <strong>Qty Added (KG):</strong> {history.stage === null ? history.feedDetails.originalQuantity : '-'}
+                          </div>
+                          <div className="mb-2">
+                            <strong>Qty Used (KG):</strong> {history.quantityUsed}
+                          </div>
+                          <div className="mb-2">
+                            <strong>Qty Remaining (KG):</strong> {history.remainingFeed}
+                          </div>
+                          <div>
+                            <strong>Status:</strong>{' '}
+                            <span className={`text-uppercase fw-semibold ${
                               history.status === 'in stock'
                                 ? 'text-success'
                                 : history.status === 'out of stock'
@@ -150,15 +201,16 @@ export default function InventoryHistory() {
                                 : history.status === 'low stock'
                                 ? 'text-warning'
                                 : ''
-                            }>
+                            }`}>
                               {history.status}
                             </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
                 <div className="d-flex justify-content-center mt-4">
                   <ReactPaginate
                     previousLabel={"<"}
@@ -182,7 +234,7 @@ export default function InventoryHistory() {
                 </div>
               </>
             )}
-          </main>        
+          </main>
         </section>
       </div>
     </section>

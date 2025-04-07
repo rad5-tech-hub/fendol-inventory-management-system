@@ -13,6 +13,12 @@ $text-color: #ffffff;
     overflow-y: auto 2px; 
 }
 
+.offcan{
+    background-color: $siderbar-color;
+    overflow-x: hidden; 
+    overflow-y: auto 2px; 
+}
+
 // Custom scrollbar styling for WebKit browsers (Chrome, Safari)
 .sidebar::-webkit-scrollbar {
     width: 8px; // Adjust width of the scrollbar
