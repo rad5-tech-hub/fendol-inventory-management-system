@@ -24,20 +24,24 @@ const HarvestFish = () => {
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
 
   // Fetch Fish Stages
-  useEffect(() => {
-    const fetchStages = async () => {
-      try {
-        const response = await Api.get('/fish-stages');
-        if (!Array.isArray(response.data.data)) {
-          throw new Error('Expected an array of stages');
-        }
-        setStages(response.data.data);
-      } catch (err) {
-        console.error(err.response?.data?.message || 'Failed to fetch stages');
-        setStages([]);
+  const fetchStages = async () => {
+    try {
+      const response = await Api.get('/fish-stages');
+      if (!Array.isArray(response.data.data)) {
+        throw new Error('Expected an array of stages');
       }
-    };
+      setStages(response.data.data);
+    } catch (err) {
+      console.error(err.response?.data?.message || 'Failed to fetch stages');
+      setStages([]);
+      toast.error(err.response?.data?.message || 'Failed to fetch ponds. Please try again.', {
+        className: 'dark-toast',
+        autoClose: 3000,
+      });
+    }
+  };
 
+  useEffect(() => {
     fetchStages();
   }, []);
 
@@ -92,6 +96,9 @@ const HarvestFish = () => {
         autoClose: 5000,
         className: 'dark-toast',
       });
+
+      // Fetch updated ponds after successful harvest
+      await fetchStages();
     } catch (error) {
       toast.update(loadingToast, {
         render: error.response?.data?.message || 'Error harvesting fish. Please try again.',

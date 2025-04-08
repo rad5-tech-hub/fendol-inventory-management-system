@@ -23,20 +23,25 @@ const DamageFish = () => {
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchStages = async () => {
-      try {
-        const response = await Api.get('/fish-stages');
-        if (Array.isArray(response.data.data)) {
-          setStages(response.data.data);
-        } else {
-          throw new Error('Expected an array of stages');
-        }
-      } catch (err) {
-        console.error(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+  // Fetch ponds (stages)
+  const fetchStages = async () => {
+    try {
+      const response = await Api.get('/fish-stages');
+      if (Array.isArray(response.data.data)) {
+        setStages(response.data.data);
+      } else {
+        throw new Error('Expected an array of stages');
       }
-    };
+    } catch (err) {
+      console.error(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to fetch ponds. Please try again.', {
+        className: 'dark-toast',
+        autoClose: 3000,
+      });
+    }
+  };
 
+  useEffect(() => {
     fetchStages();
   }, []);
 
@@ -121,6 +126,9 @@ const DamageFish = () => {
         autoClose: 5000,
         className: 'dark-toast'
       });
+
+      // Fetch updated ponds after successful submission
+      await fetchStages();
     } catch (error) {
       toast.update(loadingToast, {
         render: error.response?.data?.message || "Error removing damaged fish. Please try again.",

@@ -28,22 +28,27 @@ export default function MoveFish() {
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
 
   // Fetch Stages
-  useEffect(() => {
-    const fetchStages = async () => {
-      try {
-        const response = await Api.get('/fish-stages');
-        if (Array.isArray(response.data.data)) {
-          const filteredProcessStages = response.data.data.filter(
-            (stage) => stage.title !== 'Smoking' && stage.title !== 'Drying'
-          );
-          setStages(filteredProcessStages);
-        } else {
-          throw new Error('Expected an array of stages');
-        }
-      } catch (err) {
-        console.error(err.response?.data?.message || 'Failed to fetch stages');
+  const fetchStages = async () => {
+    try {
+      const response = await Api.get('/fish-stages');
+      if (Array.isArray(response.data.data)) {
+        const filteredProcessStages = response.data.data.filter(
+          (stage) => stage.title !== 'Smoking' && stage.title !== 'Drying'
+        );
+        setStages(filteredProcessStages);
+      } else {
+        throw new Error('Expected an array of stages');
       }
-    };
+    } catch (err) {
+      console.error(err.response?.data?.message || 'Failed to fetch stages');
+      toast.error(err.response?.data?.message || 'Failed to fetch ponds. Please try again.', {
+        className: 'dark-toast',
+        autoClose: 3000,
+      });
+    }
+  };
+
+  useEffect(() => {
     fetchStages();
   }, []);
 
@@ -168,6 +173,9 @@ export default function MoveFish() {
         autoClose: 3000,
         className: 'dark-toast',
       });
+
+      // Fetch updated ponds after successful move
+      await fetchStages();
     } catch (error) {
       toast.update(loadingToast, {
         render: error.response?.data?.message || 'Error moving fish. Please try again.',
