@@ -14,6 +14,7 @@ import StoreNavigations from "./store/storeRouter";
 import FinanceNavigations from "./finance/financeRouter";
 import DamageLoss from "./damage-loss/damges";
 import ShowcaseNavigations from "./showcase/showcaseRoute";
+import SiteManagementNavigations from "./site-management/siteManagementRouter";
 import ManageNavigations from "./manage-fish/manageRoute";
 import { ToastContainer } from "react-toastify";
 import Dashboard from "./dashboard/dashbord";
@@ -120,6 +121,14 @@ export default function RouterSwitch() {
             element={
               <ProtectedRoute>
                 <ShowcaseNavigations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="site-management/*"
+            element={
+              <ProtectedRoute>
+                <SiteManagementNavigations />
               </ProtectedRoute>
             }
           />

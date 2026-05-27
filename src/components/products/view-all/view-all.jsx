@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import styles from '../product.module.scss'; // Use your product styles
-import { BsThreeDotsVertical } from "react-icons/bs"; // Dropdown icon
+import styles from '../product.module.scss';
+import { BsThreeDotsVertical, BsPlusLg, BsBarChartFill } from "react-icons/bs";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap'; // Import Bootstrap Spinner and Alert
-import ReactPaginate from 'react-paginate'; // Import React Paginate
+import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap';
+import ReactPaginate from 'react-paginate';
+import { useNavigate } from 'react-router-dom';
 
 const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick }) => {
   if (!show) return null;
@@ -23,71 +24,132 @@ const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick }) => {
   );
 };
 
+const ProductTable = ({ rows, avatarColors }) => (
+  <table className={styles.productTable}>
+    <thead>
+      <tr>
+        <th>Product Name</th>
+        <th>Site</th>
+        <th>Created By</th>
+        <th>Date Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((product, idx) => (
+        <tr key={product.id}>
+          <td className={styles.productNameCell}>{product.productName}</td>
+          <td>{product.site?.name || '—'}</td>
+          <td>
+            {product.creator?.fullName ? (
+              <div className={styles.createdByCell}>
+                <div
+                  className={styles.createdByAvatar}
+                  style={{ background: avatarColors[idx % avatarColors.length] }}
+                >
+                  {(() => {
+                    const parts = product.creator.fullName.trim().split(' ');
+                    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+                  })()}
+                </div>
+                <span>{product.creator.fullName}</span>
+              </div>
+            ) : '—'}
+          </td>
+          <td>
+            {(() => {
+              const date = new Date(product.createdAt);
+              return date.toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric',
+              });
+            })()}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
+
 export default function ViewAllProducts() {
-  const [products, setProducts] = useState([]); // State for products
-  const [loading, setLoading] = useState(true); // Loader state
-  const [loadingEdit, setLoadingEdit] = useState(false); // Loader state
-  const [error, setError] = useState(''); // Error state
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0); // State for current page
-  const itemsPerPage = 10; // Define how many items per page
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
   const [showSidebar, setShowSidebar] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null); // State to track active dropdown
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [viewMode, setViewMode] = useState('by-site');
+  const [selectedSite, setSelectedSite] = useState(null);
+  const navigate = useNavigate();
 
-  // Fetch data from API
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await Api.get('/products'); 
+        const response = await Api.get('/products');
         setProducts(response.data.data);
       } catch (err) {
-        setError('Failed to fetch data. Please try again.'); // Set error message if API call fails
+        setError('Failed to fetch data. Please try again.');
       } finally {
-        setLoading(false); // Stop loading once data is fetched
+        setLoading(false);
       }
     };
 
-    fetchData(); // Call the function to fetch data
+    fetchData();
   }, []);
 
-  // Handle Edit click
+  useEffect(() => {
+    const role = sessionStorage.getItem('role');
+    setUserRole(role);
+  }, []);
+
+  const isSuperAdmin = userRole === 'super_admin';
+
+  const groupedBySite = isSuperAdmin && viewMode === 'by-site'
+    ? products.reduce((acc, product) => {
+        const siteName = product.site?.name || 'Unassigned';
+        if (!acc[siteName]) acc[siteName] = [];
+        acc[siteName].push(product);
+        return acc;
+      }, {})
+    : {};
+
+  const siteNames = Object.keys(groupedBySite).sort();
+
   const handleEditClick = (product) => {
-    setSelectedProduct(product); // Set selected product for modal
-    setShowModal(true); // Open modal
+    setSelectedProduct(product);
+    setShowModal(true);
   };
-  
-  // Handle Delete click
+
   const handleDeleteClick = async (productId) => {
     try {
-      await Api.delete(`/products/${productId}`); // Adjust endpoint for delete
+      await Api.delete(`/products/${productId}`);
       setProducts(products.filter(product => product.id !== productId));
     } catch (err) {
       console.error('Failed to delete product:', err);
     }
   };
 
-  // Handle Input Change in Modal
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setSelectedProduct(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle Save click in Modal
   const handleSaveClick = async () => {
     setLoadingEdit(true)
     const loadingToast = toast.loading("Editing Product...",{
       className: 'dark-toast'});
     try {
       if (selectedProduct && selectedProduct.id) {
-        await Api.put(`/product/${selectedProduct.id}`, selectedProduct); // Adjust endpoint for update
+        await Api.put(`/product/${selectedProduct.id}`, selectedProduct);
         setProducts(products.map(product => product.id === selectedProduct.id ? selectedProduct : product));
-        setShowModal(false); // Close modal after saving
+        setShowModal(false);
 
-        // After a successful API call
         toast.update(loadingToast, {
           render: "Product Edited successfully!",
-          type: "success", // Use string for type
+          type: "success",
           isLoading: false,
           autoClose: 3000,
           className: 'dark-toast'
@@ -96,7 +158,7 @@ export default function ViewAllProducts() {
     } catch (error) {
       toast.update(loadingToast, {
         render: error.response?.data?.message ||  "Error adding fish. Please try again.",
-        type: "error", // Use string for type
+        type: "error",
         isLoading: false,
         autoClose: 3000,
         className: 'dark-toast'
@@ -117,224 +179,267 @@ export default function ViewAllProducts() {
     return `${formattedDate} ${formattedTime}`;
   };
 
-  // Handle dropdown toggle
   const handleDropdownToggle = (productId) => {
-    setActiveDropdown(activeDropdown === productId ? null : productId); // Toggle active dropdown
+    setActiveDropdown(activeDropdown === productId ? null : productId);
   };
-  
-  // Handle click outside dropdown
+
   const handleClickOutside = () => setActiveDropdown(null);
 
-  // Handle page change for pagination
   const handlePageChange = (data) => {
-    setCurrentPage(data.selected); // Update current page
+    setCurrentPage(data.selected);
   };
 
-  // Calculate current products to display based on current page
   const currentProducts = products.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const formatDateShort = (isoDate) => {
+    const date = new Date(isoDate);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const SITE_ICON_COLORS   = ['#F5A623', '#8B4513', '#4A90D9', '#2E7D32', '#7B1FA2'];
+  const AVATAR_COLORS      = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA'];
+
+  const getInitials = (fullName = '') => {
+    const parts = fullName.trim().split(' ');
+    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+  };
+
   return (
-      <section className={`${styles.body}`}>
-          <div className="sticky-top">
-              <Header toggleSidebar={toggleSidebar} />
-          </div>
-          <div className="d-flex gap-2">
-              <div className={styles.sidebar}>
-                  <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
-              </div>
-              <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
-            <h4 className="mt-3 mb-5">All Products</h4>
-            <ToastContainer/>            
-            {/* Loader */}
-            {loading && (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
-            )}
-            
-            {/* Error Message */}
-            {error && (
-              <Alert variant="danger" className="text-center">
-                {error}
-              </Alert>
-            )}
+    <section className={`${styles.body}`}>
+      <div className="sticky-top">
+        <Header toggleSidebar={toggleSidebar} />
+      </div>
+      <div className="d-flex gap-2">
+        <div className={styles.sidebar}>
+          <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
+        </div>
+        <section className={`${styles.content} flex-grow-1`}>
+            <main className={styles.create_form}>
+              <ToastContainer />
 
-            {!loading && !error && products.length === 0 && (
-              <Alert variant="info">
-                No products available.
-              </Alert>
-            )}
-
-            {/* Products Table */}
-            {!loading && !error && (
-              <>
-                <table className={styles.styled_table}>
-                  <thead>
-                    <tr>
-                      <th>DATE CREATED</th>
-                      <th>PRODUCT NAME</th>
-                      <th>PRODUCT WEIGHT</th>
-                      <th>UNIT</th>
-                      <th>BASE PRICE (₦)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentProducts.map((product) => (
-                      <tr key={product.id}>
-                        <td>{formatDate(product.createdAt)}</td>
-                        <td>{product.productName}</td>
-                        <td>{product.productWeight}</td>
-                        <td>{product.unit}</td>
-                        <td className="d-flex justify-content-between">
-                          <span>{product.basePrice.toLocaleString() }</span>
-                          <div>
-                            <span
-                              style={{
-                                display: "inline-block",
-                                textAlign: "center",
-                                backgroundColor: "#f8f9fa",
-                                padding: "0.5rem",
-                                borderRadius: "50%",
-                                boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "translateY(-5px)";
-                                e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "translateY(0)";
-                                e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
-                              }}
-                            >
-                              <BsThreeDotsVertical
-                                className="cursor-pointer"
-                                onClick={() => handleDropdownToggle(product.id)}
-                              />
-                            </span>
-                            <DropdownMenu 
-                              show={activeDropdown === product.id} 
-                              onClickOutside={handleClickOutside} 
-                              onEditClick={() => handleEditClick(product)} 
-                              onDeleteClick={() => handleDeleteClick(product.id)}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Pagination */}
-                <div className="d-flex justify-content-center mt-4">
-                  <ReactPaginate
-                    previousLabel={"< "}
-                    nextLabel={" >"}
-                    breakLabel={"..."}
-                    pageCount={Math.ceil(products.length / itemsPerPage)}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    containerClassName={"pagination"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"dark"}
-                  />
+              {/* ── Page header ── */}
+              <div className={styles.pageHeader}>
+                <div>
+                  <h2 className={styles.pageTitle}>Product Assignments</h2>
+                  <p className={styles.pageSubtitle}>
+                    Manage and track inventory allocation across all aquaculture sites.
+                  </p>
                 </div>
-              </>
-            )}
-          </main>        
-        </section>
-         {/* Edit Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton className="border-0 ">
-          <Modal.Title className="fw-semibold">Edit Product</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="mt-5">
-          {selectedProduct && (
-            <Form>
-              {/* Product Name */}
-              <Form.Group className="mb-3 row">
-                <Form.Label className="col-4 fw-semibold">Product Name</Form.Label>
-                <div className="col-8">
-                  <Form.Control
-                    type="text"
-                    name="productName"
-                    value={selectedProduct.productName}
-                    onChange={handleInputChange}
-                    className="py-2 shadow-none border-secondary-subtle border-1"
-                  />
-                </div>
-              </Form.Group>
-
-              {/* Product Weight */}
-              <Form.Group className="mb-3 row">
-                <Form.Label className="col-4 fw-semibold">Base Weight</Form.Label>
-                <div className="col-8">
-                  <Form.Control
-                    type="text"
-                    name="productWeight"
-                    value={selectedProduct.productWeight}
-                    onChange={handleInputChange}
-                    className="py-2 shadow-none border-secondary-subtle border-1"
-                  />
-                </div>
-              </Form.Group>
-
-              {/* Unit */}
-              <Form.Group className="mb-3 row">
-                <Form.Label className="col-4 fw-semibold">Unit</Form.Label>
-                <div className="col-8">
-                  <Form.Select
-                    name="unit"
-                    value={selectedProduct.unit}
-                    onChange={handleInputChange}
-                    className="py-2 shadow-none border-secondary-subtle border-1"
+                {isSuperAdmin && (
+                  <button
+                    className={styles.assignBtn}
+                    onClick={() => navigate('/products/create')}
                   >
-                    <option value="" disabled>Select Unit</option>
-                    <option value="KG">Kilogram</option>
-                    <option value="G">Gram</option>
-                  </Form.Select>
-                </div>
-              </Form.Group>
+                    <BsPlusLg /> Assign Product
+                  </button>
+                )}
+              </div>
 
-              {/* Base Price */}
-              <Form.Group className="mb-3 row">
-                <Form.Label className="col-4 fw-semibold">Base Price (₦)</Form.Label>
-                <div className="col-8">
-                  <Form.Control
-                    type="number"
-                    name="basePrice"
-                    value={selectedProduct.basePrice}
-                    onChange={handleInputChange}
-                    className="py-2 shadow-none border-secondary-subtle border-1"
-                  />
+              {/* ── Admin view-mode toggle ── */}
+              {isSuperAdmin && (
+                <div className={styles.filterBar}>
+                  <button
+                    className={viewMode === 'all' ? styles.filterBtnActive : styles.filterBtnOutline}
+                    onClick={() => setViewMode('all')}
+                  >
+                    All Products
+                  </button>
+                  <button
+                    className={viewMode === 'by-site' ? styles.filterBtnActive : styles.filterBtnOutline}
+                    onClick={() => setViewMode('by-site')}
+                  >
+                    By Site
+                  </button>
                 </div>
-              </Form.Group>
-            </Form>
-          )}
-        </Modal.Body>
-        <Modal.Footer className="border-0">
-          <Button
-            className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`} 
-            onClick={handleSaveClick}
-            disabled={loadingEdit}
-          >
-            Save
-          </Button>
-        </Modal.Footer>
-      </Modal>
+              )}
+
+              {/* ── Loading ── */}
+              {loading && (
+                <div className="text-center">
+                  <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </Spinner>
+                </div>
+              )}
+
+              {/* ── Error ── */}
+              {error && (
+                <Alert variant="danger" className="text-center">{error}</Alert>
+              )}
+
+              {/* ── Empty ── */}
+              {!loading && !error && products.length === 0 && (
+                <Alert variant="info">No products available.</Alert>
+              )}
+
+              {/* ── SUPER ADMIN: By Site ── */}
+              {!loading && !error && products.length > 0 && isSuperAdmin && viewMode === 'by-site' && (
+                <>
+                  {siteNames.map((siteName, siteIdx) => (
+                    <div key={siteName} className={styles.siteCard}>
+                      <div className={styles.siteCardHeader}>
+                        <div className={styles.siteCardHeaderLeft}>
+                          <div
+                            className={styles.siteIcon}
+                            style={{ background: SITE_ICON_COLORS[siteIdx % SITE_ICON_COLORS.length] }}
+                          >
+                            <BsBarChartFill />
+                          </div>
+                          <h5 className={styles.siteName}>{siteName}</h5>
+                        </div>
+                        <span className={styles.assignmentsBadge}>
+                          {groupedBySite[siteName].length}&nbsp;
+                          {groupedBySite[siteName].length === 1 ? 'Assignment' : 'Assignments'}
+                        </span>
+                      </div>
+                      <hr className={styles.siteCardDivider} />
+                      <ProductTable
+                        rows={groupedBySite[siteName]}
+                        avatarColors={AVATAR_COLORS}
+                      />
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* ── SUPER ADMIN: All Products flat ── */}
+              {!loading && !error && products.length > 0 && isSuperAdmin && viewMode === 'all' && (
+                <>
+                  <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
+                  <div className="d-flex justify-content-center mt-4">
+                    <ReactPaginate
+                      previousLabel={"< "}
+                      nextLabel={" >"}
+                      breakLabel={"..."}
+                      pageCount={Math.ceil(products.length / itemsPerPage)}
+                      marginPagesDisplayed={2}
+                      pageRangeDisplayed={3}
+                      onPageChange={handlePageChange}
+                      containerClassName={"pagination"}
+                      pageClassName={"page-item"}
+                      pageLinkClassName={"page-link"}
+                      previousClassName={"page-item"}
+                      previousLinkClassName={"page-link"}
+                      nextClassName={"page-item"}
+                      nextLinkClassName={"page-link"}
+                      breakClassName={"page-item"}
+                      breakLinkClassName={"page-link"}
+                      activeClassName={"dark"}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* ── NON-SUPER-ADMIN: flat list, no site headers ── */}
+              {!loading && !error && products.length > 0 && !isSuperAdmin && (
+                <>
+                  <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
+                  <div className="d-flex justify-content-center mt-4">
+                    <ReactPaginate
+                      previousLabel={"< "}
+                      nextLabel={" >"}
+                      breakLabel={"..."}
+                      pageCount={Math.ceil(products.length / itemsPerPage)}
+                      marginPagesDisplayed={2}
+                      pageRangeDisplayed={3}
+                      onPageChange={handlePageChange}
+                      containerClassName={"pagination"}
+                      pageClassName={"page-item"}
+                      pageLinkClassName={"page-link"}
+                      previousClassName={"page-item"}
+                      previousLinkClassName={"page-link"}
+                      nextClassName={"page-item"}
+                      nextLinkClassName={"page-link"}
+                      breakClassName={"page-item"}
+                      breakLinkClassName={"page-link"}
+                      activeClassName={"dark"}
+                    />
+                  </div>
+                </>
+              )}
+            </main>
+
+          <Modal show={showModal} onHide={() => setShowModal(false)}>
+            <Modal.Header closeButton className="border-0 ">
+              <Modal.Title className="fw-semibold">Edit Product</Modal.Title>
+            </Modal.Header>
+            <Modal.Body className="mt-5">
+              {selectedProduct && (
+                <Form>
+                  <Form.Group className="mb-3 row">
+                    <Form.Label className="col-4 fw-semibold">Product Name</Form.Label>
+                    <div className="col-8">
+                      <Form.Control
+                        type="text"
+                        name="productName"
+                        value={selectedProduct.productName}
+                        onChange={handleInputChange}
+                        className="py-2 shadow-none border-secondary-subtle border-1"
+                      />
+                    </div>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3 row">
+                    <Form.Label className="col-4 fw-semibold">Base Weight</Form.Label>
+                    <div className="col-8">
+                      <Form.Control
+                        type="text"
+                        name="productWeight"
+                        value={selectedProduct.productWeight}
+                        onChange={handleInputChange}
+                        className="py-2 shadow-none border-secondary-subtle border-1"
+                      />
+                    </div>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3 row">
+                    <Form.Label className="col-4 fw-semibold">Unit</Form.Label>
+                    <div className="col-8">
+                      <Form.Select
+                        name="unit"
+                        value={selectedProduct.unit}
+                        onChange={handleInputChange}
+                        className="py-2 shadow-none border-secondary-subtle border-1"
+                      >
+                        <option value="" disabled>Select Unit</option>
+                        <option value="KG">Kilogram</option>
+                        <option value="G">Gram</option>
+                      </Form.Select>
+                    </div>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3 row">
+                    <Form.Label className="col-4 fw-semibold">Base Price (₦)</Form.Label>
+                    <div className="col-8">
+                      <Form.Control
+                        type="number"
+                        name="basePrice"
+                        value={selectedProduct.basePrice}
+                        onChange={handleInputChange}
+                        className="py-2 shadow-none border-secondary-subtle border-1"
+                      />
+                    </div>
+                  </Form.Group>
+                </Form>
+              )}
+            </Modal.Body>
+            <Modal.Footer className="border-0">
+              <Button
+                className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+                onClick={handleSaveClick}
+                disabled={loadingEdit}
+              >
+                Save
+              </Button>
+            </Modal.Footer>
+          </Modal>
+        </section>
       </div>
     </section>
   );

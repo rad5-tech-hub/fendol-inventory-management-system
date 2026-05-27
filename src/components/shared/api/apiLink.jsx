@@ -51,3 +51,39 @@ Api.interceptors.request.use(
 );
 
 export default Api;
+
+const v2BaseURL = 'https://dev-api.fendolgroup.com/';
+
+export const ApiV2 = axios.create({
+    baseURL: v2BaseURL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+ApiV2.interceptors.request.use(
+    (config) => {
+        const token = sessionStorage.getItem('authToken');
+        if (token) {
+            if (isTokenExpired(token)) {
+                console.warn("Token is expired, redirecting to login page.");
+
+                toast.error("Your session has expired. Please re-login.", {
+                    position: toast.POSITION.TOP_CENTER,
+                    autoClose: 5000,
+                    onClose: () => {
+                        window.location.href = '/';
+                    }
+                });
+
+                return Promise.reject(new Error("Token expired"));
+            } else {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);

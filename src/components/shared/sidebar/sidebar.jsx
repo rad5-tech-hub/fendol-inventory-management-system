@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Nav, Card, Collapse, Tooltip, OverlayTrigger, Offcanvas } from "react-bootstrap";
-import { FaCaretDown, FaCaretUp } from "react-icons/fa";
+import { FaCaretDown, FaCaretUp, FaMapMarkerAlt } from "react-icons/fa";
 import { IoGridOutline } from "react-icons/io5";
 import { BsShopWindow } from "react-icons/bs";
 import { LuClipboardCheck, LuClipboardPenLine } from "react-icons/lu";
@@ -35,6 +35,8 @@ export default function SideBar({ show, handleClose }) {
       setOpen((prev) => ({ ...prev, products: true }));
     } else if (path.includes("/showcase")) {
       setOpen((prev) => ({ ...prev, showcase: true }));
+    } else if (path.includes("/site-management")) {
+      setOpen((prev) => ({ ...prev, site_management: true }));
     } else if (path.includes("/feed")) {
       setOpen((prev) => ({ ...prev, feed: true }));
     } else if (path.includes("/store")) {
@@ -389,6 +391,46 @@ export default function SideBar({ show, handleClose }) {
                     style={{ cursor: "pointer" }}
                   >
                     <FaRegCircle size={16} className="me-1" /> Whole Showcase
+                  </div>
+                </Nav.Item>
+              </Card.Body>
+            </div>
+          </Collapse>
+        </Card>
+
+        {/* Site Management navigation */}
+        <Card className={styles.card}>
+          <Card.Header
+            onClick={() => handleToggle("site_management")}
+            aria-controls="site_management-collapse-text"
+            aria-expanded={open.site_management}
+            style={{ cursor: "pointer" }}
+            className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
+          >
+            <span className={`${styles.title}`}>
+              <FaMapMarkerAlt size={25} className="me-1" /> Site Management
+            </span>
+            <span>{open.site_management ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
+          </Card.Header>
+          <Collapse in={open.site_management} style={{ transitionDuration: "0s" }}>
+            <div id="site_management-collapse-text" className="px-2">
+              <Card.Body className={styles.navigationLinks}>
+                <Nav.Item className="mb-3">
+                  <div
+                    onClick={() => navigate("/site-management/create")}
+                    className={`${location.pathname === "/site-management/create" ? styles.activeLink : styles.nonactiveLink}`}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <FaRegCircle size={16} className="me-1" /> Create Site
+                  </div>
+                </Nav.Item>
+                <Nav.Item className="my-3">
+                  <div
+                    onClick={() => navigate("/site-management/view-all")}
+                    className={`${location.pathname === "/site-management/view-all" ? styles.activeLink : styles.nonactiveLink}`}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <FaRegCircle size={16} className="me-1" /> View All
                   </div>
                 </Nav.Item>
               </Card.Body>

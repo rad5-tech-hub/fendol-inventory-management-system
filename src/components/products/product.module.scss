@@ -183,6 +183,217 @@
   }
 }
 
+/* ── Page header ── */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.pageTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2E3135;
+  margin-bottom: 6px;
+}
+.pageSubtitle {
+  font-size: 14px;
+  color: #8C949B;
+  margin: 0;
+}
+.assignBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #512728;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.assignBtn:hover {
+  background: #714445;
+}
+
+/* ── Filter bar (admin) ── */
+.filterBar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.filterBtnActive {
+  background: #512728;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.filterBtnOutline {
+  background: #ffffff;
+  color: #512728;
+  border: 1px solid #512728;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.filterBtnOutline:hover {
+  background: #fdf5f5;
+}
+
+/* ── Site section card ── */
+.siteCard {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.siteCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+.siteCardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.siteIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+.siteName {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2E3135;
+  margin: 0;
+}
+.assignmentsBadge {
+  background: #F5F5F5;
+  color: #2E3135;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.siteCardDivider {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 0;
+}
+
+/* ── Product table ── */
+.productTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.productTable thead tr {
+  border-bottom: 1px solid #e0e0e0;
+}
+.productTable thead th {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8C949B;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+.productTable tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+}
+.productTable tbody tr:last-child {
+  border-bottom: none;
+}
+.productTable tbody td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  color: #2E3135;
+}
+.productNameCell {
+  font-weight: 700;
+  color: #2E3135;
+}
+
+/* ── Created By cell ── */
+.createdByCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.createdByAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+/* ── Status badges ── */
+.statusActive {
+  background: #FFF8E1;
+  color: #E65100;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+}
+.statusPending {
+  background: #F5F5F5;
+  color: #757575;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+}
+.statusReplacement {
+  background: #FDECEA;
+  color: #C62828;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+}
+.statusDefault {
+  background: #F5F5F5;
+  color: #757575;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+}
+
 // Desktop View (992px and above)
 @media (min-width: 992px) {
   .body {

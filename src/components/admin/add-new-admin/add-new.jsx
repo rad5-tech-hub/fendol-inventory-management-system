@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
-import { Form, Row, Col, Button, InputGroup } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Form, Row, Col, Button } from 'react-bootstrap';
 import styles from '../admin-styles.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
-import { FaEye, FaEyeSlash, FaUserPlus, FaMapMarkerAlt } from "react-icons/fa";
-import { IoChevronDown } from "react-icons/io5";
+import { FaUserPlus } from "react-icons/fa";
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const AddNew = () => {
-  const [showPassword, setShowPassword] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,18 +20,49 @@ const AddNew = () => {
   const [formData, setFormData] = useState({
     fullName: adminToEdit?.fullName || '',
     email: adminToEdit?.email || '',
-    password: '',
-    role: adminToEdit?.role || ''
+    siteIds: [],
+    roleId: adminToEdit?.roleId || ''
   });
   const [editId] = useState(adminToEdit?.id || null);
+  const [roles, setRoles] = useState([]);
+  const [sites, setSites] = useState([]);
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await ApiV2.get('/v2/roles');
+        setRoles(Array.isArray(res.data?.roles) ? res.data.roles : []);
+      } catch (err) {
+        console.error('Failed to fetch roles:', err.response?.data || err.message);
+      }
+    };
+    fetchRoles();
+  }, []);
+
+  useEffect(() => {
+    const fetchSites = async () => {
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        setSites(Array.isArray(res.data?.data) ? res.data.data : []);
+      } catch (err) {
+        console.error('Failed to fetch sites:', err.response?.data || err.message);
+      }
+    };
+    fetchSites();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSiteToggle = (siteId) => {
+    setFormData(prev => ({
+      ...prev,
+      siteIds: prev.siteIds.includes(siteId)
+        ? prev.siteIds.filter(id => id !== siteId)
+        : [...prev.siteIds, siteId]
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -45,13 +74,19 @@ const AddNew = () => {
       { className: 'dark-toast' }
     );
     try {
+      const payload = {
+        fullName: formData.fullName,
+        email: formData.email,
+        siteIds: formData.siteIds,
+        roleId: formData.roleId
+      };
       const response = isEdit
-        ? await Api.put(`/edit-admin/${editId}`, formData)
-        : await Api.post('/admin', formData);
-      const { message } = response.data;
+        ? await Api.put(`/edit-admin/${editId}`, payload)
+        : await ApiV2.post('/api/v1/admin', payload);
+      const { message } = response.data || {};
 
       if (!isEdit) {
-        setFormData({ fullName: '', email: '', password: '', role: '' });
+        setFormData({ fullName: '', email: '', siteIds: [], roleId: '' });
       }
 
       toast.update(loadingToast, {
@@ -141,32 +176,6 @@ const AddNew = () => {
                         />
                       </Col>
                     </Row>
-                    <Form.Label className="fw-semibold">Temporary Password</Form.Label>
-                    <InputGroup className="mb-2">
-                      <Form.Control
-                        type={showPassword ? "text" : "password"}
-                        className={`py-2 bg-light-subtle shadow-none border-1 border-end-0 ${styles.inputs} ${styles.fadedPlaceholder}`}
-                        placeholder="Enter Password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        minLength={7}
-                        maxLength={10}
-                        required={!isEdit}
-                      />
-                      <InputGroup.Text
-                        onClick={togglePasswordVisibility}
-                        className={`py-2 bg-light-subtle shadow-none border-1 border-start-0 ${styles.inputs}`}
-                        style={{ cursor: "pointer" }}
-                      >
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                      </InputGroup.Text>
-                    </InputGroup>
-                    <small className="text-muted">
-                      {isEdit
-                        ? 'Leave blank to keep the current password.'
-                        : 'The user will be prompted to change this upon first login.'}
-                    </small>
                   </div>
                 </Col>
                 <Col className="mb-4">
@@ -178,27 +187,31 @@ const AddNew = () => {
                     <Form.Label className="fw-semibold">Permission Level</Form.Label>
                     <Form.Select
                       className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                      name="role"
-                      value={formData.role}
+                      name="roleId"
+                      value={formData.roleId}
                       onChange={handleInputChange}
                       required
                     >
                       <option value="" disabled>Select Role</option>
-                      <option value="admin">Admin</option>
-                      <option value="super_admin">Super Admin</option>
-                      <option value="sales_manager">Sales Manager</option>
+                      {roles.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+                      ))}
                     </Form.Select>
 
-                    <Form.Label className="fw-semibold mt-4">Assign Site</Form.Label>
-                    <div className={styles.siteField}>
-                      <div className={styles.siteFieldLeft}>
-                        <FaMapMarkerAlt />
-                        <span>Search farm site...</span>
-                      </div>
-                      <IoChevronDown />
-                    </div>
-                    <div className={styles.sitePill}>
-                      Main Hatchery <span style={{ cursor: "pointer", marginLeft: "4px" }}>&times;</span>
+                    <Form.Label className="fw-semibold mt-4">Assign Sites</Form.Label>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '6px', padding: '8px 12px' }}>
+                      {sites.length === 0 && <small className="text-muted">No sites available</small>}
+                      {sites.map((site) => (
+                        <Form.Check
+                          key={site.id}
+                          type="checkbox"
+                          id={`site-${site.id}`}
+                          label={site.name}
+                          checked={formData.siteIds.includes(site.id)}
+                          onChange={() => handleSiteToggle(site.id)}
+                          className="mb-1"
+                        />
+                      ))}
                     </div>
 
                     <div className={styles.securityNote}>
