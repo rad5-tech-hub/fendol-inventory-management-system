@@ -8,8 +8,20 @@ import { BsExclamationTriangleFill} from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Spinner, Alert, Modal, Button, Form, InputGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { FaEye, FaEyeSlash, FaTrashAlt  } from "react-icons/fa";
+import { Spinner, Alert, Modal, Button, Form, InputGroup } from 'react-bootstrap';
+import { FaEye, FaEyeSlash, FaTrashAlt, FaUserPlus, FaFilter, FaEdit } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
+
+const avatarColors = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47'];
+
+const getInitials = (name) => {
+  const parts = (name || '').split(' ');
+  return ((parts[0] || '')[0] || '') + ((parts[1] || '')[0] || '');
+};
+
+const formatRole = (role) => {
+  return (role || '').replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+};
 
 export default function ViewAll() {
   const [admins, setAdmins] = useState([]);
@@ -21,7 +33,9 @@ export default function ViewAll() {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [filterSite, setFilterSite] = useState('');
+  const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
@@ -118,10 +132,12 @@ export default function ViewAll() {
     setCurrentPage(selected);
   };
 
-  const displayAdmins = admins.slice(
-    currentPage * adminsPerPage,
-    (currentPage + 1) * adminsPerPage
-  );
+  const filteredAdmins = filterSite
+    ? admins.filter(admin => (admin.assignedSite || '').toLowerCase() === filterSite.toLowerCase())
+    : admins;
+
+  const offset = currentPage * adminsPerPage;
+  const displayAdmins = filteredAdmins.slice(offset, offset + adminsPerPage);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -137,9 +153,30 @@ export default function ViewAll() {
         </div>
 
         <section className={`${styles.content}`}>
-          <main className={styles.create_form}>
+          <main>
             <ToastContainer />
-            <h4 className="mt-3">All Admins</h4>           
+
+            <div className={styles.pageHeader}>
+              <h4 className={styles.pageTitle}>All Admins</h4>
+              <div className={styles.headerActions}>
+                <button type="button" className={styles.navBtnActive} onClick={() => navigate('/admin/add-new-admin')}>
+                  <FaUserPlus style={{ marginRight: '6px' }} /> Create New Admin
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.filterBar}>
+              <Form.Select
+                className={styles.siteSelect}
+                value={filterSite}
+                onChange={(e) => setFilterSite(e.target.value)}
+              >
+                <option value="">All Sites</option>
+              </Form.Select>
+              <button type="button" className={styles.filterBtn}>
+                <FaFilter /> Filter
+              </button>
+            </div>
 
             {loading ? (
               <div className="text-center">
@@ -160,64 +197,76 @@ export default function ViewAll() {
                 </Alert>
               </div>
             ) : (
-              <div className={styles.tableWrapper}>
-                <table className={styles.styled_table}>
-                  <thead>
-                    <tr>
-                      <th>NAME</th>
-                      <th>E-MAIL</th>
-                      <th>ROLE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayAdmins.map((admin) => (
-                      <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-view-all">Click on {admin.fullName} to Edit</Tooltip>}>
-                        <tr key={admin.id} onClick={() => handleEdit(admin)} title="Edit Admin">
-                          <td>{admin.fullName}</td>
+              <>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className={styles.adminTable}>
+                    <thead>
+                      <tr>
+                        <th>Full Name</th>
+                        <th>E-mail Address</th>
+                        <th>Role</th>
+                        <th>Assigned Site</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayAdmins.map((admin, index) => (
+                        <tr key={admin.id} style={{ cursor: 'pointer' }} onClick={() => handleEdit(admin)}>
+                          <td>
+                            <div className={styles.nameCell}>
+                              <div
+                                className={styles.avatar}
+                                style={{ backgroundColor: avatarColors[index % avatarColors.length] }}
+                              >
+                                {getInitials(admin.fullName).toUpperCase()}
+                              </div>
+                              {admin.fullName}
+                            </div>
+                          </td>
                           <td>{admin.email}</td>
-                          <td className="d-flex justify-content-between">
-                            <span>{admin.role?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}</span>
-                            <span
-                              style={{
-                                display: "inline-block",
-                                textAlign: "center",
-                                backgroundColor: "#f8f9fa",
-                                padding: "0.5rem",
-                                borderRadius: "50%",
-                                boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "translateY(-5px)";
-                                e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "translateY(0)";
-                                e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
-                              }}
-                            >
+                          <td>{formatRole(admin.role)}</td>
+                          <td>{admin.assignedSite || '-'}</td>
+                          <td>
+                            <span className={(admin.status || 'Active') === 'Active' ? styles.statusActive : styles.statusInactive}>
+                              {admin.status || 'Active'}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <FaEdit
+                                style={{ cursor: 'pointer', color: '#512728' }}
+                                title="Edit Admin"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(admin);
+                                }}
+                              />
                               <FaTrashAlt
-                                style={{ cursor: "pointer", color: "red" }}
+                                style={{ cursor: 'pointer', color: '#dc3545' }}
                                 title="Delete Admin"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDelete(admin.id);
                                 }}
                               />
-                            </span>
+                            </div>
                           </td>
                         </tr>
-                      </OverlayTrigger>
-                    ))}
-                  </tbody>
-                </table>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-                <div className="d-flex justify-content-center mt-4">
+                <div className={styles.tableFooter}>
+                  <small className="text-muted">
+                    Showing {offset + 1} to {Math.min(offset + adminsPerPage, filteredAdmins.length)} of {filteredAdmins.length} admins
+                  </small>
                   <ReactPaginate
                     previousLabel={"← Previous"}
                     nextLabel={"Next →"}
                     breakLabel="..."
-                    pageCount={Math.ceil(admins.length / adminsPerPage)}
+                    pageCount={Math.ceil(filteredAdmins.length / adminsPerPage)}
                     pageRangeDisplayed={3}
                     marginPagesDisplayed={2}
                     onPageChange={handlePageClick}
@@ -233,7 +282,7 @@ export default function ViewAll() {
                     activeClassName={"active-light"}
                   />
                 </div>
-              </div>
+              </>
             )}
           </main>
           <Modal show={showModal} onHide={() => setShowModal(false)}>
