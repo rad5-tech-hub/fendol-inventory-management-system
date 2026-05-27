@@ -12,7 +12,8 @@
   width: $sidebar-width;
   transition: width 0.3s ease;
 
-  @media (max-width: 991px) { // Below lg (tablet range)
+  @media (max-width: 991px) {
+    // Below lg (tablet range)
     width: 0; // Hidden unless offcanvas is active
     overflow: hidden;
   }
@@ -23,7 +24,8 @@
   flex-grow: 1;
   padding: 15px;
 
-  @media (max-width: 991px) { // md to lg (tablet)
+  @media (max-width: 991px) {
+    // md to lg (tablet)
     margin-left: 0; // No offset when sidebar is hidden
     width: 100%;
   }
@@ -42,7 +44,8 @@
     color: #2E3135;
   }
 
-  @media (max-width: 991px) { // Tablet
+  @media (max-width: 991px) {
+    // Tablet
     padding: 20px; // Reduced padding
     height: auto; // Allow content to dictate height
   }
@@ -75,7 +78,9 @@
     transform: scale(1.05);
   }
 
-  @media (max-width: 991px) { // Tablet
+  @media (max-width: 991px) {
+
+    // Tablet
     p {
       font-size: 24px; // Smaller text on tablets
     }
@@ -99,7 +104,8 @@
   border-collapse: collapse;
   table-layout: fixed;
 
-  th, td {
+  th,
+  td {
     padding: 8px;
     text-align: left;
     overflow: hidden;
@@ -128,8 +134,11 @@
     }
   }
 
-  @media (max-width: 991px) { // Tablet
-    th, td {
+  @media (max-width: 991px) {
+
+    // Tablet
+    th,
+    td {
       padding: 6px; // Reduced padding
       font-size: 14px; // Smaller text
     }
@@ -207,7 +216,8 @@
   width: 100px;
   margin: 8px 10px;
 
-  @media (max-width: 991px) { // Tablet
+  @media (max-width: 991px) {
+    // Tablet
     width: 80px; // Slightly smaller on tablets
   }
 }
@@ -245,7 +255,8 @@
     font-size: 18px;
   }
 
-  @media (max-width: 991px) { // Tablet
+  @media (max-width: 991px) {
+    // Tablet
     width: 35px; // Slightly smaller
     height: 35px;
 

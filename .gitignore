@@ -11,6 +11,10 @@
 # production
 /build
 
+# Vite
+/.vite/
+/dist/
+
 # misc
 .DS_Store
 .env
