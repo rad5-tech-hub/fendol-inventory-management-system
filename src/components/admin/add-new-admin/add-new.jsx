@@ -8,19 +8,24 @@ import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const AddNew = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const editState = location.state || {};
+  const isEdit = editState.isEdit === true;
+  const adminToEdit = editState.adminData || null;
   const [loader, setLoader] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    role: ""
+    fullName: adminToEdit?.fullName || '',
+    email: adminToEdit?.email || '',
+    password: '',
+    role: adminToEdit?.role || ''
   });
+  const [editId] = useState(adminToEdit?.id || null);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -35,20 +40,22 @@ const AddNew = () => {
     e.preventDefault();
     setLoader(true);
 
-    const loadingToast = toast.loading("Creating New Admin..", { className: 'dark-toast' });
+    const loadingToast = toast.loading(
+      isEdit ? "Updating Admin..." : "Creating New Admin..",
+      { className: 'dark-toast' }
+    );
     try {
-      const response = await Api.post('/admin', formData);
+      const response = isEdit
+        ? await Api.put(`/edit-admin/${editId}`, formData)
+        : await Api.post('/admin', formData);
       const { message } = response.data;
 
-      setFormData({
-        fullName: "",
-        email: "",
-        password: "",
-        role: ""
-      });
+      if (!isEdit) {
+        setFormData({ fullName: '', email: '', password: '', role: '' });
+      }
 
       toast.update(loadingToast, {
-        render: message || "Created Admin successfully!",
+        render: message || (isEdit ? "Admin updated successfully!" : "Created Admin successfully!"),
         type: "success",
         isLoading: false,
         autoClose: 5000,
@@ -60,7 +67,7 @@ const AddNew = () => {
       }, 4500);
     } catch (error) {
       console.error("Error creating admin:", error);
-      const errorMessage = error.response?.data?.message || "Error creating admin. Please try again.";
+      const errorMessage = error.response?.data?.message || (isEdit ? "Error updating admin. Please try again." : "Error creating admin. Please try again.");
       toast.update(loadingToast, {
         render: errorMessage,
         type: "error",
@@ -91,11 +98,11 @@ const AddNew = () => {
             <Form onSubmit={handleSubmit}>
               <div className={styles.pageHeader}>
                 <div>
-                  <h4 className={styles.pageTitle}>Create Admin</h4>
-                  <p className={styles.pageSubtitle}>Provision a new administrator with specific site permissions and roles.</p>
+                  <h4 className={styles.pageTitle}>{isEdit ? 'Edit Admin' : 'Create Admin'}</h4>
+                  <p className={styles.pageSubtitle}>{isEdit ? 'Update the details for this administrator.' : 'Provision a new administrator with specific site permissions and roles.'}</p>
                 </div>
                 <div className={styles.headerActions}>
-                  <button type="button" className={styles.navBtnActive}>Create New</button>
+                  <button type="button" className={styles.navBtnActive}>{isEdit ? 'Edit Admin' : 'Create New'}</button>
                   <button type="button" className={styles.navBtnOutline} onClick={() => navigate('/admin/view-all')}>View All Admins</button>
                 </div>
               </div>
@@ -145,7 +152,7 @@ const AddNew = () => {
                         onChange={handleInputChange}
                         minLength={7}
                         maxLength={10}
-                        required
+                        required={!isEdit}
                       />
                       <InputGroup.Text
                         onClick={togglePasswordVisibility}
@@ -155,7 +162,11 @@ const AddNew = () => {
                         {showPassword ? <FaEyeSlash /> : <FaEye />}
                       </InputGroup.Text>
                     </InputGroup>
-                    <small className="text-muted">The user will be prompted to change this upon first login.</small>
+                    <small className="text-muted">
+                      {isEdit
+                        ? 'Leave blank to keep the current password.'
+                        : 'The user will be prompted to change this upon first login.'}
+                    </small>
                   </div>
                 </Col>
                 <Col className="mb-4">
@@ -205,7 +216,7 @@ const AddNew = () => {
                   disabled={loader}
                   type="submit"
                 >
-                  {loader ? 'Creating...' : 'Create Admin'}
+                  {loader ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update Admin' : 'Create Admin')}
                 </Button>
               </div>
             </Form>

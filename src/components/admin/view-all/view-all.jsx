@@ -239,7 +239,17 @@ export default function ViewAll() {
                                 title="Edit Admin"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleEdit(admin);
+                                  navigate('/admin/add-new-admin', {
+                                    state: {
+                                      isEdit: true,
+                                      adminData: {
+                                        id: admin.id,
+                                        fullName: admin.fullName,
+                                        email: admin.email,
+                                        role: admin.role,
+                                      }
+                                    }
+                                  });
                                 }}
                               />
                               <FaTrashAlt
