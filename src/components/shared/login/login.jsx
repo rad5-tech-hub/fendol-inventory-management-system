@@ -72,9 +72,9 @@ export default function LogIn() {
                 throw new Error("Login failed");
             }
         } catch (error) {
-            // Show error toast
+            const msg = error.response?.data?.response_message || error.response?.data?.message || error.response?.data?.error?.message || "Error while logging in. Please try again.";
             toast.update(loadingToast, {
-                render: error.response?.data?.message || "Error while logging in. Please try again.",
+                render: msg,
                 type: "error",
                 isLoading: false,
                 autoClose: 7000,
