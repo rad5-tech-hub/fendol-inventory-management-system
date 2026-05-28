@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
 import styles from './dashboard.module.scss';
 import Api from '../shared/api/apiLink';
 import SideBar from '../shared/sidebar/sidebar';
@@ -63,7 +63,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <section className={`${styles.body}`}>
+      <section className={`${styles.body} ${styles.dashBody}`}>
         <div className="sticky-top">
           <Header toggleSidebar={() => setShowSidebar(!showSidebar)} />
         </div>
@@ -74,7 +74,7 @@ const Dashboard = () => {
           <section className={`${styles.content}`}>
             <main>
               <div className={styles.create_form}>
-                <h4 className="fw-semibold my-5">Loading...</h4>
+                <h1 className={styles.pageTitle}>Loading...</h1>
               </div>
             </main>
           </section>
@@ -85,7 +85,7 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <section className={`${styles.body}`}>
+      <section className={`${styles.body} ${styles.dashBody}`}>
         <div className="sticky-top">
           <Header toggleSidebar={() => setShowSidebar(!showSidebar)} />
         </div>
@@ -96,7 +96,7 @@ const Dashboard = () => {
           <section className={`${styles.content}`}>
             <main>
               <div className={styles.create_form}>
-                <h4 className="fw-semibold my-5 text-danger">Error: {error}</h4>
+                <h1 className={styles.pageTitle} style={{ color: '#C62828' }}>Error: {error}</h1>
               </div>
             </main>
           </section>
@@ -288,7 +288,7 @@ const Dashboard = () => {
   };
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body} ${styles.dashBody}`}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -299,65 +299,238 @@ const Dashboard = () => {
         <section className={`${styles.content}`}>
           <main>
             <div className={styles.create_form}>
-              <h4 className="fw-semibold my-4">Dashboard Overview</h4>
-              <Row className="g-4 mb-4">
-                <Col lg={3} md={6} sm={12} xs={12}>
-                  <Card className={`shadow rounded-0 border-0 ${styles.board} ${styles.salesCard}`}>
-                    <Card.Body>
-                      <Card.Title className="fw-semibold mb-3 fs-6">Total Sales</Card.Title>
-                      <Card.Text className="fs-4 fw-bold text-white">{totalSalesFormatted}</Card.Text>
-                    </Card.Body>
-                  </Card>
+              <div className={styles.pageTitleRow}>
+                <div className={styles.pageTitleLeft}>
+                  <h1 className={styles.pageTitle}>Dashboard Overview</h1>
+                  <div className={styles.siteDropdown}>
+                    All Sites <span className={styles.dropdownCaret}>▾</span>
+                  </div>
+                </div>
+                <div className={styles.pageTitleRight}>
+                  <div className={styles.searchBar}>
+                    <span className={styles.searchIcon}>🔍</span>
+                    <input
+                      className={styles.searchInput}
+                      type="text"
+                      placeholder="Search ponds, inventory..."
+                      readOnly
+                    />
+                  </div>
+                  <div className={styles.iconBtn}>🔔</div>
+                  <div className={styles.userAvatar}>A</div>
+                </div>
+              </div>
+
+              <Row className="g-3 mb-4">
+                <Col xl={3} lg={6} md={6} sm={12} xs={12}>
+                  <div className={styles.statCard}>
+                    <div className={styles.statCardTop}>
+                      <span className={styles.statLabel}>TOTAL SALES</span>
+                      <div className={`${styles.statIcon} ${styles.statIconAmber}`}>🛍</div>
+                    </div>
+                    <div className={styles.statValue}>{totalSalesFormatted}</div>
+                    <div className={`${styles.statSub} ${styles.statSubGreen}`}>
+                      ↑ +16.5% vs last month
+                    </div>
+                  </div>
                 </Col>
-                <Col lg={3} md={6} sm={12} xs={12}>
-                  <Card className={`shadow rounded-0 border-0 ${styles.board}`}>
-                    <Card.Body>
-                      <Card.Title className="fw-semibold mb-3 fs-6">Total Customers</Card.Title>
-                      <Card.Text className="fs-4 fw-bold">{totalCustomers}</Card.Text>
-                    </Card.Body>
-                  </Card>
+                <Col xl={3} lg={6} md={6} sm={12} xs={12}>
+                  <div className={styles.statCard}>
+                    <div className={styles.statCardTop}>
+                      <span className={styles.statLabel}>TOTAL CUSTOMERS</span>
+                      <div className={`${styles.statIcon} ${styles.statIconAmber}`}>👤</div>
+                    </div>
+                    <div className={styles.statValue}>{totalCustomers.toLocaleString()}</div>
+                    <div className={`${styles.statSub} ${styles.statSubGreen}`}>
+                      ↑ +42 new this week
+                    </div>
+                  </div>
                 </Col>
-                <Col lg={3} md={6} sm={12} xs={12}>
-                  <Card className={`shadow rounded-0 border-0 ${styles.board}`}>
-                    <Card.Body>
-                      <Card.Title className="fw-semibold mb-3 fs-6">Total Marketers</Card.Title>
-                      <Card.Text className="fs-4 fw-bold">{totalMarketers}</Card.Text>
-                    </Card.Body>
-                  </Card>
+                <Col xl={3} lg={6} md={6} sm={12} xs={12}>
+                  <div className={styles.statCard}>
+                    <div className={styles.statCardTop}>
+                      <span className={styles.statLabel}>ACTIVE PONDS</span>
+                      <div className={`${styles.statIcon} ${styles.statIconBrown}`}>🐟</div>
+                    </div>
+                    <div className={styles.statValue}>
+                      {totalPonds} <span className={styles.statValueMuted}>/ 52</span>
+                    </div>
+                    <div className={`${styles.statSub} ${styles.statSubNeutral}`}>
+                      ⊙ 4 in maintenance
+                    </div>
+                  </div>
                 </Col>
-                <Col lg={3} md={6} sm={12} xs={12}>
-                  <Card className={`shadow rounded-0 border-0 ${styles.board}`}>
-                    <Card.Body>
-                      <Card.Title className="fw-semibold mb-3 fs-6">Total Ponds</Card.Title>
-                      <Card.Text className="fs-4 fw-bold">{totalPonds}</Card.Text>
-                    </Card.Body>
-                  </Card>
+                <Col xl={3} lg={6} md={6} sm={12} xs={12}>
+                  <div className={styles.statCard}>
+                    <div className={styles.statCardTop}>
+                      <span className={styles.statLabel}>TOTAL STOCK</span>
+                      <div className={`${styles.statIcon} ${styles.statIconGray}`}>🗄</div>
+                    </div>
+                    <div className={styles.statValue}>84,000</div>
+                    <div className={`${styles.statSub} ${styles.statSubWarn}`}>
+                      ⚠ Stock low in West Nursery
+                    </div>
+                  </div>
                 </Col>
               </Row>
+
+              <div className={`${styles.sectionCard} mb-4`}>
+                <h6 className={styles.sectionTitle}>Business Today</h6>
+                <Row className="g-3">
+                  <Col lg={4} md={4} sm={12} xs={12}>
+                    <div className={styles.todayTile}>
+                      <div className={`${styles.todayIcon} ${styles.todayIconOrange}`}>🛒</div>
+                      <div>
+                        <div className={styles.todayLabel}>TODAY'S SALES</div>
+                        <div className={styles.todayValue}>₦ 450,000</div>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col lg={4} md={4} sm={12} xs={12}>
+                    <div className={styles.todayTile}>
+                      <div className={`${styles.todayIcon} ${styles.todayIconYellow}`}>📦</div>
+                      <div>
+                        <div className={styles.todayLabel}>TODAY'S ORDERS</div>
+                        <div className={styles.todayValue}>12</div>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col lg={4} md={4} sm={12} xs={12}>
+                    <div className={styles.todayTile}>
+                      <div className={`${styles.todayIcon} ${styles.todayIconGray}`}>📋</div>
+                      <div>
+                        <div className={styles.todayLabel}>TODAY'S EXPENSES</div>
+                        <div className={`${styles.todayValue} ${styles.todayValueDanger}`}>₦ 120,000</div>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+
               <Row className="g-4 mb-4">
                 <Col lg={6} md={12} sm={12} xs={12}>
-                  <div className={`shadow rounded ${styles.chartDash}`}>
+                  <div className={styles.chartCard}>
+                    <div className={styles.chartCardHeader}>
+                      <span className={styles.chartCardTitle}>Sales Summary</span>
+                      <div className={styles.chartCardControls}>
+                        <div className={styles.chartSiteDropdown}>
+                          All Sites <span>▾</span>
+                        </div>
+                        <span className={styles.viewDetails}>View Details &rsaquo;</span>
+                      </div>
+                    </div>
                     {renderChart(salesSummaryData, 'Sales Summary', 'line')}
                   </div>
                 </Col>
                 <Col lg={6} md={12} sm={12} xs={12}>
-                  <div className={`shadow rounded ${styles.chartDash}`}>
+                  <div className={styles.chartCard}>
+                    <div className={styles.chartCardHeader}>
+                      <span className={styles.chartCardTitle}>Finance</span>
+                      <div className={styles.chartSiteDropdown}>
+                        All Sites <span>▾</span>
+                      </div>
+                    </div>
                     {renderChart(financeSummaryData, 'Finance Summary', 'bar')}
                   </div>
                 </Col>
               </Row>
-              <Row className="g-4">
+
+              <Row className="g-4 mb-4">
                 <Col lg={6} md={12} sm={12} xs={12}>
-                  <div className={`shadow rounded ${styles.chartDash}`}>
-                    {renderChart(topSellingProductsData, 'Top Selling Products', 'bar')}
+                  <div className={styles.sectionCard}>
+                    <h6 className={styles.sectionTitle}>Top Selling Products</h6>
+                    <div className={styles.productList}>
+                      {(dashboardData?.topProducts || []).length === 0 && (
+                        <p className={styles.emptyText}>No product data available.</p>
+                      )}
+                      {(dashboardData?.topProducts || []).map((item, idx) => (
+                        <div key={idx} className={styles.productListRow}>
+                          <span className={styles.productListName}>{item.productName}</span>
+                          <span className={styles.productListRevenue}>
+                            ₦ {item.totalRevenue?.toLocaleString?.() ?? item.totalRevenue}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </Col>
                 <Col lg={6} md={12} sm={12} xs={12}>
-                  <div className={`shadow rounded ${styles.chartDash}`}>
-                    {renderChart(processSummaryData, 'Process Summary', 'line')}
+                  <div className={styles.sectionCard}>
+                    <h6 className={styles.sectionTitle}>Major Sites Summary</h6>
+                    <Row className="g-3">
+                      <Col md={6} sm={12} xs={12}>
+                        <div className={styles.siteSummaryCard}>
+                          <div className={styles.siteSummaryHeader}>
+                            <span className={styles.siteSummaryIcon}>📍</span>
+                            <span className={styles.siteSummaryName}>Main Hatchery</span>
+                            <span className={`${styles.siteBadge} ${styles.siteBadgeActive}`}>Active</span>
+                          </div>
+                          <div className={styles.siteSummaryStats}>
+                            <div>
+                              <div className={styles.siteSummaryStatLabel}>Active Ponds</div>
+                              <div className={styles.siteSummaryStatValue}>24</div>
+                            </div>
+                            <div>
+                              <div className={styles.siteSummaryStatLabel}>Est. Stock</div>
+                              <div className={styles.siteSummaryStatValue}>45k</div>
+                            </div>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col md={6} sm={12} xs={12}>
+                        <div className={styles.siteSummaryCard}>
+                          <div className={styles.siteSummaryHeader}>
+                            <span className={styles.siteSummaryIcon}>📍</span>
+                            <span className={styles.siteSummaryName}>West Nursery</span>
+                            <span className={`${styles.siteBadge} ${styles.siteBadgeReview}`}>Needs Review</span>
+                          </div>
+                          <div className={styles.siteSummaryStats}>
+                            <div>
+                              <div className={styles.siteSummaryStatLabel}>Active Ponds</div>
+                              <div className={styles.siteSummaryStatValue}>18</div>
+                            </div>
+                            <div>
+                              <div className={styles.siteSummaryStatLabel}>Est. Stock</div>
+                              <div className={`${styles.siteSummaryStatValue} ${styles.statValueDanger}`}>12k</div>
+                            </div>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
                   </div>
                 </Col>
               </Row>
+
+              <div className={`${styles.sectionCard} mb-4`}>
+                <div className={styles.alertsHeader}>
+                  <h6 className={styles.sectionTitle}>Recent Alerts</h6>
+                  <div className={styles.alertsHelpIcon}>?</div>
+                </div>
+                <div className={styles.alertsList}>
+                  <div className={styles.alertRow}>
+                    <div className={`${styles.alertDot} ${styles.alertDotRed}`}>⚠</div>
+                    <div className={styles.alertContent}>
+                      <div className={styles.alertText}>Feed level critically low in Pond 4 (West Nursery).</div>
+                      <div className={styles.alertTime}>10 mins ago</div>
+                    </div>
+                  </div>
+                  <div className={styles.alertRow}>
+                    <div className={`${styles.alertDot} ${styles.alertDotGreen}`}>ℹ</div>
+                    <div className={styles.alertContent}>
+                      <div className={styles.alertText}>New site admin John Doe assigned to Main Hatchery.</div>
+                      <div className={styles.alertTime}>3 hours ago</div>
+                    </div>
+                  </div>
+                  <div className={styles.alertRow}>
+                    <div className={`${styles.alertDot} ${styles.alertDotGray}`}>✓</div>
+                    <div className={styles.alertContent}>
+                      <div className={styles.alertText}>Weekly water quality assessment completed.</div>
+                      <div className={styles.alertTime}>5 hours ago</div>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.viewAllLogs}>View All Logs</div>
+              </div>
             </div>
           </main>
         </section>

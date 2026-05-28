@@ -5,7 +5,7 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../admin-styles.module.scss';
 import { BsExclamationTriangleFill} from "react-icons/bs";
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Spinner, Alert, Modal, Button, Form, InputGroup } from 'react-bootstrap';
@@ -35,6 +35,9 @@ export default function ViewAll() {
   const [showPassword, setShowPassword] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [filterSite, setFilterSite] = useState('');
+  const [userRole, setUserRole] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [sites, setSites] = useState([]);
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -56,10 +59,37 @@ export default function ViewAll() {
 
   useEffect(() => {
     fetchData();
+    setUserRole(sessionStorage.getItem('role'));
   }, []);
 
+  useEffect(() => {
+    if (!showModal) return;
+    const fetchRoles = async () => {
+      try {
+        const res = await ApiV2.get('/v2/roles');
+        setRoles(Array.isArray(res.data?.roles) ? res.data.roles : []);
+      } catch (err) {
+        console.error('Failed to fetch roles:', err.response?.data || err.message);
+      }
+    };
+    const fetchSites = async () => {
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        setSites(Array.isArray(res.data?.data) ? res.data.data : []);
+      } catch (err) {
+        console.error('Failed to fetch sites:', err.response?.data || err.message);
+      }
+    };
+    fetchRoles();
+    fetchSites();
+  }, [showModal]);
+
   const handleEdit = (admin) => {
-    setSelectedAdmin(admin);
+    setSelectedAdmin({
+      ...admin,
+      roleId: admin.roleRef?.id || admin.roleId || '',
+      siteIds: admin.UserSites?.map(us => us.siteId) || [],
+    });
     setShowModal(true);
   };
 
@@ -71,13 +101,31 @@ export default function ViewAll() {
     });
   };
 
+  const handleSiteToggle = (siteId) => {
+    setSelectedAdmin(prev => ({
+      ...prev,
+      siteIds: prev.siteIds?.includes(siteId)
+        ? prev.siteIds.filter(id => id !== siteId)
+        : [...(prev.siteIds || []), siteId]
+    }));
+  };
+
   const handleSave = async () => {
     setLoadingEdit(true);
     const loadingToast = toast.loading("Saving Admin...", { className: 'dark-toast' });
     try {
-      await Api.put(`/edit-admin/${selectedAdmin.id}`, selectedAdmin);
+      const payload = {
+        fullName: selectedAdmin.fullName,
+        email: selectedAdmin.email,
+      };
+      if (selectedAdmin.password) payload.password = selectedAdmin.password;
+      if (userRole === 'super_admin') {
+        if (selectedAdmin.roleId) payload.roleId = selectedAdmin.roleId;
+        payload.siteIds = selectedAdmin.siteIds || [];
+      }
+      await ApiV2.patch(`/api/v1/edit-admin/${selectedAdmin.id}`, payload);
       toast.update(loadingToast, {
-        render: "Admin saved successfully!",
+        render: "Admin updated successfully!",
         type: "success",
         isLoading: false,
         autoClose: 3000,
@@ -87,7 +135,7 @@ export default function ViewAll() {
       setShowModal(false);
     } catch (error) {
       toast.update(loadingToast, {
-        render: "Failed to save admin. Please try again.",
+        render: error.response?.data?.message || "Failed to save admin. Please try again.",
         type: "error",
         isLoading: false,
         autoClose: 6000,
@@ -133,7 +181,7 @@ export default function ViewAll() {
   };
 
   const filteredAdmins = filterSite
-    ? admins.filter(admin => (admin.assignedSite || '').toLowerCase() === filterSite.toLowerCase())
+    ? admins.filter(admin => admin.UserSites?.some(us => (us.Site?.name || '').toLowerCase() === filterSite.toLowerCase()))
     : admins;
 
   const offset = currentPage * adminsPerPage;
@@ -225,11 +273,11 @@ export default function ViewAll() {
                             </div>
                           </td>
                           <td>{admin.email}</td>
-                          <td>{formatRole(admin.role)}</td>
-                          <td>{admin.assignedSite || '-'}</td>
+                          <td>{formatRole(admin.roleRef?.name || admin.role)}</td>
+                          <td>{admin.UserSites?.length ? admin.UserSites.map(us => us.Site?.name).filter(Boolean).join(', ') : '-'}</td>
                           <td>
-                            <span className={(admin.status || 'Active') === 'Active' ? styles.statusActive : styles.statusInactive}>
-                              {admin.status || 'Active'}
+                            <span className={admin.deletedAt === null ? styles.statusActive : styles.statusInactive}>
+                              {admin.deletedAt === null ? 'Active' : 'Inactive'}
                             </span>
                           </td>
                           <td>
@@ -237,20 +285,22 @@ export default function ViewAll() {
                               <FaEdit
                                 style={{ cursor: 'pointer', color: '#512728' }}
                                 title="Edit Admin"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate('/admin/add-new-admin', {
-                                    state: {
-                                      isEdit: true,
-                                      adminData: {
-                                        id: admin.id,
-                                        fullName: admin.fullName,
-                                        email: admin.email,
-                                        role: admin.role,
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/admin/add-new-admin', {
+                                      state: {
+                                        isEdit: true,
+                                        adminData: {
+                                          id: admin.id,
+                                          fullName: admin.fullName,
+                                          email: admin.email,
+                                          role: admin.role,
+                                          roleId: admin.roleRef?.id || admin.roleId || '',
+                                          UserSites: admin.UserSites || [],
+                                        }
                                       }
-                                    }
-                                  });
-                                }}
+                                    });
+                                  }}
                               />
                               <FaTrashAlt
                                 style={{ cursor: 'pointer', color: '#dc3545' }}
@@ -350,26 +400,47 @@ export default function ViewAll() {
                     </div>
                   </Form.Group>
 
-                  <Form.Group className="mb-3 row">
-                    <Form.Label className="col-4 fw-semibold">Role</Form.Label>
-                    <div className="col-8">
-                      <Form.Select
-                        name="role"
-                        value={
-                          ["admin", "super_admin", "sales_manager"].includes(selectedAdmin.role)
-                            ? selectedAdmin.role
-                            : ""
-                        }
-                        onChange={handleInputChange}
-                        className="py-2 shadow-none border-secondary-subtle border-1"
-                      >
-                        <option value="" disabled>Select Role</option>
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                        <option value="sales_manager">Sales Manager</option>
-                      </Form.Select>
-                    </div>
-                  </Form.Group>
+                  {userRole === 'super_admin' && (
+                    <Form.Group className="mb-3 row">
+                      <Form.Label className="col-4 fw-semibold">Permission Level</Form.Label>
+                      <div className="col-8">
+                        <Form.Select
+                          name="roleId"
+                          value={selectedAdmin.roleId || ''}
+                          onChange={handleInputChange}
+                          className="py-2 shadow-none border-secondary-subtle border-1"
+                        >
+                          <option value="" disabled>Select Role</option>
+                          {roles.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </div>
+                    </Form.Group>
+                  )}
+                  {userRole === 'super_admin' && (
+                    <Form.Group className="mb-3 row">
+                      <Form.Label className="col-4 fw-semibold">Assign Sites</Form.Label>
+                      <div className="col-8">
+                        <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '6px', padding: '8px 12px' }}>
+                          {sites.length === 0 && <small className="text-muted">No sites available</small>}
+                          {sites.map((site) => (
+                            <Form.Check
+                              key={site.id}
+                              type="checkbox"
+                              id={`modal-site-${site.id}`}
+                              label={site.name}
+                              checked={selectedAdmin.siteIds?.includes(site.id)}
+                              onChange={() => handleSiteToggle(site.id)}
+                              className="mb-1"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </Form.Group>
+                  )}
                 </Form>
               )}
             </Modal.Body>

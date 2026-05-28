@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -15,9 +15,11 @@ export default function CreateSite() {
 
     const [siteName, setSiteName] = useState(editData?.name || '');
     const [locationField, setLocationField] = useState(editData?.location || '');
-    const [siteType, setSiteType] = useState(editData?.description || 'Hatchery');
+    const [siteType, setSiteType] = useState(editData?.description || '');
+    const [typeId, setTypeId] = useState('');
     const [editId] = useState(editData?.id || null);
     const [loading, setLoading] = useState(false);
+    const [siteTypes, setSiteTypes] = useState([]);
     const [showSidebar, setShowSidebar] = useState(false);
     const navigate = useNavigate();
 
@@ -40,7 +42,7 @@ export default function CreateSite() {
                 const body = {};
                 if (siteName.trim()) body.name = siteName;
                 if (locationField.trim()) body.location = locationField;
-                if (siteType) body.description = siteType;
+                if (typeId) body.typeId = typeId;
 
                 await ApiV2.patch(`/v2/update-site/${editId}`, body);
 
@@ -52,7 +54,7 @@ export default function CreateSite() {
                     className: 'dark-toast'
                 });
             } else {
-                await ApiV2.post('/v2/create-site', { name: siteName, location: locationField, description: siteType });
+                await ApiV2.post('/v2/create-site', { name: siteName, location: locationField, typeId });
 
                 toast.update(loadingToast, {
                     render: "Site created successfully",
@@ -63,7 +65,8 @@ export default function CreateSite() {
                 });
                 setSiteName('');
                 setLocationField('');
-                setSiteType('Hatchery');
+                setSiteType('');
+                setTypeId(siteTypes[0]?.id || '');
             }
 
             setTimeout(() => {
@@ -81,6 +84,27 @@ export default function CreateSite() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const fetchSiteTypes = async () => {
+            try {
+                const res = await ApiV2.get('/v2/site-types');
+                const types = Array.isArray(res.data?.data) ? res.data.data : [];
+                setSiteTypes(types);
+                if (types.length > 0) {
+                    if (editData?.description) {
+                        const match = types.find(t => t.name === editData.description);
+                        if (match) setTypeId(match.id);
+                    } else if (!typeId) {
+                        setTypeId(types[0].id);
+                    }
+                }
+            } catch {
+                setSiteTypes([]);
+            }
+        };
+        fetchSiteTypes();
+    }, []);
 
     const toggleSidebar = () => setShowSidebar(!showSidebar);
     const handleCloseSidebar = () => setShowSidebar(false);
@@ -124,12 +148,13 @@ export default function CreateSite() {
                             <Form.Select
                                 className={`py-2 shadow-none ${styles.siteSelect}`}
                                 style={{ maxWidth: '320px' }}
-                                value={siteType}
-                                onChange={(e) => setSiteType(e.target.value)}
+                                value={typeId}
+                                onChange={(e) => setTypeId(e.target.value)}
                             >
-                                <option value="Hatchery">Hatchery</option>
-                                <option value="Nursery">Nursery</option>
-                                <option value="Grow-out">Grow-out</option>
+                                {siteTypes.length === 0 && <option value="">Select site type</option>}
+                                {siteTypes.map((type) => (
+                                    <option key={type.id} value={type.id}>{type.name}</option>
+                                ))}
                             </Form.Select>
                             <div className="d-flex justify-content-end my-4 gap-2">
                                 <Button

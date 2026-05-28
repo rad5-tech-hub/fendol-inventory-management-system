@@ -91,13 +91,15 @@ export default function CreateProducts() {
         });
 
         try {
-            // Before submitting, remove commas from basePrice
             const formDataToSubmit = {
-                ...formData,
-                basePrice: removeCommas(formData.basePrice)
+                productName: formData.productName,
+                productWeight: parseFloat(formData.productWeight) || 0,
+                unit: formData.unit,
+                basePrice: parseFloat(removeCommas(formData.basePrice)) || 0,
             };
+            if (formData.siteId) formDataToSubmit.siteId = formData.siteId;
 
-            const response = await Api.post('/product', formDataToSubmit);
+            const response = await ApiV2.post('/api/v1/product', formDataToSubmit);
 
             // Reset form or handle success as needed
             setFormData({
@@ -185,8 +187,8 @@ export default function CreateProducts() {
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     >
                                         <option value="" disabled>Select Unit</option>
-                                        <option value="KG">Kilogram</option>
-                                        <option value="G">Gram</option>
+                                        <option value="kg">Kilogram</option>
+                                        <option value="g">Gram</option>
                                     </Form.Select>
                                 </Col>
                                 <Col className="mb-4">

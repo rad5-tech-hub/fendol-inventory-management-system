@@ -4,7 +4,7 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../site-management.module.scss';
 import { BsExclamationTriangleFill } from "react-icons/bs";
-import { Spinner, Alert } from 'react-bootstrap';
+import { Spinner, Alert, Modal } from 'react-bootstrap';
 import { ApiV2 } from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { ToastContainer } from 'react-toastify';
@@ -14,7 +14,7 @@ const typeBadgeStyle = (type) => {
   const map = {
     Hatchery:  { background: '#E3F2FD', color: '#1565C0' },
     Nursery:   { background: '#E8F5E9', color: '#2E7D32' },
-    'Grow-out':{ background: '#FFF3E0', color: '#E65100' },
+    'Grow Out':{ background: '#FFF3E0', color: '#E65100' },
   };
   return map[type] || { background: '#F5F5F5', color: '#2E3135' };
 };
@@ -26,6 +26,8 @@ const ViewAllSites = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [selectedSite, setSelectedSite] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const itemsPerPage = 10;
   const navigate = useNavigate();
 
@@ -54,6 +56,16 @@ const ViewAllSites = () => {
 
   const handleEdit = (site) => {
     navigate('/site-management/create', { state: { editData: site } });
+  };
+
+  const handleRowClick = (site) => {
+    setSelectedSite(site);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedSite(null);
   };
 
   const startIndex = currentPage * itemsPerPage;
@@ -151,12 +163,12 @@ const ViewAllSites = () => {
                     </thead>
                     <tbody>
                       {displayedSites.map((site) => (
-                        <tr key={site.id}>
+                        <tr key={site.id} style={{ cursor: 'pointer' }} onClick={() => handleRowClick(site)}>
                           <td>{site.name}</td>
                           <td>
                             <span
                               style={{
-                                ...typeBadgeStyle(site.description),
+                                ...typeBadgeStyle(site.type?.name || site.description),
                                 padding: '2px 10px',
                                 borderRadius: '12px',
                                 fontSize: '0.8rem',
@@ -164,28 +176,24 @@ const ViewAllSites = () => {
                                 display: 'inline-block',
                               }}
                             >
-                              {site.description}
+                              {site.type?.name || site.description}
                             </span>
                           </td>
                           <td>{site.location}</td>
                           <td>
-                            {site.manager ? (
-                              site.manager
-                            ) : (
+                            {site.userSites?.[0]?.Admin?.fullName || (
                               <span style={{ color: '#8C949B', fontStyle: 'italic' }}>Not assigned</span>
                             )}
                           </td>
                           <td>
-                            {site.contact ? (
-                              site.contact
-                            ) : (
+                            {site.userSites?.[0]?.Admin?.email || (
                               <span style={{ color: '#8C949B', fontStyle: 'italic' }}>No contact</span>
                             )}
                           </td>
                           <td>
                             <span
                               style={{ color: '#F57C00', cursor: 'pointer', fontWeight: 500 }}
-                              onClick={() => handleEdit(site)}
+                              onClick={(e) => { e.stopPropagation(); handleEdit(site); }}
                             >
                               Edit
                             </span>
@@ -222,6 +230,79 @@ const ViewAllSites = () => {
           </main>
         </section>
       </div>
+
+      <Modal show={showModal} onHide={handleCloseModal} size="lg" centered>
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title className="fw-semibold">{selectedSite?.name}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-0">
+          {selectedSite && (
+            <>
+              <div className="row g-3 mb-4">
+                <div className="col-6">
+                  <small className="text-muted d-block">Site Name</small>
+                  <span className="fw-medium">{selectedSite.name}</span>
+                </div>
+                <div className="col-6">
+                  <small className="text-muted d-block">Location</small>
+                  <span className="fw-medium">{selectedSite.location || '—'}</span>
+                </div>
+                <div className="col-6">
+                  <small className="text-muted d-block">Type</small>
+                  <span className="fw-medium">{selectedSite.type?.name || selectedSite.description || '—'}</span>
+                </div>
+                <div className="col-6">
+                  <small className="text-muted d-block">Date Created</small>
+                  <span className="fw-medium">
+                    {(() => {
+                      const d = new Date(selectedSite.createdAt);
+                      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              <h6 className="fw-semibold mb-3">Assigned Admins</h6>
+              {selectedSite.userSites?.length > 0 ? (
+                <div className="d-flex flex-column gap-2">
+                  {selectedSite.userSites.map((us) => (
+                    <div key={us.id} className="d-flex align-items-center gap-3 p-2 rounded" style={{ backgroundColor: '#F8F9FA' }}>
+                      <div
+                        className="d-flex align-items-center justify-content-center rounded-circle text-white fw-semibold"
+                        style={{ width: '36px', height: '36px', backgroundColor: '#512728', fontSize: '14px', flexShrink: 0 }}
+                      >
+                        {us.Admin?.fullName?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <div>
+                        <div className="fw-medium" style={{ fontSize: '14px' }}>{us.Admin?.fullName}</div>
+                        <small className="text-muted">{us.Admin?.email}</small>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted fst-italic mb-0">No admins assigned to this site.</p>
+              )}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <div className="d-flex justify-content-end gap-2 w-100">
+            <button className={styles.toggleBtnOutline} onClick={handleCloseModal}>Close</button>
+            <button
+              className={`border-0 text-white shadow py-2 px-4 fs-6 fw-semibold ${styles.submit}`}
+              style={{ borderRadius: '50px', fontSize: '14px' }}
+              onClick={() => {
+                handleCloseModal();
+                navigate('/site-management/create', { state: { editData: selectedSite } });
+              }}
+            >
+              Edit Site
+            </button>
+          </div>
+        </Modal.Footer>
+      </Modal>
+
       <ToastContainer />
     </section>
   );

@@ -204,3 +204,390 @@
     overflow-y: auto; // Enable vertical scrolling
   }
 }
+
+/* ═══════════════════════════════════════════
+   Dashboard Redesign — new classes
+   ═══════════════════════════════════════════ */
+
+/* Page background */
+.dashBody {
+  background: #F8F4EF;
+  min-height: 100vh;
+}
+
+/* ── Page title row ── */
+.pageTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pageTitleLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.pageTitle {
+  font-size: 26px;
+  font-weight: 800;
+  color: #2E3135;
+  margin: 0;
+}
+.siteDropdown {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: #2E3135;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dropdownCaret {
+  font-size: 11px;
+  color: #8C949B;
+}
+.pageTitleRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.searchBar {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  padding: 7px 14px;
+  gap: 8px;
+  min-width: 220px;
+}
+.searchIcon {
+  font-size: 13px;
+  color: #8C949B;
+}
+.searchInput {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #8C949B;
+  background: transparent;
+  width: 100%;
+}
+.iconBtn {
+  width: 36px;
+  height: 36px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+}
+.userAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #C07D3A;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* ── Stat cards ── */
+.statCard {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 18px 20px;
+  border: 1px solid #ede8e0;
+  height: 100%;
+}
+.statCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.statLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8C949B;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.statIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.statIconAmber { background: #FFF0D6; }
+.statIconBrown { background: #F5E6D6; }
+.statIconGray  { background: #F0F0F0; }
+
+.statValue {
+  font-size: 28px;
+  font-weight: 800;
+  color: #2E3135;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+.statValueMuted {
+  font-size: 18px;
+  font-weight: 500;
+  color: #8C949B;
+}
+.statValueDanger {
+  color: #C62828;
+}
+.statSub {
+  font-size: 12px;
+  font-weight: 500;
+}
+.statSubGreen   { color: #2E7D32; }
+.statSubNeutral { color: #8C949B; }
+.statSubWarn    { color: #C62828; }
+
+/* ── Generic section card ── */
+.sectionCard {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid #ede8e0;
+}
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2E3135;
+  margin-bottom: 16px;
+}
+
+/* ── Business Today tiles ── */
+.todayTile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #F8F4EF;
+  border-radius: 10px;
+  padding: 16px;
+}
+.todayIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.todayIconOrange { background: #FFE0B2; }
+.todayIconYellow { background: #FFF9C4; }
+.todayIconGray   { background: #ECEFF1; }
+.todayLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8C949B;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+.todayValue {
+  font-size: 20px;
+  font-weight: 800;
+  color: #2E3135;
+}
+.todayValueDanger { color: #C62828; }
+
+/* ── Chart cards ── */
+.chartCard {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid #ede8e0;
+}
+.chartCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.chartCardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2E3135;
+}
+.chartCardControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.chartSiteDropdown {
+  background: #F8F4EF;
+  border: 1px solid #e0d8cc;
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #2E3135;
+  font-weight: 500;
+  cursor: pointer;
+}
+.viewDetails {
+  font-size: 12px;
+  color: #512728;
+  font-weight: 600;
+  cursor: pointer;
+}
+.viewDetails:hover { text-decoration: underline; }
+
+/* ── Top Selling Products list ── */
+.productList { display: flex; flex-direction: column; gap: 0; }
+.productListRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0ebe3;
+}
+.productListRow:last-child { border-bottom: none; }
+.productListName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2E3135;
+}
+.productListRevenue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2E3135;
+}
+.emptyText {
+  font-size: 13px;
+  color: #8C949B;
+  padding: 12px 0;
+}
+
+/* ── Major Sites Summary ── */
+.siteSummaryCard {
+  background: #F8F4EF;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #ede8e0;
+}
+.siteSummaryHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.siteSummaryIcon { font-size: 16px; }
+.siteSummaryName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2E3135;
+  flex: 1;
+}
+.siteBadge {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 10px;
+}
+.siteBadgeActive   { background: #E8F5E9; color: #2E7D32; }
+.siteBadgeReview   { background: #FFF3E0; color: #E65100; }
+.siteSummaryStats {
+  display: flex;
+  gap: 20px;
+}
+.siteSummaryStatLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8C949B;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+.siteSummaryStatValue {
+  font-size: 20px;
+  font-weight: 800;
+  color: #2E3135;
+}
+
+/* ── Recent Alerts ── */
+.alertsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.alertsHelpIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #512728;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.alertsList { display: flex; flex-direction: column; gap: 0; }
+.alertRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0ebe3;
+}
+.alertRow:last-child { border-bottom: none; }
+.alertDot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.alertDotRed   { background: #FDECEA; color: #C62828; }
+.alertDotGreen { background: #E8F5E9; color: #2E7D32; }
+.alertDotGray  { background: #F0F0F0; color: #757575; }
+.alertContent  { flex: 1; }
+.alertText {
+  font-size: 13px;
+  color: #2E3135;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+.alertTime {
+  font-size: 11px;
+  color: #8C949B;
+}
+.viewAllLogs {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #512728;
+  cursor: pointer;
+  padding-top: 12px;
+  border-top: 1px solid #f0ebe3;
+}
+.viewAllLogs:hover { text-decoration: underline; }

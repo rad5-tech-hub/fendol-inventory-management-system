@@ -4,7 +4,7 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product.module.scss';
 import { BsThreeDotsVertical, BsPlusLg, BsBarChartFill } from "react-icons/bs";
-import Api from "../../shared/api/apiLink";
+import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap';
@@ -88,7 +88,7 @@ export default function ViewAllProducts() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await Api.get('/products');
+        const response = await ApiV2.get('/api/v1/products');
         setProducts(response.data.data);
       } catch (err) {
         setError('Failed to fetch data. Please try again.');

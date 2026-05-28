@@ -81,7 +81,7 @@ const AddNew = () => {
         roleId: formData.roleId
       };
       const response = isEdit
-        ? await Api.put(`/edit-admin/${editId}`, payload)
+        ? await ApiV2.patch(`/api/v1/edit-admin/${editId}`, payload)
         : await ApiV2.post('/api/v1/admin', payload);
       const { message } = response.data || {};
 
