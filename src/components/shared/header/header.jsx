@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Row, Col, Dropdown, ButtonGroup, Button, Navbar } from "react-bootstrap";
-import { IoMdNotifications } from "react-icons/io";
-import { FaRegUserCircle } from "react-icons/fa";
+import { Row, Col, Dropdown, ButtonGroup, Button, Navbar, Modal, Spinner, InputGroup } from "react-bootstrap";
 import { FiDownload } from "react-icons/fi";
-import { FaBars } from "react-icons/fa"; // Hamburger icon
+import { FaBars, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Logo from "../../../assests/logo.png";
-import Api from '../../shared/api/apiLink'; // Import your API utility
+import Api, { ApiV2 } from '../../shared/api/apiLink'; // Import your API utility
+import { jwtDecode } from 'jwt-decode';
+import { toast } from 'react-toastify';
 import styles from "./header.module.scss";
 
 export default function Header({ toggleSidebar }) {
@@ -18,6 +18,22 @@ export default function Header({ toggleSidebar }) {
   const [notifications, setNotifications] = useState([]); // State for fetched notifications
   const [loading, setLoading] = useState(false); // Loading state for fetch
   const notificationRef = useRef(null); // Ref to handle click outside
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [changePwLoading, setChangePwLoading] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const token = sessionStorage.getItem('authToken');
+  let userName = '';
+  try {
+    const decoded = jwtDecode(token);
+    userName = decoded?.name || decoded?.fullName || decoded?.email || sessionStorage.getItem('role') || 'User';
+  } catch {
+    userName = sessionStorage.getItem('role') || 'User';
+  }
+  const userInitial = userName.charAt(0).toUpperCase();
 
   // Handle PWA installation prompt
   useEffect(() => {
@@ -98,6 +114,37 @@ export default function Header({ toggleSidebar }) {
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword) {
+      toast.error('Please fill in both password fields.', { className: 'dark-toast' });
+      return;
+    }
+    setChangePwLoading(true);
+    const loadingToast = toast.loading('Changing password...', { className: 'dark-toast' });
+    try {
+      await ApiV2.patch('/api/v1/admin/change-password', {
+        oldPassword,
+        newPassword,
+      });
+      toast.dismiss(loadingToast);
+      toast.success('Password changed successfully!', { className: 'dark-toast', autoClose: 3000 });
+      setShowPasswordModal(false);
+      setOldPassword('');
+      setNewPassword('');
+    } catch (err) {
+      const msg = err.response?.data?.response_message || err.response?.data?.message || 'Failed to change password.';
+      toast.update(loadingToast, {
+        render: msg,
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+        className: 'dark-toast',
+      });
+    } finally {
+      setChangePwLoading(false);
+    }
+  };
+
   return (
     <header>
       <div className={`shadow-sm sticky-top py-1 ${styles.header}`}>
@@ -118,12 +165,7 @@ export default function Header({ toggleSidebar }) {
           <Col xs={6} lg={4} className="d-flex align-items-center justify-content-end pe-lg-4 position-relative">
             {/* Notification Icon with Dropdown and Badge */}
             <div ref={notificationRef} className="position-relative">
-              <IoMdNotifications
-                size={25}
-                className={`me-3 ${styles.icons}`}
-                style={{ cursor: "pointer" }}
-                onClick={toggleNotifications}
-              />
+              <span className={`me-3 ${styles.icons}`} style={{ cursor: 'pointer', fontSize: '22px' }} onClick={toggleNotifications}>🔔</span>
               {notifications.length >= 1 && (
                 <span
                   style={{
@@ -205,8 +247,13 @@ export default function Header({ toggleSidebar }) {
 
             {/* User Dropdown */}
             <Dropdown as={ButtonGroup}>
-              <Dropdown.Toggle className="bg-transparent text-dark border-0" id="dropdown-basic">
-                <FaRegUserCircle size={32} className={`me-1 ${styles.icons}`} />
+              <Dropdown.Toggle className="bg-transparent text-dark border-0 d-flex align-items-center gap-2" id="dropdown-basic">
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold"
+                  style={{ width: '32px', height: '32px', backgroundColor: '#512728', fontSize: '14px', flexShrink: 0 }}
+                >
+                  {userInitial}
+                </div>
                 <span className="d-none d-lg-inline fw-semibold">
                   {sessionStorage
                     .getItem("role")
@@ -215,6 +262,13 @@ export default function Header({ toggleSidebar }) {
                 </span>
               </Dropdown.Toggle>
               <Dropdown.Menu className="border border-secondary bg-light-subtle">
+                <Dropdown.Item
+                  className="fw-semibold"
+                  onClick={() => setShowPasswordModal(true)}
+                >
+                  Change Password
+                </Dropdown.Item>
+                <Dropdown.Divider />
                 <Dropdown.Item
                   className="fw-semibold"
                   onClick={() => {
@@ -229,6 +283,66 @@ export default function Header({ toggleSidebar }) {
           </Col>
         </Row>
       </div>
+      <Modal show={showPasswordModal} onHide={() => setShowPasswordModal(false)} centered>
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title className="fw-semibold fs-5">Change Password</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-0">
+          <div className="mb-3">
+            <label className="form-label fw-semibold" style={{ fontSize: '14px' }}>Old Password</label>
+            <InputGroup>
+              <input
+                type={showOldPassword ? 'text' : 'password'}
+                className="form-control shadow-none"
+                placeholder="Enter old password"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+              />
+              <InputGroup.Text
+                style={{ cursor: 'pointer', backgroundColor: '#fff' }}
+                onClick={() => setShowOldPassword(!showOldPassword)}
+              >
+                {showOldPassword ? <FaEyeSlash /> : <FaEye />}
+              </InputGroup.Text>
+            </InputGroup>
+          </div>
+          <div className="mb-3">
+            <label className="form-label fw-semibold" style={{ fontSize: '14px' }}>New Password</label>
+            <InputGroup>
+              <input
+                type={showNewPassword ? 'text' : 'password'}
+                className="form-control shadow-none"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <InputGroup.Text
+                style={{ cursor: 'pointer', backgroundColor: '#fff' }}
+                onClick={() => setShowNewPassword(!showNewPassword)}
+              >
+                {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+              </InputGroup.Text>
+            </InputGroup>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0">
+          <button
+            className="btn btn-secondary shadow-none fw-semibold"
+            onClick={() => setShowPasswordModal(false)}
+            disabled={changePwLoading}
+          >
+            Cancel
+          </button>
+          <button
+            className="btn fw-semibold text-white border-0 shadow-none"
+            style={{ backgroundColor: '#512728' }}
+            onClick={handleChangePassword}
+            disabled={changePwLoading}
+          >
+            {changePwLoading ? <><Spinner size="sm" animation="border" className="me-2" />Changing password...</> : 'Change Password'}
+          </button>
+        </Modal.Footer>
+      </Modal>
     </header>
   );
 }

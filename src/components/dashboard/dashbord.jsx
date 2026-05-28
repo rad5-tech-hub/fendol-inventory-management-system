@@ -316,8 +316,6 @@ const Dashboard = () => {
                       readOnly
                     />
                   </div>
-                  <div className={styles.iconBtn}>🔔</div>
-                  <div className={styles.userAvatar}>A</div>
                 </div>
               </div>
 
