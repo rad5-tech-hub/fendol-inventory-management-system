@@ -52,10 +52,8 @@ Api.interceptors.request.use(
 
 export default Api;
 
-const v2BaseURL = 'https://dev-api.fendolgroup.com/';
-
 export const ApiV2 = axios.create({
-    baseURL: v2BaseURL,
+    baseURL: import.meta.env.VITE_API_V2_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
