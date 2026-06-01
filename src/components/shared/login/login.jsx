@@ -96,7 +96,7 @@ export default function LogIn() {
                     <div className={`${styles.form_box} rounded-5`}>
                         <Form className={styles.form} onSubmit={handleSubmit}>
                             <div className="text-center mb-4">
-                                <img src={Logo} alt="logo" />
+                                <img src={Logo} alt="logo" className={styles.logo} />
                             </div>                          
 
                             <Form.Label className="fw-semibold">Email</Form.Label>
