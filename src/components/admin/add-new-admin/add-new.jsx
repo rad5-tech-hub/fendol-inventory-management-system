@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Row, Col, Button } from 'react-bootstrap';
+import { Form, Row, Col, Button, Modal } from 'react-bootstrap';
 import styles from '../admin-styles.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import { FaUserPlus } from "react-icons/fa";
@@ -17,6 +17,8 @@ const AddNew = () => {
   const isEdit = editState.isEdit === true;
   const adminToEdit = editState.adminData || null;
   const [loader, setLoader] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const createdEmailRef = React.useRef('');
   const [formData, setFormData] = useState({
     fullName: adminToEdit?.fullName || '',
     email: adminToEdit?.email || '',
@@ -86,6 +88,7 @@ const AddNew = () => {
       const { message } = response.data || {};
 
       if (!isEdit) {
+        createdEmailRef.current = formData.email;
         setFormData({ fullName: '', email: '', siteIds: [], roleId: '' });
       }
 
@@ -97,9 +100,13 @@ const AddNew = () => {
         className: 'dark-toast'
       });
 
-      setTimeout(() => {
-        navigate('/admin/view-all');
-      }, 4500);
+      if (!isEdit) {
+        setShowSuccessModal(true);
+      } else {
+        setTimeout(() => {
+          navigate('/admin/view-all');
+        }, 4500);
+      }
     } catch (error) {
       console.error("Error creating admin:", error);
       const errorMessage = error.response?.data?.message || (isEdit ? "Error updating admin. Please try again." : "Error creating admin. Please try again.");
@@ -113,6 +120,11 @@ const AddNew = () => {
     } finally {
       setLoader(false);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    navigate('/admin/view-all');
   };
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
@@ -236,6 +248,62 @@ const AddNew = () => {
           </main>
         </section>
       </div>
+
+      <Modal
+        show={showSuccessModal}
+        onHide={handleSuccessModalClose}
+        centered
+        backdrop={true}
+      >
+        <Modal.Header className={styles.successModalHeader}>
+          <Modal.Title className={styles.successModalTitle}>
+            Account Created
+          </Modal.Title>
+          <button
+            className={styles.successModalClose}
+            onClick={handleSuccessModalClose}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </Modal.Header>
+
+        <Modal.Body className={styles.successModalBody}>
+          <div className={styles.successModalIcon}>
+            ✉
+          </div>
+
+          <h5 className={styles.successModalHeading}>
+            Check Your Email
+          </h5>
+
+          <p className={styles.successModalText}>
+            The admin account has been created successfully.
+          </p>
+          <p className={styles.successModalText}>
+            A temporary password has been sent to{' '}
+            <span className={styles.successModalEmail}>
+              {createdEmailRef.current || 'the registered email address'}
+            </span>
+            . The new admin should check their inbox and log in using
+            that password.
+          </p>
+
+          <div className={styles.successModalNote}>
+            <strong>Note:</strong> The temporary password expires after
+            first login. The admin will be prompted to set a new password.
+          </div>
+        </Modal.Body>
+
+        <Modal.Footer className={styles.successModalFooter}>
+          <button
+            className={styles.successModalBtn}
+            onClick={handleSuccessModalClose}
+          >
+            Got it
+          </button>
+        </Modal.Footer>
+      </Modal>
     </section>
   );
 };

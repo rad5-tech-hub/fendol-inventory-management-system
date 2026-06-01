@@ -510,3 +510,92 @@
     display: block;
   }
 }
+
+/* ── Admin creation success modal ── */
+.successModalHeader {
+  border-bottom: none;
+  padding: 20px 24px 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.successModalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2E3135;
+}
+.successModalClose {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #8C949B;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.successModalClose:hover {
+  color: #2E3135;
+  background: #f0f0f0;
+}
+
+.successModalBody {
+  padding: 24px 32px;
+  text-align: center;
+}
+.successModalIcon {
+  font-size: 52px;
+  margin-bottom: 16px;
+  display: block;
+  line-height: 1;
+}
+.successModalHeading {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2E3135;
+  margin-bottom: 12px;
+}
+.successModalText {
+  font-size: 14px;
+  color: #2E3135;
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+.successModalEmail {
+  font-weight: 700;
+  color: #512728;
+  word-break: break-all;
+}
+.successModalNote {
+  background: #FDF0E8;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #7A3B1E;
+  text-align: left;
+  margin-top: 16px;
+  line-height: 1.6;
+}
+
+.successModalFooter {
+  border-top: none;
+  padding: 0 32px 28px 32px;
+  justify-content: center;
+}
+.successModalBtn {
+  background: #512728;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 48px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  width: 100%;
+  max-width: 220px;
+}
+.successModalBtn:hover {
+  background: #714445;
+}
