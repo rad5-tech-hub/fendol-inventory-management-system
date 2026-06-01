@@ -400,3 +400,31 @@
     display: block; // Ensure body is visible for desktop
   }
 }
+
+/* ── Collapsible site card ── */
+.siteCardHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.collapseChevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #8C949B;
+  font-size: 15px;
+  transition: transform 0.25s ease, background 0.15s ease;
+}
+.collapseChevron:hover {
+  background: #f0ebe3;
+  color: #2E3135;
+}
+
+.collapseChevronClosed {
+  transform: rotate(-90deg);
+}

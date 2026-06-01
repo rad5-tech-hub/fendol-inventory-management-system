@@ -3,7 +3,7 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product.module.scss';
-import { BsThreeDotsVertical, BsPlusLg, BsBarChartFill } from "react-icons/bs";
+import { BsThreeDotsVertical, BsPlusLg, BsBarChartFill, BsChevronDown } from "react-icons/bs";
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -83,6 +83,7 @@ export default function ViewAllProducts() {
   const [userRole, setUserRole] = useState(null);
   const [viewMode, setViewMode] = useState('by-site');
   const [selectedSite, setSelectedSite] = useState(null);
+  const [collapsedSites, setCollapsedSites] = useState(new Set());
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -193,6 +194,18 @@ export default function ViewAllProducts() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const toggleSiteCollapse = (siteName) => {
+    setCollapsedSites(prev => {
+      const next = new Set(prev);
+      if (next.has(siteName)) {
+        next.delete(siteName);
+      } else {
+        next.add(siteName);
+      }
+      return next;
+    });
+  };
+
   const formatDateShort = (isoDate) => {
     const date = new Date(isoDate);
     return date.toLocaleDateString('en-US', {
@@ -293,16 +306,29 @@ export default function ViewAllProducts() {
                           </div>
                           <h5 className={styles.siteName}>{siteName}</h5>
                         </div>
-                        <span className={styles.assignmentsBadge}>
-                          {groupedBySite[siteName].length}&nbsp;
-                          {groupedBySite[siteName].length === 1 ? 'Assignment' : 'Assignments'}
-                        </span>
+                        <div className={styles.siteCardHeaderRight}>
+                          <span className={styles.assignmentsBadge}>
+                            {groupedBySite[siteName].length}&nbsp;
+                            {groupedBySite[siteName].length === 1 ? 'Assignment' : 'Assignments'}
+                          </span>
+                          <span
+                            className={`${styles.collapseChevron} ${collapsedSites.has(siteName) ? styles.collapseChevronClosed : ''}`}
+                            onClick={() => toggleSiteCollapse(siteName)}
+                            title={collapsedSites.has(siteName) ? 'Expand' : 'Collapse'}
+                          >
+                            <BsChevronDown />
+                          </span>
+                        </div>
                       </div>
-                      <hr className={styles.siteCardDivider} />
-                      <ProductTable
-                        rows={groupedBySite[siteName]}
-                        avatarColors={AVATAR_COLORS}
-                      />
+                      {!collapsedSites.has(siteName) && (
+                        <>
+                          <hr className={styles.siteCardDivider} />
+                          <ProductTable
+                            rows={groupedBySite[siteName]}
+                            avatarColors={AVATAR_COLORS}
+                          />
+                        </>
+                      )}
                     </div>
                   ))}
                 </>
