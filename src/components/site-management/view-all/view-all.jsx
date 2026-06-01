@@ -156,7 +156,7 @@ const ViewAllSites = () => {
                         <th>SITE NAME</th>
                         <th>TYPE</th>
                         <th>ADDRESS</th>
-                        <th>MANAGER</th>
+                        <th>MANAGERS</th>
                         <th>CONTACT</th>
                         <th>ACTIONS</th>
                       </tr>
@@ -181,7 +181,9 @@ const ViewAllSites = () => {
                           </td>
                           <td>{site.location}</td>
                           <td>
-                            {site.userSites?.[0]?.Admin?.fullName || (
+                            {site.userSites?.length > 0 ? (
+                              <span>{site.userSites.length} {site.userSites.length === 1 ? 'Admin' : 'Admins'}</span>
+                            ) : (
                               <span style={{ color: '#8C949B', fontStyle: 'italic' }}>Not assigned</span>
                             )}
                           </td>
@@ -276,6 +278,25 @@ const ViewAllSites = () => {
                       <div>
                         <div className="fw-medium" style={{ fontSize: '14px' }}>{us.Admin?.fullName}</div>
                         <small className="text-muted">{us.Admin?.email}</small>
+                        {us.Admin?.roles?.length > 0 && (
+                          <div className="d-flex flex-wrap gap-1 mt-1">
+                            {us.Admin.roles.map((role) => (
+                              <span
+                                key={role.id}
+                                style={{
+                                  backgroundColor: '#EDE0E0',
+                                  color: '#512728',
+                                  padding: '1px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {role.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

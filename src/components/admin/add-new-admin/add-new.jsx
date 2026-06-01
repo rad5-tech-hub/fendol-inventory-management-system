@@ -23,7 +23,7 @@ const AddNew = () => {
     fullName: adminToEdit?.fullName || '',
     email: adminToEdit?.email || '',
     siteIds: [],
-    roleId: adminToEdit?.roleId || ''
+    roleIds: adminToEdit?.roleIds || (adminToEdit?.roleId ? [adminToEdit.roleId] : [])
   });
   const [editId] = useState(adminToEdit?.id || null);
   const [roles, setRoles] = useState([]);
@@ -67,9 +67,24 @@ const AddNew = () => {
     }));
   };
 
+  const handleRoleToggle = (roleId) => {
+    setFormData(prev => ({
+      ...prev,
+      roleIds: prev.roleIds.includes(roleId)
+        ? prev.roleIds.filter(id => id !== roleId)
+        : [...prev.roleIds, roleId]
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoader(true);
+
+    if (formData.roleIds.length === 0) {
+      toast.error('Please select at least one role.', { className: 'dark-toast' });
+      setLoader(false);
+      return;
+    }
 
     const loadingToast = toast.loading(
       isEdit ? "Updating Admin..." : "Creating New Admin..",
@@ -80,7 +95,7 @@ const AddNew = () => {
         fullName: formData.fullName,
         email: formData.email,
         siteIds: formData.siteIds,
-        roleId: formData.roleId
+        roleIds: formData.roleIds
       };
       const response = isEdit
         ? await ApiV2.patch(`/api/v1/edit-admin/${editId}`, payload)
@@ -89,7 +104,7 @@ const AddNew = () => {
 
       if (!isEdit) {
         createdEmailRef.current = formData.email;
-        setFormData({ fullName: '', email: '', siteIds: [], roleId: '' });
+        setFormData({ fullName: '', email: '', siteIds: [], roleIds: [] });
       }
 
       toast.update(loadingToast, {
@@ -197,18 +212,20 @@ const AddNew = () => {
                     </div>
                     <hr className={styles.cardDivider} />
                     <Form.Label className="fw-semibold">Permission Level</Form.Label>
-                    <Form.Select
-                      className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                      name="roleId"
-                      value={formData.roleId}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="" disabled>Select Role</option>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '6px', padding: '8px 12px' }}>
+                      {roles.length === 0 && <small className="text-muted">No roles available</small>}
                       {roles.map((r) => (
-                        <option key={r.id} value={r.id}>{r.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+                        <Form.Check
+                          key={r.id}
+                          type="checkbox"
+                          id={`role-${r.id}`}
+                          label={r.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                          checked={formData.roleIds.includes(r.id)}
+                          onChange={() => handleRoleToggle(r.id)}
+                          className="mb-1"
+                        />
                       ))}
-                    </Form.Select>
+                    </div>
 
                     <Form.Label className="fw-semibold mt-4">Assign Sites</Form.Label>
                     <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '6px', padding: '8px 12px' }}>
