@@ -10,7 +10,9 @@ import { toast, ToastContainer } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import Logo from '../../../assests/logo.png';
-import { LOGIN_USER } from "../reduxForProtectingRoute/actions/types";
+import { loginUser } from "../reduxForProtectingRoute/actions/authActions";
+import { jwtDecode } from 'jwt-decode';
+import { extractUserTypes } from '../permissions/permissions';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function LogIn() {
@@ -33,25 +35,35 @@ export default function LogIn() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoader(true);
-    
+
         // Show loading toast
         const loadingToast = toast.loading("Logging in...", { className: 'dark-toast' });
-    
+
         try {
             const response = await Api.post('/login', loginData);
             const { token, role, success } = response.data; // Destructure response data
-    
-            if (success) {               
+
+            if (success) {
                 // Store token and role in sessionStorage
                 sessionStorage.setItem('authToken', token);
                 sessionStorage.setItem('role', role);
-    
+
+                // Decode token and extract user types safely with fallback
+                const decoded = (() => {
+                    try {
+                        return jwtDecode(token);
+                    } catch {
+                        return {};
+                    }
+                })();
+                const userTypes = extractUserTypes(decoded);
+
                 // Clear form data
                 setLoginData({ email: '', password: '' });
-    
-                // Dispatch token to Redux (important for state updates)
-                dispatch({ type: LOGIN_USER, payload: token });
-    
+
+                // Dispatch decoded user info into Redux
+                dispatch(loginUser(token));
+
                 // Update success toast
                 toast.update(loadingToast, {
                     render: "Logged in successfully!",
@@ -60,17 +72,19 @@ export default function LogIn() {
                     autoClose: 3000,
                     className: 'dark-toast',
                 });
-    
-                if (role === 'super_admin' || role === 'farm_manager') {
+
+                if (userTypes.includes('super_admin') || userTypes.includes('farm_manager')) {
                     navigate("/dashboard");
-                } else if (role === 'store_keeper') {
+                } else if (userTypes.includes('store_keeper')) {
                     navigate('/store/view-all');
-                } else if (role === 'finance') {
+                } else if (userTypes.includes('finance')) {
                     navigate('/finance/add-sales');
-                } else {
+                } else if (userTypes.includes('sales_manager')) {
                     navigate('/customer/view-all');
+                } else {
+                    navigate('/dashboard');
                 }
-    
+
             } else {
                 // Handle failed login
                 throw new Error("Login failed");
@@ -88,8 +102,8 @@ export default function LogIn() {
             setLoader(false); // Reset loader state
         }
     };
-    
-    
+
+
     return (
         <section className={styles.login_section}>
             <div className={`${styles.imageCont} text-end`}>
@@ -101,7 +115,7 @@ export default function LogIn() {
                         <Form className={styles.form} onSubmit={handleSubmit}>
                             <div className="text-center mb-4">
                                 <img src={Logo} alt="logo" className={styles.logo} />
-                            </div>                          
+                            </div>
 
                             <Form.Label className="fw-semibold">Email</Form.Label>
                             <Form.Control

@@ -10,7 +10,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from 'react-router-dom';
-import { hasAccess } from '../../shared/permissions';
+import { useSelector } from 'react-redux';
+import { hasPermission } from '../../shared/permissions/permissions';
 
 const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick }) => {
   if (!show) return null;
@@ -81,7 +82,6 @@ export default function ViewAllProducts() {
   const itemsPerPage = 10;
   const [showSidebar, setShowSidebar] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [userRole, setUserRole] = useState(null);
   const [viewMode, setViewMode] = useState('by-site');
   const [selectedSite, setSelectedSite] = useState(null);
   const [collapsedSites, setCollapsedSites] = useState(new Set());
@@ -102,20 +102,17 @@ export default function ViewAllProducts() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const role = sessionStorage.getItem('role');
-    setUserRole(role);
-  }, []);
+  const userTypes = useSelector((state) => state.user?.userTypes || []);
 
-  const canAssignSite = hasAccess(userRole, 'products', 'assign-site');
+  const canAssignSite = hasPermission(userTypes, 'products', 'assign-site');
 
   const groupedBySite = canAssignSite && viewMode === 'by-site'
     ? products.reduce((acc, product) => {
-        const siteName = product.site?.name || 'Unassigned';
-        if (!acc[siteName]) acc[siteName] = [];
-        acc[siteName].push(product);
-        return acc;
-      }, {})
+      const siteName = product.site?.name || 'Unassigned';
+      if (!acc[siteName]) acc[siteName] = [];
+      acc[siteName].push(product);
+      return acc;
+    }, {})
     : {};
 
   const siteNames = Object.keys(groupedBySite).sort();
@@ -141,8 +138,9 @@ export default function ViewAllProducts() {
 
   const handleSaveClick = async () => {
     setLoadingEdit(true)
-    const loadingToast = toast.loading("Editing Product...",{
-      className: 'dark-toast'});
+    const loadingToast = toast.loading("Editing Product...", {
+      className: 'dark-toast'
+    });
     try {
       if (selectedProduct && selectedProduct.id) {
         await Api.put(`/product/${selectedProduct.id}`, selectedProduct);
@@ -159,13 +157,13 @@ export default function ViewAllProducts() {
       }
     } catch (error) {
       toast.update(loadingToast, {
-        render: error.response?.data?.message ||  "Error adding fish. Please try again.",
+        render: error.response?.data?.message || "Error adding fish. Please try again.",
         type: "error",
         isLoading: false,
         autoClose: 3000,
         className: 'dark-toast'
-    });
-    }finally{
+      });
+    } finally {
       setLoadingEdit(false);
     }
   };
@@ -216,8 +214,8 @@ export default function ViewAllProducts() {
     });
   };
 
-  const SITE_ICON_COLORS   = ['#F5A623', '#8B4513', '#4A90D9', '#2E7D32', '#7B1FA2'];
-  const AVATAR_COLORS      = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA'];
+  const SITE_ICON_COLORS = ['#F5A623', '#8B4513', '#4A90D9', '#2E7D32', '#7B1FA2'];
+  const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA'];
 
   const getInitials = (fullName = '') => {
     const parts = fullName.trim().split(' ');
@@ -234,163 +232,163 @@ export default function ViewAllProducts() {
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${styles.content} flex-grow-1`}>
-            <main className={styles.create_form}>
-              <ToastContainer />
+          <main className={styles.create_form}>
+            <ToastContainer />
 
-              {/* ── Page header ── */}
-              <div className={styles.pageHeader}>
-                <div>
-                  <h2 className={styles.pageTitle}>Product Assignments</h2>
-                  <p className={styles.pageSubtitle}>
-                    Manage and track inventory allocation across all aquaculture sites.
-                  </p>
-                </div>
-                {canAssignSite && (
-                  <button
-                    className={styles.assignBtn}
-                    onClick={() => navigate('/products/create')}
-                  >
-                    <BsPlusLg /> Assign Product
-                  </button>
-                )}
+            {/* ── Page header ── */}
+            <div className={styles.pageHeader}>
+              <div>
+                <h2 className={styles.pageTitle}>Product Assignments</h2>
+                <p className={styles.pageSubtitle}>
+                  Manage and track inventory allocation across all aquaculture sites.
+                </p>
               </div>
-
-              {/* ── Admin view-mode toggle ── */}
               {canAssignSite && (
-                <div className={styles.filterBar}>
-                  <button
-                    className={viewMode === 'all' ? styles.filterBtnActive : styles.filterBtnOutline}
-                    onClick={() => setViewMode('all')}
-                  >
-                    All Products
-                  </button>
-                  <button
-                    className={viewMode === 'by-site' ? styles.filterBtnActive : styles.filterBtnOutline}
-                    onClick={() => setViewMode('by-site')}
-                  >
-                    By Site
-                  </button>
-                </div>
+                <button
+                  className={styles.assignBtn}
+                  onClick={() => navigate('/products/create')}
+                >
+                  <BsPlusLg /> Assign Product
+                </button>
               )}
+            </div>
 
-              {/* ── Loading ── */}
-              {loading && (
-                <div className="text-center">
-                  <Spinner animation="border" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </Spinner>
-                </div>
-              )}
+            {/* ── Admin view-mode toggle ── */}
+            {canAssignSite && (
+              <div className={styles.filterBar}>
+                <button
+                  className={viewMode === 'all' ? styles.filterBtnActive : styles.filterBtnOutline}
+                  onClick={() => setViewMode('all')}
+                >
+                  All Products
+                </button>
+                <button
+                  className={viewMode === 'by-site' ? styles.filterBtnActive : styles.filterBtnOutline}
+                  onClick={() => setViewMode('by-site')}
+                >
+                  By Site
+                </button>
+              </div>
+            )}
 
-              {/* ── Error ── */}
-              {error && (
-                <Alert variant="danger" className="text-center">{error}</Alert>
-              )}
+            {/* ── Loading ── */}
+            {loading && (
+              <div className="text-center">
+                <Spinner animation="border" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </Spinner>
+              </div>
+            )}
 
-              {/* ── Empty ── */}
-              {!loading && !error && products.length === 0 && (
-                <Alert variant="info">No products available.</Alert>
-              )}
+            {/* ── Error ── */}
+            {error && (
+              <Alert variant="danger" className="text-center">{error}</Alert>
+            )}
 
-              {/* ── SUPER ADMIN: By Site ── */}
-              {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'by-site' && (
-                <>
-                  {siteNames.map((siteName, siteIdx) => (
-                    <div key={siteName} className={styles.siteCard}>
-                      <div className={styles.siteCardHeader}>
-                        <div className={styles.siteCardHeaderLeft}>
-                          <div
-                            className={styles.siteIcon}
-                            style={{ background: SITE_ICON_COLORS[siteIdx % SITE_ICON_COLORS.length] }}
-                          >
-                            <BsBarChartFill />
-                          </div>
-                          <h5 className={styles.siteName}>{siteName}</h5>
+            {/* ── Empty ── */}
+            {!loading && !error && products.length === 0 && (
+              <Alert variant="info">No products available.</Alert>
+            )}
+
+            {/* ── SUPER ADMIN: By Site ── */}
+            {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'by-site' && (
+              <>
+                {siteNames.map((siteName, siteIdx) => (
+                  <div key={siteName} className={styles.siteCard}>
+                    <div className={styles.siteCardHeader}>
+                      <div className={styles.siteCardHeaderLeft}>
+                        <div
+                          className={styles.siteIcon}
+                          style={{ background: SITE_ICON_COLORS[siteIdx % SITE_ICON_COLORS.length] }}
+                        >
+                          <BsBarChartFill />
                         </div>
-                        <div className={styles.siteCardHeaderRight}>
-                          <span className={styles.assignmentsBadge}>
-                            {groupedBySite[siteName].length}&nbsp;
-                            {groupedBySite[siteName].length === 1 ? 'Assignment' : 'Assignments'}
-                          </span>
-                          <span
-                            className={`${styles.collapseChevron} ${collapsedSites.has(siteName) ? styles.collapseChevronClosed : ''}`}
-                            onClick={() => toggleSiteCollapse(siteName)}
-                            title={collapsedSites.has(siteName) ? 'Expand' : 'Collapse'}
-                          >
-                            <BsChevronDown />
-                          </span>
-                        </div>
+                        <h5 className={styles.siteName}>{siteName}</h5>
                       </div>
-                      {!collapsedSites.has(siteName) && (
-                        <>
-                          <hr className={styles.siteCardDivider} />
-                          <ProductTable
-                            rows={groupedBySite[siteName]}
-                            avatarColors={AVATAR_COLORS}
-                          />
-                        </>
-                      )}
+                      <div className={styles.siteCardHeaderRight}>
+                        <span className={styles.assignmentsBadge}>
+                          {groupedBySite[siteName].length}&nbsp;
+                          {groupedBySite[siteName].length === 1 ? 'Assignment' : 'Assignments'}
+                        </span>
+                        <span
+                          className={`${styles.collapseChevron} ${collapsedSites.has(siteName) ? styles.collapseChevronClosed : ''}`}
+                          onClick={() => toggleSiteCollapse(siteName)}
+                          title={collapsedSites.has(siteName) ? 'Expand' : 'Collapse'}
+                        >
+                          <BsChevronDown />
+                        </span>
+                      </div>
                     </div>
-                  ))}
-                </>
-              )}
-
-              {/* ── SUPER ADMIN: All Products flat ── */}
-              {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'all' && (
-                <>
-                  <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
-                  <div className="d-flex justify-content-center mt-4">
-                    <ReactPaginate
-                      previousLabel={"< "}
-                      nextLabel={" >"}
-                      breakLabel={"..."}
-                      pageCount={Math.ceil(products.length / itemsPerPage)}
-                      marginPagesDisplayed={2}
-                      pageRangeDisplayed={3}
-                      onPageChange={handlePageChange}
-                      containerClassName={"pagination"}
-                      pageClassName={"page-item"}
-                      pageLinkClassName={"page-link"}
-                      previousClassName={"page-item"}
-                      previousLinkClassName={"page-link"}
-                      nextClassName={"page-item"}
-                      nextLinkClassName={"page-link"}
-                      breakClassName={"page-item"}
-                      breakLinkClassName={"page-link"}
-                      activeClassName={"dark"}
-                    />
+                    {!collapsedSites.has(siteName) && (
+                      <>
+                        <hr className={styles.siteCardDivider} />
+                        <ProductTable
+                          rows={groupedBySite[siteName]}
+                          avatarColors={AVATAR_COLORS}
+                        />
+                      </>
+                    )}
                   </div>
-                </>
-              )}
+                ))}
+              </>
+            )}
 
-              {/* ── NON-SUPER-ADMIN: flat list, no site headers ── */}
-              {!loading && !error && products.length > 0 && !canAssignSite && (
-                <>
-                  <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
-                  <div className="d-flex justify-content-center mt-4">
-                    <ReactPaginate
-                      previousLabel={"< "}
-                      nextLabel={" >"}
-                      breakLabel={"..."}
-                      pageCount={Math.ceil(products.length / itemsPerPage)}
-                      marginPagesDisplayed={2}
-                      pageRangeDisplayed={3}
-                      onPageChange={handlePageChange}
-                      containerClassName={"pagination"}
-                      pageClassName={"page-item"}
-                      pageLinkClassName={"page-link"}
-                      previousClassName={"page-item"}
-                      previousLinkClassName={"page-link"}
-                      nextClassName={"page-item"}
-                      nextLinkClassName={"page-link"}
-                      breakClassName={"page-item"}
-                      breakLinkClassName={"page-link"}
-                      activeClassName={"dark"}
-                    />
-                  </div>
-                </>
-              )}
-            </main>
+            {/* ── SUPER ADMIN: All Products flat ── */}
+            {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'all' && (
+              <>
+                <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
+                <div className="d-flex justify-content-center mt-4">
+                  <ReactPaginate
+                    previousLabel={"< "}
+                    nextLabel={" >"}
+                    breakLabel={"..."}
+                    pageCount={Math.ceil(products.length / itemsPerPage)}
+                    marginPagesDisplayed={2}
+                    pageRangeDisplayed={3}
+                    onPageChange={handlePageChange}
+                    containerClassName={"pagination"}
+                    pageClassName={"page-item"}
+                    pageLinkClassName={"page-link"}
+                    previousClassName={"page-item"}
+                    previousLinkClassName={"page-link"}
+                    nextClassName={"page-item"}
+                    nextLinkClassName={"page-link"}
+                    breakClassName={"page-item"}
+                    breakLinkClassName={"page-link"}
+                    activeClassName={"dark"}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* ── NON-SUPER-ADMIN: flat list, no site headers ── */}
+            {!loading && !error && products.length > 0 && !canAssignSite && (
+              <>
+                <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
+                <div className="d-flex justify-content-center mt-4">
+                  <ReactPaginate
+                    previousLabel={"< "}
+                    nextLabel={" >"}
+                    breakLabel={"..."}
+                    pageCount={Math.ceil(products.length / itemsPerPage)}
+                    marginPagesDisplayed={2}
+                    pageRangeDisplayed={3}
+                    onPageChange={handlePageChange}
+                    containerClassName={"pagination"}
+                    pageClassName={"page-item"}
+                    pageLinkClassName={"page-link"}
+                    previousClassName={"page-item"}
+                    previousLinkClassName={"page-link"}
+                    nextClassName={"page-item"}
+                    nextLinkClassName={"page-link"}
+                    breakClassName={"page-item"}
+                    breakLinkClassName={"page-link"}
+                    activeClassName={"dark"}
+                  />
+                </div>
+              </>
+            )}
+          </main>
 
           <Modal show={showModal} onHide={() => setShowModal(false)}>
             <Modal.Header closeButton className="border-0 ">

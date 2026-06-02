@@ -12,13 +12,14 @@ import { RiStoreFill } from "react-icons/ri";
 import { MdOutlinePointOfSale } from "react-icons/md";
 import styles from "./siderbar.module.scss";
 import { useLocation, useNavigate } from "react-router-dom";
-import { hasAccess } from "../permissions";
+import { useSelector } from "react-redux";
+import { hasPermission } from "../permissions/permissions";
 
 export default function SideBar({ show, handleClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState({});
-  const [role, setRole] = useState(null);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
 
   useEffect(() => {
     const path = location.pathname;
@@ -49,10 +50,7 @@ export default function SideBar({ show, handleClose }) {
     } else if (path.includes("/notification")) {
       setOpen((prev) => ({ ...prev, notification: true }));
     }
-    if (role === null) {
-      setRole(sessionStorage.getItem("role"));
-    }
-  }, [location.pathname, role]);
+  }, [location.pathname]);
 
   const handleToggle = (key) => {
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -60,7 +58,7 @@ export default function SideBar({ show, handleClose }) {
 
   const sidebarContent = (
     <Nav className={`flex-column ${styles.navs}`}>
-      {hasAccess(role, 'dashboard') && (
+      {hasPermission(userTypes, 'dashboard') && (
         <Nav.Item className={`mt-4 ${location.pathname === "/dashboard" ? "mx-2" : ""}`}>
           <Nav.Link
             onClick={() => navigate("/dashboard")}
@@ -72,7 +70,7 @@ export default function SideBar({ show, handleClose }) {
       )}
       <div className={`mb-4 ${styles.navigationDropdown}`}>
         {/* Admin navigations */}
-        {hasAccess(role, 'admin') && (
+        {hasPermission(userTypes, 'admin') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("admin")}
@@ -89,7 +87,7 @@ export default function SideBar({ show, handleClose }) {
             <Collapse in={open.admin} style={{ transitionDuration: "0s" }}>
               <div id="admin-collapse-text" className="px-2">
                 <Card.Body className={styles.navigationLinks}>
-                  {hasAccess(role, 'admin', 'create') && (
+                  {hasPermission(userTypes, 'admin') && (
                     <Nav.Item className="mb-3">
                       <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-add-new">Add a new admin</Tooltip>}>
                         <div
@@ -120,7 +118,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Customer navigation */}
-        {hasAccess(role, 'customer') && (
+        {hasPermission(userTypes, 'customer') && (
           <Card className={styles.card}>
             <Card.Header
               style={{ cursor: "pointer" }}
@@ -162,7 +160,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Pond navigation */}
-        {hasAccess(role, 'ponds') && (
+        {hasPermission(userTypes, 'ponds') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("ponds")}
@@ -204,7 +202,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Manage Fish navigation */}
-        {hasAccess(role, 'manage-fish') && (
+        {hasPermission(userTypes, 'manage_fish') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("manage_fish")}
@@ -282,7 +280,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Fish Processing navigation */}
-        {hasAccess(role, 'fish-processes') && (
+        {hasPermission(userTypes, 'fish_processing') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("fish_processes")}
@@ -324,7 +322,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Products navigation */}
-        {hasAccess(role, 'products') && (
+        {hasPermission(userTypes, 'products') && (
           <Card className={styles.card}>
             <Card.Header
               style={{ cursor: "pointer" }}
@@ -366,7 +364,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Showcase navigation */}
-        {hasAccess(role, 'showcase') && (
+        {hasPermission(userTypes, 'showcase') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("showcase")}
@@ -408,7 +406,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Site Management navigation */}
-        {hasAccess(role, 'site-management') && (
+        {hasPermission(userTypes, 'site-management') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("site_management")}
@@ -425,7 +423,7 @@ export default function SideBar({ show, handleClose }) {
             <Collapse in={open.site_management} style={{ transitionDuration: "0s" }}>
               <div id="site_management-collapse-text" className="px-2">
                 <Card.Body className={styles.navigationLinks}>
-                  {hasAccess(role, 'site-management', 'create') && (
+                  {hasPermission(userTypes, 'site-management') && (
                     <Nav.Item className="mb-3">
                       <div
                         onClick={() => navigate("/site-management/create")}
@@ -452,7 +450,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Feed navigation */}
-        {hasAccess(role, 'feed') && (
+        {hasPermission(userTypes, 'feed') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("feed")}
@@ -503,7 +501,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Store navigation */}
-        {hasAccess(role, 'store') && (
+        {hasPermission(userTypes, 'store') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("store")}
@@ -554,7 +552,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Finance navigation */}
-        {hasAccess(role, 'finance:add-sales') || hasAccess(role, 'finance:add-expenses') || hasAccess(role, 'finance:ledger') || hasAccess(role, 'finance:cash-drawer') ? (
+        {(hasPermission(userTypes, 'finance:add-sales') || hasPermission(userTypes, 'finance:add-expenses') || hasPermission(userTypes, 'finance:ledger') || hasPermission(userTypes, 'finance:cash-drawer')) ? (
           <Card className={styles.card}>
             <Card.Header
               style={{ cursor: "pointer" }}
@@ -571,7 +569,7 @@ export default function SideBar({ show, handleClose }) {
             <Collapse in={open.finance} style={{ transitionDuration: "0s" }}>
               <div id="finance-collapse-text" className="px-2">
                 <Card.Body className={styles.navigationLinks}>
-                  {hasAccess(role, 'finance:add-sales') && (
+                  {hasPermission(userTypes, 'finance:add-sales') && (
                     <Nav.Item className="mb-3" title="Make A Sale">
                       <div
                         onClick={() => navigate("/finance/add-sales")}
@@ -582,7 +580,7 @@ export default function SideBar({ show, handleClose }) {
                       </div>
                     </Nav.Item>
                   )}
-                  {hasAccess(role, 'finance:add-expenses') && (
+                  {hasPermission(userTypes, 'finance:add-expenses') && (
                     <Nav.Item className="mb-3" title="Add Expenses">
                       <div
                         onClick={() => navigate("/finance/add-expenses")}
@@ -593,7 +591,7 @@ export default function SideBar({ show, handleClose }) {
                       </div>
                     </Nav.Item>
                   )}
-                  {hasAccess(role, 'finance:ledger') && (
+                  {hasPermission(userTypes, 'finance:ledger') && (
                     <Nav.Item className="mb-3" title="Financial Ledger">
                       <div
                         onClick={() => navigate("/finance/ledger")}
@@ -604,7 +602,7 @@ export default function SideBar({ show, handleClose }) {
                       </div>
                     </Nav.Item>
                   )}
-                  {hasAccess(role, 'finance:cash-drawer') && (
+                  {hasPermission(userTypes, 'finance:cash-drawer') && (
                     <Nav.Item className="mb-3" title="Cash Drawer">
                       <div
                         onClick={() => navigate("/finance/cash-drawer")}
@@ -621,7 +619,7 @@ export default function SideBar({ show, handleClose }) {
           </Card>
         ) : null}
 
-        {hasAccess(role, 'damage-loss') && (
+        {hasPermission(userTypes, 'damage-loss') && (
           <Nav.Item className={`mt-3 ${location.pathname === "/damage-loss" ? "mx-2" : ""}`}>
             <Nav.Link
               onClick={() => navigate("/damage-loss")}

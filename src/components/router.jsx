@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import LogIn from "./shared/login/login";
 import ProtectedRoute from "./protect-routes";
 import { Provider } from "react-redux";
 import store from "./shared/reduxForProtectingRoute/store";
-import { hasAccess } from "./shared/permissions";
+import { hasPermission } from "./shared/permissions/permissions";
 import AdminNavigations from "./admin/adminRoutes";
 import CustomerNavigations from "./customer/customerRoute";
 import FeedNavigations from "./feed/feedRouter";
@@ -26,20 +27,23 @@ import Dashboard from "./dashboard/dashbord";
  * Redirects unauthorised users to their default landing page.
  */
 const RoleRoute = ({ children, resource }) => {
-  const [role, setRole] = useState(null);
+  const userTypes = useSelector((state) => state.user?.userTypes || []);
 
-  useEffect(() => {
-    setRole(sessionStorage.getItem('role'));
-  }, []);
-
-  if (role === null) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
-  if (!hasAccess(role, resource)) {
-    // Redirect to the user's default landing page
-    if (role === 'store_keeper') return <Navigate to="/store/view-all" replace />;
-    if (role === 'sales_manager') return <Navigate to="/customer/view-all" replace />;
-    if (role === 'finance') return <Navigate to="/finance/add-sales" replace />;
-    return <Navigate to="/dashboard" replace />;
+  if (!hasPermission(userTypes, resource)) {
+    const defaultRoute = hasPermission(userTypes, 'dashboard')
+      ? '/dashboard'
+      : hasPermission(userTypes, 'customer')
+        ? '/customer/view-all'
+        : hasPermission(userTypes, 'store')
+          ? '/store/view-all'
+          : hasPermission(userTypes, 'finance:add-sales')
+            ? '/finance/add-sales'
+            : hasPermission(userTypes, 'showcase')
+              ? '/showcase/broken-showcase'
+              : '/';
+    return <Navigate to={defaultRoute} replace />;
   }
+
   return children;
 };
 
@@ -51,26 +55,26 @@ export default function RouterSwitch() {
         <Routes>
           <Route path="/" element={<LogIn />} />
           <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <RoleRoute resource="dashboard">
-                    <Dashboard/>
-                  </RoleRoute>
-                </ProtectedRoute>
-              }
-          />   
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <RoleRoute resource="dashboard">
+                  <Dashboard />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
           <Route
-              path="admin/*"
-              element={
-                <ProtectedRoute>
-                  <RoleRoute resource="admin">
-                    <AdminNavigations/>
-                  </RoleRoute>
-                </ProtectedRoute>
-              }
-          />        
-          
+            path="admin/*"
+            element={
+              <ProtectedRoute>
+                <RoleRoute resource="admin">
+                  <AdminNavigations />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="customer/*"
             element={
@@ -95,8 +99,8 @@ export default function RouterSwitch() {
             path="manage-fish/*"
             element={
               <ProtectedRoute>
-                <RoleRoute resource="manage-fish">
-                  <ManageNavigations/>
+                <RoleRoute resource="manage_fish">
+                  <ManageNavigations />
                 </RoleRoute>
               </ProtectedRoute>
             }
@@ -105,7 +109,7 @@ export default function RouterSwitch() {
             path="fish-processes/*"
             element={
               <ProtectedRoute>
-                <RoleRoute resource="fish-processes">
+                <RoleRoute resource="fish_processing">
                   <ProcessNavigations />
                 </RoleRoute>
               </ProtectedRoute>
@@ -145,7 +149,7 @@ export default function RouterSwitch() {
             path="damage-loss"
             element={
               <ProtectedRoute>
-                <RoleRoute resource="damage-loss">
+                <RoleRoute resource="damage_loss">
                   <DamageLoss />
                 </RoleRoute>
               </ProtectedRoute>

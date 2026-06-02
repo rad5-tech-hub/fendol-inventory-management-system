@@ -7,7 +7,8 @@ import styles from '../product.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { useNavigate } from "react-router-dom";
-import { hasAccess } from "../../shared/permissions";
+import { useSelector } from 'react-redux';
+import { hasPermission } from "../../shared/permissions/permissions";
 
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
@@ -23,7 +24,7 @@ export default function CreateProducts() {
         siteId: ""
     });
 
-    const [userRole, setUserRole] = useState(null);
+    const userTypes = useSelector((state) => state.user?.userTypes || []);
     const [sites, setSites] = useState([]);
     const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
     const siteSelectRef = useRef(null);
@@ -38,12 +39,7 @@ export default function CreateProducts() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        const role = sessionStorage.getItem('role');
-        setUserRole(role);
-    }, []);
-
-    const canAssignSite = hasAccess(userRole, 'products', 'assign-site');
+    const canAssignSite = hasPermission(userTypes, 'products', 'assign-site');
 
     useEffect(() => {
         if (!canAssignSite) return;
@@ -56,7 +52,7 @@ export default function CreateProducts() {
             }
         };
         fetchSites();
-    }, [userRole]);
+    }, [canAssignSite]);
 
     // Function to format numbers with commas
     const formatNumberWithCommas = (value) => {
@@ -228,7 +224,7 @@ export default function CreateProducts() {
                                                 <span>{sites.find(s => s.id === formData.siteId)?.name || 'Select a site'}</span>
                                                 <span className={`${styles.chevron} ${siteDropdownOpen ? styles.chevronUp : ''}`}>
                                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                                        <path d="M3 4.5L6 7.5L9 4.5" stroke="#6C757D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        <path d="M3 4.5L6 7.5L9 4.5" stroke="#6C757D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                     </svg>
                                                 </span>
                                             </button>

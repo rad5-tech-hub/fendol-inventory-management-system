@@ -3,7 +3,8 @@ import { useSelector } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
 
 const ProtectedRoute = ({ children }) => {
-  const auth = useSelector((store) => store.authenticated);
+  const isAuth = useSelector((store) => store.authenticated);
+  const user = useSelector((store) => store.user);
   const token = sessionStorage.getItem("authToken");
   const navigate = useNavigate();
   const [isTokenValid, setIsTokenValid] = useState(true);
@@ -38,7 +39,7 @@ const ProtectedRoute = ({ children }) => {
 
   // Check token on mount and when it changes
   useEffect(() => {
-    if (!token || !auth) {
+    if (!token || !isAuth) {
       sessionStorage.removeItem("authToken");
       sessionStorage.removeItem("role");
       setIsTokenValid(false);
@@ -58,10 +59,10 @@ const ProtectedRoute = ({ children }) => {
 
     // Cleanup interval on unmount
     return () => clearInterval(interval);
-  }, [token, auth, navigate]);
+  }, [token, isAuth, navigate]);
 
   // If no token, not authenticated, or token is invalid, redirect to login
-  if (!token || !auth || !isTokenValid) {
+  if (!token || !isAuth || !isTokenValid) {
     return <Navigate to="/" replace />;
   }
 

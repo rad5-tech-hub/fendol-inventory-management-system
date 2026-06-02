@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate";
+import { useSelector } from 'react-redux';
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../admin-styles.module.scss';
-import { BsExclamationTriangleFill} from "react-icons/bs";
+import { BsExclamationTriangleFill } from "react-icons/bs";
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Spinner, Alert, Form } from 'react-bootstrap';
 import { FaTrashAlt, FaUserPlus, FaFilter, FaEdit } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
-import { hasAccess } from '../../shared/permissions';
+import { hasPermission } from '../../shared/permissions/permissions';
 
 const avatarColors = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47'];
 
@@ -27,10 +28,10 @@ const formatRole = (role) => {
 const formatDate = (isoDate) => {
   if (!isoDate) return '—';
   const date = new Date(isoDate);
-  const d  = String(date.getDate()).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
   const mo = String(date.getMonth() + 1).padStart(2, '0');
   const yr = date.getFullYear();
-  const h  = String(date.getHours()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
   const mi = String(date.getMinutes()).padStart(2, '0');
   return `${d}/${mo}/${yr} ${h}:${mi}`;
 };
@@ -43,9 +44,9 @@ export default function ViewAll() {
   const [adminsPerPage] = useState(10);
   const [showSidebar, setShowSidebar] = useState(false);
   const [filterSite, setFilterSite] = useState('');
-  const [userRole, setUserRole] = useState(null);
   const [sites, setSites] = useState([]);
   const navigate = useNavigate();
+  const userTypes = useSelector((state) => state.user?.userTypes || []);
 
   const fetchData = async () => {
     try {
@@ -66,13 +67,10 @@ export default function ViewAll() {
 
   useEffect(() => {
     fetchData();
-    const r = sessionStorage.getItem('role');
-    setUserRole(sessionStorage.getItem('role'));
   }, []);
 
   useEffect(() => {
-    const role = sessionStorage.getItem('role');
-    if (!hasAccess(role, 'admin', 'create')) return;
+    if (!hasPermission(userTypes, 'admin', 'create')) return;
     const fetchSites = async () => {
       try {
         const res = await ApiV2.get('/v2/all-site');
@@ -82,7 +80,7 @@ export default function ViewAll() {
       }
     };
     fetchSites();
-  }, []);
+  }, [userTypes]);
 
   const handleDelete = async (adminId) => {
     const loadingToast = toast.loading("Deleting Admin...", { className: 'dark-toast' });
@@ -146,7 +144,7 @@ export default function ViewAll() {
               </div>
             </div>
 
-            {hasAccess(userRole, 'admin', 'create') && (
+            {hasPermission(userTypes, 'admin', 'create') && (
               <div className={styles.filterBar}>
                 <Form.Select
                   className={styles.siteSelect}
@@ -221,22 +219,22 @@ export default function ViewAll() {
                               <FaEdit
                                 style={{ cursor: 'pointer', color: '#512728' }}
                                 title="Edit Admin"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate('/admin/add-new-admin', {
-                                      state: {
-                                        isEdit: true,
-                                        adminData: {
-                                          id: admin.id,
-                                          fullName: admin.fullName,
-                                          email: admin.email,
-                                          role: admin.role,
-                                          roleId: admin.roleRef?.id || admin.roleId || '',
-                                          UserSites: admin.UserSites || [],
-                                        }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate('/admin/add-new-admin', {
+                                    state: {
+                                      isEdit: true,
+                                      adminData: {
+                                        id: admin.id,
+                                        fullName: admin.fullName,
+                                        email: admin.email,
+                                        role: admin.role,
+                                        roleId: admin.roleRef?.id || admin.roleId || '',
+                                        UserSites: admin.UserSites || [],
                                       }
-                                    });
-                                  }}
+                                    }
+                                  });
+                                }}
                               />
                               <FaTrashAlt
                                 style={{ cursor: 'pointer', color: '#dc3545' }}
