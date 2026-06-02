@@ -59,7 +59,7 @@ export default function SideBar({ show, handleClose }) {
 
   const sidebarContent = (
     <Nav className={`flex-column ${styles.navs}`}>
-      {role === "super_admin" && (
+      {(role === "super_admin" || role === "farm_manager") && (
         <Nav.Item className={`mt-4 ${location.pathname === "/dashboard" ? "mx-2" : ""}`}>
           <Nav.Link
             onClick={() => navigate("/dashboard")}
@@ -71,7 +71,7 @@ export default function SideBar({ show, handleClose }) {
       )}
       <div className={`mb-4 ${styles.navigationDropdown}`}>
         {/* Admin navigations */}
-        {role === "super_admin" && (
+        {(role === "super_admin" || role === "farm_manager") && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("admin")}
@@ -88,17 +88,19 @@ export default function SideBar({ show, handleClose }) {
             <Collapse in={open.admin} style={{ transitionDuration: "0s" }}>
               <div id="admin-collapse-text" className="px-2">
                 <Card.Body className={styles.navigationLinks}>
-                  <Nav.Item className="mb-3">
-                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-add-new">Add a new admin</Tooltip>}>
-                      <div
-                        onClick={() => navigate("/admin/add-new-admin")}
-                        className={`${location.pathname === "/admin/add-new-admin" ? styles.activeLink : styles.nonactiveLink}`}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <FaRegCircle size={16} className="me-1" /> Add New
-                      </div>
-                    </OverlayTrigger>
-                  </Nav.Item>
+                  {role === "super_admin" && (
+                    <Nav.Item className="mb-3">
+                      <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-add-new">Add a new admin</Tooltip>}>
+                        <div
+                          onClick={() => navigate("/admin/add-new-admin")}
+                          className={`${location.pathname === "/admin/add-new-admin" ? styles.activeLink : styles.nonactiveLink}`}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <FaRegCircle size={16} className="me-1" /> Add New
+                        </div>
+                      </OverlayTrigger>
+                    </Nav.Item>
+                  )}
                   <Nav.Item className="my-3">
                     <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-view-all">View all admins</Tooltip>}>
                       <div
@@ -157,7 +159,7 @@ export default function SideBar({ show, handleClose }) {
         </Card>
 
         {/* Pond navigation */}
-        {role !== "sales_manager" && (
+        {role !== "sales_manager" && role !== "store_keeper" && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("ponds")}
@@ -199,7 +201,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Manage Fish navigation */}
-        {role !== "sales_manager" && (
+        {role !== "sales_manager" && role !== "store_keeper" && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("manage_fish")}
@@ -277,7 +279,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Fish Processing navigation */}
-        {role !== "sales_manager" && (
+        {role !== "sales_manager" && role !== "store_keeper" && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("fish_processes")}
@@ -399,44 +401,48 @@ export default function SideBar({ show, handleClose }) {
         </Card>
 
         {/* Site Management navigation */}
-        <Card className={styles.card}>
-          <Card.Header
-            onClick={() => handleToggle("site_management")}
-            aria-controls="site_management-collapse-text"
-            aria-expanded={open.site_management}
-            style={{ cursor: "pointer" }}
-            className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
-          >
-            <span className={`${styles.title}`}>
-              <FaMapMarkerAlt size={25} className="me-1" /> Site Management
-            </span>
-            <span>{open.site_management ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
-          </Card.Header>
-          <Collapse in={open.site_management} style={{ transitionDuration: "0s" }}>
-            <div id="site_management-collapse-text" className="px-2">
-              <Card.Body className={styles.navigationLinks}>
-                <Nav.Item className="mb-3">
-                  <div
-                    onClick={() => navigate("/site-management/create")}
-                    className={`${location.pathname === "/site-management/create" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> Create Site
-                  </div>
-                </Nav.Item>
-                <Nav.Item className="my-3">
-                  <div
-                    onClick={() => navigate("/site-management/view-all")}
-                    className={`${location.pathname === "/site-management/view-all" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> View All
-                  </div>
-                </Nav.Item>
-              </Card.Body>
-            </div>
-          </Collapse>
-        </Card>
+        {(role === "super_admin" || role === "farm_manager") && (
+          <Card className={styles.card}>
+            <Card.Header
+              onClick={() => handleToggle("site_management")}
+              aria-controls="site_management-collapse-text"
+              aria-expanded={open.site_management}
+              style={{ cursor: "pointer" }}
+              className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
+            >
+              <span className={`${styles.title}`}>
+                <FaMapMarkerAlt size={25} className="me-1" /> Site Management
+              </span>
+              <span>{open.site_management ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
+            </Card.Header>
+            <Collapse in={open.site_management} style={{ transitionDuration: "0s" }}>
+              <div id="site_management-collapse-text" className="px-2">
+                <Card.Body className={styles.navigationLinks}>
+                  {role === "super_admin" && (
+                    <Nav.Item className="mb-3">
+                      <div
+                        onClick={() => navigate("/site-management/create")}
+                        className={`${location.pathname === "/site-management/create" ? styles.activeLink : styles.nonactiveLink}`}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <FaRegCircle size={16} className="me-1" /> Create Site
+                      </div>
+                    </Nav.Item>
+                  )}
+                  <Nav.Item className="my-3">
+                    <div
+                      onClick={() => navigate("/site-management/view-all")}
+                      className={`${location.pathname === "/site-management/view-all" ? styles.activeLink : styles.nonactiveLink}`}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FaRegCircle size={16} className="me-1" /> View All
+                    </div>
+                  </Nav.Item>
+                </Card.Body>
+              </div>
+            </Collapse>
+          </Card>
+        )}
 
         {/* Feed navigation */}
         {role !== "sales_manager" && (
@@ -600,7 +606,7 @@ export default function SideBar({ show, handleClose }) {
           </Collapse>
         </Card>
 
-        {role !== "sales_manager" && (
+        {role !== "sales_manager" && role !== "store_keeper" && (
           <Nav.Item className={`mt-3 ${location.pathname === "/damage-loss" ? "mx-2" : ""}`}>
             <Nav.Link
               onClick={() => navigate("/damage-loss")}

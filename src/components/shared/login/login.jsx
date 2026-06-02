@@ -61,8 +61,10 @@ export default function LogIn() {
                     className: 'dark-toast',
                 });
     
-                if (role === 'super_admin') {
+                if (role === 'super_admin' || role === 'farm_manager') {
                     navigate("/dashboard");
+                } else if (role === 'store_keeper') {
+                    navigate('/store/view-all');
                 } else {
                     navigate('/customer/view-all');
                 }

@@ -16,15 +16,9 @@ const AdminNavigations = () => {
     return <div>Loading...</div>;
   }
 
-  // If the user is not a super admin, redirect or show an unauthorized message
-  if (role !== 'super_admin') {
-    return console.log('not super admin');
-  }
-
-  // If the user is a super admin, render the protected routes
   return (
     <Routes>
-      <Route path="add-new-admin" element={<AddNew />} />
+      {role === 'super_admin' && <Route path="add-new-admin" element={<AddNew />} />}
       <Route path="view-all" element={<ViewAll />} />
     </Routes>
   );
