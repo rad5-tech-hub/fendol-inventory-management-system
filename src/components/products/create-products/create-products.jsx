@@ -7,6 +7,7 @@ import styles from '../product.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { useNavigate } from "react-router-dom";
+import { hasAccess } from "../../shared/permissions";
 
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
@@ -42,10 +43,10 @@ export default function CreateProducts() {
         setUserRole(role);
     }, []);
 
-    const isSuperAdmin = userRole === 'super_admin';
+    const canAssignSite = hasAccess(userRole, 'products', 'assign-site');
 
     useEffect(() => {
-        if (userRole !== 'super_admin') return;
+        if (!canAssignSite) return;
         const fetchSites = async () => {
             try {
                 const res = await ApiV2.get('/v2/all-site');
@@ -92,7 +93,7 @@ export default function CreateProducts() {
         e.preventDefault();
         setLoader(true);
 
-        if (isSuperAdmin && !formData.siteId) {
+        if (canAssignSite && !formData.siteId) {
             toast.error("Please select a site.", { className: 'dark-toast' });
             setLoader(false);
             return;
@@ -163,7 +164,7 @@ export default function CreateProducts() {
                     <main>
                         <ToastContainer />
                         <Form className={styles.create_form} onSubmit={handleSubmit}>
-                            <h4 className="mt-3 mb-5">{isSuperAdmin ? 'Create & Assign Product' : 'Create Product'}</h4>
+                            <h4 className="mt-3 mb-5">{canAssignSite ? 'Create & Assign Product' : 'Create Product'}</h4>
                             <Row xxl={2} xl={2} lg={2} md={1}>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Product Name</Form.Label>
@@ -215,7 +216,7 @@ export default function CreateProducts() {
                                         onChange={handleInputChange}
                                     />
                                 </Col>
-                                {isSuperAdmin && (
+                                {canAssignSite && (
                                     <Col className="mb-4">
                                         <Form.Label className="fw-semibold">Assign to Site</Form.Label>
                                         <div className={styles.customSelect} ref={siteSelectRef}>

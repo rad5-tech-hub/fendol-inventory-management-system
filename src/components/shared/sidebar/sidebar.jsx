@@ -12,6 +12,7 @@ import { RiStoreFill } from "react-icons/ri";
 import { MdOutlinePointOfSale } from "react-icons/md";
 import styles from "./siderbar.module.scss";
 import { useLocation, useNavigate } from "react-router-dom";
+import { hasAccess } from "../permissions";
 
 export default function SideBar({ show, handleClose }) {
   const location = useLocation();
@@ -59,7 +60,7 @@ export default function SideBar({ show, handleClose }) {
 
   const sidebarContent = (
     <Nav className={`flex-column ${styles.navs}`}>
-      {(role === "super_admin" || role === "farm_manager") && (
+      {hasAccess(role, 'dashboard') && (
         <Nav.Item className={`mt-4 ${location.pathname === "/dashboard" ? "mx-2" : ""}`}>
           <Nav.Link
             onClick={() => navigate("/dashboard")}
@@ -71,7 +72,7 @@ export default function SideBar({ show, handleClose }) {
       )}
       <div className={`mb-4 ${styles.navigationDropdown}`}>
         {/* Admin navigations */}
-        {(role === "super_admin" || role === "farm_manager") && (
+        {hasAccess(role, 'admin') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("admin")}
@@ -88,7 +89,7 @@ export default function SideBar({ show, handleClose }) {
             <Collapse in={open.admin} style={{ transitionDuration: "0s" }}>
               <div id="admin-collapse-text" className="px-2">
                 <Card.Body className={styles.navigationLinks}>
-                  {role === "super_admin" && (
+                  {hasAccess(role, 'admin', 'create') && (
                     <Nav.Item className="mb-3">
                       <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-add-new">Add a new admin</Tooltip>}>
                         <div
@@ -119,47 +120,49 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Customer navigation */}
-        <Card className={styles.card}>
-          <Card.Header
-            style={{ cursor: "pointer" }}
-            onClick={() => handleToggle("customer")}
-            aria-controls="customer-collapse-text"
-            aria-expanded={open.customer}
-            className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
-          >
-            <span className={`${styles.title}`}>
-              <LuClipboardPenLine size={25} className="me-1" /> Customer
-            </span>
-            <span>{open.customer ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
-          </Card.Header>
-          <Collapse in={open.customer} style={{ transitionDuration: "0s" }}>
-            <div id="customer-collapse-text" className="px-2">
-              <Card.Body className={styles.navigationLinks}>
-                <Nav.Item className="mb-3">
-                  <div
-                    onClick={() => navigate("/customer/add")}
-                    className={`${location.pathname === "/customer/add" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> Add Customer
-                  </div>
-                </Nav.Item>
-                <Nav.Item className="my-3">
-                  <div
-                    onClick={() => navigate("/customer/view-all")}
-                    className={`${location.pathname === "/customer/view-all" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> View All
-                  </div>
-                </Nav.Item>
-              </Card.Body>
-            </div>
-          </Collapse>
-        </Card>
+        {hasAccess(role, 'customer') && (
+          <Card className={styles.card}>
+            <Card.Header
+              style={{ cursor: "pointer" }}
+              onClick={() => handleToggle("customer")}
+              aria-controls="customer-collapse-text"
+              aria-expanded={open.customer}
+              className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
+            >
+              <span className={`${styles.title}`}>
+                <LuClipboardPenLine size={25} className="me-1" /> Customer
+              </span>
+              <span>{open.customer ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
+            </Card.Header>
+            <Collapse in={open.customer} style={{ transitionDuration: "0s" }}>
+              <div id="customer-collapse-text" className="px-2">
+                <Card.Body className={styles.navigationLinks}>
+                  <Nav.Item className="mb-3">
+                    <div
+                      onClick={() => navigate("/customer/add")}
+                      className={`${location.pathname === "/customer/add" ? styles.activeLink : styles.nonactiveLink}`}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FaRegCircle size={16} className="me-1" /> Add Customer
+                    </div>
+                  </Nav.Item>
+                  <Nav.Item className="my-3">
+                    <div
+                      onClick={() => navigate("/customer/view-all")}
+                      className={`${location.pathname === "/customer/view-all" ? styles.activeLink : styles.nonactiveLink}`}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FaRegCircle size={16} className="me-1" /> View All
+                    </div>
+                  </Nav.Item>
+                </Card.Body>
+              </div>
+            </Collapse>
+          </Card>
+        )}
 
         {/* Pond navigation */}
-        {role !== "sales_manager" && role !== "store_keeper" && (
+        {hasAccess(role, 'ponds') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("ponds")}
@@ -201,7 +204,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Manage Fish navigation */}
-        {role !== "sales_manager" && role !== "store_keeper" && (
+        {hasAccess(role, 'manage-fish') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("manage_fish")}
@@ -279,7 +282,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Fish Processing navigation */}
-        {role !== "sales_manager" && role !== "store_keeper" && (
+        {hasAccess(role, 'fish-processes') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("fish_processes")}
@@ -321,87 +324,91 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Products navigation */}
-        <Card className={styles.card}>
-          <Card.Header
-            style={{ cursor: "pointer" }}
-            onClick={() => handleToggle("products")}
-            aria-controls="products-collapse-text"
-            aria-expanded={open.products}
-            className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
-          >
-            <span className={`${styles.title}`}>
-              <GiFriedFish size={25} className="me-1" /> Products
-            </span>
-            <span>{open.products ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
-          </Card.Header>
-          <Collapse in={open.products} style={{ transitionDuration: "0s" }}>
-            <div id="products-collapse-text" className="px-2">
-              <Card.Body className={styles.navigationLinks}>
-                <Nav.Item className="mb-3">
-                  <div
-                    onClick={() => navigate("/products/create-products")}
-                    className={`${location.pathname === "/products/create-products" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> Create Products
-                  </div>
-                </Nav.Item>
-                <Nav.Item className="my-3">
-                  <div
-                    onClick={() => navigate("/products/view-all")}
-                    className={`${location.pathname === "/products/view-all" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> View All
-                  </div>
-                </Nav.Item>
-              </Card.Body>
-            </div>
-          </Collapse>
-        </Card>
+        {hasAccess(role, 'products') && (
+          <Card className={styles.card}>
+            <Card.Header
+              style={{ cursor: "pointer" }}
+              onClick={() => handleToggle("products")}
+              aria-controls="products-collapse-text"
+              aria-expanded={open.products}
+              className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
+            >
+              <span className={`${styles.title}`}>
+                <GiFriedFish size={25} className="me-1" /> Products
+              </span>
+              <span>{open.products ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
+            </Card.Header>
+            <Collapse in={open.products} style={{ transitionDuration: "0s" }}>
+              <div id="products-collapse-text" className="px-2">
+                <Card.Body className={styles.navigationLinks}>
+                  <Nav.Item className="mb-3">
+                    <div
+                      onClick={() => navigate("/products/create-products")}
+                      className={`${location.pathname === "/products/create-products" ? styles.activeLink : styles.nonactiveLink}`}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FaRegCircle size={16} className="me-1" /> Create Products
+                    </div>
+                  </Nav.Item>
+                  <Nav.Item className="my-3">
+                    <div
+                      onClick={() => navigate("/products/view-all")}
+                      className={`${location.pathname === "/products/view-all" ? styles.activeLink : styles.nonactiveLink}`}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FaRegCircle size={16} className="me-1" /> View All
+                    </div>
+                  </Nav.Item>
+                </Card.Body>
+              </div>
+            </Collapse>
+          </Card>
+        )}
 
         {/* Showcase navigation */}
-        <Card className={styles.card}>
-          <Card.Header
-            onClick={() => handleToggle("showcase")}
-            aria-controls="showcase-collapse-text"
-            aria-expanded={open.showcase}
-            style={{ cursor: "pointer" }}
-            className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
-          >
-            <span className={`${styles.title}`}>
-              <BsShopWindow size={25} className="me-1" /> Showcase
-            </span>
-            <span>{open.showcase ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
-          </Card.Header>
-          <Collapse in={open.showcase} style={{ transitionDuration: "0s" }}>
-            <div id="showcase-collapse-text" className="px-2">
-              <Card.Body className={styles.navigationLinks}>
-                <Nav.Item className="mb-3">
-                  <div
-                    onClick={() => navigate("/showcase/broken-showcase")}
-                    className={`${location.pathname === "/showcase/broken-showcase" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> Broken Showcase
-                  </div>
-                </Nav.Item>
-                <Nav.Item className="mb-3">
-                  <div
-                    onClick={() => navigate("/showcase/whole-showcase")}
-                    className={`${location.pathname === "/showcase/whole-showcase" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> Whole Showcase
-                  </div>
-                </Nav.Item>
-              </Card.Body>
-            </div>
-          </Collapse>
-        </Card>
+        {hasAccess(role, 'showcase') && (
+          <Card className={styles.card}>
+            <Card.Header
+              onClick={() => handleToggle("showcase")}
+              aria-controls="showcase-collapse-text"
+              aria-expanded={open.showcase}
+              style={{ cursor: "pointer" }}
+              className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
+            >
+              <span className={`${styles.title}`}>
+                <BsShopWindow size={25} className="me-1" /> Showcase
+              </span>
+              <span>{open.showcase ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
+            </Card.Header>
+            <Collapse in={open.showcase} style={{ transitionDuration: "0s" }}>
+              <div id="showcase-collapse-text" className="px-2">
+                <Card.Body className={styles.navigationLinks}>
+                  <Nav.Item className="mb-3">
+                    <div
+                      onClick={() => navigate("/showcase/broken-showcase")}
+                      className={`${location.pathname === "/showcase/broken-showcase" ? styles.activeLink : styles.nonactiveLink}`}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FaRegCircle size={16} className="me-1" /> Broken Showcase
+                    </div>
+                  </Nav.Item>
+                  <Nav.Item className="mb-3">
+                    <div
+                      onClick={() => navigate("/showcase/whole-showcase")}
+                      className={`${location.pathname === "/showcase/whole-showcase" ? styles.activeLink : styles.nonactiveLink}`}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FaRegCircle size={16} className="me-1" /> Whole Showcase
+                    </div>
+                  </Nav.Item>
+                </Card.Body>
+              </div>
+            </Collapse>
+          </Card>
+        )}
 
         {/* Site Management navigation */}
-        {(role === "super_admin" || role === "farm_manager") && (
+        {hasAccess(role, 'site-management') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("site_management")}
@@ -418,7 +425,7 @@ export default function SideBar({ show, handleClose }) {
             <Collapse in={open.site_management} style={{ transitionDuration: "0s" }}>
               <div id="site_management-collapse-text" className="px-2">
                 <Card.Body className={styles.navigationLinks}>
-                  {role === "super_admin" && (
+                  {hasAccess(role, 'site-management', 'create') && (
                     <Nav.Item className="mb-3">
                       <div
                         onClick={() => navigate("/site-management/create")}
@@ -445,7 +452,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Feed navigation */}
-        {role !== "sales_manager" && (
+        {hasAccess(role, 'feed') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("feed")}
@@ -496,7 +503,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Store navigation */}
-        {role !== "sales_manager" && (
+        {hasAccess(role, 'store') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("store")}
@@ -547,66 +554,74 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Finance navigation */}
-        <Card className={styles.card}>
-          <Card.Header
-            style={{ cursor: "pointer" }}
-            onClick={() => handleToggle("finance")}
-            aria-controls="finance-collapse-text"
-            aria-expanded={open.finance}
-            className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
-          >
-            <span className={`${styles.title}`}>
-              <MdOutlinePointOfSale size={25} className="me-1" /> Finance
-            </span>
-            <span>{open.finance ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
-          </Card.Header>
-          <Collapse in={open.finance} style={{ transitionDuration: "0s" }}>
-            <div id="finance-collapse-text" className="px-2">
-              <Card.Body className={styles.navigationLinks}>
-                <Nav.Item className="mb-3" title="Make A Sale">
-                  <div
-                    onClick={() => navigate("/finance/add-sales")}
-                    className={`${location.pathname === "/finance/add-sales" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> Add Sales
-                  </div>
-                </Nav.Item>
-                <Nav.Item className="mb-3" title="Add Expenses">
-                  <div
-                    onClick={() => navigate("/finance/add-expenses")}
-                    className={`${location.pathname === "/finance/add-expenses" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> Add Expenses
-                  </div>
-                </Nav.Item>
-                {role === "super_admin" && (
-                  <Nav.Item className="mb-3" title="Financial Ledger">
-                    <div
-                      onClick={() => navigate("/finance/ledger")}
-                      className={`${location.pathname === "/finance/ledger" ? styles.activeLink : styles.nonactiveLink}`}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <FaRegCircle size={16} className="me-1" /> Finance Ledger
-                    </div>
-                  </Nav.Item>
-                )}
-                <Nav.Item className="mb-3" title="Cash Drawer">
-                  <div
-                    onClick={() => navigate("/finance/cash-drawer")}
-                    className={`${location.pathname === "/finance/cash-drawer" ? styles.activeLink : styles.nonactiveLink}`}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <FaRegCircle size={16} className="me-1" /> Cash Drawer
-                  </div>
-                </Nav.Item>
-              </Card.Body>
-            </div>
-          </Collapse>
-        </Card>
+        {hasAccess(role, 'finance:add-sales') || hasAccess(role, 'finance:add-expenses') || hasAccess(role, 'finance:ledger') || hasAccess(role, 'finance:cash-drawer') ? (
+          <Card className={styles.card}>
+            <Card.Header
+              style={{ cursor: "pointer" }}
+              onClick={() => handleToggle("finance")}
+              aria-controls="finance-collapse-text"
+              aria-expanded={open.finance}
+              className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
+            >
+              <span className={`${styles.title}`}>
+                <MdOutlinePointOfSale size={25} className="me-1" /> Finance
+              </span>
+              <span>{open.finance ? <FaCaretUp className="text-light" /> : <FaCaretDown className="text-light" />}</span>
+            </Card.Header>
+            <Collapse in={open.finance} style={{ transitionDuration: "0s" }}>
+              <div id="finance-collapse-text" className="px-2">
+                <Card.Body className={styles.navigationLinks}>
+                  {hasAccess(role, 'finance:add-sales') && (
+                    <Nav.Item className="mb-3" title="Make A Sale">
+                      <div
+                        onClick={() => navigate("/finance/add-sales")}
+                        className={`${location.pathname === "/finance/add-sales" ? styles.activeLink : styles.nonactiveLink}`}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <FaRegCircle size={16} className="me-1" /> Add Sales
+                      </div>
+                    </Nav.Item>
+                  )}
+                  {hasAccess(role, 'finance:add-expenses') && (
+                    <Nav.Item className="mb-3" title="Add Expenses">
+                      <div
+                        onClick={() => navigate("/finance/add-expenses")}
+                        className={`${location.pathname === "/finance/add-expenses" ? styles.activeLink : styles.nonactiveLink}`}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <FaRegCircle size={16} className="me-1" /> Add Expenses
+                      </div>
+                    </Nav.Item>
+                  )}
+                  {hasAccess(role, 'finance:ledger') && (
+                    <Nav.Item className="mb-3" title="Financial Ledger">
+                      <div
+                        onClick={() => navigate("/finance/ledger")}
+                        className={`${location.pathname === "/finance/ledger" ? styles.activeLink : styles.nonactiveLink}`}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <FaRegCircle size={16} className="me-1" /> Finance Ledger
+                      </div>
+                    </Nav.Item>
+                  )}
+                  {hasAccess(role, 'finance:cash-drawer') && (
+                    <Nav.Item className="mb-3" title="Cash Drawer">
+                      <div
+                        onClick={() => navigate("/finance/cash-drawer")}
+                        className={`${location.pathname === "/finance/cash-drawer" ? styles.activeLink : styles.nonactiveLink}`}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <FaRegCircle size={16} className="me-1" /> Cash Drawer
+                      </div>
+                    </Nav.Item>
+                  )}
+                </Card.Body>
+              </div>
+            </Collapse>
+          </Card>
+        ) : null}
 
-        {role !== "sales_manager" && role !== "store_keeper" && (
+        {hasAccess(role, 'damage-loss') && (
           <Nav.Item className={`mt-3 ${location.pathname === "/damage-loss" ? "mx-2" : ""}`}>
             <Nav.Link
               onClick={() => navigate("/damage-loss")}

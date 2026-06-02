@@ -10,6 +10,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from 'react-router-dom';
+import { hasAccess } from '../../shared/permissions';
 
 const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick }) => {
   if (!show) return null;
@@ -106,9 +107,9 @@ export default function ViewAllProducts() {
     setUserRole(role);
   }, []);
 
-  const isSuperAdmin = userRole === 'super_admin';
+  const canAssignSite = hasAccess(userRole, 'products', 'assign-site');
 
-  const groupedBySite = isSuperAdmin && viewMode === 'by-site'
+  const groupedBySite = canAssignSite && viewMode === 'by-site'
     ? products.reduce((acc, product) => {
         const siteName = product.site?.name || 'Unassigned';
         if (!acc[siteName]) acc[siteName] = [];
@@ -244,7 +245,7 @@ export default function ViewAllProducts() {
                     Manage and track inventory allocation across all aquaculture sites.
                   </p>
                 </div>
-                {isSuperAdmin && (
+                {canAssignSite && (
                   <button
                     className={styles.assignBtn}
                     onClick={() => navigate('/products/create')}
@@ -255,7 +256,7 @@ export default function ViewAllProducts() {
               </div>
 
               {/* ── Admin view-mode toggle ── */}
-              {isSuperAdmin && (
+              {canAssignSite && (
                 <div className={styles.filterBar}>
                   <button
                     className={viewMode === 'all' ? styles.filterBtnActive : styles.filterBtnOutline}
@@ -292,7 +293,7 @@ export default function ViewAllProducts() {
               )}
 
               {/* ── SUPER ADMIN: By Site ── */}
-              {!loading && !error && products.length > 0 && isSuperAdmin && viewMode === 'by-site' && (
+              {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'by-site' && (
                 <>
                   {siteNames.map((siteName, siteIdx) => (
                     <div key={siteName} className={styles.siteCard}>
@@ -335,7 +336,7 @@ export default function ViewAllProducts() {
               )}
 
               {/* ── SUPER ADMIN: All Products flat ── */}
-              {!loading && !error && products.length > 0 && isSuperAdmin && viewMode === 'all' && (
+              {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'all' && (
                 <>
                   <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
                   <div className="d-flex justify-content-center mt-4">
@@ -363,7 +364,7 @@ export default function ViewAllProducts() {
               )}
 
               {/* ── NON-SUPER-ADMIN: flat list, no site headers ── */}
-              {!loading && !error && products.length > 0 && !isSuperAdmin && (
+              {!loading && !error && products.length > 0 && !canAssignSite && (
                 <>
                   <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
                   <div className="d-flex justify-content-center mt-4">

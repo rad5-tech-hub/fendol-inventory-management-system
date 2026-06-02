@@ -11,6 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Spinner, Alert, Form } from 'react-bootstrap';
 import { FaTrashAlt, FaUserPlus, FaFilter, FaEdit } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
+import { hasAccess } from '../../shared/permissions';
 
 const avatarColors = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47'];
 
@@ -65,12 +66,13 @@ export default function ViewAll() {
 
   useEffect(() => {
     fetchData();
+    const r = sessionStorage.getItem('role');
     setUserRole(sessionStorage.getItem('role'));
   }, []);
 
   useEffect(() => {
     const role = sessionStorage.getItem('role');
-    if (role !== 'super_admin') return;
+    if (!hasAccess(role, 'admin', 'create')) return;
     const fetchSites = async () => {
       try {
         const res = await ApiV2.get('/v2/all-site');
@@ -144,7 +146,7 @@ export default function ViewAll() {
               </div>
             </div>
 
-            {userRole === 'super_admin' && (
+            {hasAccess(userRole, 'admin', 'create') && (
               <div className={styles.filterBar}>
                 <Form.Select
                   className={styles.siteSelect}

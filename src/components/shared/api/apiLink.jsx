@@ -50,6 +50,20 @@ Api.interceptors.request.use(
     }
 );
 
+// Response interceptor — handle 403 (backend RBAC enforcement)
+Api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 403) {
+            toast.error("Access denied. You do not have permission to perform this action.", {
+                position: toast.POSITION.TOP_CENTER,
+                autoClose: 5000,
+            });
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default Api;
 
 export const ApiV2 = axios.create({
@@ -82,6 +96,20 @@ ApiV2.interceptors.request.use(
         return config;
     },
     (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor — handle 403 (backend RBAC enforcement)
+ApiV2.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 403) {
+            toast.error("Access denied. You do not have permission to perform this action.", {
+                position: toast.POSITION.TOP_CENTER,
+                autoClose: 5000,
+            });
+        }
         return Promise.reject(error);
     }
 );

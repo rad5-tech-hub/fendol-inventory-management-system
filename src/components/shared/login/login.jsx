@@ -65,6 +65,8 @@ export default function LogIn() {
                     navigate("/dashboard");
                 } else if (role === 'store_keeper') {
                     navigate('/store/view-all');
+                } else if (role === 'finance') {
+                    navigate('/finance/add-sales');
                 } else {
                     navigate('/customer/view-all');
                 }

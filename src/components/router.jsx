@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LogIn from "./shared/login/login";
 import ProtectedRoute from "./protect-routes";
 import { Provider } from "react-redux";
 import store from "./shared/reduxForProtectingRoute/store";
+import { hasAccess } from "./shared/permissions";
 import AdminNavigations from "./admin/adminRoutes";
 import CustomerNavigations from "./customer/customerRoute";
 import FeedNavigations from "./feed/feedRouter";
@@ -19,8 +20,30 @@ import ManageNavigations from "./manage-fish/manageRoute";
 import { ToastContainer } from "react-toastify";
 import Dashboard from "./dashboard/dashbord";
 
-export default function RouterSwitch() {
+/**
+ * Role-protected route wrapper.
+ * Checks both authentication (ProtectedRoute) AND role-based access.
+ * Redirects unauthorised users to their default landing page.
+ */
+const RoleRoute = ({ children, resource }) => {
+  const [role, setRole] = useState(null);
 
+  useEffect(() => {
+    setRole(sessionStorage.getItem('role'));
+  }, []);
+
+  if (role === null) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+  if (!hasAccess(role, resource)) {
+    // Redirect to the user's default landing page
+    if (role === 'store_keeper') return <Navigate to="/store/view-all" replace />;
+    if (role === 'sales_manager') return <Navigate to="/customer/view-all" replace />;
+    if (role === 'finance') return <Navigate to="/finance/add-sales" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
+export default function RouterSwitch() {
   return (
     <Provider store={store}>
       <Router>
@@ -31,7 +54,9 @@ export default function RouterSwitch() {
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard/>
+                  <RoleRoute resource="dashboard">
+                    <Dashboard/>
+                  </RoleRoute>
                 </ProtectedRoute>
               }
           />   
@@ -39,7 +64,9 @@ export default function RouterSwitch() {
               path="admin/*"
               element={
                 <ProtectedRoute>
-                  <AdminNavigations/>
+                  <RoleRoute resource="admin">
+                    <AdminNavigations/>
+                  </RoleRoute>
                 </ProtectedRoute>
               }
           />        
@@ -48,7 +75,9 @@ export default function RouterSwitch() {
             path="customer/*"
             element={
               <ProtectedRoute>
-                <CustomerNavigations />
+                <RoleRoute resource="customer">
+                  <CustomerNavigations />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -56,7 +85,9 @@ export default function RouterSwitch() {
             path="ponds/*"
             element={
               <ProtectedRoute>
-                <ProductStagesNavigations />
+                <RoleRoute resource="ponds">
+                  <ProductStagesNavigations />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -64,7 +95,9 @@ export default function RouterSwitch() {
             path="manage-fish/*"
             element={
               <ProtectedRoute>
-                <ManageNavigations/>
+                <RoleRoute resource="manage-fish">
+                  <ManageNavigations/>
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -72,7 +105,9 @@ export default function RouterSwitch() {
             path="fish-processes/*"
             element={
               <ProtectedRoute>
-                <ProcessNavigations />
+                <RoleRoute resource="fish-processes">
+                  <ProcessNavigations />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -80,7 +115,9 @@ export default function RouterSwitch() {
             path="products/*"
             element={
               <ProtectedRoute>
-                <ProductNavigations />
+                <RoleRoute resource="products">
+                  <ProductNavigations />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -88,7 +125,9 @@ export default function RouterSwitch() {
             path="feed/*"
             element={
               <ProtectedRoute>
-                <FeedNavigations />
+                <RoleRoute resource="feed">
+                  <FeedNavigations />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -96,7 +135,9 @@ export default function RouterSwitch() {
             path="store/*"
             element={
               <ProtectedRoute>
-                <StoreNavigations />
+                <RoleRoute resource="store">
+                  <StoreNavigations />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -104,7 +145,9 @@ export default function RouterSwitch() {
             path="damage-loss"
             element={
               <ProtectedRoute>
-                <DamageLoss />
+                <RoleRoute resource="damage-loss">
+                  <DamageLoss />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -112,7 +155,9 @@ export default function RouterSwitch() {
             path="finance/*"
             element={
               <ProtectedRoute>
-                <FinanceNavigations />
+                <RoleRoute resource="finance:add-sales">
+                  <FinanceNavigations />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -120,7 +165,9 @@ export default function RouterSwitch() {
             path="showcase/*"
             element={
               <ProtectedRoute>
-                <ShowcaseNavigations />
+                <RoleRoute resource="showcase">
+                  <ShowcaseNavigations />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -128,7 +175,9 @@ export default function RouterSwitch() {
             path="site-management/*"
             element={
               <ProtectedRoute>
-                <SiteManagementNavigations />
+                <RoleRoute resource="site-management">
+                  <SiteManagementNavigations />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
