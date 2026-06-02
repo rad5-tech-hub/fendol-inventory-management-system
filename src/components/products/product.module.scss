@@ -428,3 +428,82 @@
 .collapseChevronClosed {
   transform: rotate(-90deg);
 }
+
+/* ── Custom site select dropdown ── */
+.customSelect {
+  position: relative;
+  width: 100%;
+}
+
+.selectTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  background: #F8F9FA;
+  border: 1px solid #CED4DA;
+  border-radius: 8px;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #212529;
+  cursor: pointer;
+  text-align: left;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.selectTrigger:focus {
+  border-color: #512728;
+  box-shadow: 0 0 0 0.2rem rgba(81, 39, 40, 0.15);
+}
+
+.chevron {
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+.chevronUp {
+  transform: rotate(180deg);
+}
+
+.selectDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #CED4DA;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  margin-top: 2px;
+  overflow: hidden;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.selectOption {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: #212529;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.selectOption:hover {
+  background: #F8F9FA;
+}
+.selectOptionActive {
+  background: #F1F3F5;
+  font-weight: 700;
+  color: #212529;
+}
+.selectOptionActive:hover {
+  background: #F1F3F5;
+}

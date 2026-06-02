@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -24,6 +24,18 @@ export default function CreateProducts() {
 
     const [userRole, setUserRole] = useState(null);
     const [sites, setSites] = useState([]);
+    const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
+    const siteSelectRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (siteSelectRef.current && !siteSelectRef.current.contains(e.target)) {
+                setSiteDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         const role = sessionStorage.getItem('role');
@@ -206,20 +218,45 @@ export default function CreateProducts() {
                                 {isSuperAdmin && (
                                     <Col className="mb-4">
                                         <Form.Label className="fw-semibold">Assign to Site</Form.Label>
-                                        <Form.Select
-                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                            name="siteId"
-                                            value={formData.siteId}
-                                            onChange={handleInputChange}
-                                            required
-                                        >
-                                            <option value="" disabled>Select a site</option>
-                                            {sites.map((site) => (
-                                                <option key={site.id} value={site.id}>
-                                                    {site.name}
-                                                </option>
-                                            ))}
-                                        </Form.Select>
+                                        <div className={styles.customSelect} ref={siteSelectRef}>
+                                            <button
+                                                type="button"
+                                                className={styles.selectTrigger}
+                                                onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
+                                            >
+                                                <span>{sites.find(s => s.id === formData.siteId)?.name || 'Select a site'}</span>
+                                                <span className={`${styles.chevron} ${siteDropdownOpen ? styles.chevronUp : ''}`}>
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                                        <path d="M3 4.5L6 7.5L9 4.5" stroke="#6C757D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    </svg>
+                                                </span>
+                                            </button>
+                                            {siteDropdownOpen && (
+                                                <div className={styles.selectDropdown}>
+                                                    <div
+                                                        className={`${styles.selectOption} ${!formData.siteId ? styles.selectOptionActive : ''}`}
+                                                        onClick={() => {
+                                                            setFormData({ ...formData, siteId: "" });
+                                                            setSiteDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        Select a site
+                                                    </div>
+                                                    {sites.map((site) => (
+                                                        <div
+                                                            key={site.id}
+                                                            className={`${styles.selectOption} ${site.id === formData.siteId ? styles.selectOptionActive : ''}`}
+                                                            onClick={() => {
+                                                                setFormData({ ...formData, siteId: site.id });
+                                                                setSiteDropdownOpen(false);
+                                                            }}
+                                                        >
+                                                            {site.name}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </Col>
                                 )}
                             </Row>

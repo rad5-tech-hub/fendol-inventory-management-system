@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -21,7 +21,19 @@ export default function CreateSite() {
     const [loading, setLoading] = useState(false);
     const [siteTypes, setSiteTypes] = useState([]);
     const [showSidebar, setShowSidebar] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const selectRef = useRef(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (selectRef.current && !selectRef.current.contains(e.target)) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -145,17 +157,42 @@ export default function CreateSite() {
                                 required={!isEdit}
                             />
                             <Form.Label className="fw-semibold mt-4">Site Type</Form.Label>
-                            <Form.Select
-                                className={`py-2 shadow-none ${styles.siteSelect}`}
-                                style={{ maxWidth: '320px' }}
-                                value={typeId}
-                                onChange={(e) => setTypeId(e.target.value)}
-                            >
-                                {siteTypes.length === 0 && <option value="">Select site type</option>}
-                                {siteTypes.map((type) => (
-                                    <option key={type.id} value={type.id}>{type.name}</option>
-                                ))}
-                            </Form.Select>
+                            <div className={styles.customSelect} ref={selectRef} style={{ maxWidth: '320px' }}>
+                                <button
+                                    type="button"
+                                    className={styles.selectTrigger}
+                                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                                >
+                                    <span>{siteTypes.find(t => t.id === typeId)?.name || 'Select site type'}</span>
+                                    <span className={`${styles.chevron} ${dropdownOpen ? styles.chevronUp : ''}`}>
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                            <path d="M3 4.5L6 7.5L9 4.5" stroke="#6C757D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                                {dropdownOpen && (
+                                    <div className={styles.selectDropdown}>
+                                        {siteTypes.length === 0 && (
+                                            <div className={styles.selectOption} style={{ color: '#8C949B', fontStyle: 'italic' }}>
+                                                No site types available
+                                            </div>
+                                        )}
+                                        {siteTypes.map((type) => (
+                                            <div
+                                                key={type.id}
+                                                className={`${styles.selectOption} ${type.id === typeId ? styles.selectOptionActive : ''}`}
+                                                onClick={() => {
+                                                    setTypeId(type.id);
+                                                    setSiteType(type.name);
+                                                    setDropdownOpen(false);
+                                                }}
+                                            >
+                                                {type.name}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                             <div className="d-flex justify-content-end my-4 gap-2">
                                 <Button
                                     variant="outline-secondary"
