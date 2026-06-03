@@ -21,7 +21,8 @@ export default function CreateProducts() {
         productWeight: "",
         unit: "",
         basePrice: "",
-        siteId: ""
+        siteId: "",
+        showOnwebsite: false
     });
 
     const userTypes = useSelector((state) => state.user?.userTypes || []);
@@ -105,6 +106,7 @@ export default function CreateProducts() {
                 productWeight: parseFloat(formData.productWeight) || 0,
                 unit: formData.unit,
                 basePrice: parseFloat(removeCommas(formData.basePrice)) || 0,
+                showOnwebsite: formData.showOnwebsite,
             };
             if (formData.siteId) formDataToSubmit.siteId = formData.siteId;
 
@@ -116,7 +118,8 @@ export default function CreateProducts() {
                 productWeight: "",
                 unit: "",
                 basePrice: "",
-                siteId: ""
+                siteId: "",
+                showOnwebsite: false
             });
 
             // After a successful API call
@@ -256,6 +259,20 @@ export default function CreateProducts() {
                                         </div>
                                     </Col>
                                 )}
+                            </Row>
+                            <Row>
+                                <Col className="mb-4">
+                                    <Form.Check
+                                        type="checkbox"
+                                        id="showOnwebsite"
+                                        name="showOnwebsite"
+                                        label="Show on website"
+                                        checked={formData.showOnwebsite}
+                                        onChange={(e) => setFormData({ ...formData, showOnwebsite: e.target.checked })}
+                                        className="fw-semibold"
+                                        style={{ fontSize: '1rem' }}
+                                    />
+                                </Col>
                             </Row>
 
                             <div className="d-flex justify-content-end mt-5">
