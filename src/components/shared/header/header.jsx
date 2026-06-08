@@ -29,9 +29,11 @@ export default function Header({ toggleSidebar }) {
   let userName = '';
   try {
     const decoded = jwtDecode(token);
-    userName = decoded?.name || decoded?.fullName || decoded?.email || sessionStorage.getItem('role') || 'User';
+    const primaryRole = sessionStorage.getItem('primaryRole');
+    userName = decoded?.name || decoded?.fullName || decoded?.email || (primaryRole ? primaryRole.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '') || 'User';
   } catch {
-    userName = sessionStorage.getItem('role') || 'User';
+    const primaryRole = sessionStorage.getItem('primaryRole');
+    userName = primaryRole ? primaryRole.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'User';
   }
   const userInitial = userName.charAt(0).toUpperCase();
 

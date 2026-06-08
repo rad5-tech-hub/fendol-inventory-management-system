@@ -99,7 +99,7 @@ export default function RouterSwitch() {
             path="manage-fish/*"
             element={
               <ProtectedRoute>
-                <RoleRoute resource="manage_fish">
+                <RoleRoute resource="manage-fish">
                   <ManageNavigations />
                 </RoleRoute>
               </ProtectedRoute>
@@ -109,7 +109,7 @@ export default function RouterSwitch() {
             path="fish-processes/*"
             element={
               <ProtectedRoute>
-                <RoleRoute resource="fish_processing">
+                <RoleRoute resource="fish-processes">
                   <ProcessNavigations />
                 </RoleRoute>
               </ProtectedRoute>
@@ -149,7 +149,7 @@ export default function RouterSwitch() {
             path="damage-loss"
             element={
               <ProtectedRoute>
-                <RoleRoute resource="damage_loss">
+                <RoleRoute resource="damage-loss">
                   <DamageLoss />
                 </RoleRoute>
               </ProtectedRoute>

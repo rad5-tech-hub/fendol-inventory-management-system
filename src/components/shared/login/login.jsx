@@ -12,7 +12,7 @@ import { useDispatch } from "react-redux";
 import Logo from '../../../assests/logo.png';
 import { loginUser } from "../reduxForProtectingRoute/actions/authActions";
 import { jwtDecode } from 'jwt-decode';
-import { extractUserTypes } from '../permissions/permissions';
+import { extractUserTypes, normaliseRoleType } from '../permissions/permissions';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function LogIn() {
@@ -41,12 +41,12 @@ export default function LogIn() {
 
         try {
             const response = await Api.post('/login', loginData);
-            const { token, role, success } = response.data; // Destructure response data
+            const { token, role, primaryRole, success } = response.data;
 
             if (success) {
-                // Store token and role in sessionStorage
                 sessionStorage.setItem('authToken', token);
-                sessionStorage.setItem('role', role);
+                const rawPrimary = primaryRole || (Array.isArray(response.data.roles) && response.data.roles.length > 0 ? response.data.roles[0].type : '') || role || '';
+                sessionStorage.setItem('primaryRole', normaliseRoleType(rawPrimary));
 
                 // Decode token and extract user types safely with fallback
                 const decoded = (() => {

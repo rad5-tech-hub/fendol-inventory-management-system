@@ -20,6 +20,7 @@ const ProtectedRoute = ({ children }) => {
           // Token has expired
           sessionStorage.removeItem("authToken");
           sessionStorage.removeItem("role");
+          sessionStorage.removeItem("primaryRole");
           setIsTokenValid(false);
           navigate("/"); // Navigate to login page
           return false;
@@ -29,6 +30,7 @@ const ProtectedRoute = ({ children }) => {
         console.error("Error decoding token:", error);
         sessionStorage.removeItem("authToken");
         sessionStorage.removeItem("role");
+        sessionStorage.removeItem("primaryRole");
         setIsTokenValid(false);
         navigate("/");
         return false;
@@ -42,6 +44,7 @@ const ProtectedRoute = ({ children }) => {
     if (!token || !isAuth) {
       sessionStorage.removeItem("authToken");
       sessionStorage.removeItem("role");
+      sessionStorage.removeItem("primaryRole");
       setIsTokenValid(false);
       navigate("/");
       return;

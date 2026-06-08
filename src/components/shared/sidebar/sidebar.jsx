@@ -202,7 +202,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Manage Fish navigation */}
-        {hasPermission(userTypes, 'manage_fish') && (
+        {hasPermission(userTypes, 'manage-fish') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("manage_fish")}
@@ -280,7 +280,7 @@ export default function SideBar({ show, handleClose }) {
         )}
 
         {/* Fish Processing navigation */}
-        {hasPermission(userTypes, 'fish_processing') && (
+        {hasPermission(userTypes, 'fish-processes') && (
           <Card className={styles.card}>
             <Card.Header
               onClick={() => handleToggle("fish_processes")}

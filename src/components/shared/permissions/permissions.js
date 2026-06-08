@@ -84,6 +84,17 @@ export const ROLE_TYPES = {
 export const ROLES = Object.values(ROLE_TYPES);
 
 /**
+ * Normalise a role type string — corrects known backend typos/spellings
+ * so the permission matrix can match consistently.
+ */
+function normaliseRoleType(type) {
+	const aliases = {
+		'farm_manger': 'farm_manager',   // backend typo (missing 'a')
+	};
+	return aliases[type] || type;
+}
+
+/**
  * Extract role type strings from the decoded JWT.
  * 
  * Tries decoded.roles[].type first (new structure).
@@ -98,7 +109,7 @@ export function extractUserTypes(decoded) {
 
 	// Try the new roles array structure
 	if (Array.isArray(decoded.roles) && decoded.roles.length > 0) {
-		return decoded.roles.map(r => r.type).filter(Boolean);
+		return decoded.roles.map(r => normaliseRoleType(r.type)).filter(Boolean);
 	}
 
 	// Fallback to top-level role field (legacy or transitional)
@@ -141,4 +152,6 @@ export function getAllowedRoles(resource, action) {
 	return ACCESS[key] || [];
 }
 
-export default { hasPermission, canRead, canCreate, canUpdate, canDelete, getAllowedRoles, ROLES, ROLE_TYPES, extractUserTypes };
+export { normaliseRoleType };
+
+export default { hasPermission, canRead, canCreate, canUpdate, canDelete, getAllowedRoles, ROLES, ROLE_TYPES, extractUserTypes, normaliseRoleType };
