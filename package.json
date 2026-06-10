@@ -10,10 +10,8 @@
     "axios": "^1.7.7",
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.6",
-
     "env-cmd": "^10.1.0",
     "jwt-decode": "^4.0.0",
-
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.4",
     "react-bootstrap-typeahead": "^7.0.0-rc.5",
@@ -25,6 +23,7 @@
     "react-router-dom": "^6.26.1",
     "react-toastify": "^10.0.5",
     "react-tooltip": "^5.28.0",
+    "recharts": "^3.8.1",
     "redux": "^5.0.1",
     "sass": "^1.77.8",
     "styled-components": "^6.1.13"

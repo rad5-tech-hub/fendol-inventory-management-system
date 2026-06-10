@@ -5,16 +5,18 @@ import { extractUserTypes } from '../../permissions/permissions';
 
 const token = sessionStorage.getItem('authToken');
 const getInitialUser = () => {
-  if (!token) return { userTypes: [] };
+  if (!token) return { userTypes: [], userSites: [] };
 
   try {
     const decoded = jwtDecode(token);
+    const userSites = decoded.sites || decoded.userSites || decoded.assignedSites || [];
     return {
       ...decoded,
       userTypes: extractUserTypes(decoded),
+      userSites: Array.isArray(userSites) ? userSites : [],
     };
   } catch {
-    return { userTypes: [] };
+    return { userTypes: [], userSites: [] };
   }
 };
 

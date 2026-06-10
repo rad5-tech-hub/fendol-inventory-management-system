@@ -23,6 +23,12 @@ const ACCESS = {
 	// ── Dashboard (all authenticated users) ──
 	dashboard: ['super_admin', 'farm_manager', 'store_keeper', 'sales_manager', 'finance'],
 
+	// ── Hatchery ──
+	hatchery: ['super_admin', 'farm_manager'],
+
+	// ── Batch Dashboard ──
+	'batch-dashboard': ['super_admin', 'farm_manager'],
+
 	// ── Admin ──
 	admin: ['super_admin'],
 	'admin:create': ['super_admin'],

@@ -3,11 +3,14 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product-stages.module.scss';
-import { BsExclamationTriangleFill, BsPencilFill, BsTrash } from "react-icons/bs";
+import { BsExclamationTriangleFill, BsPencilFill, BsTrash, BsSearch, BsDownload, BsThreeDotsVertical } from "react-icons/bs";
 import { Form, Button, Spinner, Alert, Modal, Popover, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import Api from "../../shared/api/apiLink";
+import Api, { ApiV2 } from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
+import { useSelector } from 'react-redux';
+import { hasPermission } from "../../shared/permissions/permissions";
+import { useNavigate } from 'react-router-dom';
 
 const ViewAllStages = () => {
   const [stages, setStages] = useState([]);
@@ -26,12 +29,35 @@ const ViewAllStages = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSidebar, setShowSidebar] = useState(false);
+  const [siteFilter, setSiteFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const itemsPerPage = 10;
   const [showModal, setShowModal] = useState(false);
   const [showMdModal, setShowMdModal] = useState(false);
   const [showSamplingModal, setShowSamplingModal] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [selectedNote, setSelectedNote] = useState(null);
+  const [sites, setSites] = useState([]);
+  const [showAside, setShowAside] = useState(false);
+  const [asideStage, setAsideStage] = useState(null);
+  const [openMenuStageId, setOpenMenuStageId] = useState(null);
+
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const canSeeSiteFilter = hasPermission(userTypes, 'site-management');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!canSeeSiteFilter) return;
+    const fetchSites = async () => {
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        setSites(Array.isArray(res.data?.data) ? res.data.data : []);
+      } catch (err) {
+        console.error('Failed to fetch sites:', err);
+      }
+    };
+    fetchSites();
+  }, [canSeeSiteFilter]);
 
   const handleNoteClick = (note) => {
     setSelectedNote(note);
@@ -81,9 +107,12 @@ const ViewAllStages = () => {
   const startIndex = currentPage * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
 
-  const filteredStages = stages.filter(stage =>
-    (stage.title?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-  );
+  const filteredStages = stages.filter(stage => {
+    const matchesSearch = (stage.title?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    const matchesStatus = statusFilter ? (stage.status?.toLowerCase() || '') === statusFilter.toLowerCase() : true;
+    return matchesSearch && matchesSite && matchesStatus;
+  });
 
   const handleEditStage = (stage) => {
     setSelectedStage(stage);
@@ -91,6 +120,15 @@ const ViewAllStages = () => {
     setModaltype('view all note'); // Default to notes view
     setNoteLoader(true); // Trigger note fetch
     fetchnote(stage.id);
+  };
+
+  const handleOpenAside = (stage) => {
+    setAsideStage(stage);
+    setShowAside(true);
+  };
+
+  const handleCloseAside = () => {
+    setShowAside(false);
   };
 
   const handleAddNote = () => {
@@ -232,6 +270,27 @@ const ViewAllStages = () => {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const handleExportCSV = () => {
+    const headers = ['Date Created', 'Pond Name', 'Description', 'Site', 'Current Stock'];
+    const rows = filteredStages.map((stage) => [
+      formatDate(stage.createdAt),
+      stage.title || '',
+      (stage.description || '').replace(/,/g, ''),
+      stage.site || '',
+      stage.quantity ?? '',
+    ]);
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ponds-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <section className={`${styles.body}`}>
       <div className="sticky-top">
@@ -243,29 +302,120 @@ const ViewAllStages = () => {
         </div>
         <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
-            <div className="d-flex justify-content-between flex-column flex-md-row align-items-md-center mb-3">
-              <div className="mb-3">
-                <h4 className="mt-3 mb-1">View Ponds</h4>                
+            {/* ── Page Header ── */}
+            <div className="d-flex justify-content-between align-items-start mb-4 mt-3 flex-wrap gap-2">
+              <div>
+                <h4 className="mb-1 fw-bold" style={{ color: '#2E3135' }}>All Ponds</h4>
+                <p className="mb-0" style={{ fontSize: '0.875rem', color: '#8C949B' }}>
+                  Monitor and manage all active aquaculture ponds across your sites.
+                </p>
               </div>
-              <div className="w-50 w-md-25">
-                <input
-                  type="text"
-                  className="form-control shadow-none border-secondary"
-                  placeholder="Search by Pond...."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              <div className="d-flex gap-2">
+                <button
+                  className="btn fw-semibold d-flex align-items-center gap-1"
+                  style={{ backgroundColor: '#512728', color: '#fff', fontSize: '0.875rem', border: 'none' }}
+                  onClick={() => navigate('../create')}
+                >
+                  + Add Pond
+                </button>
               </div>
             </div>
 
+            {/* ── Filter Bar ── */}
+            <div className="border rounded p-3 mb-4" style={{ backgroundColor: '#fff' }}>
+              <div className="d-flex flex-wrap gap-3 align-items-end">
+                {canSeeSiteFilter && (
+                  <div style={{ minWidth: '155px' }}>
+                    <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Site</label>
+                    <select
+                      className="form-select form-select-sm shadow-none"
+                      value={siteFilter}
+                      onChange={(e) => setSiteFilter(e.target.value)}
+                    >
+                      <option value="">All Sites</option>
+                      {sites.map((site) => (
+                        <option key={site.id} value={site.name}>{site.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div style={{ minWidth: '155px' }}>
+                  <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Status</label>
+                  <select
+                    className="form-select form-select-sm shadow-none"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1, minWidth: '220px' }}>
+                  <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Search</label>
+                  <div className="input-group input-group-sm">
+                    <span className="input-group-text bg-white border-end-0">
+                      <BsSearch size={13} className="text-muted" />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control border-start-0 shadow-none"
+                      placeholder="Pond name or description..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Active filter chips — only render when at least one filter is active */}
+              {(siteFilter || statusFilter) && (
+                <div className="d-flex gap-2 flex-wrap mt-3 align-items-center">
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2E3135', letterSpacing: '0.03em' }}>
+                    ACTIVE FILTERS:
+                  </span>
+                  {siteFilter && (
+                    <span
+                      className="d-inline-flex align-items-center gap-1 px-2 py-1 rounded"
+                      style={{ backgroundColor: '#FFF3CD', color: '#856404', border: '1px solid #FFE69C', fontSize: '0.78rem', fontWeight: 500 }}
+                    >
+                      Site: {siteFilter}
+                      <span
+                        style={{ cursor: 'pointer', marginLeft: '2px', fontWeight: 700 }}
+                        onClick={() => setSiteFilter('')}
+                      >
+                        ×
+                      </span>
+                    </span>
+                  )}
+                  {statusFilter && (
+                    <span
+                      className="d-inline-flex align-items-center gap-1 px-2 py-1 rounded"
+                      style={{ backgroundColor: '#FFF3CD', color: '#856404', border: '1px solid #FFE69C', fontSize: '0.78rem', fontWeight: 500 }}
+                    >
+                      Status: {statusFilter}
+                      <span
+                        style={{ cursor: 'pointer', marginLeft: '2px', fontWeight: 700 }}
+                        onClick={() => setStatusFilter('')}
+                      >
+                        ×
+                      </span>
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Loading ── */}
             {loading && (
-              <div className="text-center">
+              <div className="text-center py-5">
                 <Spinner animation="border" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </Spinner>
               </div>
             )}
 
+            {/* ── Error ── */}
             {error && (
               <div className="d-flex justify-content-center">
                 <Alert variant="danger" className="text-center w-75 py-5">
@@ -274,6 +424,7 @@ const ViewAllStages = () => {
               </div>
             )}
 
+            {/* ── Empty State ── */}
             {!loading && !error && filteredStages.length === 0 && (
               <div className="d-flex justify-content-center">
                 <Alert variant="info" className="text-center w-75 py-5">
@@ -282,41 +433,116 @@ const ViewAllStages = () => {
               </div>
             )}
 
+            {/* ── Table + Pagination ── */}
             {!loading && !error && displayedStages.length > 0 && (
               <>
-                <table className={`${styles.styled_table} table-responsive`}>
-                  <thead>
-                    <tr>
-                      <th>DATE CREATED</th>
-                      <th>NAME</th>
-                      <th>QUANTITY</th>
-                      <th>DESCRIPTION</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayedStages.map((stage) => {
-                      const formattedCreatedAt = formatDate(stage.createdAt);
-                      return (
-                        <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-view-all">Click on {stage.title} to view its details</Tooltip>}>
-                        <tr
-                          key={stage.id}
-                          style={{ cursor: 'pointer' }}
-                          title={`View ${stage.title}`}
-                          onClick={() => handleEditStage(stage)}
-                        >
-                          <td>{formattedCreatedAt}</td>
-                          <td>{stage.title}</td>
-                          <td>{stage.quantity}</td>
-                          <td>{stage.description}</td>
-                        </tr>
-                        </OverlayTrigger>
-                        
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div className="border rounded overflow-hidden" style={{ backgroundColor: '#fff' }}>
+                  <table className="table table-hover mb-0" style={{ fontSize: '0.875rem' }}>
+                    <thead style={{ backgroundColor: '#F8F9FA' }}>
+                      <tr>
+                        <th className="py-3 px-3 border-0 fw-semibold" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>DATE CREATED</th>
+                        <th className="py-3 px-3 border-0 fw-semibold" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>POND NAME</th>
+                        <th className="py-3 px-3 border-0 fw-semibold" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>DESCRIPTION</th>
+                        <th className="py-3 px-3 border-0 fw-semibold" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>SITE</th>
+                        <th className="py-3 px-3 border-0 fw-semibold text-end" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>CURRENT STOCK</th>
+                        <th className="py-3 px-3 border-0 fw-semibold text-center" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayedStages.map((stage) => {
+                        const formattedCreatedAt = formatDate(stage.createdAt);
+                        const isHatchery = stage.site?.toLowerCase() === 'hatchery';
+                        return (
+                          <tr key={stage.id} style={{ borderTop: '1px solid #F0F0F0', cursor: 'pointer' }} onClick={() => handleOpenAside(stage)}>
+                            <td className="py-3 px-3 align-middle" style={{ color: '#8C949B' }}>{formattedCreatedAt}</td>
+                            <td className="py-3 px-3 align-middle">
+                              <span
+                                style={{ color: '#512728', fontWeight: 600 }}
+                              >
+                                {stage.title}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 align-middle" style={{ color: '#2E3135' }}>{stage.description}</td>
+                            <td className="py-3 px-3 align-middle">
+                              {stage.site ? (
+                                <span
+                                  className="px-2 py-1 rounded"
+                                  style={{
+                                    backgroundColor: isHatchery ? '#FFF3CD' : '#E9ECEF',
+                                    color: isHatchery ? '#856404' : '#495057',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {stage.site}
+                                </span>
+                              ) : (
+                                <span style={{ color: '#8C949B' }}>--</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 align-middle text-end" style={{ fontWeight: 600, color: '#2E3135' }}>
+                              {new Intl.NumberFormat().format(stage.quantity)} pcs
+                            </td>
+                            <td className="py-3 px-3 align-middle text-center" style={{ position: 'relative' }}>
+                              <span
+                                style={{ cursor: 'pointer', color: '#6C757D', padding: '4px 8px', display: 'inline-block' }}
+                                title="Actions"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuStageId(openMenuStageId === stage.id ? null : stage.id);
+                                }}
+                              >
+                                <BsThreeDotsVertical size={18} />
+                              </span>
+                              {openMenuStageId === stage.id && (
+                                <>
+                                  <div
+                                    style={{ position: 'fixed', inset: 0, zIndex: 1050 }}
+                                    onClick={() => setOpenMenuStageId(null)}
+                                  />
+                                  <div
+                                    style={{
+                                      position: 'absolute', right: '50%', top: '100%', zIndex: 1051,
+                                      backgroundColor: '#fff',
+                                      border: '1px solid #e9ecef',
+                                      borderRadius: '8px',
+                                      boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                                      minWidth: '160px',
+                                      padding: '4px 0',
+                                    }}
+                                  >
+                                    <button
+                                      style={{ display: 'block', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.875rem', color: '#2E3135', cursor: 'pointer' }}
+                                      onClick={() => { setOpenMenuStageId(null); handleEditStage(stage); }}
+                                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#F8F9FA'}
+                                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                      <BsPencilFill size={13} style={{ marginRight: '10px', color: '#6C757D' }} /> Edit Pond
+                                    </button>
+                                    <button
+                                      style={{ display: 'block', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.875rem', color: '#dc3545', cursor: 'pointer' }}
+                                      onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setTimeout(() => DeletePond(), 0); }}
+                                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#FFF5F5'}
+                                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                      <BsTrash size={13} style={{ marginRight: '10px', color: '#dc3545' }} /> Delete
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
-                <div className="d-flex justify-content-center mt-4">
+                {/* Pagination row */}
+                <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                  <span style={{ fontSize: '0.875rem', color: '#8C949B' }}>
+                    Showing {startIndex + 1}–{Math.min(endIndex, filteredStages.length)} of {filteredStages.length} ponds
+                  </span>
                   <ReactPaginate
                     previousLabel={"< "}
                     nextLabel={" >"}
@@ -325,7 +551,7 @@ const ViewAllStages = () => {
                     marginPagesDisplayed={2}
                     pageRangeDisplayed={3}
                     onPageChange={handlePageChange}
-                    containerClassName={"pagination"}
+                    containerClassName={"pagination mb-0"}
                     pageClassName={"page-item"}
                     pageLinkClassName={"page-link"}
                     previousClassName={"page-item"}
@@ -669,6 +895,253 @@ const ViewAllStages = () => {
           </Form>
         </Modal.Body>
       </Modal>
+
+      {/* ── Pond Summary Aside ── */}
+      <>
+        {/* Backdrop */}
+        <div
+          onClick={handleCloseAside}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.35)',
+            zIndex: 1040,
+            opacity: showAside ? 1 : 0,
+            pointerEvents: showAside ? 'auto' : 'none',
+            transition: 'opacity 0.3s ease',
+          }}
+        />
+
+        {/* Panel */}
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: '360px',
+            maxWidth: '95vw',
+            backgroundColor: '#fff',
+            zIndex: 1050,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            transform: showAside ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: showAside ? '-8px 0 32px rgba(0,0,0,0.12)' : 'none',
+          }}
+        >
+          {asideStage && (
+            <>
+              {/* ── Header ── */}
+              <div style={{ padding: '20px 20px 0 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                  <h5 style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem', color: '#2E3135' }}>
+                    Pond Summary
+                  </h5>
+                  <span
+                    onClick={handleCloseAside}
+                    style={{ cursor: 'pointer', color: '#8C949B', fontSize: '1.1rem', lineHeight: 1, padding: '2px 4px' }}
+                    title="Close"
+                  >
+                    ✕
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: 600, color: '#512728', letterSpacing: '0.02em' }}>
+                  {asideStage.title?.toUpperCase()} · {asideStage.site || '--'}
+                </p>
+                <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#8C949B' }}>
+                  Created: {formatDate(asideStage.createdAt)}
+                </p>
+              </div>
+
+              {/* ── Pond Image placeholder ── */}
+              <div style={{ margin: '16px 20px 0 20px', borderRadius: '10px', overflow: 'hidden', height: '148px', backgroundColor: '#e8edf1', position: 'relative', flexShrink: 0 }}>
+                <div style={{
+                  width: '100%', height: '100%',
+                  background: 'linear-gradient(160deg, #b6cfd6 0%, #7fadb8 50%, #4f8a96 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: '2.5rem', opacity: 0.35 }}>🌊</span>
+                </div>
+                {/* Status badge */}
+                <span style={{
+                  position: 'absolute', bottom: '10px', left: '12px',
+                  backgroundColor: asideStage.status?.toLowerCase() === 'inactive' ? '#6C757D' : '#28a745',
+                  color: '#fff',
+                  fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.06em',
+                  padding: '3px 10px', borderRadius: '20px',
+                }}>
+                  {asideStage.status?.toUpperCase() || 'ACTIVE'}
+                </span>
+              </div>
+
+              {/* ── 2×2 Stat Cards ── */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '16px 20px 0 20px' }}>
+                {[
+                  { label: 'Current Stock', value: `${new Intl.NumberFormat().format(asideStage.quantity ?? 0)} pcs`, danger: false },
+                  { label: 'Mortality Count', value: asideStage.mortalityCount != null ? `${new Intl.NumberFormat().format(asideStage.mortalityCount)} pcs` : '--', danger: true },
+                  { label: 'Feed Consumed', value: asideStage.feedConsumed != null ? `${new Intl.NumberFormat().format(asideStage.feedConsumed)} kg` : '--', danger: false },
+                  { label: 'Last Activity', value: asideStage.lastActivity || '-- hrs ago', danger: false },
+                ].map((stat, i) => (
+                  <div key={i} style={{
+                    backgroundColor: '#F8F9FA',
+                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    border: '1px solid #F0F0F0',
+                  }}>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#8C949B', marginBottom: '4px' }}>{stat.label}</p>
+                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: stat.danger ? '#dc3545' : '#2E3135' }}>
+                      {stat.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Movement Stats ── */}
+              <div style={{ margin: '18px 20px 0 20px' }}>
+                <p style={{ margin: '0 0 8px 0', fontSize: '0.7rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.07em' }}>
+                  MOVEMENT STATS
+                </p>
+                <div style={{ display: 'flex', gap: '32px' }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#8C949B', marginBottom: '3px' }}>Fish Added</p>
+                    <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#2E3135' }}>
+                      {asideStage.fishAdded != null ? `${new Intl.NumberFormat().format(asideStage.fishAdded)} pcs` : '--'}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#8C949B', marginBottom: '3px' }}>Fish Moved</p>
+                    <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#2E3135' }}>
+                      {asideStage.fishMoved != null ? `${new Intl.NumberFormat().format(asideStage.fishMoved)} pcs` : '--'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Sampling History ── */}
+              <div style={{ margin: '18px 20px 0 20px' }}>
+                <p style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 700, color: '#2E3135' }}>
+                  Sampling History
+                </p>
+                {sampling.length > 0 && asideStage?.id === selectedStage?.id ? (
+                  <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #F0F0F0' }}>
+                        {['Date', 'Avg. Wt', 'Health'].map((h) => (
+                          <th key={h} style={{ textAlign: 'left', padding: '6px 8px', fontSize: '0.72rem', color: '#8C949B', fontWeight: 600 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sampling.slice(0, 4).map((s, i) => (
+                        <tr key={s.id || i} style={{ borderBottom: '1px solid #F8F9FA' }}>
+                          <td style={{ padding: '7px 8px', color: '#2E3135' }}>{formatDate(s.createdAt).slice(0, 5)}</td>
+                          <td style={{ padding: '7px 8px', color: '#2E3135' }}>{s.avgWeight ? `${s.avgWeight}g` : '--'}</td>
+                          <td style={{ padding: '7px 8px', fontWeight: 600, color: s.health?.toLowerCase() === 'stable' ? '#e8a020' : '#28a745' }}>
+                            {s.health || '--'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #F0F0F0' }}>
+                        {['Date', 'Avg. Wt', 'Health'].map((h) => (
+                          <th key={h} style={{ textAlign: 'left', padding: '6px 8px', fontSize: '0.72rem', color: '#8C949B', fontWeight: 600 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { date: 'Oct 14', wt: '145g', health: 'Optimal', color: '#28a745' },
+                        { date: 'Oct 07', wt: '132g', health: 'Optimal', color: '#28a745' },
+                        { date: 'Sep 30', wt: '118g', health: 'Stable',  color: '#e8a020' },
+                      ].map((row, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid #F8F9FA' }}>
+                          <td style={{ padding: '7px 8px', color: '#2E3135' }}>{row.date}</td>
+                          <td style={{ padding: '7px 8px', color: '#2E3135' }}>{row.wt}</td>
+                          <td style={{ padding: '7px 8px', fontWeight: 600, color: row.color }}>{row.health}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* ── Recent Activity ── */}
+              <div style={{ margin: '18px 20px 0 20px' }}>
+                <p style={{ margin: '0 0 10px 0', fontSize: '1rem', fontWeight: 700, color: '#2E3135' }}>
+                  Recent Activity
+                </p>
+                {note.length > 0 && asideStage?.id === selectedStage?.id ? (
+                  note.slice(0, 3).map((n, i) => (
+                    <div key={n.id || i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: i === 0 ? '#512728' : '#dc3545', marginTop: '5px', flexShrink: 0 }} />
+                      <div>
+                        <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#2E3135' }}>{n.note?.length > 40 ? `${n.note.substring(0, 40)}...` : n.note}</p>
+                        <p style={{ margin: 0, fontSize: '0.72rem', color: '#8C949B' }}>{formatDate(n.createdAt)} · {n.fullName || 'System'}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  [
+                    { title: 'Morning Feed Dispatched',        sub: '08:30 AM · System Auto',              dot: '#512728' },
+                    { title: 'Dissolved Oxygen Low Warning',   sub: 'Yesterday · Aerator-02 Check Required', dot: '#dc3545' },
+                    { title: 'Water Sample Collected',         sub: 'Oct 14, 02:16 PM · Marcus J.',          dot: '#dc3545' },
+                  ].map((a, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: a.dot, marginTop: '5px', flexShrink: 0 }} />
+                      <div>
+                        <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#2E3135' }}>{a.title}</p>
+                        <p style={{ margin: 0, fontSize: '0.72rem', color: '#8C949B' }}>{a.sub}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* ── Footer CTA ── */}
+              <div style={{ padding: '20px', marginTop: 'auto', display: 'flex', gap: '10px', alignItems: 'center', borderTop: '1px solid #F0F0F0', backgroundColor: '#fff' }}>
+                <button
+                  onClick={() => { handleCloseAside(); handleEditStage(asideStage); }}
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#512728',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '11px 0',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  View Full Analytics
+                </button>
+                <button
+                  onClick={() => { handleCloseAside(); setSelectedStage(asideStage); setShowModal(true); setModaltype('edit pond'); }}
+                  style={{
+                    width: '40px', height: '40px',
+                    backgroundColor: '#F8F9FA',
+                    border: '1px solid #dee2e6',
+                    borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                  title="Edit pond"
+                >
+                  <BsPencilFill size={15} color="#2E3135" />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </>
     </section>
   );
 };

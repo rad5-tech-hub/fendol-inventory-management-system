@@ -3,6 +3,7 @@ import { Form, Row, Col, Button, Breadcrumb } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import { MdOutlineRefresh } from "react-icons/md";
+import { BsGrid3X3GapFill, BsXCircleFill, BsArrowRight, BsXLg, BsSave, BsExclamationCircle } from 'react-icons/bs';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
@@ -16,26 +17,41 @@ export default function NewBatchFish() {
   const [stages, setStages] = useState({ washing: null });
   const [checkStages, setCheckStages] = useState([]);
   const [fishType, setFishType] = useState([]);
-  const [moveFishData, setMoveFishData] = useState({
-    stageId_to: '',
-    batch_no: '',
-    actual_quantity: 0,
-    remarks: '',
+  const [moveFishData, setMoveFishData] = useState(() => {
+    const saved = sessionStorage.getItem('batchMoveFishData');
+    return saved ? JSON.parse(saved) : {
+      stageId_to: '',
+      batch_no: '',
+      actual_quantity: 0,
+      remarks: '',
+    };
   });
-  const [moveData, setMoveData] = useState({
-    stageId_from: "",
-    stageId_to: "",
-    wholeFishQuantity: '',
-    brokenFishQuantity: '',
-    damageOrLoss: '',
+  const [moveData, setMoveData] = useState(() => {
+    const saved = sessionStorage.getItem('batchMoveData');
+    return saved ? JSON.parse(saved) : {
+      stageId_from: "",
+      stageId_to: "",
+      wholeFishQuantity: '',
+      brokenFishQuantity: '',
+      damageOrLoss: '',
+    };
   });
-  const [quantity, setQuantity] = useState({
-    wholeFish: 0,
-    brokenFish: 0,
-    damage: 0,
+  const [quantity, setQuantity] = useState(() => {
+    const saved = sessionStorage.getItem('batchQuantity');
+    return saved ? JSON.parse(saved) : {
+      wholeFish: 0,
+      brokenFish: 0,
+      damage: 0,
+    };
   });
-  const [cumulativeBrokenFishQuantity, setCumulativeBrokenFishQuantity] = useState(0);
-  const [cumulativeDamageOrLoss, setCumulativeDamageOrLoss] = useState(0);
+  const [cumulativeBrokenFishQuantity, setCumulativeBrokenFishQuantity] = useState(() => {
+    const saved = sessionStorage.getItem('batchCumBroken');
+    return saved ? JSON.parse(saved) : 0;
+  });
+  const [cumulativeDamageOrLoss, setCumulativeDamageOrLoss] = useState(() => {
+    const saved = sessionStorage.getItem('batchCumDamage');
+    return saved ? JSON.parse(saved) : 0;
+  });
   const [loader, setLoader] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -97,6 +113,26 @@ export default function NewBatchFish() {
   useEffect(() => {
     sessionStorage.setItem('showSuccessOverlay', JSON.stringify(showSuccessOverlay));
   }, [showSuccessOverlay]);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchMoveData', JSON.stringify(moveData));
+  }, [moveData]);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchQuantity', JSON.stringify(quantity));
+  }, [quantity]);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchMoveFishData', JSON.stringify(moveFishData));
+  }, [moveFishData]);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchCumBroken', JSON.stringify(cumulativeBrokenFishQuantity));
+  }, [cumulativeBrokenFishQuantity]);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchCumDamage', JSON.stringify(cumulativeDamageOrLoss));
+  }, [cumulativeDamageOrLoss]);
 
   useEffect(() => {
     if (message) {
@@ -230,6 +266,7 @@ export default function NewBatchFish() {
 
         setMessage("Fish moved successfully!");
         if (currentStage.title === "Drying") {
+          clearBatchStorage();
           setShowSuccessOverlay(false);
           setTimeout(() => navigate('/showcase/whole-showcase'), 2500);
         } else {
@@ -263,6 +300,15 @@ export default function NewBatchFish() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const clearBatchStorage = () => {
+    ['batchMoveData', 'batchQuantity', 'batchMoveFishData', 'batchCumBroken', 'batchCumDamage', 'showSuccessOverlay'].forEach(k => sessionStorage.removeItem(k));
+  };
+
+  const handleSaveProgress = () => {
+    setShowSuccessOverlay(false);
+    toast.success('Progress saved successfully!', { autoClose: 2000 });
+  };
+
   return (
     <section className={`${styles.body}`}>
       <div className="sticky-top">
@@ -275,261 +321,477 @@ export default function NewBatchFish() {
         <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
             <ToastContainer />
-            <Form onSubmit={handleMoveFishes}>
-              <h4 className="my-5">Process Fish</h4>
-              <Row>
-                <Col md={12} lg={12} className="mb-4">
-                  <Form.Label className="fw-semibold">Import Harvest</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="batch_no"
-                    value="Harvest"
-                    readOnly
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  />
-                </Col>
-                <Col md={12} lg={12} className="mb-4">
-                  <Form.Label className="fw-semibold">Quantity</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="actual_quantity"
-                    value={moveFishData.actual_quantity || ""}
-                    readOnly
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  />
-                  {showLoading ? (
-                    <Form.Text className="text-success mt-1 d-block">Loading...</Form.Text>
-                  ) : (
-                    (!moveFishData.actual_quantity || moveFishData.actual_quantity === 0) && (
-                      <Form.Text className="text-danger mt-1 d-block">
-                        No harvested quantity available. Please add fish to harvest to start processing.
-                      </Form.Text>
-                    )
-                  )}
-                </Col>
-                {/* Removed Process To and Remark fields */}
-              </Row>
-              <div className="d-flex justify-content-end my-4">
-                <Button
-                  className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-                  disabled={loader|| moveFishData.actual_quantity === 0}
-                  type="submit"
-                >
-                  {loader ? 'Processing' : "Process"}
-                </Button>
-              </div>
-            </Form>
-
-            {showSuccessOverlay && (
-              <div className={`${styles.successOverlay}`}>
-                <div className={`${styles.successBox}`}>
-                  <Form>
-                    <div className="d-flex justify-content-end">
-                      {/* <span className={styles.refresh} title="Refresh The Process" onClick={handleRefresh}>
-                        <MdOutlineRefresh size={25} />
-                      </span> */}
-                    </div>
-
-                    <h5
-                      className={`text-end px-2 py-3 ${
-                        message ? styles.fade_in : styles.fade_out
-                      }`}
-                    >
-                      {message}
-                    </h5>
-
-                    <Breadcrumb
-                      className="mb-4"
-                      listProps={{
-                        className: "d-flex align-items-center",
-                        style: { gap: "0.5rem" },
-                      }}
-                    >
-                      {orderedStages.length > 0 ? (
-                        orderedStages.map((stage) => (
-                          <Breadcrumb.Item
-                            key={stage.id}
-                            active={moveData.stageId_from === stage.id}
-                            onClick={
-                              moveData.stageId_from === stage.id
-                                ? () => handleStageSelect(stage.id)
-                                : undefined
-                            }
-                            className="fw-semibold"
-                            style={{
-                              cursor:
-                                moveData.stageId_from === stage.id
-                                  ? "pointer"
-                                  : "not-allowed",
-                              textTransform: "uppercase",
-                              textDecoration: "none",
-                              color:
-                                moveData.stageId_from === stage.id ? "#5e0d0f" : "gray",
-                            }}
-                            linkAs="span"
-                          >
-                            {stage.title}
-                          </Breadcrumb.Item>
-                        ))
-                      ) : (
-                        <p className="text-muted fw-semibold">Loading...</p>
-                      )}
-                    </Breadcrumb>
-
-                    <div className="mt-5 mb-4">
-                      {/* Whole Fish Section */}
-                      <div className="d-flex flex-column flex-md-row align-items-md-center mb-4">
-                        <div className="d-flex align-items-center mb-2 mb-md-0">
-                          <p className="fw-semibold me-2 mb-0">WHOLE FISH</p>
-                          <div className={styles.border_dot}></div>
-                        </div>
-                        <div className="d-flex flex-column flex-md-row justify-content-md-center align-items-md-center gap-3">
-                          <Form.Group>
-                            <Form.Label className="fw-semibold mb-3 text-dark">
-                              Before
-                            </Form.Label>
-                            <Form.Control
-                              type="number"
-                              value={quantity.wholeFish}
-                              onChange={(e) =>
-                                setQuantity((prev) => ({
-                                  ...prev,
-                                  wholeFish: parseFloat(e.target.value) || 0,
-                                }))
-                              }
-                              readOnly
-                              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                            />
-                          </Form.Group>
-                          <Form.Group>
-                            <Form.Label className="fw-semibold mb-3 text-dark">
-                              After
-                            </Form.Label>
-                            <Form.Control
-                              name="wholeFishQuantity"
-                              value={moveData.wholeFishQuantity}
-                              onChange={handleMoveFish}
-                              type="number"
-                              placeholder={`Enter Whole Quantity after ${
-                                orderedStages.find(
-                                  (stage) => stage.id === moveData.stageId_from
-                                )?.title || "Stage"
-                              }`}
-                              title={`Enter Whole Quantity after ${
-                                orderedStages.find(
-                                  (stage) => stage.id === moveData.stageId_from
-                                )?.title || "Stage"
-                              }`}
-                              required
-                              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                            />
-                          </Form.Group>
-                        </div>
-                      </div>
-
-                      {/* Broken Fish Section */}
-                      <div className="d-flex flex-column flex-md-row align-items-md-center mb-4">
-                        <div className="d-flex align-items-center mb-2 mb-md-0">
-                          <p className="fw-semibold me-2 mb-0">BROKEN FISH</p>
-                          <div className={styles.border_dote}></div>
-                        </div>
-                        <div className="d-flex flex-column flex-md-row justify-content-md-center align-items-md-center gap-3">
-                          <Form.Control
-                            type="number"
-                            value={quantity.brokenFish}
-                            onChange={(e) =>
-                              setQuantity((prev) => ({
-                                ...prev,
-                                brokenFish: parseFloat(e.target.value) || 0,
-                              }))
-                            }
-                            readOnly
-                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                          />
-                          <Form.Control
-                            type="number"
-                            placeholder={`Enter Broken Quantity after ${
-                              orderedStages.find(
-                                (stage) => stage.id === moveData.stageId_from
-                              )?.title || "Stage"
-                            }`}
-                            name="brokenFishQuantity"
-                            value={moveData.brokenFishQuantity}
-                            onChange={handleMoveFish}
-                            required
-                            title={`Enter Broken Quantity after ${
-                              orderedStages.find(
-                                (stage) => stage.id === moveData.stageId_from
-                              )?.title || "Stage"
-                            }`}
-                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Damage/Loss Section */}
-                      <div className="d-flex flex-column flex-md-row align-items-md-center">
-                        <div className="d-flex align-items-center mb-2 mb-md-0">
-                          <p className="fw-semibold me-2 mb-0">DAMAGE/LOSS</p>
-                          <div className={styles.border_dots}></div>
-                        </div>
-                        <div className="d-flex flex-column flex-md-row justify-content-md-center align-items-md-center gap-3">
-                          <Form.Control
-                            type="number"
-                            value={quantity.damage}
-                            onChange={(e) =>
-                              setQuantity((prev) => ({
-                                ...prev,
-                                damage: parseFloat(e.target.value) || 0,
-                              }))
-                            }
-                            readOnly
-                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                          />
-                          <Form.Control
-                            required
-                            placeholder={`Enter Damage Quantity after ${
-                              orderedStages.find(
-                                (stage) => stage.id === moveData.stageId_from
-                              )?.title || "Stage"
-                            }`}
-                            type="number"
-                            title={`Enter Damage Quantity after ${
-                              orderedStages.find(
-                                (stage) => stage.id === moveData.stageId_from
-                              )?.title || "Stage"
-                            }`}
-                            name="damageOrLoss"
-                            value={moveData.damageOrLoss}
-                            onChange={handleMoveFish}
-                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="d-flex justify-content-end">
-                      <Button
-                        onClick={handleNext}
-                        disabled={
-                          loading ||
-                          moveData.wholeFishQuantity === "" ||
-                          moveData.brokenFishQuantity === "" ||
-                          moveData.damageOrLoss === ""
-                        }
-                        className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-                      >
-                        {moveData.stageId_from &&
-                        orderedStages.find((stage) => stage.id === moveData.stageId_from)
-                          ?.title !== "Drying"
-                          ? "Next"
-                          : "Move To Showcase"}
-                      </Button>
-                    </div>
-                  </Form>
+            {!showSuccessOverlay && (
+              <Form onSubmit={handleMoveFishes}>
+                <h4 className="my-5">Process Fish</h4>
+                <Row>
+                  <Col md={12} lg={12} className="mb-4">
+                    <Form.Label className="fw-semibold">Import Harvest</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="batch_no"
+                      value="Harvest"
+                      readOnly
+                      className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                    />
+                  </Col>
+                  <Col md={12} lg={12} className="mb-4">
+                    <Form.Label className="fw-semibold">Quantity</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="actual_quantity"
+                      value={moveFishData.actual_quantity || ""}
+                      readOnly
+                      className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                    />
+                    {showLoading ? (
+                      <Form.Text className="text-success mt-1 d-block">Loading...</Form.Text>
+                    ) : (
+                      (!moveFishData.actual_quantity || moveFishData.actual_quantity === 0) && (
+                        <Form.Text className="text-danger mt-1 d-block">
+                          No harvested quantity available. Please add fish to harvest to start processing.
+                        </Form.Text>
+                      )
+                    )}
+                  </Col>
+                  {/* Removed Process To and Remark fields */}
+                </Row>
+                <div className="d-flex justify-content-end my-4">
+                  <Button
+                    className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+                    disabled={loader|| moveFishData.actual_quantity === 0}
+                    type="submit"
+                  >
+                    {loader ? 'Processing' : "Process"}
+                  </Button>
                 </div>
-              </div>
+              </Form>
             )}
+
+            {showSuccessOverlay && (() => {
+              const currentStage = orderedStages.find(s => s.id === moveData.stageId_from);
+              const nextStage = orderedStages[orderedStages.findIndex(s => s.id === moveData.stageId_from) + 1];
+              const totalInput = quantity.wholeFish + quantity.brokenFish + quantity.damage;
+              const expYield = (totalInput * 0.8).toFixed(2);
+              const damageRatio = quantity.wholeFish > 0 ? quantity.damage / quantity.wholeFish : 0;
+              const batchHealthy = quantity.wholeFish > 0 && damageRatio < 0.1;
+
+              const processingNotes = {
+                Washing: 'Ensure all fish are thoroughly rinsed. Record initial weight before proceeding.',
+                Smoking: 'Ensure smoking temperature remains between 65–75°C. Recording moisture loss is critical for yield calculation.',
+                Drying: 'Ensure fish are evenly spread. Target moisture content below 15% before showcase transfer.',
+              };
+              const noteText = processingNotes[currentStage?.title] || 'Follow standard processing procedures for this stage.';
+
+              return (
+                <div style={{ marginTop: '0', fontFamily: 'inherit' }}>
+
+                  {/* ── Page Header Bar ── */}
+                  <div style={{ backgroundColor: '#F5F5F3', borderRadius: '10px', padding: '20px 28px 0 28px', marginBottom: '0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+                      <div>
+                        <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          Current Operation
+                        </p>
+                        <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.55rem', color: '#2E3135', letterSpacing: '-0.01em' }}>
+                          Batch Harvesting: {moveFishData.batch_no || `#PR-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(moveFishData.actual_quantity || 0).padStart(3, '0')}`}
+                        </h3>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          Processing Date
+                        </p>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '1rem', color: '#2E3135' }}>
+                          {(() => { const d = new Date(); return `${d.getDate().toString().padStart(2,'0')} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getFullYear()}`; })()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* ── Stage Tabs ── */}
+                    <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #E0E0DC' }}>
+                      {orderedStages.length > 0 ? orderedStages.map((stage) => {
+                        const isActive = moveData.stageId_from === stage.id;
+                        const stageIdx = orderedStages.findIndex(s => s.id === stage.id);
+                        const currentIdx = orderedStages.findIndex(s => s.id === moveData.stageId_from);
+                        const isPast = stageIdx < currentIdx;
+                        return (
+                          <div
+                            key={stage.id}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '7px',
+                              padding: '12px 22px 11px 22px',
+                              borderBottom: isActive ? '2px solid #512728' : '2px solid transparent',
+                              cursor: isActive ? 'default' : 'not-allowed',
+                              marginBottom: '-1px',
+                            }}
+                          >
+                            <span style={{
+                              width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
+                              backgroundColor: isActive ? '#512728' : 'transparent',
+                              border: isActive ? 'none' : `2px solid ${isPast ? '#512728' : '#C0C0BA'}`,
+                              display: 'inline-block',
+                            }} />
+                            <span style={{
+                              fontSize: '0.82rem', fontWeight: 700,
+                              color: isActive ? '#512728' : isPast ? '#512728' : '#8C949B',
+                              letterSpacing: '0.06em', textTransform: 'uppercase',
+                            }}>
+                              {stage.title}
+                            </span>
+                          </div>
+                        );
+                      }) : (
+                        <p className="text-muted fw-semibold px-3 pb-2" style={{ fontSize: '0.82rem' }}>Loading...</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ── Main Content Card ── */}
+                  <div style={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #E8E8E4',
+                    borderRadius: '10px',
+                    marginTop: '16px',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{ display: 'flex', minHeight: '360px' }}>
+
+                      {/* Left Column */}
+                      <div style={{ width: '34%', borderRight: '1px solid #F0F0EC', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                        {/* Batch Reference Image */}
+                        <div>
+                          <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                            Batch Reference Image
+                          </p>
+                          <div style={{
+                            border: '1px dashed #C8C8C4',
+                            borderRadius: '6px',
+                            padding: '10px',
+                            backgroundColor: '#FAFAFA',
+                            fontSize: '0.65rem',
+                            color: '#8C949B',
+                            lineHeight: 1.6,
+                          }}>
+                            <div style={{ backgroundColor: '#E8E8E4', borderRadius: '3px', padding: '4px 6px', marginBottom: '6px', fontSize: '0.62rem', color: '#5F5E5A', fontWeight: 600 }}>
+                              WASHING / SMOKING / DRYING
+                            </div>
+                            {['WHOLE FISH', 'BROKEN FISH', 'DAMAGE/LOSS'].map((label, i) => (
+                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px', gap: '6px' }}>
+                                <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#8C949B', whiteSpace: 'nowrap' }}>{label}</span>
+                                <div style={{ display: 'flex', gap: '4px', flex: 1, justifyContent: 'flex-end' }}>
+                                  <div style={{ height: '14px', flex: 1, backgroundColor: '#E8E8E4', borderRadius: '2px', maxWidth: '36px' }} />
+                                  <div style={{ height: '14px', flex: 1, backgroundColor: '#E8E8E4', borderRadius: '2px', maxWidth: '60px' }} />
+                                </div>
+                              </div>
+                            ))}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                              <div style={{ backgroundColor: '#512728', borderRadius: '3px', padding: '3px 10px', fontSize: '0.6rem', color: '#fff', fontWeight: 600 }}>Next</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Processing Notes */}
+                        <div style={{
+                          backgroundColor: '#FFF8F0',
+                          border: '1px solid #FAD8A8',
+                          borderLeft: '3px solid #e8a020',
+                          borderRadius: '6px',
+                          padding: '14px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
+                            <BsExclamationCircle size={15} color="#e8a020" />
+                            <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, color: '#e8a020' }}>Processing Notes</p>
+                          </div>
+                          <p style={{ margin: 0, fontSize: '0.78rem', color: '#5F5E5A', lineHeight: 1.6, fontStyle: 'italic' }}>
+                            {noteText}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right Column */}
+                      <div style={{ flex: 1, padding: '0' }}>
+
+                        {/* Column Headers */}
+                        <div style={{
+                          display: 'grid', gridTemplateColumns: '2fr 1.4fr 1.4fr',
+                          padding: '12px 20px',
+                          borderBottom: '1px solid #F0F0EC',
+                          backgroundColor: '#FAFAFA',
+                        }}>
+                          {['Fish Category', 'Before (Kg)', 'After (Kg)'].map((h) => (
+                            <p key={h} style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</p>
+                          ))}
+                        </div>
+
+                        {/* Fish Rows */}
+                        {[
+                          {
+                            icon: <BsGrid3X3GapFill size={20} color="#512728" />,
+                            bgIcon: '#FFF0F0',
+                            label: 'Whole Fish',
+                            before: quantity.wholeFish,
+                            afterName: 'wholeFishQuantity',
+                            afterValue: moveData.wholeFishQuantity,
+                          },
+                          {
+                            icon: <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '2px', padding: '3px' }}>
+                              {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: '14px', height: '3px', backgroundColor: '#e8a020', borderRadius: '1px' }} />)}
+                            </span>,
+                            bgIcon: '#FFFBF0',
+                            label: 'Broken Fish',
+                            before: quantity.brokenFish,
+                            afterName: 'brokenFishQuantity',
+                            afterValue: moveData.brokenFishQuantity,
+                          },
+                          {
+                            icon: <BsXCircleFill size={20} color="#dc3545" />,
+                            bgIcon: '#FFF5F5',
+                            label: 'Damage / Loss',
+                            before: quantity.damage,
+                            afterName: 'damageOrLoss',
+                            afterValue: moveData.damageOrLoss,
+                          },
+                        ].map((row, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              display: 'grid', gridTemplateColumns: '2fr 1.4fr 1.4fr',
+                              padding: '14px 20px', alignItems: 'center',
+                              borderBottom: i < 2 ? '1px solid #F8F8F5' : 'none',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{
+                                width: '36px', height: '36px', borderRadius: '8px',
+                                backgroundColor: row.bgIcon,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                flexShrink: 0,
+                              }}>
+                                {row.icon}
+                              </div>
+                              <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#2E3135' }}>{row.label}</span>
+                            </div>
+                            <div style={{ paddingRight: '12px' }}>
+                              <input
+                                type="number"
+                                readOnly
+                                value={row.before}
+                                style={{
+                                  width: '100%', padding: '9px 12px',
+                                  border: '1px solid #E8E8E4', borderRadius: '6px',
+                                  backgroundColor: '#F5F5F3', color: '#2E3135',
+                                  fontSize: '0.875rem', fontWeight: 600,
+                                  outline: 'none',
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <input
+                                type="number"
+                                name={row.afterName}
+                                value={row.afterValue}
+                                onChange={handleMoveFish}
+                                required
+                                placeholder="Enter weight"
+                                style={{
+                                  width: '100%', padding: '9px 12px',
+                                  border: '1px solid #E0E0DC', borderRadius: '6px',
+                                  backgroundColor: '#fff', color: '#2E3135',
+                                  fontSize: '0.875rem',
+                                  outline: 'none',
+                                }}
+                                onFocus={e => e.target.style.borderColor = '#512728'}
+                                onBlur={e => e.target.style.borderColor = '#E0E0DC'}
+                              />
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Action Buttons */}
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '16px 20px', borderTop: '1px solid #F0F0EC',
+                          justifyContent: 'flex-end',
+                        }}>
+                          <button
+                            type="button"
+                            onClick={() => setShowSuccessOverlay(false)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '7px',
+                              padding: '9px 18px', borderRadius: '7px',
+                              border: '1px solid #D0D0CC', backgroundColor: '#fff',
+                              color: '#5F5E5A', fontSize: '0.875rem', fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <BsXLg size={13} /> Cancel Movement
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveProgress}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '7px',
+                              padding: '9px 18px', borderRadius: '7px',
+                              border: '1px solid #D0D0CC', backgroundColor: '#fff',
+                              color: '#5F5E5A', fontSize: '0.875rem', fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <BsSave size={13} /> Save Progress
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleNext}
+                            disabled={
+                              loading ||
+                              moveData.wholeFishQuantity === '' ||
+                              moveData.brokenFishQuantity === '' ||
+                              moveData.damageOrLoss === ''
+                            }
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '8px',
+                              padding: '9px 22px', borderRadius: '7px',
+                              border: 'none',
+                              backgroundColor:
+                                loading ||
+                                moveData.wholeFishQuantity === '' ||
+                                moveData.brokenFishQuantity === '' ||
+                                moveData.damageOrLoss === ''
+                                  ? '#8C6364'
+                                  : '#512728',
+                              color: '#fff', fontSize: '0.875rem', fontWeight: 700,
+                              cursor:
+                                loading ||
+                                moveData.wholeFishQuantity === '' ||
+                                moveData.brokenFishQuantity === '' ||
+                                moveData.damageOrLoss === ''
+                                  ? 'not-allowed'
+                                  : 'pointer',
+                              transition: 'background-color 0.15s ease',
+                            }}
+                          >
+                            {currentStage?.title !== 'Drying' ? `Proceed to ${nextStage?.title || 'Next'}` : 'Move To Showcase'}
+                            <BsArrowRight size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── Summary Stat Bar ── */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '16px' }}>
+                    {[
+                      {
+                        label: 'Total Input',
+                        value: `${totalInput.toFixed(2)} Kg`,
+                        valueColor: '#2E3135',
+                        content: null,
+                      },
+                      {
+                        label: 'Exp. Yield (80%)',
+                        value: `${expYield} Kg`,
+                        valueColor: '#e8a020',
+                        content: null,
+                      },
+                      {
+                        label: 'Processing Team',
+                        value: null,
+                        content: (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                            {['FT', 'JA'].map((init, i) => (
+                              <div key={i} style={{
+                                width: '28px', height: '28px', borderRadius: '50%',
+                                backgroundColor: i === 0 ? '#512728' : '#e8a020',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '0.6rem', fontWeight: 700, color: '#fff',
+                                border: '2px solid #fff', marginLeft: i > 0 ? '-6px' : '0',
+                              }}>
+                                {init}
+                              </div>
+                            ))}
+                            <span style={{
+                              backgroundColor: '#F0F0EC', borderRadius: '20px',
+                              padding: '2px 8px', fontSize: '0.72rem', fontWeight: 600, color: '#5F5E5A',
+                            }}>+3</span>
+                          </div>
+                        ),
+                      },
+                      {
+                        label: 'Batch Health',
+                        value: null,
+                        content: (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
+                            <span style={{
+                              backgroundColor: batchHealthy ? '#E8F5E9' : '#FFF3CD',
+                              color: batchHealthy ? '#28a745' : '#e8a020',
+                              border: `1px solid ${batchHealthy ? '#C8E6CA' : '#FFE082'}`,
+                              borderRadius: '4px', padding: '3px 10px',
+                              fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em',
+                            }}>
+                              {batchHealthy ? 'STABLE' : 'AT RISK'}
+                            </span>
+                            <span style={{
+                              width: '22px', height: '22px', borderRadius: '50%',
+                              backgroundColor: batchHealthy ? '#28a745' : '#e8a020',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                                <path d="M1 4L4 7L10 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </span>
+                          </div>
+                        ),
+                      },
+                    ].map((card, i) => (
+                      <div key={i} style={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #E8E8E4',
+                        borderRadius: '8px',
+                        padding: '14px 18px',
+                      }}>
+                        <p style={{ margin: '0 0 2px 0', fontSize: '0.75rem', color: '#8C949B', fontWeight: 500 }}>{card.label}</p>
+                        {card.value !== null && (
+                          <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: card.valueColor }}>{card.value}</p>
+                        )}
+                        {card.content}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* ── Status Footer Bar ── */}
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    marginTop: '14px', padding: '10px 16px',
+                    backgroundColor: '#F5F5F3', borderRadius: '8px',
+                    fontSize: '0.75rem', color: '#8C949B',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#28a745', display: 'inline-block' }} />
+                        ERP Sync Active
+                      </span>
+                      <span style={{ color: '#D0D0CC' }}>|</span>
+                      <span>Central Cold Store – Sector 4</span>
+                    </div>
+                    <span>Last change: 2 mins ago</span>
+                  </div>
+
+                  {/* Inline fade message */}
+                  {message && (
+                    <p style={{
+                      textAlign: 'right', fontSize: '0.875rem', fontWeight: 600,
+                      color: message.includes('Error') ? '#dc3545' : '#28a745',
+                      padding: '8px 4px 0 0',
+                      animation: 'fadeInOut 0.3s ease',
+                    }}>
+                      {message}
+                    </p>
+                  )}
+
+                </div>
+              );
+            })()}
           </main>
         </section>
       </div>

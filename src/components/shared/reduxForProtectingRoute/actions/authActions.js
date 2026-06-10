@@ -13,6 +13,7 @@ export const loginUser = (token) => {
   })();
 
   const userTypes = extractUserTypes(decoded);
+  const userSites = decoded.sites || decoded.userSites || decoded.assignedSites || [];
 
   return {
     type: LOGIN_USER,
@@ -20,6 +21,7 @@ export const loginUser = (token) => {
       user: {
         ...decoded,
         userTypes,
+        userSites: Array.isArray(userSites) ? userSites : [],
       },
     },
   };

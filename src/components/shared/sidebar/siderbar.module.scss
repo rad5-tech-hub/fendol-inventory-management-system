@@ -7,16 +7,16 @@ $text-color: #ffffff;
 
 .sidebar {
     width: $sidebar-width;
-    background-color: $siderbar-color;
+    background-color: #1C1008;
     height: 90vh;
-    overflow-x: hidden; 
-    overflow-y: auto 2px; 
+    overflow-x: hidden;
+    overflow-y: auto 2px;
 }
 
-.offcan{
-    background-color: $siderbar-color;
-    overflow-x: hidden; 
-    overflow-y: auto 2px; 
+.offcan {
+    background-color: #1C1008 !important;
+    overflow-x: hidden;
+    overflow-y: auto 2px;
 }
 
 // Custom scrollbar styling for WebKit browsers (Chrome, Safari)
@@ -44,69 +44,199 @@ $text-color: #ffffff;
     background-color: darken($siderbar-color, 20%); // Darker color on hover
 }
 
-.card{
-    background-color: $siderbar-color;
-    border: none;
+.card {
+    background: transparent;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
     margin: 10px 0;
 }
 
-.cardHeader{
-    background-color: $siderbar-color;
+.cardHeader {
+    background: transparent !important;
+    color: #EDE4DA;
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 0 !important;
+
+    &:hover {
+        background: #2A1A0A !important;
+    }
 }
 
 .activeLink {
+    color: #CC6E1A;
+    font-weight: 600;
     background-color: $active-color;
+    border-radius: 6px;
+    font-family: "Roboto Flex", system-ui;
+    font-optical-sizing: auto;
+    font-style: normal;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    padding: 10px 14px;
+}
+
+.activeLink:hover {
     color: #ffffff;
-    border-radius: 15px;
+    background-color: $active-color;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.activeLink:active {
+    color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.nonactiveLink {
+    color: #9A8070;
     font-family: "Roboto Flex", system-ui;
     font-optical-sizing: auto;
     font-weight: 500;
     font-style: normal;
     font-size: 14px;
-    box-shadow: 2px 2px 5px $active-color;
-    padding: 7px 10px;
+    padding: 10px 14px;
+    border-radius: 6px;
+
+    svg {
+        color: #5A4030;
+        opacity: 0.8;
+    }
 }
 
-.activeLink:hover{
-    color: #ffffff;    
-    background-color: $active-color;
-    box-shadow: 2px 2px 2px $active-color;
-}
-
-.activeLink:active{
+.nonactiveLink:hover {
     color: #ffffff;
-    box-shadow: 2px 2px 6px $active-color;
-}
-  
-.nonactiveLink{
-    color: #ffffff;
-    font-family: "Roboto Flex", system-ui;
-    font-optical-sizing: auto;
-    font-weight: 500;
-    font-style: normal;
-    font-size: 14px;
+    background: #2A1A0A;
 }
 
-.nonactiveLink:hover{
-    color: #ffffff;    
-}
+.navs {
+    background: transparent;
+    padding: 0;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 
-.navs{
+    &::-webkit-scrollbar {
+        display: none;
+    }
 
-    .title{
-        color: #ffffff;
+    .title {
+        color: #EDE4DA;
+        font-size: 0.9rem;
         font-family: "Roboto Flex", system-ui;
         font-optical-sizing: auto;
         font-weight: 500;
         font-style: normal;
-        font-size: 15px;
     }
-    .navigationLinks{
+
+    .navigationLinks {
+        background: #20130A;
+        border-radius: 8px;
+        padding: 16px 12px 16px 22px;
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.12);
         color: #ffffff;
         font-family: "Roboto Flex", system-ui;
         font-optical-sizing: auto;
         font-weight: 500;
         font-style: normal;
         font-size: 14px;
+
+        .nav-item {
+            padding: 8px 0;
+        }
     }
+}
+
+.sidebarInner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.sectionLabel {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #5E4A38;
+    padding: 16px 16px 5px;
+    line-height: 1;
+}
+
+.dashboardLinkActive {
+    background: #CC6E1A;
+    color: #fff;
+
+    &:hover {
+        background: #CC6E1A;
+    }
+}
+
+.userFooter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &:hover {
+        background: #2A1A0A;
+    }
+}
+
+.userAvatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #CC6E1A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.88rem;
+    flex-shrink: 0;
+}
+
+.userName {
+    font-size: 0.875rem;
+    color: #EDE4DA;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.userRole {
+    font-size: 0.72rem;
+    color: #9A8070;
+    line-height: 1.3;
+}
+
+.logoHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 16px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.logoTitle {
+    color: #EDE4DA;
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+}
+
+.logoSubtitle {
+    color: #5E4A38;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 2px;
 }

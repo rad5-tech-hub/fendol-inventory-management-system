@@ -18,6 +18,8 @@ import DamageLoss from "./damage-loss/damges";
 import ShowcaseNavigations from "./showcase/showcaseRoute";
 import SiteManagementNavigations from "./site-management/siteManagementRouter";
 import ManageNavigations from "./manage-fish/manageRoute";
+import BatchDashboardNavigations from "./batch-dashboard/batchDashboardRouter";
+import HatcheryNavigations from "./hatchery/hatcheryRouter";
 import { ToastContainer } from "react-toastify";
 import Dashboard from "./dashboard/dashbord";
 
@@ -181,6 +183,26 @@ export default function RouterSwitch() {
               <ProtectedRoute>
                 <RoleRoute resource="site-management">
                   <SiteManagementNavigations />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="batch-dashboard/*"
+            element={
+              <ProtectedRoute>
+                <RoleRoute resource="batch-dashboard">
+                  <BatchDashboardNavigations />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="hatchery/*"
+            element={
+              <ProtectedRoute>
+                <RoleRoute resource="hatchery">
+                  <HatcheryNavigations />
                 </RoleRoute>
               </ProtectedRoute>
             }
