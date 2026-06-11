@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -7,8 +7,7 @@ import styles from '../product.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from 'react-redux';
-import { hasPermission } from "../../shared/permissions/permissions";
+import SiteSelector from "../../shared/site-selector/SiteSelector";
 
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
@@ -24,36 +23,6 @@ export default function CreateProducts() {
         siteId: "",
         showOnwebsite: false
     });
-
-    const userTypes = useSelector((state) => state.user?.userTypes || []);
-    const [sites, setSites] = useState([]);
-    const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
-    const siteSelectRef = useRef(null);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (siteSelectRef.current && !siteSelectRef.current.contains(e.target)) {
-                setSiteDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const canAssignSite = hasPermission(userTypes, 'products', 'assign-site');
-
-    useEffect(() => {
-        if (!canAssignSite) return;
-        const fetchSites = async () => {
-            try {
-                const res = await ApiV2.get('/v2/all-site');
-                setSites(Array.isArray(res.data?.data) ? res.data.data : res.data || []);
-            } catch {
-                // Silent fail — form still works; super admin sees empty site dropdown
-            }
-        };
-        fetchSites();
-    }, [canAssignSite]);
 
     // Function to format numbers with commas
     const formatNumberWithCommas = (value) => {
@@ -90,7 +59,7 @@ export default function CreateProducts() {
         e.preventDefault();
         setLoader(true);
 
-        if (canAssignSite && !formData.siteId) {
+        if (!formData.siteId) {
             toast.error("Please select a site.", { className: 'dark-toast' });
             setLoader(false);
             return;
@@ -163,7 +132,7 @@ export default function CreateProducts() {
                     <main>
                         <ToastContainer />
                         <Form className={styles.create_form} onSubmit={handleSubmit}>
-                            <h4 className="mt-3 mb-5">{canAssignSite ? 'Create & Assign Product' : 'Create Product'}</h4>
+                            <h4 className="mt-3 mb-5">Create Product</h4>
                             <Row xxl={2} xl={2} lg={2} md={1}>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Product Name</Form.Label>
@@ -215,50 +184,10 @@ export default function CreateProducts() {
                                         onChange={handleInputChange}
                                     />
                                 </Col>
-                                {canAssignSite && (
-                                    <Col className="mb-4">
-                                        <Form.Label className="fw-semibold">Assign to Site</Form.Label>
-                                        <div className={styles.customSelect} ref={siteSelectRef}>
-                                            <button
-                                                type="button"
-                                                className={styles.selectTrigger}
-                                                onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
-                                            >
-                                                <span>{sites.find(s => s.id === formData.siteId)?.name || 'Select a site'}</span>
-                                                <span className={`${styles.chevron} ${siteDropdownOpen ? styles.chevronUp : ''}`}>
-                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                                        <path d="M3 4.5L6 7.5L9 4.5" stroke="#6C757D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                    </svg>
-                                                </span>
-                                            </button>
-                                            {siteDropdownOpen && (
-                                                <div className={styles.selectDropdown}>
-                                                    <div
-                                                        className={`${styles.selectOption} ${!formData.siteId ? styles.selectOptionActive : ''}`}
-                                                        onClick={() => {
-                                                            setFormData({ ...formData, siteId: "" });
-                                                            setSiteDropdownOpen(false);
-                                                        }}
-                                                    >
-                                                        Select a site
-                                                    </div>
-                                                    {sites.map((site) => (
-                                                        <div
-                                                            key={site.id}
-                                                            className={`${styles.selectOption} ${site.id === formData.siteId ? styles.selectOptionActive : ''}`}
-                                                            onClick={() => {
-                                                                setFormData({ ...formData, siteId: site.id });
-                                                                setSiteDropdownOpen(false);
-                                                            }}
-                                                        >
-                                                            {site.name}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </Col>
-                                )}
+                                <Col className="mb-4">
+                                    <Form.Label className="fw-semibold">Assign to Site</Form.Label>
+                                    <SiteSelector value={formData.siteId} onChange={(id) => setFormData({ ...formData, siteId: id || '' })} />
+                                </Col>
                             </Row>
                             <Row>
                                 <Col className="mb-4">

@@ -6,6 +6,7 @@ import styles from '../product-stages.module.scss';
 import Api from '../../shared/api/apiLink';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
+import SiteSelector from '../../shared/site-selector/SiteSelector';
 
 export default function MoveFish() {
   // State Declarations
@@ -25,7 +26,12 @@ export default function MoveFish() {
     remarks: '',
   });
   const [loader, setLoader] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [siteFilter, setSiteFilter] = useState('');
+
+  const handleSiteChange = (id, name) => {
+    setSiteFilter(name || '');
+  };
 
   // Fetch Stages
   useEffect(() => {
@@ -122,13 +128,15 @@ export default function MoveFish() {
   };
 
   // Filter Ponds
-  const filteredFromPonds = stages.filter((stage) =>
-    stage.title?.toLowerCase().includes(pondFromSearch.toLowerCase())
-  );
+  const filteredFromPonds = stages.filter((stage) => {
+    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    return matchesSite && stage.title?.toLowerCase().includes(pondFromSearch.toLowerCase());
+  });
 
-  const filteredToPonds = stages.filter((stage) =>
-    stage.title?.toLowerCase().includes(pondToSearch.toLowerCase())
-  );
+  const filteredToPonds = stages.filter((stage) => {
+    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    return matchesSite && stage.title?.toLowerCase().includes(pondToSearch.toLowerCase());
+  });
 
   // Get Selected Stage Names for Confirmation
   const selectedStageNames = stages
@@ -200,6 +208,10 @@ export default function MoveFish() {
             <ToastContainer />
             <Form onSubmit={handleMoveFishes}>
               <h4 className="my-5">Move Fish</h4>
+              <div className="mb-4" style={{ maxWidth: '250px' }}>
+                <Form.Label className="fw-semibold">Site</Form.Label>
+                <SiteSelector onChange={handleSiteChange} />
+              </div>
               <Row>
                 <Col md={12} lg={6} className="mb-4">
                   <Form.Label className="fw-semibold">Pond From</Form.Label>

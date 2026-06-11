@@ -7,6 +7,7 @@ import Api from '../../shared/api/apiLink';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { useNavigate } from 'react-router-dom';
+import SiteSelector from '../../shared/site-selector/SiteSelector';
 
 const HarvestFish = () => {
   const navigate = useNavigate();
@@ -21,7 +22,12 @@ const HarvestFish = () => {
     remarks: '',
   });
   const [loader, setLoader] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [siteFilter, setSiteFilter] = useState('');
+
+  const handleSiteChange = (id, name) => {
+    setSiteFilter(name || '');
+  };
 
   // Fetch Fish Stages
   useEffect(() => {
@@ -63,9 +69,10 @@ const HarvestFish = () => {
   };
 
   // Filter Ponds for Dropdown
-  const filteredPonds = stages.filter((stage) =>
-    stage.title?.toLowerCase().includes(pondSearch.toLowerCase())
-  );
+  const filteredPonds = stages.filter((stage) => {
+    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    return matchesSite && stage.title?.toLowerCase().includes(pondSearch.toLowerCase());
+  });
 
   // Handle Form Submission
   const handleAddFish = async (e) => {
@@ -124,6 +131,10 @@ const HarvestFish = () => {
             <ToastContainer />
             <Form className={styles.create_form} onSubmit={handleAddFish}>
               <h4 className="mt-5 mb-5">Harvest Fish</h4>
+              <div className="mb-4" style={{ maxWidth: '250px' }}>
+                <Form.Label className="fw-semibold">Site</Form.Label>
+                <SiteSelector onChange={handleSiteChange} />
+              </div>
               <Row>
                 <Col md={12} lg={6} className="mb-4">
                   <Form.Label className="fw-semibold">Pond From</Form.Label>

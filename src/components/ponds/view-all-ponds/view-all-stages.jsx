@@ -5,12 +5,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product-stages.module.scss';
 import { BsExclamationTriangleFill, BsPencilFill, BsTrash, BsSearch, BsDownload, BsThreeDotsVertical } from "react-icons/bs";
 import { Form, Button, Spinner, Alert, Modal, Popover, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import Api, { ApiV2 } from "../../shared/api/apiLink";
+import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
-import { useSelector } from 'react-redux';
-import { hasPermission } from "../../shared/permissions/permissions";
 import { useNavigate } from 'react-router-dom';
+import SiteSelector from "../../shared/site-selector/SiteSelector";
 
 const ViewAllStages = () => {
   const [stages, setStages] = useState([]);
@@ -37,27 +36,15 @@ const ViewAllStages = () => {
   const [showSamplingModal, setShowSamplingModal] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [selectedNote, setSelectedNote] = useState(null);
-  const [sites, setSites] = useState([]);
   const [showAside, setShowAside] = useState(false);
   const [asideStage, setAsideStage] = useState(null);
   const [openMenuStageId, setOpenMenuStageId] = useState(null);
 
-  const userTypes = useSelector((store) => store.user?.userTypes || []);
-  const canSeeSiteFilter = hasPermission(userTypes, 'site-management');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!canSeeSiteFilter) return;
-    const fetchSites = async () => {
-      try {
-        const res = await ApiV2.get('/v2/all-site');
-        setSites(Array.isArray(res.data?.data) ? res.data.data : []);
-      } catch (err) {
-        console.error('Failed to fetch sites:', err);
-      }
-    };
-    fetchSites();
-  }, [canSeeSiteFilter]);
+  const handleSiteChange = (id, name) => {
+    setSiteFilter(name || '');
+  };
 
   const handleNoteClick = (note) => {
     setSelectedNote(note);
@@ -324,21 +311,10 @@ const ViewAllStages = () => {
             {/* ── Filter Bar ── */}
             <div className="border rounded p-3 mb-4" style={{ backgroundColor: '#fff' }}>
               <div className="d-flex flex-wrap gap-3 align-items-end">
-                {canSeeSiteFilter && (
-                  <div style={{ minWidth: '155px' }}>
-                    <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Site</label>
-                    <select
-                      className="form-select form-select-sm shadow-none"
-                      value={siteFilter}
-                      onChange={(e) => setSiteFilter(e.target.value)}
-                    >
-                      <option value="">All Sites</option>
-                      {sites.map((site) => (
-                        <option key={site.id} value={site.name}>{site.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                <div style={{ minWidth: '155px' }}>
+                  <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Site</label>
+                  <SiteSelector onChange={handleSiteChange} />
+                </div>
                 <div style={{ minWidth: '155px' }}>
                   <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Status</label>
                   <select
@@ -382,7 +358,7 @@ const ViewAllStages = () => {
                       Site: {siteFilter}
                       <span
                         style={{ cursor: 'pointer', marginLeft: '2px', fontWeight: 700 }}
-                        onClick={() => setSiteFilter('')}
+                        onClick={() => { setSiteFilter(''); }}
                       >
                         ×
                       </span>

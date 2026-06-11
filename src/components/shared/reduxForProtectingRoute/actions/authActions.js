@@ -1,4 +1,4 @@
-import { LOGIN_USER, LOGOUT_USER } from './types';
+import { LOGIN_USER, LOGOUT_USER, SET_ACTIVE_SITE } from './types';
 import { jwtDecode } from 'jwt-decode';
 import { extractUserTypes } from '../../permissions/permissions';
 
@@ -33,3 +33,8 @@ export const logoutUser = () => {
     type: LOGOUT_USER,
   };
 };
+
+export const setActiveSite = (site) => ({
+  type: SET_ACTIVE_SITE,
+  payload: site,
+});

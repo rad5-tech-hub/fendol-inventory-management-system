@@ -1,7 +1,17 @@
-import { LOGIN_USER, LOGOUT_USER } from '../actions/types';
+import { LOGIN_USER, LOGOUT_USER, SET_ACTIVE_SITE } from '../actions/types';
 import { jwtDecode } from 'jwt-decode';
 import { extractUserTypes } from '../../permissions/permissions';
 
+const LS_KEY = 'fendol_active_site';
+
+const loadActiveSite = () => {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
 
 const token = sessionStorage.getItem('authToken');
 const getInitialUser = () => {
@@ -23,6 +33,7 @@ const getInitialUser = () => {
 const initialState = {
   authenticated: !!token,
   user: getInitialUser(),
+  activeSite: loadActiveSite(),
 };
 
 const authReducer = (state = initialState, action) => {
@@ -32,12 +43,25 @@ const authReducer = (state = initialState, action) => {
         ...state,
         authenticated: true,
         user: action.payload?.user || { userTypes: [] },
+        activeSite: loadActiveSite(),
       };
     case LOGOUT_USER:
+      localStorage.removeItem(LS_KEY);
       return {
         ...state,
         authenticated: false,
         user: { userTypes: [] },
+        activeSite: null,
+      };
+    case SET_ACTIVE_SITE:
+      if (action.payload) {
+        localStorage.setItem(LS_KEY, JSON.stringify(action.payload));
+      } else {
+        localStorage.removeItem(LS_KEY);
+      }
+      return {
+        ...state,
+        activeSite: action.payload,
       };
     default:
       return state;

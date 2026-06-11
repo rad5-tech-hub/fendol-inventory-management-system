@@ -6,7 +6,8 @@ import styles from '../process.module.scss';
 import { Spinner, Alert, OverlayTrigger, Popover } from "react-bootstrap";
 import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
-import Api, { ApiV2 } from '../../shared/api/apiLink';
+import Api from '../../shared/api/apiLink';
+import SiteSelector from '../../shared/site-selector/SiteSelector';
 
 // ─── inline style tokens (no changes to process.module.scss) ────────────────
 const PRIMARY    = '#512728';
@@ -410,7 +411,6 @@ export default function ViewSummary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [siteFilter, setSiteFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [sites, setSites] = useState([]);
   const [openActionMenu, setOpenActionMenu] = useState(null);
   const [detailsPanel, setDetailsPanel] = useState(null);
   const [panelVisible, setPanelVisible] = useState(false);
@@ -440,18 +440,6 @@ export default function ViewSummary() {
       }
     };
     fetchMoveFishHistory();
-  }, []);
-
-  useEffect(() => {
-    const fetchSites = async () => {
-      try {
-        const res = await ApiV2.get('/v2/all-site');
-        setSites(Array.isArray(res.data?.data) ? res.data.data : []);
-      } catch (err) {
-        console.error('Failed to fetch sites:', err);
-      }
-    };
-    fetchSites();
   }, []);
 
   useEffect(() => {
@@ -681,16 +669,7 @@ export default function ViewSummary() {
                 />
                 <FaChevronDown style={s.filterSelectIcon} />
               </div>
-              <select
-                value={siteFilter}
-                onChange={e => setSiteFilter(e.target.value)}
-                style={{ ...s.filterSelect, border: `1px solid ${BORDER}`, appearance: 'auto', cursor: 'pointer' }}
-              >
-                <option value="">All Sites</option>
-                {sites.map(site => (
-                  <option key={site.id} value={site.name}>{site.name}</option>
-                ))}
-              </select>
+              <SiteSelector onChange={(id, name) => setSiteFilter(name || '')} />
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}

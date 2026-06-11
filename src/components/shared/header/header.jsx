@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Row, Col, Dropdown, ButtonGroup, Button, Navbar, Modal, Spinner, InputGroup } from "react-bootstrap";
 import { FiDownload } from "react-icons/fi";
-import { FaBars, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaBars, FaEye, FaEyeSlash, FaChevronDown, FaMapMarkerAlt, FaGlobeAmericas, FaCheck } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import Logo from "../../../assests/logo.png";
-import Api, { ApiV2 } from '../../shared/api/apiLink'; // Import your API utility
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { jwtDecode } from 'jwt-decode';
 import { toast } from 'react-toastify';
+import { setActiveSite } from '../reduxForProtectingRoute/actions/authActions';
 import styles from "./header.module.scss";
 
 export default function Header({ toggleSidebar }) {
@@ -24,6 +26,52 @@ export default function Header({ toggleSidebar }) {
   const [newPassword, setNewPassword] = useState('');
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const dispatch = useDispatch();
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const activeSite = useSelector((store) => store.activeSite);
+  const isSuperAdmin = userTypes.includes('super_admin');
+
+  const [siteOptions, setSiteOptions] = useState([]);
+  const [siteLoading, setSiteLoading] = useState(false);
+  const [showSiteDropdown, setShowSiteDropdown] = useState(false);
+  const siteDropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    let cancelled = false;
+    const fetchSites = async () => {
+      setSiteLoading(true);
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (!cancelled) setSiteOptions(data);
+      } catch {
+        if (!cancelled) setSiteOptions([]);
+      } finally {
+        if (!cancelled) setSiteLoading(false);
+      }
+    };
+    fetchSites();
+    return () => { cancelled = true; };
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (siteDropdownRef.current && !siteDropdownRef.current.contains(e.target)) {
+        setShowSiteDropdown(false);
+      }
+    };
+    if (showSiteDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSiteDropdown]);
+
+  const handleSiteSelect = useCallback((site) => {
+    dispatch(setActiveSite(site));
+    setShowSiteDropdown(false);
+  }, [dispatch]);
 
   const token = sessionStorage.getItem('authToken');
   let userName = '';
@@ -234,6 +282,62 @@ export default function Header({ toggleSidebar }) {
                 </div>
               )}
             </div>
+
+            {isSuperAdmin && (
+              <div ref={siteDropdownRef} className={`d-flex align-items-center position-relative me-2 ${styles.siteSelectorWrapper}`}>
+                <button
+                  className={styles.sitePill}
+                  onClick={() => setShowSiteDropdown((prev) => !prev)}
+                >
+                  <span className={styles.sitePillIcon}>
+                    {activeSite ? <FaMapMarkerAlt /> : <FaGlobeAmericas />}
+                  </span>
+                  <span className={styles.sitePillText}>
+                    {activeSite ? activeSite.name : "All Sites"}
+                  </span>
+                  <FaChevronDown
+                    size={10}
+                    className={`${styles.sitePillChevron} ${showSiteDropdown ? styles.chevronOpen : ""}`}
+                  />
+                </button>
+                {showSiteDropdown && (
+                  <div className={styles.siteDropdown}>
+                    <div className={styles.siteDropdownHeader}>Select a site</div>
+                    <button
+                      className={`${styles.siteDropdownItem} ${!activeSite ? styles.siteDropdownItemActive : ""}`}
+                      onClick={() => handleSiteSelect(null)}
+                    >
+                      <FaGlobeAmericas className={styles.siteDropdownIcon} />
+                      <span className={styles.siteDropdownLabel}>All Sites</span>
+                      {!activeSite && <FaCheck className={styles.siteDropdownCheck} />}
+                    </button>
+                    <div className={styles.siteDropdownDivider} />
+                    {siteLoading ? (
+                      <div className={styles.siteDropdownLoading}>Loading...</div>
+                    ) : siteOptions.length === 0 ? (
+                      <div className={styles.siteDropdownEmpty}>No sites available</div>
+                    ) : (
+                      siteOptions.map((site) => (
+                        <button
+                          key={site.id}
+                          className={`${styles.siteDropdownItem} ${activeSite?.id === site.id ? styles.siteDropdownItemActive : ""}`}
+                          onClick={() => handleSiteSelect({ id: site.id, name: site.name })}
+                        >
+                          <FaMapMarkerAlt className={styles.siteDropdownIcon} />
+                          <div className={styles.siteDropdownInfo}>
+                            <span className={styles.siteDropdownLabel}>{site.name}</span>
+                            {site.location && (
+                              <span className={styles.siteDropdownSub}>{site.location}</span>
+                            )}
+                          </div>
+                          {activeSite?.id === site.id && <FaCheck className={styles.siteDropdownCheck} />}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Download App Button */}
             {isInstallable && (

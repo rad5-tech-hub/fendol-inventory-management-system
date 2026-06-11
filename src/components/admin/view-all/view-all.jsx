@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate";
-import { useSelector } from 'react-redux';
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../admin-styles.module.scss';
 import { BsExclamationTriangleFill } from "react-icons/bs";
-import Api, { ApiV2 } from '../../shared/api/apiLink';
+import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Spinner, Alert, Form } from 'react-bootstrap';
+import { Spinner, Alert } from 'react-bootstrap';
 import { FaTrashAlt, FaUserPlus, FaFilter, FaEdit } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
-import { hasPermission } from '../../shared/permissions/permissions';
+import SiteSelector from '../../shared/site-selector/SiteSelector';
 
 const avatarColors = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47'];
 
@@ -44,9 +43,7 @@ export default function ViewAll() {
   const [adminsPerPage] = useState(10);
   const [showSidebar, setShowSidebar] = useState(false);
   const [filterSite, setFilterSite] = useState('');
-  const [sites, setSites] = useState([]);
   const navigate = useNavigate();
-  const userTypes = useSelector((state) => state.user?.userTypes || []);
 
   const fetchData = async () => {
     try {
@@ -68,19 +65,6 @@ export default function ViewAll() {
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (!hasPermission(userTypes, 'admin', 'create')) return;
-    const fetchSites = async () => {
-      try {
-        const res = await ApiV2.get('/v2/all-site');
-        setSites(Array.isArray(res.data?.data) ? res.data.data : []);
-      } catch (err) {
-        console.error('Failed to fetch sites:', err.response?.data || err.message);
-      }
-    };
-    fetchSites();
-  }, [userTypes]);
 
   const handleDelete = async (adminId) => {
     const loadingToast = toast.loading("Deleting Admin...", { className: 'dark-toast' });
@@ -144,25 +128,12 @@ export default function ViewAll() {
               </div>
             </div>
 
-            {hasPermission(userTypes, 'admin', 'create') && (
-              <div className={styles.filterBar}>
-                <Form.Select
-                  className={styles.siteSelect}
-                  value={filterSite}
-                  onChange={(e) => setFilterSite(e.target.value)}
-                >
-                  <option value="">All Sites</option>
-                  {sites.map((site) => (
-                    <option key={site.id} value={site.id}>
-                      {site.name}
-                    </option>
-                  ))}
-                </Form.Select>
-                <button type="button" className={styles.filterBtn}>
-                  <FaFilter /> Filter
-                </button>
-              </div>
-            )}
+            <div className={styles.filterBar}>
+              <SiteSelector value={filterSite} onChange={(id) => setFilterSite(id || '')} />
+              <button type="button" className={styles.filterBtn}>
+                <FaFilter /> Filter
+              </button>
+            </div>
 
             {loading ? (
               <div className="text-center">

@@ -8,6 +8,7 @@ import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
 import styled from "styled-components";
+import SiteSelector from "../../shared/site-selector/SiteSelector";
 
 const NavTab = styled.div`
   display: flex;
@@ -43,7 +44,12 @@ export default function ViewAllHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+  const [siteFilter, setSiteFilter] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false);
+
+  const handleSiteChange = (id, name) => {
+    setSiteFilter(name || "");
+  };
 
   // Separate pagination state for each tab
   const [pagination, setPagination] = useState({
@@ -134,20 +140,39 @@ export default function ViewAllHistory() {
     return text.length > 40 ? `${text.substring(0, 40)}....` : text;
   };
 
-  const handleDateChange = (e) => {
-    const selected = e.target.value;
-    setSelectedDate(selected);
-    if (selected === "") {
-      setFilteredData(data.slice(pagination[activeTab].currentPage * 10, (pagination[activeTab].currentPage + 1) * 10));
-    } else {
-      const formattedSelectedDate = new Date(selected).toISOString().split('T')[0];
-      const filtered = data.filter((item) => {
+  const getItemSite = (item) => {
+    return item.site || item.sourcePond?.site || item.pondName?.site || '';
+  };
+
+  const filterData = () => {
+    if (!data.length) return;
+
+    let filtered = data;
+
+    if (selectedDate) {
+      const formattedSelectedDate = new Date(selectedDate).toISOString().split('T')[0];
+      filtered = filtered.filter((item) => {
         const itemDate = new Date(item.createdAt).toISOString().split('T')[0];
         return itemDate === formattedSelectedDate;
       });
-      setFilteredData(filtered);
     }
+
+    if (siteFilter) {
+      filtered = filtered.filter((item) => {
+        return getItemSite(item)?.toLowerCase() === siteFilter.toLowerCase();
+      });
+    }
+
+    setFilteredData(filtered);
   };
+
+  const handleDateChange = (e) => {
+    setSelectedDate(e.target.value);
+  };
+
+  useEffect(() => {
+    filterData();
+  }, [siteFilter, selectedDate, data]);
 
   const renderTable = () => {
     const currentConfig = tabConfig[activeTab];
@@ -237,7 +262,10 @@ export default function ViewAllHistory() {
                   </a>
                 ))}
               </NavTab>
-              <div className="mt-3 mt-md-0">
+              <div className="mt-3 mt-md-0 d-flex gap-3 align-items-center">
+                <div style={{ minWidth: '180px' }}>
+                  <SiteSelector onChange={handleSiteChange} />
+                </div>
                 <Form.Control
                   type="date"
                   className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}

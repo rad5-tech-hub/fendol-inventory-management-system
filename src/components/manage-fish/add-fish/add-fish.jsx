@@ -7,6 +7,7 @@ import styles from '../product-stages.module.scss';
 import Api from '../../shared/api/apiLink';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
+import SiteSelector from '../../shared/site-selector/SiteSelector';
 
 const AddFish = () => {
   const [stages, setStages] = useState([]);
@@ -19,8 +20,13 @@ const AddFish = () => {
     speciesId: '',
   });
   const [loader, setLoader] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [siteFilter, setSiteFilter] = useState('');
   const navigate = useNavigate();
+
+  const handleSiteChange = (id, name) => {
+    setSiteFilter(name || '');
+  };
 
   // Fetch Data with useEffect
   useEffect(() => {
@@ -118,9 +124,10 @@ const AddFish = () => {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   // Filtered Ponds for Dropdown
-  const filteredPonds = stages.filter((stage) =>
-    stage.title?.toLowerCase().includes(pondSearch.toLowerCase())
-  );
+  const filteredPonds = stages.filter((stage) => {
+    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    return matchesSite && stage.title?.toLowerCase().includes(pondSearch.toLowerCase());
+  });
 
   // JSX Rendering
   return (
@@ -137,6 +144,10 @@ const AddFish = () => {
             <ToastContainer />
             <Form className={styles.create_form} onSubmit={handleAddFish}>
               <h4 className="mt-5 mb-5">Add Fish</h4>
+              <div className="mb-4" style={{ maxWidth: '250px' }}>
+                <Form.Label className="fw-semibold">Site</Form.Label>
+                <SiteSelector onChange={handleSiteChange} />
+              </div>
               <Row>
                 <Col md={12} lg={6} className="mb-4">
                   <Form.Label className="fw-semibold">Pond From</Form.Label>

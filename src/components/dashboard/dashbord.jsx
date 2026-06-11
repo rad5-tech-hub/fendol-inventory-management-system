@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import styles from './dashboard.module.scss';
 import Api from '../shared/api/apiLink';
 import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
+import { useSelector } from 'react-redux';
+import SiteSelector from '../shared/site-selector/SiteSelector';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -44,22 +46,27 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [siteId, setSiteId] = useState(null);
+  const activeSite = useSelector((store) => store.activeSite);
+
+  const effectiveSiteId = activeSite?.id || siteId;
+
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = effectiveSiteId ? { siteId: effectiveSiteId } : {};
+      const response = await Api.get('/dashboard', { params });
+      setDashboardData(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch dashboard data.');
+      setLoading(false);
+    }
+  }, [effectiveSiteId]);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const response = await Api.get('/dashboard');
-        setDashboardData(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch dashboard data.');
-        setLoading(false);
-      }
-    };
-
     fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
 
   if (loading) {
     return (
@@ -300,12 +307,10 @@ const Dashboard = () => {
           <main>
             <div className={styles.create_form}>
               <div className={styles.pageTitleRow}>
-                <div className={styles.pageTitleLeft}>
-                  <h1 className={styles.pageTitle}>Dashboard Overview</h1>
-                  <div className={styles.siteDropdown}>
-                    All Sites <span className={styles.dropdownCaret}>▾</span>
+                  <div className={styles.pageTitleLeft}>
+                    <h1 className={styles.pageTitle}>Dashboard Overview</h1>
+                    <SiteSelector value={siteId} onChange={(id) => setSiteId(id)} />
                   </div>
-                </div>
                 <div className={styles.pageTitleRight}>
                   <div className={styles.searchBar}>
                     <span className={styles.searchIcon}>🔍</span>
@@ -411,9 +416,9 @@ const Dashboard = () => {
                     <div className={styles.chartCardHeader}>
                       <span className={styles.chartCardTitle}>Sales Summary</span>
                       <div className={styles.chartCardControls}>
-                        <div className={styles.chartSiteDropdown}>
-                          All Sites <span>▾</span>
-                        </div>
+                        <span className={styles.chartSiteIndicator}>
+                          {activeSite ? activeSite.name : 'All Sites'}
+                        </span>
                         <span className={styles.viewDetails}>View Details &rsaquo;</span>
                       </div>
                     </div>
@@ -424,9 +429,9 @@ const Dashboard = () => {
                   <div className={styles.chartCard}>
                     <div className={styles.chartCardHeader}>
                       <span className={styles.chartCardTitle}>Finance</span>
-                      <div className={styles.chartSiteDropdown}>
-                        All Sites <span>▾</span>
-                      </div>
+                      <span className={styles.chartSiteIndicator}>
+                        {activeSite ? activeSite.name : 'All Sites'}
+                      </span>
                     </div>
                     {renderChart(financeSummaryData, 'Finance Summary', 'bar')}
                   </div>
