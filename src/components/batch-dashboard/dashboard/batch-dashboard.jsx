@@ -86,17 +86,14 @@ export default function BatchDashboard() {
         </div>
         <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.page}>
-            <div className={styles.pageHeader}>
-              <h4>Batch Dashboard</h4>
-              <div className={styles.headerActions}>
-                <button className={styles.howItWorksBtn} onClick={() => {}}>
-                  <IoHelpCircleOutline size={18} /> How it works
-                </button>
-                <button className={styles.exportBtn} onClick={() => {}}>
-                  <IoDownloadOutline size={18} /> Export Report
-                </button>
+              <div className={styles.pageHeader}>
+                <h4>Batch Dashboard</h4>
+                <div className={styles.headerActions}>
+                  <button className={styles.howItWorksBtn} onClick={() => {}}>
+                    <IoHelpCircleOutline size={18} /> How it works
+                  </button>
+                </div>
               </div>
-            </div>
 
             <div className={styles.statGrid}>
               {statCards.map((card, i) => (

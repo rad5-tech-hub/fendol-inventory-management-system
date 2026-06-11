@@ -88,17 +88,14 @@ export default function ViewAllBatches() {
               <span className={styles.breadcrumbActive}>All Batches</span>
             </div>
 
-            <div className={styles.pageHeader}>
-              <h4>All Hatch Batches</h4>
-              <div className={styles.headerActions}>
-                <button className={styles.exportBtn} onClick={() => {}}>
-                  <IoDownloadOutline size={16} /> Export Report
-                </button>
-                <button className={styles.primaryBtn} onClick={() => navigate('/hatchery/hatch-batches/create')}>
-                  <FaPlus size={12} /> New Hatch Batch
-                </button>
+              <div className={styles.pageHeader}>
+                <h4>All Hatch Batches</h4>
+                <div className={styles.headerActions}>
+                  <button className={styles.primaryBtn} onClick={() => navigate('/hatchery/hatch-batches/create')}>
+                    <FaPlus size={12} /> New Hatch Batch
+                  </button>
+                </div>
               </div>
-            </div>
 
             <div className={styles.statGrid}>
               {statCards.map((card, i) => (

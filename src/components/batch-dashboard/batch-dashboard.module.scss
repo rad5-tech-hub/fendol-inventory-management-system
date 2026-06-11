@@ -39,7 +39,6 @@
   height: 89vh;
   padding: 40px;
   overflow: auto;
-  white-space: nowrap;
   background-color: #FAFCFF;
   @include hide-scrollbar;
   box-shadow: inset -8px 0 6px -6px rgba(0,0,0,0.05);
@@ -61,6 +60,12 @@
     font-weight: 600;
     color: #2E3135;
     margin: 0;
+  }
+
+  @media (max-width: 576px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
 
@@ -386,6 +391,12 @@
     white-space: nowrap;
   }
 
+  @media (max-width: 576px) {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
   :global {
     .page-link {
       color: #512728;
@@ -496,12 +507,22 @@
       color: #2E3135;
       margin: 0;
     }
+
+    @media (max-width: 576px) {
+      flex-wrap: wrap;
+    }
   }
 
   .summaryActions {
     display: flex;
     align-items: center;
     gap: 10px;
+  }
+
+  @media (max-width: 576px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
 
@@ -813,6 +834,8 @@
   gap: 0;
   border-bottom: 1px solid #E5E7EB;
   margin-top: 20px;
+  overflow-x: auto;
+  @include hide-scrollbar;
 }
 
 .tab {

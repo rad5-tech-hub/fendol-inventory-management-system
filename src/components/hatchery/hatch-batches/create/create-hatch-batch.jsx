@@ -31,7 +31,6 @@ export default function CreateHatchBatch() {
     numMales: editData?.males ?? 6,
     avgWeightMale: editData?.avgWeightMale ?? 2.70,
     eggWeight: editData?.eggWeight ?? 1.20,
-    numEggs: editData ? Math.round(editData.fryProduced / (editData.hatchability / 100)) : 120000,
     hatchability: editData?.hatchability ?? 72.8,
     notes: editData?.notes || '',
   });
@@ -41,7 +40,7 @@ export default function CreateHatchBatch() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const estimatedFryCount = Math.round(Number(form.numEggs) * (Number(form.hatchability) / 100));
+  const estimatedFryCount = Math.round(Number(form.eggWeight) * 9500 * (Number(form.hatchability) / 100));
   const notesLength = form.notes.length;
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
@@ -116,34 +115,16 @@ export default function CreateHatchBatch() {
                 </div>
                 <Row className="g-3">
                   <Col md={6}>
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Female Broodstock Used</Form.Label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: '#F3F4F6', borderRadius: 4, fontSize: '0.82rem' }}>
-                        F-001 (3.2 kg) <span style={{ cursor: 'pointer', color: '#8C949B', marginLeft: 4 }}>&times;</span>
-                      </span>
-                    </div>
-                    <button className={styles.outlineBtn} style={{ fontSize: '0.78rem', padding: '4px 12px' }} onClick={() => {}}>+ Add More</button>
-                    <div className="mt-3">
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem', color: '#2E3135' }}>Number of Females</Form.Label>
-                      <Form.Control type="number" name="numFemales" value={form.numFemales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
-                    </div>
+                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Number of Females</Form.Label>
+                    <Form.Control type="number" name="numFemales" value={form.numFemales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                     <div className="mt-2">
                       <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem', color: '#2E3135' }}>Average Weight (kg)</Form.Label>
                       <Form.Control type="number" step="0.01" name="avgWeightFemale" value={form.avgWeightFemale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                     </div>
                   </Col>
                   <Col md={6}>
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Male Broodstock Used</Form.Label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: '#F3F4F6', borderRadius: 4, fontSize: '0.82rem' }}>
-                        M-002 (2.7 kg) <span style={{ cursor: 'pointer', color: '#8C949B', marginLeft: 4 }}>&times;</span>
-                      </span>
-                    </div>
-                    <button className={styles.outlineBtn} style={{ fontSize: '0.78rem', padding: '4px 12px' }} onClick={() => {}}>+ Add More</button>
-                    <div className="mt-3">
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem', color: '#2E3135' }}>Number of Males</Form.Label>
-                      <Form.Control type="number" name="numMales" value={form.numMales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
-                    </div>
+                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Number of Males</Form.Label>
+                    <Form.Control type="number" name="numMales" value={form.numMales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                     <div className="mt-2">
                       <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem', color: '#2E3135' }}>Average Weight (kg)</Form.Label>
                       <Form.Control type="number" step="0.01" name="avgWeightMale" value={form.avgWeightMale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
@@ -162,10 +143,6 @@ export default function CreateHatchBatch() {
                   <Col md={4}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Weight of Eggs (kg)</Form.Label>
                     <Form.Control type="number" step="0.01" name="eggWeight" value={form.eggWeight} onChange={handleChange} onWheel={(e) => e.target.blur()} />
-                  </Col>
-                  <Col md={4}>
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Number of Eggs</Form.Label>
-                    <Form.Control type="number" name="numEggs" value={form.numEggs} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                   </Col>
                   <Col md={4}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Hatchability Percentage (%)</Form.Label>
