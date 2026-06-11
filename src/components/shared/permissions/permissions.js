@@ -75,8 +75,17 @@ const ACCESS = {
 	// ── Damage / Loss ──
 	'damage-loss': ['super_admin', 'farm_manager'],
 
-	// ── Supplier ──
+	// ── Supplier (reused under Finance) ──
 	supplier: ['super_admin', 'farm_manager', 'sales_manager', 'finance'],
+
+	// ── Staff (under Finance) ──
+	staff: ['super_admin', 'farm_manager', 'finance'],
+
+	// ── Referral System ──
+	referral: ['super_admin', 'farm_manager', 'sales_manager'],
+
+	// ── MLM ──
+	mlm: ['super_admin', 'farm_manager', 'sales_manager'],
 };
 
 export const ROLE_TYPES = {

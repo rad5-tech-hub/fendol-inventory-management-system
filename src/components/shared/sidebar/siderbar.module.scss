@@ -142,9 +142,11 @@ $text-color: #ffffff;
     }
 
     .navigationLinks {
-        background: #3A281C;
+        background: #5A2626;
         border-radius: 8px;
-        padding: 16px 12px 16px 22px;
+        padding: 16px 12px 16px 12px;
+        margin-left: 12px;
+        border-left: 3px solid #B06426;
         box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.12);
         color: #ffffff;
         font-family: "Roboto Flex", system-ui;

@@ -20,6 +20,8 @@ import SiteManagementNavigations from "./site-management/siteManagementRouter";
 import ManageNavigations from "./manage-fish/manageRoute";
 import BatchDashboardNavigations from "./batch-dashboard/batchDashboardRouter";
 import HatcheryNavigations from "./hatchery/hatcheryRouter";
+import ReferralNavigations from "./referral/referralRouter";
+import MlmNavigations from "./mlm/mlmRouter";
 import { ToastContainer } from "react-toastify";
 import Dashboard from "./dashboard/dashbord";
 
@@ -203,6 +205,26 @@ export default function RouterSwitch() {
               <ProtectedRoute>
                 <RoleRoute resource="hatchery">
                   <HatcheryNavigations />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="referral/*"
+            element={
+              <ProtectedRoute>
+                <RoleRoute resource="referral">
+                  <ReferralNavigations />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="mlm/*"
+            element={
+              <ProtectedRoute>
+                <RoleRoute resource="mlm">
+                  <MlmNavigations />
                 </RoleRoute>
               </ProtectedRoute>
             }

@@ -6,6 +6,8 @@ import MoveFish from './move-fish/move-fish';
 import HarvestFish from './harvest-fish/harvest';
 import DamageFish from './damage-fish/damage-fish';
 import ViewAllHistory from './view-all-histories/view-all-histories';
+import Sampling from './sampling/sampling';
+import Mortality from './mortality/mortality';
 
 const ManageNavigations = () => {
     
@@ -17,6 +19,8 @@ const ManageNavigations = () => {
       <Route path='harvest-fish' element={<HarvestFish/>}/>      
       <Route path='damage-fish' element={<DamageFish/>}/>      
       <Route path='view-all-histories' element={<ViewAllHistory/>}/>
+      <Route path='sampling' element={<Sampling/>}/>
+      <Route path='mortality' element={<Mortality/>}/>
     </Routes>
   );
 };
