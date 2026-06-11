@@ -58,6 +58,8 @@ export default function SideBar({ show, handleClose }) {
         setOpen((prev) => ({ ...prev, fry_production: true }));
       } else if (path.includes('/hatchery/transfers')) {
         setOpen((prev) => ({ ...prev, transfers: true }));
+      } else if (path.includes('/hatchery/cost-analysis')) {
+        setOpen((prev) => ({ ...prev, cost_analysis: true }));
       }
     } else if (path.includes("/notification")) {
       setOpen((prev) => ({ ...prev, notification: true }));
@@ -542,6 +544,48 @@ export default function SideBar({ show, handleClose }) {
                             style={{ cursor: "pointer" }}
                           >
                             <FaCircle size={10} className="me-2" /> Transfer History
+                          </div>
+                        </Nav.Item>
+                      </Card.Body>
+                    </div>
+                  </Collapse>
+                </Card>
+              )}
+
+              {/* Cost Analysis card */}
+              {hasPermission(userTypes, 'hatchery') && (
+                <Card className={styles.card}>
+                  <Card.Header
+                    onClick={() => handleToggle("cost_analysis")}
+                    aria-controls="cost_analysis-collapse-text"
+                    aria-expanded={open.cost_analysis}
+                    style={{ cursor: "pointer" }}
+                    className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader}`}
+                  >
+                    <span className={`${styles.title}`}>
+                      <MdOutlinePointOfSale size={25} className="me-1" /> Cost Analysis
+                    </span>
+                    <span>{open.cost_analysis ? <FaChevronDown size={14} className="text-light" /> : <FaChevronRight size={14} className="text-light" />}</span>
+                  </Card.Header>
+                  <Collapse in={open.cost_analysis} style={{ transitionDuration: "0s" }}>
+                    <div id="cost_analysis-collapse-text" className="px-2">
+                      <Card.Body className={styles.navigationLinks}>
+                        <Nav.Item className="mb-3">
+                          <div
+                            onClick={() => navigate("/hatchery/cost-analysis/expenses")}
+                            className={`${location.pathname === "/hatchery/cost-analysis/expenses" ? styles.activeLink : styles.nonactiveLink}`}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <FaCircle size={10} className="me-2" /> Expenses
+                          </div>
+                        </Nav.Item>
+                        <Nav.Item className="my-3">
+                          <div
+                            onClick={() => navigate("/hatchery/cost-analysis/cost-reports")}
+                            className={`${location.pathname === "/hatchery/cost-analysis/cost-reports" ? styles.activeLink : styles.nonactiveLink}`}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <FaCircle size={10} className="me-2" /> Cost Reports
                           </div>
                         </Nav.Item>
                       </Card.Body>
