@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Pagination, Dropdown } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import { IoSearchOutline, IoFilterOutline, IoRefreshOutline, IoDownloadOutline } from 'react-icons/io5';
+import { IoSearchOutline, IoFilterOutline, IoRefreshOutline } from 'react-icons/io5';
 import { GiCirclingFish } from 'react-icons/gi';
 import { FaChartLine, FaCheckCircle, FaPlus } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
@@ -27,19 +27,13 @@ const hatchabilityColor = (v) => {
 };
 
 const rows = [
-  { id: 6, batchNo: 'HB-2025-006', dateInjected: 'May 25, 2025', dateStripped: 'May 26, 2025', dateHatched: 'May 28, 2025', females: 3, males: 6, eggWeight: 1.20, hatchability: 75.4, fryProduced: 9048, status: 'Completed' },
-  { id: 5, batchNo: 'HB-2025-005', dateInjected: 'May 20, 2025', dateStripped: 'May 21, 2025', dateHatched: 'May 23, 2025', females: 2, males: 5, eggWeight: 0.95, hatchability: 70.2, fryProduced: 6669, status: 'Completed' },
-  { id: 4, batchNo: 'HB-2025-004', dateInjected: 'May 15, 2025', dateStripped: 'May 16, 2025', dateHatched: 'May 18, 2025', females: 3, males: 6, eggWeight: 1.10, hatchability: 68.9, fryProduced: 7579, status: 'Active' },
-  { id: 3, batchNo: 'HB-2025-003', dateInjected: 'May 10, 2025', dateStripped: 'May 11, 2025', dateHatched: 'May 13, 2025', females: 2, males: 4, eggWeight: 1.05, hatchability: 65.7, fryProduced: 6899, status: 'Active' },
-  { id: 2, batchNo: 'HB-2025-002', dateInjected: 'May 06, 2025', dateStripped: 'May 06, 2025', dateHatched: 'May 08, 2025', females: 2, males: 4, eggWeight: 0.90, hatchability: 69.8, fryProduced: 5325, status: 'Active' },
-  { id: 1, batchNo: 'HB-2025-001', dateInjected: 'May 01, 2025', dateStripped: 'May 02, 2025', dateHatched: 'May 04, 2025', females: 3, males: 5, eggWeight: 1.25, hatchability: 72.1, fryProduced: 8512, status: 'Active' },
+  { id: 6, batchNo: 'HB-2025-006', dateInjected: 'May 25, 2025', dateStripped: 'May 26, 2025', dateHatched: 'May 28, 2025', females: 3, males: 6, eggWeight: 1.20, hatchability: 75.4, fryProduced: 9048 },
+  { id: 5, batchNo: 'HB-2025-005', dateInjected: 'May 20, 2025', dateStripped: 'May 21, 2025', dateHatched: 'May 23, 2025', females: 2, males: 5, eggWeight: 0.95, hatchability: 70.2, fryProduced: 6669 },
+  { id: 4, batchNo: 'HB-2025-004', dateInjected: 'May 15, 2025', dateStripped: 'May 16, 2025', dateHatched: 'May 18, 2025', females: 3, males: 6, eggWeight: 1.10, hatchability: 68.9, fryProduced: 7579 },
+  { id: 3, batchNo: 'HB-2025-003', dateInjected: 'May 10, 2025', dateStripped: 'May 11, 2025', dateHatched: 'May 13, 2025', females: 2, males: 4, eggWeight: 1.05, hatchability: 65.7, fryProduced: 6899 },
+  { id: 2, batchNo: 'HB-2025-002', dateInjected: 'May 06, 2025', dateStripped: 'May 06, 2025', dateHatched: 'May 08, 2025', females: 2, males: 4, eggWeight: 0.90, hatchability: 69.8, fryProduced: 5325 },
+  { id: 1, batchNo: 'HB-2025-001', dateInjected: 'May 01, 2025', dateStripped: 'May 02, 2025', dateHatched: 'May 04, 2025', females: 3, males: 5, eggWeight: 1.25, hatchability: 72.1, fryProduced: 8512 },
 ];
-
-const StatusBadge = ({ status }) => {
-  const bg = status === 'Completed' ? '#E8F5E9' : '#EFF6FF';
-  const color = status === 'Completed' ? '#2E7D32' : '#1D4ED8';
-  return <span className={styles.statusBadge} style={{ background: bg, color }}>{status}</span>;
-};
 
 export default function ViewAllBatches() {
   const navigate = useNavigate();
@@ -122,11 +116,6 @@ export default function ViewAllBatches() {
                   <option>All Sites</option>
                 </Form.Select>
               </div>
-              <div className={styles.filterSelect}>
-                <Form.Select>
-                  <option>All Statuses</option>
-                </Form.Select>
-              </div>
               <div className={styles.dateRange}>
                 <IoFilterOutline size={14} /> May 1, 2025 – May 30, 2025
               </div>
@@ -151,7 +140,6 @@ export default function ViewAllBatches() {
                     <th className="text-end">Egg Wt (kg)</th>
                     <th className="text-end">Hatchability</th>
                     <th className="text-end">Fry Produced</th>
-                    <th className="text-start">Status</th>
                     <th className="text-start">Actions</th>
                   </tr>
                 </thead>
@@ -169,10 +157,8 @@ export default function ViewAllBatches() {
                         <td className="text-end">{row.eggWeight.toFixed(2)}</td>
                         <td className="text-end"><span className={styles.stageBadge} style={{ background: hc.bg, color: hc.color }}>{row.hatchability}%</span></td>
                         <td className="text-end">{f(row.fryProduced)}</td>
-                        <td className="text-start"><StatusBadge status={row.status} /></td>
                         <td className="text-start">
                           <div className={styles.actionsCell}>
-                            <button className={styles.viewBtn} onClick={() => navigate(`/hatchery/hatch-batches/summary/${row.id}`)}>View Summary</button>
                             <ActionDropdown row={row} />
                           </div>
                         </td>

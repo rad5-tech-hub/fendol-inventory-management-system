@@ -30,11 +30,6 @@ const statusStyle = (status) => {
   }
 };
 
-const healthStyle = (status) => {
-  if (status === 'Healthy') return { bg: '#E8F5E9', color: '#22C55E', dot: '#22C55E' };
-  return { bg: '#FFF3E0', color: '#F97316', dot: '#F97316' };
-};
-
 const rows = [
   { id: 'M-001', weight: 2.70, age: 3.5, lastSpawn: 'May 20, 2025', usageCount: 6, status: 'Active', health: 'Healthy', notes: 'High performer' },
   { id: 'M-002', weight: 2.60, age: 3.2, lastSpawn: 'May 15, 2025', usageCount: 5, status: 'Active', health: 'Healthy', notes: 'Good quality semen' },
@@ -139,13 +134,12 @@ export default function MaleBroodstock() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th className="text-start">ID / Tag No. <span style={{ cursor: 'pointer' }}>↕</span></th>
-                    <th className="text-start">Weight (kg) <span style={{ cursor: 'pointer' }}>↕</span></th>
-                    <th className="text-start">Age (Years) <span style={{ cursor: 'pointer' }}>↕</span></th>
-                    <th className="text-start">Last Spawn Date <span style={{ cursor: 'pointer' }}>↕</span></th>
-                    <th className="text-start">Usage Count <span style={{ cursor: 'pointer' }}>↕</span></th>
-                    <th className="text-start">Status <span style={{ cursor: 'pointer' }}>↕</span></th>
-                    <th className="text-start">Health Status <span style={{ cursor: 'pointer' }}>↕</span></th>
+                    <th className="text-start">ID / Tag No.</th>
+                    <th className="text-start">Weight (kg)</th>
+                    <th className="text-start">Age (Years)</th>
+                    <th className="text-start">Last Spawn Date</th>
+                    <th className="text-start">Usage Count</th>
+                    <th className="text-start">Status</th>
                     <th className="text-start">Notes</th>
                     <th className="text-start">Actions</th>
                   </tr>
@@ -153,7 +147,6 @@ export default function MaleBroodstock() {
                 <tbody>
                   {rows.map((row) => {
                     const ss = statusStyle(row.status);
-                    const hs = healthStyle(row.health);
                     return (
                       <tr key={row.id}>
                         <td className="text-start">
@@ -165,12 +158,6 @@ export default function MaleBroodstock() {
                         <td className="text-start">{row.usageCount}</td>
                         <td className="text-start">
                           <span className={styles.statusBadge} style={{ background: ss.bg, color: ss.color }}>{row.status}</span>
-                        </td>
-                        <td className="text-start">
-                          <span className={styles.healthBadge} style={{ background: hs.bg, color: hs.color }}>
-                            <span className={styles.healthDot} style={{ background: hs.dot }} />
-                            {row.health}
-                          </span>
                         </td>
                         <td className="text-start" style={{ fontSize: '0.82rem', color: '#6B7280' }}>{row.notes}</td>
                         <td className="text-start">

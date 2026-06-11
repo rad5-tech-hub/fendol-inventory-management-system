@@ -324,8 +324,8 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <Row className="g-3 mb-4">
-                <Col xl={3} lg={6} md={6} sm={12} xs={12}>
+              <Row className="g-4 mb-4">
+                <Col xl={4} lg={6} md={6} sm={12} xs={12}>
                   <div className={styles.statCard}>
                     <div className={styles.statCardTop}>
                       <span className={styles.statLabel}>TOTAL SALES</span>
@@ -337,7 +337,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </Col>
-                <Col xl={3} lg={6} md={6} sm={12} xs={12}>
+                <Col xl={4} lg={6} md={6} sm={12} xs={12}>
                   <div className={styles.statCard}>
                     <div className={styles.statCardTop}>
                       <span className={styles.statLabel}>TOTAL CUSTOMERS</span>
@@ -349,7 +349,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </Col>
-                <Col xl={3} lg={6} md={6} sm={12} xs={12}>
+                <Col xl={4} lg={6} md={6} sm={12} xs={12}>
                   <div className={styles.statCard}>
                     <div className={styles.statCardTop}>
                       <span className={styles.statLabel}>ACTIVE PONDS</span>
@@ -363,7 +363,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </Col>
-                <Col xl={3} lg={6} md={6} sm={12} xs={12}>
+                <Col xl={4} lg={6} md={6} sm={12} xs={12}>
                   <div className={styles.statCard}>
                     <div className={styles.statCardTop}>
                       <span className={styles.statLabel}>TOTAL STOCK</span>

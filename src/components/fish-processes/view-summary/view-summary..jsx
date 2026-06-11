@@ -732,6 +732,7 @@ export default function ViewSummary() {
                     {Array.isArray(paginatedData) && paginatedData.map((history, index) => {
                       const formattedDate = formatDate(history.createdAt);
                       const status = deriveStatus(history);
+                      const displayStatus = status === 'Saved Draft' ? 'In Progress' : status;
                       const site   = deriveSite(history);
                       const batchNum = history.batchNumber || history.batch || `FDL-BT-${String(index + 1).padStart(4, '0')}`;
                       const isInProgress = status === 'In Progress';
@@ -838,11 +839,10 @@ export default function ViewSummary() {
                               fontSize: '12px',
                               fontWeight: 600,
                               whiteSpace: 'nowrap',
-                              ...(status === 'Completed'    && { backgroundColor: '#e6f9ee', color: '#28a745' }),
-                              ...(status === 'In Progress'  && { backgroundColor: '#fff8e1', color: '#f9a825' }),
-                              ...(status === 'Saved Draft'  && { backgroundColor: '#f1f3f4', color: TEXT_MUTED }),
+                              ...(displayStatus === 'Completed'   && { backgroundColor: '#e6f9ee', color: '#28a745' }),
+                              ...(displayStatus === 'In Progress' && { backgroundColor: '#fff8e1', color: '#f9a825' }),
                             }}>
-                              {status}
+                              {displayStatus}
                             </span>
                           </td>
                           <td style={s.td}>
@@ -873,30 +873,17 @@ export default function ViewSummary() {
                                   minWidth: '180px',
                                   padding: '6px 0',
                                 }}>
-                                  <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(history); }}>
-                                    <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
-                                  </button>
-                                  <button style={menuItemStyle} onClick={() => setOpenActionMenu(null)}>
-                                    <FaCalendarAlt style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Batch History
-                                  </button>
-                                  <button style={menuItemStyle} onClick={() => setOpenActionMenu(null)}>
-                                    <FaChevronDown style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> Export Record
-                                  </button>
-
-                                  {status === 'Saved Draft' && (
+                                  {status === 'Completed' ? (
+                                    <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(history); }}>
+                                      <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
+                                    </button>
+                                  ) : (
                                     <>
-                                      <hr style={{ margin: '4px 0', borderColor: BORDER }} />
-                                      <button style={menuItemStyle} onClick={() => setOpenActionMenu(null)}>
-                                        ✓ <span style={{ marginLeft: '8px' }}>Continue Process</span>
-                                      </button>
-                                      <button style={{ ...menuItemStyle, color: '#dc3545', fontWeight: 600 }} onClick={() => setOpenActionMenu(null)}>
-                                        🔄 <span style={{ marginLeft: '8px' }}>Complete Process</span>
+                                      <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(history); }}>
+                                        <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
                                       </button>
                                       <button style={menuItemStyle} onClick={() => setOpenActionMenu(null)}>
-                                        ✏️ <span style={{ marginLeft: '8px' }}>Edit Process</span>
-                                      </button>
-                                      <button style={{ ...menuItemStyle, color: '#dc3545' }} onClick={() => setOpenActionMenu(null)}>
-                                        🗑️ <span style={{ marginLeft: '8px' }}>Delete Draft</span>
+                                        <span style={{ marginRight: '8px', fontSize: '12px' }}>▶</span> Continue Progress
                                       </button>
                                     </>
                                   )}
@@ -984,144 +971,134 @@ export default function ViewSummary() {
           >
 
             {/* ── Header ── */}
-            <div style={{
-              padding: '22px 22px 18px',
-              borderBottom: `2px dashed #e8eaed`,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexShrink: 0,
-            }}>
-              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: PRIMARY }}>
-                Process Details
-              </h2>
-              <button
-                onClick={closeDetails}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  color: TEXT_MUTED,
-                  lineHeight: 1,
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                }}
-              >
-                ×
-              </button>
-            </div>
+            {(() => {
+              const drawerStatus = deriveStatus(detailsPanel);
+              const isCompleted = drawerStatus === 'Completed';
+              const statusColor = isCompleted ? '#2E7D32' : (s.statusText(drawerStatus)?.color || TEXT_MUTED);
+              const statusBg = isCompleted ? '#E8F5E9' : `${statusColor}18`;
+              return (
+                <div style={{
+                  padding: '22px 22px 18px',
+                  borderBottom: '1px solid #E5E7EB',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexShrink: 0,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      backgroundColor: statusBg,
+                      color: statusColor,
+                    }}>
+                      <span style={s.statusDot(drawerStatus)} />
+                      {drawerStatus}
+                    </span>
+                    <span style={{ fontSize: '12px', color: TEXT_MUTED }}>
+                      ID: {detailsPanel.id || detailsPanel._id || '——'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={closeDetails}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '20px',
+                      color: TEXT_MUTED,
+                      lineHeight: 1,
+                      padding: '2px 6px',
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })()}
 
             {/* ── Body ── */}
-            <div style={{ padding: '20px 22px', flexGrow: 1 }}>
+            <div style={{ padding: '20px 22px', flexGrow: 1, overflowY: 'auto' }}>
 
-              {/* Current Batch Card */}
-              <div style={{
-                backgroundColor: '#f9fafb',
-                border: `1px solid #e8eaed`,
-                borderRadius: '10px',
-                padding: '16px 18px',
-                marginBottom: '24px',
-              }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: TEXT_MUTED, marginBottom: '6px' }}>
-                  Current Batch
+              {/* Section 1 — Batch Information */}
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
+                  Batch Information
                 </div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: TEXT_MAIN, marginBottom: '14px', letterSpacing: '-0.02em' }}>
-                  {detailsPanel.batchNumber || detailsPanel.batch || '——'}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <div style={{ fontSize: '11px', color: TEXT_MUTED, marginBottom: '2px' }}>Type</div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 600, color: TEXT_MAIN }}>
-                      {detailsPanel.type || detailsPanel.processType || '——'}
-                    </div>
+                {[
+                  { label: 'Batch Number', value: detailsPanel.batchNumber || detailsPanel.batch || '——' },
+                  { label: 'Source Pond', value: detailsPanel.sourcePond || detailsPanel.pond || '——' },
+                  { label: 'Fish Type', value: detailsPanel.fishType || detailsPanel.species || '——' },
+                  { label: 'Site', value: detailsPanel.site || detailsPanel.location || '——' },
+                  { label: 'Date Created', value: detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '——' },
+                  { label: 'Completed On', value: detailsPanel.completedAt ? formatDate(detailsPanel.completedAt) : detailsPanel.updatedAt ? formatDate(detailsPanel.updatedAt) : '——' },
+                ].map((row, i, arr) => (
+                  <div key={row.label} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '6px 0',
+                    borderBottom: i < arr.length - 1 ? '1px solid #F3F4F6' : 'none',
+                  }}>
+                    <span style={{ fontSize: '13px', color: TEXT_MUTED }}>{row.label}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN }}>{row.value}</span>
                   </div>
-                  <div>
-                    <div style={{ fontSize: '11px', color: TEXT_MUTED, marginBottom: '2px' }}>Site</div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 600, color: TEXT_MAIN }}>
-                      {detailsPanel.site || detailsPanel.location || '——'}
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
 
-              {/* Process Timeline */}
+              {/* Section 2 — Quantity Summary */}
               <div style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <span style={{ fontSize: '16px' }}>🕐</span>
-                  <span style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN }}>Process Timeline</span>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
+                  Quantity Summary
                 </div>
-
-                {(() => {
-                  const events = [];
-
-                  if (detailsPanel.completedAt || (deriveStatus(detailsPanel) === 'Completed')) {
-                    events.push({
-                      label: 'Process Completed',
-                      time: detailsPanel.completedAt
-                        ? formatDate(detailsPanel.completedAt)
-                        : (detailsPanel.updatedAt ? formatDate(detailsPanel.updatedAt) : '——'),
-                      by: detailsPanel.completedBy || detailsPanel.operator || '——',
-                    });
-                  }
-
-                  if (detailsPanel.qualityCheckedAt) {
-                    events.push({
-                      label: 'Quality Check Passed',
-                      time: formatDate(detailsPanel.qualityCheckedAt),
-                      by: detailsPanel.qualityCheckedBy || '——',
-                    });
-                  }
-
-                  events.push({
-                    label: 'Process Started',
-                    time: detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '——',
-                    by: detailsPanel.createdBy || detailsPanel.operator || '——',
-                  });
-
-                  return events.map((ev, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '14px', marginBottom: '18px', position: 'relative' }}>
-                      <div style={{ flexShrink: 0, position: 'relative' }}>
-                        <div style={{
-                          width: '14px',
-                          height: '14px',
-                          borderRadius: '50%',
-                          backgroundColor: i === 0 ? PRIMARY : '#e8eaed',
-                          border: `2px solid ${i === 0 ? PRIMARY : '#c4c4c4'}`,
-                          marginTop: '2px',
-                          position: 'relative',
-                          zIndex: 1,
-                        }} />
-                        {i < events.length - 1 && (
-                          <div style={{
-                            position: 'absolute',
-                            left: '6px',
-                            top: '16px',
-                            width: '2px',
-                            height: 'calc(100% + 10px)',
-                            backgroundColor: '#e8eaed',
-                            zIndex: 0,
-                          }} />
-                        )}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN }}>{ev.label}</div>
-                        <div style={{ fontSize: '12px', color: TEXT_MUTED, marginTop: '2px' }}>
-                          {ev.time} by {ev.by}
-                        </div>
-                      </div>
-                    </div>
-                  ));
-                })()}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '6px 0',
+                  borderBottom: '1px solid #F3F4F6',
+                }}>
+                  <span style={{ fontSize: '13px', color: TEXT_MUTED }}>Quantity Before</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN }}>
+                    {new Intl.NumberFormat().format(detailsPanel.totalQuantity || 0)}
+                  </span>
+                </div>
+                {[
+                  { label: 'Whole (W)', value: new Intl.NumberFormat().format(detailsPanel.wholeFishQuantity || 0), bg: '#E6F9EE', color: '#28a745' },
+                  { label: 'Broken (B)', value: new Intl.NumberFormat().format(detailsPanel.brokenFishQuantity || 0), bg: '#FFF3E0', color: '#E07B00' },
+                  { label: 'Damaged (D)', value: new Intl.NumberFormat().format(detailsPanel.totalDamageLoss || 0), bg: '#FDECEA', color: '#dc3545' },
+                ].map((row, i, arr) => (
+                  <div key={row.label} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '6px 0',
+                    borderBottom: i < arr.length - 1 ? '1px solid #F3F4F6' : 'none',
+                  }}>
+                    <span style={{ fontSize: '13px', color: TEXT_MUTED }}>{row.label}</span>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      backgroundColor: row.bg,
+                      color: row.color,
+                    }}>
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
               </div>
 
-              {/* Assigned Team */}
+              {/* Section 3 — Processing Team */}
               <div style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                  <span style={{ fontSize: '16px' }}>👥</span>
-                  <span style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN }}>Assigned Team</span>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
+                  Processing Team
                 </div>
-
                 {(() => {
                   const team = detailsPanel.processingTeam || detailsPanel.team || [];
                   if (team.length === 0) {
@@ -1129,61 +1106,102 @@ export default function ViewSummary() {
                       <div style={{ fontSize: '13px', color: TEXT_MUTED, fontStyle: 'italic' }}>——</div>
                     );
                   }
-                  return team.map((member, i) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '10px 0',
-                      borderBottom: i < team.length - 1 ? `1px solid #f1f3f4` : 'none',
-                    }}>
-                      <div style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '50%',
-                        backgroundColor: '#c4c4c4',
-                        backgroundImage: member?.avatar ? `url(${member.avatar})` : 'none',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        color: '#fff',
-                      }}>
-                        {!member?.avatar && (member?.name ? member.name.charAt(0).toUpperCase() : '?')}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '13.5px', fontWeight: 600, color: TEXT_MAIN }}>
-                          {member?.name || '——'}
+                  const visible = team.slice(0, 4);
+                  return (
+                    <>
+                      {visible.map((member, i) => (
+                        <div key={i} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '8px 0',
+                          borderBottom: i < visible.length - 1 ? '1px solid #F1F3F4' : 'none',
+                        }}>
+                          <div style={{
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: '50%',
+                            backgroundColor: '#c4c4c4',
+                            backgroundImage: member?.avatar ? `url(${member.avatar})` : 'none',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            color: '#fff',
+                          }}>
+                            {!member?.avatar && (member?.name ? member.name.charAt(0).toUpperCase() : '?')}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '13.5px', fontWeight: 600, color: TEXT_MAIN }}>
+                              {member?.name || '——'}
+                            </div>
+                            <div style={{ fontSize: '12px', color: TEXT_MUTED }}>
+                              {member?.role || member?.position || '——'}
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '12px', color: TEXT_MUTED }}>
-                          {member?.role || member?.position || '——'}
+                      ))}
+                      {team.length > 4 && (
+                        <div style={{ fontSize: '12px', color: TEXT_MUTED, fontStyle: 'italic', marginTop: '8px' }}>
+                          +{team.length - 4} More Members
                         </div>
-                      </div>
-                    </div>
-                  ));
+                      )}
+                    </>
+                  );
                 })()}
               </div>
 
-              {/* Divider */}
-              <hr style={{ borderColor: '#e8eaed', margin: '0 0 18px' }} />
-
-              {/* Metadata */}
-              <div>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: TEXT_MUTED, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Metadata
+              {/* Section 4 — Remarks */}
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
+                  Remarks
                 </div>
-                <div className="fdl-meta-box">
-                  <div>ID: {detailsPanel.id || detailsPanel._id || '——'}</div>
-                  <div>Created: {detailsPanel.createdAt ? new Date(detailsPanel.createdAt).toISOString().replace('T', ' ').slice(0, 19) : '——'}</div>
-                  <div>Updated: {detailsPanel.updatedAt ? new Date(detailsPanel.updatedAt).toISOString().replace('T', ' ').slice(0, 19) : '——'}</div>
-                  <div>Server: {detailsPanel.server || detailsPanel.cluster || 'Cluster-Main-01'}</div>
-                </div>
+                {(() => {
+                  const remark = detailsPanel.remark || detailsPanel.remarks || detailsPanel.note || '——';
+                  return (
+                    <div style={{
+                      fontSize: '13px',
+                      color: remark === '——' ? TEXT_MUTED : TEXT_MAIN,
+                      fontStyle: remark === '——' ? 'italic' : 'normal',
+                      lineHeight: 1.6,
+                    }}>
+                      {remark}
+                    </div>
+                  );
+                })()}
               </div>
 
+            </div>
+
+            {/* ── Bottom Action Bar ── */}
+            <div style={{
+              borderTop: '1px solid #E5E7EB',
+              padding: '16px 22px',
+              background: '#fff',
+              display: 'flex',
+              gap: '10px',
+              flexShrink: 0,
+            }}>
+              <button
+                style={{
+                  border: '1px solid #512728',
+                  color: '#512728',
+                  background: 'transparent',
+                  borderRadius: '8px',
+                  padding: '9px 18px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  flex: 1,
+                  cursor: 'pointer',
+                }}
+                onClick={() => {}}
+              >
+                View Batch History
+              </button>
             </div>
           </div>
         </>

@@ -57,7 +57,14 @@ export default function SideBar({ show, handleClose }) {
   }, [location.pathname]);
 
   const handleToggle = (key) => {
-    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+    setOpen((prev) => {
+      if (!prev[key]) {
+        const only = {};
+        only[key] = true;
+        return only;
+      }
+      return { ...prev, [key]: false };
+    });
   };
 
   const renderNavItem = (label, route, icon) => (
@@ -192,12 +199,7 @@ export default function SideBar({ show, handleClose }) {
                   {renderNavItem("View all Batch", "/hatchery/hatch-batches/view-all")}
                 </>
               )}
-              {hasPermission(userTypes, 'hatchery') && renderCard("broodstock", "Broodstock Management", <GiCirclingFish size={25} className="me-1" />,
-                <>
-                  {renderNavItem("Male", "/hatchery/broodstock/male")}
-                  {renderNavItem("Female", "/hatchery/broodstock/female")}
-                </>
-              )}
+              {hasPermission(userTypes, 'hatchery') && renderDirectLink("Broodstock Management", "/hatchery/broodstock", <GiCirclingFish size={25} className="me-1" />)}
               {hasPermission(userTypes, 'hatchery') && renderDirectLink("Fry Production Records", "/hatchery/fry-production/daily-records", <GiCirclingFish size={25} className="me-1" />)}
               {hasPermission(userTypes, 'hatchery') && renderCard("cost_analysis", "Cost Analysis", <MdOutlinePointOfSale size={25} className="me-1" />,
                 <>

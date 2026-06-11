@@ -71,11 +71,9 @@
 
 .statGrid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
-  overflow-x: auto;
-  @include hide-scrollbar;
 
   @media (max-width: 991px) {
     grid-template-columns: repeat(3, 1fr);
@@ -148,6 +146,10 @@
   margin-bottom: 20px;
   flex-wrap: wrap;
 
+  & > * {
+    flex: 1;
+  }
+
   @media (max-width: 991px) {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -161,7 +163,8 @@
 
 .searchWrapper {
   position: relative;
-  width: 220px;
+  flex: 2;
+  min-width: 220px;
 
   input {
     width: 100%;
@@ -197,7 +200,7 @@
 }
 
 .filterSelect {
-  min-width: 150px;
+  min-width: 160px;
 
   select {
     width: 100%;
@@ -230,13 +233,16 @@
   white-space: nowrap;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   cursor: default;
+  flex: 0 0 auto;
 }
 
 .filterBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 8px 16px;
   border: 1px solid #512728;
@@ -246,6 +252,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  flex: 0 0 auto;
 
   &:hover {
     background: #512728;
@@ -256,6 +263,7 @@
 .resetBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 8px 16px;
   border: none;
@@ -263,6 +271,7 @@
   color: #8C949B;
   font-size: 0.85rem;
   cursor: pointer;
+  flex: 0 0 auto;
 
   &:hover {
     color: #2E3135;
@@ -370,12 +379,15 @@
   background: transparent;
   color: #8C949B;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px 8px;
   display: flex;
   align-items: center;
+  border-radius: 6px;
+  transition: background 0.2s ease, color 0.2s ease;
 
   &:hover {
-    color: #2E3135;
+    background: #F0E4E4;
+    color: #512728;
   }
 }
 

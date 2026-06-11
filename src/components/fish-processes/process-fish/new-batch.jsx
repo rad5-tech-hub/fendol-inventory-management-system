@@ -377,7 +377,7 @@ export default function NewBatchFish() {
               const batchHealthy = quantity.wholeFish > 0 && damageRatio < 0.1;
 
               const processingNotes = {
-                Washing: 'Ensure all fish are thoroughly rinsed. Record initial weight before proceeding.',
+                Washing: 'Ensure all fish are thoroughly rinsed. Record initial quantity before proceeding.',
                 Smoking: 'Ensure smoking temperature remains between 65–75°C. Recording moisture loss is critical for yield calculation.',
                 Drying: 'Ensure fish are evenly spread. Target moisture content below 15% before showcase transfer.',
               };
@@ -593,7 +593,7 @@ export default function NewBatchFish() {
                                 value={row.afterValue}
                                 onChange={handleMoveFish}
                                 required
-                                placeholder="Enter weight"
+                                placeholder="Enter quantity"
                                 style={{
                                   width: '100%', padding: '9px 12px',
                                   border: '1px solid #E0E0DC', borderRadius: '6px',
