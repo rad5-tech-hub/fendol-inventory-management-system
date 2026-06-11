@@ -58,9 +58,11 @@ $text-color: #ffffff;
     padding: 13px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
     border-radius: 0 !important;
+    transition: background 0.2s ease, color 0.2s ease;
 
     &:hover {
-        background: #3D2818 !important;
+        background: #B06426 !important;
+        color: #ffffff;
     }
 }
 
@@ -97,16 +99,24 @@ $text-color: #ffffff;
     font-size: 14px;
     padding: 10px 14px;
     border-radius: 6px;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 
     svg {
         color: #7A5A48;
         opacity: 0.9;
+        transition: color 0.2s ease;
     }
 }
 
 .nonactiveLink:hover {
     color: #ffffff;
-    background: #3D2818;
+    background: #B06426;
+    box-shadow: 0 2px 8px rgba(176, 100, 38, 0.3);
+
+    svg {
+        color: #ffffff;
+        opacity: 1;
+    }
 }
 
 .navs {
@@ -183,9 +193,10 @@ $text-color: #ffffff;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     cursor: pointer;
     flex-shrink: 0;
+    transition: background 0.2s ease;
 
     &:hover {
-        background: #3D2818;
+        background: #B06426;
     }
 }
 
