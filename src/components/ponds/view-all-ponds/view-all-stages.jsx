@@ -5,6 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product-stages.module.scss';
 import { BsExclamationTriangleFill, BsPencilFill, BsTrash, BsSearch, BsDownload, BsThreeDotsVertical, BsInfoCircle, BsWater, BsClipboardData, BsSticky } from "react-icons/bs";
 import { Form, Button, Spinner, Alert, Modal } from 'react-bootstrap';
+import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
@@ -336,10 +337,11 @@ const ViewAllStages = () => {
 
             {/* ── Loading ── */}
             {loading && (
-              <div className="text-center py-5">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
+              <div style={{ padding: "20px 0" }}>
+                <SkeletonStatGrid count={4} />
+                <div style={{ height: 24 }} />
+                <SkeletonFilterBar />
+                <SkeletonTable rows={5} cols={5} />
               </div>
             )}
 
@@ -690,7 +692,7 @@ const ViewAllStages = () => {
             <Form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.target); handleAddSamplingSubmit({ sample_labeling: fd.get('sample_labeling') }); }}>
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#2E3135', marginBottom: '6px' }}>Sampling Data / Comment</label>
-                <textarea name="sample_labeling" placeholder="Enter sampling observations, measurements, or comments..." rows={4} required style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '10px', fontSize: '0.875rem', outline: 'none', color: '#2E3135', resize: 'vertical', transition: 'border 0.2s', fontFamily: 'inherit' }} onFocus={e => e.target.style.borderColor = '#512728'} onBlur={e => e.target.style.borderColor = '#E0E0E0'} />
+                <textarea name="sample_labeling" placeholder="Enter sampling observations, measurements, or comments..." rows={4} required style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '10px', fontSize: '0.875rem', outline: 'none', color: '#2E3135', resize: 'vertical', transition: 'border 0.2s', fontFamily: 'inherit' }} onFocus={e => e.target.style.borderColor = '#512728'} onBlur={e => e.target.style.borderColor = '#E0E0E0'} onInput={e => { e.target.value = e.target.value.replace(/\D/g, ''); }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button type="button" onClick={() => setShowAddSamplingModal(false)} style={{ padding: '10px 20px', borderRadius: '10px', border: '1px solid #E0E0E0', background: '#fff', color: '#2E3135', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>

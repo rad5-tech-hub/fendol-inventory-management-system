@@ -8,7 +8,8 @@ import { BsExclamationTriangleFill } from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Spinner, Alert } from 'react-bootstrap';
+import { Alert } from 'react-bootstrap';
+import { SkeletonTable, SkeletonFilterBar } from '../../shared/skeleton/Skeleton';
 import { FaTrashAlt, FaUserPlus, FaFilter, FaEdit } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import SiteSelector from '../../shared/site-selector/SiteSelector';
@@ -136,10 +137,9 @@ export default function ViewAll() {
             </div>
 
             {loading ? (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
+              <div style={{ padding: "20px 0" }}>
+                <SkeletonFilterBar />
+                <SkeletonTable rows={5} cols={5} />
               </div>
             ) : error ? (
               <div className="d-flex justify-content-center">

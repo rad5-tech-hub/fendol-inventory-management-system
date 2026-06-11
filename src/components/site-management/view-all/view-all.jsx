@@ -4,11 +4,12 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../site-management.module.scss';
 import { BsExclamationTriangleFill } from "react-icons/bs";
-import { Spinner, Alert, Modal } from 'react-bootstrap';
+import { Alert, Modal } from 'react-bootstrap';
 import { ApiV2 } from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { ToastContainer } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 const typeBadgeStyle = (type) => {
   const map = {
@@ -123,13 +124,7 @@ const ViewAllSites = () => {
               </div>
             </div>
 
-            {loading && (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
-            )}
+            {loading && <SkeletonTable cols={6} rows={5} />}
 
             {error && (
               <div className="d-flex justify-content-center">

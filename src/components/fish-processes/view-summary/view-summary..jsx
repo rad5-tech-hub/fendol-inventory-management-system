@@ -3,7 +3,8 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../process.module.scss';
-import { Spinner, Alert, OverlayTrigger, Popover } from "react-bootstrap";
+import { Alert, OverlayTrigger, Popover } from "react-bootstrap";
+import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
 import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import Api from '../../shared/api/apiLink';
@@ -687,8 +688,11 @@ export default function ViewSummary() {
 
             {/* ── loading / error / empty / table ─────────────────────────── */}
             {loading ? (
-              <div className="text-center my-5">
-                <Spinner animation="border" />
+              <div style={{ padding: "20px 0" }}>
+                <SkeletonStatGrid count={5} />
+                <div style={{ height: 24 }} />
+                <SkeletonFilterBar />
+                <SkeletonTable rows={6} cols={6} />
               </div>
             ) : error ? (
               <div className="d-flex justify-content-center">

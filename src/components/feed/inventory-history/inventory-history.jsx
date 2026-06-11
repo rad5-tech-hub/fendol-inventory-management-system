@@ -3,10 +3,11 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../feed.module.scss';
-import { Spinner, Alert } from "react-bootstrap";
+import { Alert } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from 'react-paginate';
 import Api from '../../shared/api/apiLink';
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 export default function InventoryHistory() {
   const [inventoryHistory, setInventoryHistory] = useState([]);
@@ -97,8 +98,8 @@ export default function InventoryHistory() {
             </div>
 
             {loading ? (
-              <div className="text-center my-5">
-                <Spinner animation="border" />
+              <div style={{ padding: "20px 0" }}>
+                <SkeletonTable rows={5} cols={8} />
               </div>
             ) : error ? (
               <div className="d-flex justify-content-center">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Spinner, Alert, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Form, Button, Alert, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { BsExclamationTriangleFill } from "react-icons/bs";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,6 +8,7 @@ import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
 import { FaTrashAlt } from "react-icons/fa";
 import styles from '../product-stages.module.scss';
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 const AddSpecies = () => {
     const [formData, setFormData] = useState({
@@ -177,11 +178,7 @@ const AddSpecies = () => {
                                     </span>
                                 </div>
                                 {loading ? (
-                                    <div className="text-center">
-                                        <Spinner animation="border" role="status">
-                                            <span className="visually-hidden">Loading...</span>
-                                        </Spinner>
-                                    </div>
+                                    <SkeletonTable cols={3} rows={5} />
                                 ) : error ? (
                                     <div className="d-flex justify-content-center">
                                         <Alert variant="danger" className="text-center w-75 py-5">

@@ -4,9 +4,10 @@ import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../finance.module.scss";
 import { BsExclamationTriangleFill } from "react-icons/bs";
-import { Spinner, Alert } from "react-bootstrap";
+import { Alert } from "react-bootstrap";
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from "react-paginate";
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 const FinanceLedger = () => {
   const [ledgerData, setLedgerData] = useState([]);
@@ -108,13 +109,7 @@ const FinanceLedger = () => {
             </div>
 
             {/* Loader */}
-            {loading && (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
-            )}
+            {loading && <SkeletonTable cols={6} rows={5} />}
 
             {/* Error Message */}
             {error && (

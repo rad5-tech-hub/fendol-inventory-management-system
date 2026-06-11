@@ -7,11 +7,12 @@ import { BsThreeDotsVertical, BsPlusLg, BsBarChartFill, BsChevronDown } from "re
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap';
+import { Alert, Modal, Form, Button } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { hasPermission } from '../../shared/permissions/permissions';
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick }) => {
   if (!show) return null;
@@ -272,13 +273,7 @@ export default function ViewAllProducts() {
             )}
 
             {/* ── Loading ── */}
-            {loading && (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
-            )}
+            {loading && <SkeletonTable cols={4} rows={5} />}
 
             {/* ── Error ── */}
             {error && (

@@ -8,10 +8,11 @@ import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaArrowLeft, FaArrowRight, FaEdit } from "react-icons/fa";
-import { Spinner, Alert, Modal, Button, Form, OverlayTrigger, Tooltip, Tabs, Tab } from 'react-bootstrap';
+import { Alert, Modal, Button, Form, OverlayTrigger, Tooltip, Tabs, Tab } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
 import { FaTrash } from "react-icons/fa6";
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 export default function ViewAll() {
   const navigate = useNavigate();
@@ -257,13 +258,7 @@ export default function ViewAll() {
             {/* All Customers Tab */}
             {activeTab === 'all' && (
               <>
-                {loadingAll && (
-                  <div className="text-center">
-                    <Spinner animation="border" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </Spinner>
-                  </div>
-                )}
+                {loadingAll && <SkeletonTable cols={5} rows={5} />}
 
                 {errorAll && !loadingAll && (
                   <div className="d-flex justify-content-center">
@@ -421,13 +416,7 @@ export default function ViewAll() {
             {/* Debtors Tab */}
             {activeTab === 'debtors' && (
               <>
-                {loadingDebtors && (
-                  <div className="text-center">
-                    <Spinner animation="border" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </Spinner>
-                  </div>
-                )}
+                {loadingDebtors && <SkeletonTable cols={3} rows={5} />}
 
                 {errorDebtors && !loadingDebtors && (
                   <div className="d-flex justify-content-center">

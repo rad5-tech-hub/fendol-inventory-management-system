@@ -5,9 +5,10 @@ import Header from "../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from './damge.module.scss';
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { Spinner, Alert } from "react-bootstrap";
+import { Alert } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import Api from '../shared/api/apiLink';
+import { SkeletonTable } from "../shared/skeleton/Skeleton";
 
 export default function DamageLoss() {
   const [moveFishHistory, setMoveFishHistory] = useState([]);
@@ -72,8 +73,8 @@ export default function DamageLoss() {
 
             {/* Table */}
             {loading ? (
-              <div className="text-center my-5">
-                <Spinner animation="border" />
+              <div style={{ padding: "20px 0" }}>
+                <SkeletonTable rows={5} cols={5} />
               </div>
             ) : error ? (
               <div className="d-flex justify-content-center">

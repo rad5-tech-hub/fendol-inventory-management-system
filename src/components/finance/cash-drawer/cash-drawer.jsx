@@ -7,6 +7,7 @@ import { BsExclamationTriangleFill } from "react-icons/bs";
 import { Spinner, Alert, Modal, Button, Form, Toast, ToastContainer } from "react-bootstrap";
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from "react-paginate";
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 const CashDrawer = () => {
   const [ledgerData, setLedgerData] = useState([]);
@@ -248,13 +249,7 @@ const CashDrawer = () => {
             {/* Cash Drawer View */}
             {viewMode === "cash" && (
               <>
-                {cashLoading && (
-                  <div className="text-center">
-                    <Spinner animation="border" role="status">
-                      <span className="visually-hidden">Loading Cash Drawer...</span>
-                    </Spinner>
-                  </div>
-                )}
+                {cashLoading && <SkeletonTable cols={5} rows={5} />}
                 {!cashLoading && cashError && (
                   <Alert variant="danger" className="text-center w-75 py-5 mx-auto">
                     <BsExclamationTriangleFill size={40} />{" "}
@@ -332,13 +327,7 @@ const CashDrawer = () => {
             {/* Withdrawals View */}
             {viewMode === "withdrawals" && (
               <>
-                {withdrawLoading && (
-                  <div className="text-center">
-                    <Spinner animation="border" role="status">
-                      <span className="visually-hidden">Loading Withdrawals...</span>
-                    </Spinner>
-                  </div>
-                )}
+                {withdrawLoading && <SkeletonTable cols={3} rows={5} />}
                 {!withdrawLoading && withdrawError && (
                   <Alert variant="danger" className="text-center w-75 py-5 mx-auto">
                     <BsExclamationTriangleFill size={40} />{" "}

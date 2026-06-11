@@ -3,13 +3,14 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../showcase.module.scss";
-import { Spinner, Alert, Button, Modal, Form, Dropdown } from "react-bootstrap";
+import { Alert, Button, Modal, Form, Dropdown } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 export default function ViewBrokenHistory() {
   const [brokenQuantity, setBrokenQuantity] = useState(null);
@@ -222,11 +223,7 @@ export default function ViewBrokenHistory() {
 
             {/* History Table */}
             {loadingTable ? (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
+              <SkeletonTable cols={3} rows={5} />
             ) : errorTable ? (
               <div className="d-flex justify-content-center">
                 <Alert variant="danger" className="text-center w-50 py-5">

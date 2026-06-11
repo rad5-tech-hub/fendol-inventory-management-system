@@ -9,6 +9,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import { Spinner, Alert, Button, Form, Modal } from 'react-bootstrap';
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import ReceiptModal from "../../finance/add-sales/receipt";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -325,13 +326,7 @@ const PersonalLedger = () => {
               </div>
             </div>
 
-            {loading && (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
-            )}
+            {loading && <SkeletonTable cols={6} rows={5} />}
 
             {error && (
               <div className="d-flex justify-content-center">

@@ -1,0 +1,49 @@
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.base {
+  background: linear-gradient(90deg, #F0F0F0 25%, #E8E8E8 37%, #F0F0F0 63%);
+  background-size: 200px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+.line {
+  composes: base;
+  height: 14px;
+  width: 100%;
+}
+
+.title {
+  composes: base;
+  height: 22px;
+  width: 180px;
+}
+
+.card {
+  composes: base;
+  height: 110px;
+  width: 100%;
+}
+
+.circle {
+  composes: base;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+}
+
+.tableCell {
+  composes: base;
+  height: 16px;
+  width: 100%;
+}
+
+.badge {
+  composes: base;
+  height: 24px;
+  width: 80px;
+  border-radius: 12px;
+}

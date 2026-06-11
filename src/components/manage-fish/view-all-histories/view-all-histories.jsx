@@ -3,7 +3,8 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../product-stages.module.scss";
-import { Spinner, Alert, Form } from "react-bootstrap";
+import { Alert, Form } from "react-bootstrap";
+import { SkeletonTable, SkeletonFilterBar } from "../../shared/skeleton/Skeleton";
 import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
@@ -276,8 +277,9 @@ export default function ViewAllHistory() {
             </div>
 
             {loading ? (
-              <div className="text-center my-5">
-                <Spinner animation="border" />
+              <div style={{ padding: "20px 0" }}>
+                <SkeletonFilterBar />
+                <SkeletonTable rows={6} cols={7} />
               </div>
             ) : error ? (
               <div className="d-flex justify-content-center">

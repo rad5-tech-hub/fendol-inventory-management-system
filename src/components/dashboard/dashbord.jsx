@@ -6,6 +6,7 @@ import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
 import { useSelector } from 'react-redux';
 import SiteSelector from '../shared/site-selector/SiteSelector';
+import { SkeletonStatGrid, SkeletonFilterBar } from '../shared/skeleton/Skeleton';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -81,7 +82,14 @@ const Dashboard = () => {
           <section className={`${styles.content}`}>
             <main>
               <div className={styles.create_form}>
-                <h1 className={styles.pageTitle}>Loading...</h1>
+                <div style={{ padding: "10px 0" }}>
+                  <SkeletonStatGrid count={4} />
+                  <div style={{ height: 24 }} />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div className={styles.chartCard}><div className={styles.skeletonBlock} style={{ height: 400 }} /></div>
+                    <div className={styles.chartCard}><div className={styles.skeletonBlock} style={{ height: 400 }} /></div>
+                  </div>
+                </div>
               </div>
             </main>
           </section>

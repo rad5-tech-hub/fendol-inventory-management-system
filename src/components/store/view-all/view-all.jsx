@@ -5,10 +5,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../store.module.scss';
 import { BsThreeDotsVertical } from "react-icons/bs";
 import Api from "../../shared/api/apiLink";
-import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap';
+import { Alert, Modal, Form, Button } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 const DropdownMenu = ({ show, onClickOutside, onAddClick, onRemoveClick, onEditClick, position }) => {
   const dropdownRef = useRef(null);
@@ -218,13 +219,7 @@ export default function UpdateStoreInventory() {
             <h4 className="mt-3 mb-5">View All</h4>
             <ToastContainer />
 
-            {loading && (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
-            )}
+            {loading && <SkeletonTable cols={6} rows={5} />}
 
             {error && (
               <Alert variant="danger" className="text-center">{error}</Alert>
