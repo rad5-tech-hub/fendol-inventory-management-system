@@ -7,14 +7,14 @@ $text-color: #ffffff;
 
 .sidebar {
     width: $sidebar-width;
-    background-color: #1C1008;
+    background-color: #2D1F14;
     height: 90vh;
     overflow-x: hidden;
     overflow-y: auto 2px;
 }
 
 .offcan {
-    background-color: #1C1008 !important;
+    background-color: #2D1F14 !important;
     overflow-x: hidden;
     overflow-y: auto 2px;
 }
@@ -54,13 +54,13 @@ $text-color: #ffffff;
 
 .cardHeader {
     background: transparent !important;
-    color: #EDE4DA;
+    color: #FFF5EE;
     padding: 13px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
     border-radius: 0 !important;
 
     &:hover {
-        background: #2A1A0A !important;
+        background: #3D2818 !important;
     }
 }
 
@@ -89,7 +89,7 @@ $text-color: #ffffff;
 }
 
 .nonactiveLink {
-    color: #9A8070;
+    color: #B8A090;
     font-family: "Roboto Flex", system-ui;
     font-optical-sizing: auto;
     font-weight: 500;
@@ -99,14 +99,14 @@ $text-color: #ffffff;
     border-radius: 6px;
 
     svg {
-        color: #5A4030;
-        opacity: 0.8;
+        color: #7A5A48;
+        opacity: 0.9;
     }
 }
 
 .nonactiveLink:hover {
     color: #ffffff;
-    background: #2A1A0A;
+    background: #3D2818;
 }
 
 .navs {
@@ -123,7 +123,7 @@ $text-color: #ffffff;
     }
 
     .title {
-        color: #EDE4DA;
+        color: #FFF5EE;
         font-size: 0.9rem;
         font-family: "Roboto Flex", system-ui;
         font-optical-sizing: auto;
@@ -132,7 +132,7 @@ $text-color: #ffffff;
     }
 
     .navigationLinks {
-        background: #20130A;
+        background: #3A281C;
         border-radius: 8px;
         padding: 16px 12px 16px 22px;
         box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.12);
@@ -161,7 +161,7 @@ $text-color: #ffffff;
     font-size: 0.65rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #5E4A38;
+    color: #8A7050;
     padding: 16px 16px 5px;
     line-height: 1;
 }
@@ -185,7 +185,7 @@ $text-color: #ffffff;
     flex-shrink: 0;
 
     &:hover {
-        background: #2A1A0A;
+        background: #3D2818;
     }
 }
 
@@ -205,14 +205,14 @@ $text-color: #ffffff;
 
 .userName {
     font-size: 0.875rem;
-    color: #EDE4DA;
+    color: #FFF5EE;
     font-weight: 600;
     line-height: 1.3;
 }
 
 .userRole {
     font-size: 0.72rem;
-    color: #9A8070;
+    color: #B8A090;
     line-height: 1.3;
 }
 
@@ -226,7 +226,7 @@ $text-color: #ffffff;
 }
 
 .logoTitle {
-    color: #EDE4DA;
+    color: #FFF5EE;
     font-weight: 700;
     font-size: 1.05rem;
     line-height: 1.1;
@@ -234,7 +234,7 @@ $text-color: #ffffff;
 }
 
 .logoSubtitle {
-    color: #5E4A38;
+    color: #8A7050;
     font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
