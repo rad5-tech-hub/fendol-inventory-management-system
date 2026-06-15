@@ -70,10 +70,10 @@ export default function NewBatchFish() {
   });
 
   const orderedStages = useMemo(() => {
-    return checkStages.sort((a, b) => {
-      const stageOrder = ["Washing", "Smoking", "Drying"];
-      return stageOrder.indexOf(a.title) - stageOrder.indexOf(b.title);
-    });
+    const stageOrder = ["Washing", "Smoking", "Drying"];
+    return checkStages
+      .filter(s => stageOrder.includes(s.title))
+      .sort((a, b) => stageOrder.indexOf(a.title) - stageOrder.indexOf(b.title));
   }, [checkStages]);
 
   const fetchWashingStage = async () => {
