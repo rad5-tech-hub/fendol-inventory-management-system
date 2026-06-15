@@ -340,7 +340,7 @@ export default function NewBatchFish() {
 
   const getEndpoint = (stageTitle) => {
     const normalized = (stageTitle || '').trim().toLowerCase();
-    if (normalized === "washing") return "/fish-process";
+    if (normalized === "washing") return "/washing-to-smoking";
     if (normalized === "smoking") return "/smoking-to-drying";
     if (normalized === "drying") return "/add-fish-to-show-glass";
     return null;
@@ -352,7 +352,7 @@ export default function NewBatchFish() {
 
   const getEndpointByIndex = (stageId) => {
     const idx = getStageIndex(stageId);
-    if (idx === 0) return "/fish-process";
+    if (idx === 0) return "/washing-to-smoking";
     if (idx === 1) return "/smoking-to-drying";
     if (idx === 2) return "/add-fish-to-show-glass";
     return null;
