@@ -541,11 +541,8 @@ export default function NewBatchFish() {
                   <div style={{ backgroundColor: '#F5F5F3', borderRadius: '10px', padding: '20px 28px 0 28px', marginBottom: '0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
                       <div>
-                        <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
-                          Current Operation
-                        </p>
                         <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.55rem', color: '#2E3135', letterSpacing: '-0.01em' }}>
-                          Washing: {moveFishData.batch_no || `#PR-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(moveFishData.actual_quantity || 0).padStart(3, '0')}`}
+                          Batch Processing: {moveFishData.batch_no || `#PR-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(moveFishData.actual_quantity || 0).padStart(3, '0')}`}
                         </h3>
                       </div>
                       <div style={{ textAlign: 'right' }}>
