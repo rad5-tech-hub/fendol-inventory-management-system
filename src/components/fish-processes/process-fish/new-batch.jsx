@@ -520,8 +520,11 @@ export default function NewBatchFish() {
             )}
 
             {showSuccessOverlay && (() => {
-              const currentStage = orderedStages.find(s => s.id === moveData.stageId_from);
-              const nextStage = orderedStages[orderedStages.findIndex(s => s.id === moveData.stageId_from) + 1];
+              const resolvedStageId = orderedStages.some(s => s.id === moveData.stageId_from)
+                ? moveData.stageId_from
+                : orderedStages[0]?.id;
+              const currentStage = orderedStages.find(s => s.id === resolvedStageId);
+              const nextStage = orderedStages[orderedStages.findIndex(s => s.id === resolvedStageId) + 1];
               const totalInput = quantity.wholeFish + quantity.brokenFish + quantity.damage;
               const expYield = (totalInput * 0.8).toFixed(2);
               const damageRatio = quantity.wholeFish > 0 ? quantity.damage / quantity.wholeFish : 0;
