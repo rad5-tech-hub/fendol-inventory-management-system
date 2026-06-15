@@ -188,7 +188,14 @@ export default function NewBatchFish() {
     const loadingToast = toast.loading("Moving To Process Control...");
 
     try {
-      const response = await Api.post('/harvest-washing', moveFishData);
+      const payload = {
+        ...moveFishData,
+        ...(isSuperAdmin
+          ? (activeSite?.id ? { siteId: activeSite.id } : {})
+          : (user?.siteId ? { siteId: user.siteId } : {})
+        ),
+      };
+      const response = await Api.post('/harvest-washing', payload);
       toast.update(loadingToast, {
         render: "Fish moved successfully!",
         type: "success",
@@ -254,7 +261,14 @@ export default function NewBatchFish() {
       const endpoint = getEndpoint(currentStage?.title);
 
       if (endpoint) {
-        const response = await Api.post(endpoint, moveData);
+        const payload = {
+          ...moveData,
+          ...(isSuperAdmin
+            ? (activeSite?.id ? { siteId: activeSite.id } : {})
+            : (user?.siteId ? { siteId: user.siteId } : {})
+          ),
+        };
+        const response = await Api.post(endpoint, payload);
         const data = response.data.data || response.data.newProcess;
 
         const { wholeFishQuantity = 0, brokenFishQuantity = 0, damageOrLoss = 0 } = data;
