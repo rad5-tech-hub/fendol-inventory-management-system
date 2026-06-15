@@ -18,6 +18,7 @@ export default function NewBatchFish() {
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
   const [showSidebar, setShowSidebar] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
+  const [stagesLoading, setStagesLoading] = useState(true);
   const [stages, setStages] = useState({ washing: null });
   const [checkStages, setCheckStages] = useState([]);
   const [fishType, setFishType] = useState([]);
@@ -76,6 +77,7 @@ export default function NewBatchFish() {
   }, [checkStages]);
 
   const fetchWashingStage = async () => {
+    setStagesLoading(true);
     try {
       const response = await Api.get('/process-stages');
       if (Array.isArray(response.data.data)) {
@@ -92,6 +94,8 @@ export default function NewBatchFish() {
       }
     } catch (err) {
       console.error(err.response?.data?.message || 'Failed to fetch washing stage.');
+    } finally {
+      setStagesLoading(false);
     }
   };
 
@@ -121,8 +125,36 @@ export default function NewBatchFish() {
   };
 
   useEffect(() => {
-    fetchWashingStage();
-    fetchFishType();
+    const init = async () => {
+      await fetchWashingStage();
+      fetchFishType();
+
+      const savedProcessId = sessionStorage.getItem('batchProcessId');
+      if (savedProcessId) {
+        try {
+          const pid = JSON.parse(savedProcessId);
+          const res = await Api.get(`/fish-process/${pid}`);
+          const data = res.data.data;
+          if (data) {
+            setQuantity({
+              wholeFish: data.wholeFishQuantity || 0,
+              brokenFish: data.cumulativeBrokenQuantity || data.brokenFishQuantity || 0,
+              damage: data.cumulativeDamageOrLoss || data.damageOrLoss || 0,
+            });
+            setMoveData(prev => ({
+              ...prev,
+              stageId_from: data.stageId_from || prev.stageId_from,
+              stageId_to: data.stageId_to || prev.stageId_to,
+            }));
+            setCumulativeBrokenFishQuantity(data.cumulativeBrokenQuantity || data.brokenFishQuantity || 0);
+            setCumulativeDamageOrLoss(data.cumulativeDamageOrLoss || data.damageOrLoss || 0);
+          }
+        } catch (err) {
+          console.error('Failed to restore process data on reload:', err);
+        }
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -296,7 +328,12 @@ export default function NewBatchFish() {
     setMessage("Processing your request...");
     try {
       const currentStage = orderedStages.find(stage => stage.id === moveData.stageId_from);
-      const endpoint = getEndpoint(currentStage?.title);
+
+      if (!currentStage || stagesLoading) {
+        throw new Error("Stages are still loading. Please wait.");
+      }
+
+      const endpoint = getEndpoint(currentStage.title);
 
       if (endpoint) {
         const payload = {
@@ -724,6 +761,8 @@ export default function NewBatchFish() {
                             onClick={handleNext}
                             disabled={
                               loading ||
+                              stagesLoading ||
+                              !currentStage ||
                               moveData.wholeFishQuantity === '' ||
                               moveData.brokenFishQuantity === '' ||
                               moveData.damageOrLoss === ''
@@ -734,6 +773,8 @@ export default function NewBatchFish() {
                               border: 'none',
                               backgroundColor:
                                 loading ||
+                                stagesLoading ||
+                                !currentStage ||
                                 moveData.wholeFishQuantity === '' ||
                                 moveData.brokenFishQuantity === '' ||
                                 moveData.damageOrLoss === ''
@@ -742,6 +783,8 @@ export default function NewBatchFish() {
                               color: '#fff', fontSize: '0.875rem', fontWeight: 700,
                               cursor:
                                 loading ||
+                                stagesLoading ||
+                                !currentStage ||
                                 moveData.wholeFishQuantity === '' ||
                                 moveData.brokenFishQuantity === '' ||
                                 moveData.damageOrLoss === ''
@@ -750,7 +793,7 @@ export default function NewBatchFish() {
                               transition: 'background-color 0.15s ease',
                             }}
                           >
-                            {currentStage?.title !== 'Drying' ? `Proceed to ${nextStage?.title || 'Next'}` : 'Move To Showcase'}
+                            {stagesLoading || !currentStage ? 'Loading...' : currentStage?.title !== 'Drying' ? `Proceed to ${nextStage?.title || 'Next'}` : 'Move To Showcase'}
                             <BsArrowRight size={15} />
                           </button>
                         </div>
