@@ -208,13 +208,23 @@ export default function NewBatchFish() {
   useEffect(() => {
     if (orderedStages.length > 0) {
       setMoveData(prev => {
-        if (prev.stageId_from) return prev;
-        const defaultStageId = orderedStages[0].id;
-        return {
-          ...prev,
-          stageId_from: defaultStageId,
-          stageId_to: getNextStageId(defaultStageId),
-        };
+        if (!prev.stageId_from) {
+          const defaultStageId = orderedStages[0].id;
+          return {
+            ...prev,
+            stageId_from: defaultStageId,
+            stageId_to: getNextStageId(defaultStageId),
+          };
+        }
+        if (!orderedStages.some(s => s.id === prev.stageId_from)) {
+          const washing = orderedStages[0];
+          return {
+            ...prev,
+            stageId_from: washing.id,
+            stageId_to: getNextStageId(washing.id),
+          };
+        }
+        return prev;
       });
     }
   }, [orderedStages]);
