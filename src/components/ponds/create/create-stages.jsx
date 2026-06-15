@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -7,6 +7,7 @@ import styles from '../product-stages.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import Api from "../../shared/api/apiLink";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from 'react-redux';
 import SiteSelector from "../../shared/site-selector/SiteSelector";
 
 export default function CreateStages() {
@@ -16,8 +17,18 @@ export default function CreateStages() {
         description: "",
         siteId: "",
     });
-    const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+    const [showSidebar, setShowSidebar] = useState(false);
     const navigate = useNavigate();
+    const user = useSelector((store) => store.user);
+    const isSuperAdmin = user?.userTypes?.includes('super_admin');
+    const profileSiteId = user?.siteId || '';
+
+    // Auto-fill siteId for non-super-admin users from their profile
+    useEffect(() => {
+        if (!isSuperAdmin && profileSiteId) {
+            setFormData((prev) => ({ ...prev, siteId: profileSiteId }));
+        }
+    }, [isSuperAdmin, profileSiteId]);
 
     // Handle form input change
     const handleInputChange = (e) => {
@@ -38,8 +49,11 @@ export default function CreateStages() {
         });
 
         try {
-            const payload = { title: formData.title, description: formData.description };
-            if (canManageSite && formData.siteId) payload.siteId = formData.siteId;
+            const payload = {
+                title: formData.title,
+                description: formData.description,
+                siteId: isSuperAdmin ? formData.siteId : profileSiteId,
+            };
             const response = await Api.post('/fish-stage', payload);
 
             setFormData({
@@ -102,8 +116,18 @@ export default function CreateStages() {
                                 required
                             />
                             <Form.Label className="fw-semibold mt-4">Site</Form.Label>
-                            <SiteSelector value={formData.siteId} onChange={(id) => setFormData({ ...formData, siteId: id || '' })} />
-                            <div className="text-muted small mt-1">Select the operational site where this pond belongs.</div>
+                            {isSuperAdmin ? (
+                                <>
+                                    <SiteSelector value={formData.siteId} onChange={(id) => setFormData({ ...formData, siteId: id || '' })} />
+                                    <div className="text-muted small mt-1">Select the operational site where this pond belongs.</div>
+                                </>
+                            ) : (
+                                <Form.Control
+                                    value={profileSiteId}
+                                    disabled
+                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                />
+                            )}
                             <Form.Label className="fw-semibold fs-6 mt-4">Description</Form.Label>
                             <Form.Control
                                 as="textarea"

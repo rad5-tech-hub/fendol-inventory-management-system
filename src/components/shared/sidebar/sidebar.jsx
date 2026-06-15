@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+
+let sidebarScrollPos = 0;
 import { Nav, Card, Collapse, Tooltip, OverlayTrigger, Offcanvas } from "react-bootstrap";
 import { FaChevronRight, FaChevronDown, FaMapMarkerAlt, FaCircle, FaHouseUser, FaExchangeAlt, FaUsers, FaTrophy, FaTree, FaHandHoldingUsd, FaUserTie, FaMoneyCheckAlt, FaClock, FaClipboardList } from "react-icons/fa";
 import { IoGridOutline } from "react-icons/io5";
@@ -19,6 +21,7 @@ export default function SideBar({ show, handleClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState({});
+  const sidebarRef = useRef(null);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const user = useSelector((store) => store.user);
 
@@ -54,7 +57,34 @@ export default function SideBar({ show, handleClose }) {
     if (path.includes("/referral")) updates.referral = true;
     if (path.includes("/mlm")) updates.mlm = true;
     setOpen((prev) => ({ ...prev, ...updates }));
+
+    // Restore sidebar scroll on the .navs element after open state settles
+    requestAnimationFrame(() => {
+      const section = sidebarRef.current;
+      if (!section) return;
+      const navsEl = section.querySelector(`[class*="${styles.navs}"]`);
+      if (navsEl) navsEl.scrollTop = sidebarScrollPos;
+    });
+
+    // Save scroll on cleanup (unmount/navigation away)
+    return () => {
+      const section = sidebarRef.current;
+      if (!section) return;
+      const navsEl = section.querySelector(`[class*="${styles.navs}"]`);
+      if (navsEl) sidebarScrollPos = navsEl.scrollTop;
+    };
   }, [location.pathname]);
+
+  // Save sidebar scroll position on the actual scrollable element (.navs)
+  useEffect(() => {
+    const section = sidebarRef.current;
+    if (!section) return;
+    const navsEl = section.querySelector(`[class*="${styles.navs}"]`);
+    if (!navsEl) return;
+    const handleScroll = () => { sidebarScrollPos = navsEl.scrollTop; };
+    navsEl.addEventListener('scroll', handleScroll, { passive: true });
+    return () => navsEl.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleToggle = (key) => {
     setOpen((prev) => {
@@ -417,7 +447,7 @@ export default function SideBar({ show, handleClose }) {
   return (
     <aside>
       {/* Desktop Sidebar */}
-      <section className={`position-fixed d-none d-lg-block ${styles.sidebar}`}>
+      <section ref={sidebarRef} className={`position-fixed d-none d-lg-block ${styles.sidebar}`}>
         {sidebarContent}
       </section>
 

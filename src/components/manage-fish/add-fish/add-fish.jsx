@@ -7,7 +7,7 @@ import styles from '../product-stages.module.scss';
 import Api from '../../shared/api/apiLink';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import SiteSelector from '../../shared/site-selector/SiteSelector';
+
 
 const AddFish = () => {
   const [stages, setStages] = useState([]);
@@ -144,10 +144,7 @@ const AddFish = () => {
             <ToastContainer />
             <Form className={styles.create_form} onSubmit={handleAddFish}>
               <h4 className="mt-5 mb-5">Add Fish</h4>
-              <div className="mb-4" style={{ maxWidth: '250px' }}>
-                <Form.Label className="fw-semibold">Site</Form.Label>
-                <SiteSelector onChange={handleSiteChange} />
-              </div>
+
               <Row>
                 <Col md={12} lg={6} className="mb-4">
                   <Form.Label className="fw-semibold">Pond From</Form.Label>

@@ -8,7 +8,7 @@ import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared
 import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import Api from '../../shared/api/apiLink';
-import SiteSelector from '../../shared/site-selector/SiteSelector';
+
 
 // ─── inline style tokens (no changes to process.module.scss) ────────────────
 const PRIMARY    = '#512728';
@@ -670,7 +670,7 @@ export default function ViewSummary() {
                 />
                 <FaChevronDown style={s.filterSelectIcon} />
               </div>
-              <SiteSelector onChange={(id, name) => setSiteFilter(name || '')} />
+
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}

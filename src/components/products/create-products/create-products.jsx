@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -7,12 +7,21 @@ import styles from '../product.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { useNavigate } from "react-router-dom";
-import SiteSelector from "../../shared/site-selector/SiteSelector";
+import { useSelector } from "react-redux";
 
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
     const navigate = useNavigate();
     const [showSidebar, setShowSidebar] = useState(false);
+    const user = useSelector((store) => store.user);
+    const isSuperAdmin = user?.userTypes?.includes('super_admin');
+    const profileSiteId = user?.siteId || '';
+
+    useEffect(() => {
+        if (!isSuperAdmin && profileSiteId) {
+            setFormData((prev) => ({ ...prev, siteId: profileSiteId }));
+        }
+    }, [isSuperAdmin, profileSiteId]);
 
     // Form fields state
     const [formData, setFormData] = useState({
@@ -186,7 +195,21 @@ export default function CreateProducts() {
                                 </Col>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Assign to Site</Form.Label>
-                                    <SiteSelector value={formData.siteId} onChange={(id) => setFormData({ ...formData, siteId: id || '' })} />
+                                    {isSuperAdmin ? (
+                                        <Form.Control
+                                            placeholder="Enter site ID"
+                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                            type="text"
+                                            value={formData.siteId}
+                                            onChange={(e) => setFormData({ ...formData, siteId: e.target.value })}
+                                        />
+                                    ) : (
+                                        <Form.Control
+                                            value={profileSiteId}
+                                            disabled
+                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                        />
+                                    )}
                                 </Col>
                             </Row>
                             <Row>

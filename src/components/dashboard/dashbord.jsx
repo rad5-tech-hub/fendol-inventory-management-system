@@ -5,7 +5,6 @@ import Api from '../shared/api/apiLink';
 import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
 import { useSelector } from 'react-redux';
-import SiteSelector from '../shared/site-selector/SiteSelector';
 import { SkeletonStatGrid, SkeletonFilterBar } from '../shared/skeleton/Skeleton';
 import {
   Chart as ChartJS,
@@ -48,6 +47,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [siteId, setSiteId] = useState(null);
+  const user = useSelector((store) => store.user);
+  const isSuperAdmin = user?.userTypes?.includes('super_admin');
   const activeSite = useSelector((store) => store.activeSite);
 
   const effectiveSiteId = activeSite?.id || siteId;
@@ -317,7 +318,11 @@ const Dashboard = () => {
               <div className={styles.pageTitleRow}>
                   <div className={styles.pageTitleLeft}>
                     <h1 className={styles.pageTitle}>Dashboard Overview</h1>
-                    <SiteSelector value={siteId} onChange={(id) => setSiteId(id)} />
+                    {isSuperAdmin && (
+                      <select className="form-select form-select-sm shadow-none" style={{ width: '180px' }} value={siteId || ''} onChange={(e) => setSiteId(e.target.value || null)}>
+                        <option value="">All Sites</option>
+                      </select>
+                    )}
                   </div>
                 <div className={styles.pageTitleRight}>
                   <div className={styles.searchBar}>

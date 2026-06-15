@@ -9,7 +9,6 @@ import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
 import styled from "styled-components";
-import SiteSelector from "../../shared/site-selector/SiteSelector";
 
 const NavTab = styled.div`
   display: flex;
@@ -264,9 +263,6 @@ export default function ViewAllHistory() {
                 ))}
               </NavTab>
               <div className="mt-3 mt-md-0 d-flex gap-3 align-items-center">
-                <div style={{ minWidth: '180px' }}>
-                  <SiteSelector onChange={handleSiteChange} />
-                </div>
                 <Form.Control
                   type="date"
                   className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}

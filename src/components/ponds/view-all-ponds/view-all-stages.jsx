@@ -10,6 +10,7 @@ import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import SiteSelector from "../../shared/site-selector/SiteSelector";
 
 const ViewAllStages = () => {
@@ -25,6 +26,8 @@ const ViewAllStages = () => {
   const [noteError, setNoteError] = useState('');
   const [samplingLoader, setSamplingLoader] = useState(false); // Start as false, only true during fetch
   const [samplingError, setSamplingError] = useState('');
+  const [pondDetail, setPondDetail] = useState(null);
+  const [pondDetailLoading, setPondDetailLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSidebar, setShowSidebar] = useState(false);
@@ -33,12 +36,14 @@ const ViewAllStages = () => {
   const itemsPerPage = 10;
   const [selectedStage, setSelectedStage] = useState(null);
   const [openMenuStageId, setOpenMenuStageId] = useState(null);
-  const [showPondSummaryModal, setShowPondSummaryModal] = useState(false);
+  const [showPondSummaryPanel, setShowPondSummaryPanel] = useState(false);
   const [showEditPondModal, setShowEditPondModal] = useState(false);
   const [showAddSamplingModal, setShowAddSamplingModal] = useState(false);
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
 
   const navigate = useNavigate();
+  const user = useSelector((store) => store.user);
+  const isSuperAdmin = user?.userTypes?.includes('super_admin');
 
   const handleSiteChange = (id, name) => {
     setSiteFilter(name || '');
@@ -83,7 +88,8 @@ const ViewAllStages = () => {
 
   const filteredStages = stages.filter(stage => {
     const matchesSearch = (stage.title?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    const siteName = stage.site?.name || '';
+    const matchesSite = siteFilter ? siteName.toLowerCase() === siteFilter.toLowerCase() : true;
     const matchesStatus = statusFilter ? (stage.status?.toLowerCase() || '') === statusFilter.toLowerCase() : true;
     return matchesSearch && matchesSite && matchesStatus;
   });
@@ -92,7 +98,12 @@ const ViewAllStages = () => {
     setLoadingEdit(true)
     const saveToast = toast.loading('Saving changes...');
     try {
-      await Api.put(`/fish-stage/${selectedStage.id}`, selectedStage);
+      const payload = {
+        title: selectedStage.title,
+        description: selectedStage.description,
+      };
+      if (isSuperAdmin && selectedStage.siteId) payload.siteId = selectedStage.siteId;
+      await Api.put(`/fish-stage/${selectedStage.id}`, payload);
       toast.update(saveToast, {
         render: 'Pond updated successfully!',
         type: 'success',
@@ -139,6 +150,7 @@ const ViewAllStages = () => {
       toast.update(noteToast, { render: 'Note added successfully!', type: 'success', isLoading: false, autoClose: 3000 });
       setShowAddNoteModal(false);
       fetchnote(selectedStage.id);
+      if (selectedStage) fetchPondDetail(selectedStage.id);
     } catch (err) {
       toast.update(noteToast, { render: 'Failed to add note. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
     }finally{
@@ -164,6 +176,18 @@ const ViewAllStages = () => {
     }
   };
 
+  const fetchPondDetail = async (stageId) => {
+    setPondDetailLoading(true);
+    try {
+      const response = await Api.get(`/fish-stage/${stageId}`);
+      setPondDetail(response.data);
+    } catch {
+      setPondDetail(null);
+    } finally {
+      setPondDetailLoading(false);
+    }
+  };
+
   const handleAddSamplingSubmit = async (sampling) => {
     setLoadingSamp(true);
     const samplingToast = toast.loading('Adding sampling...');
@@ -172,6 +196,7 @@ const ViewAllStages = () => {
       toast.update(samplingToast, { render: 'Sampling added successfully!', type: 'success', isLoading: false, autoClose: 3000 });
       setShowAddSamplingModal(false);
       fetchSampling(selectedStage.id);
+      if (selectedStage) fetchPondDetail(selectedStage.id);
     } catch (err) {
       toast.update(samplingToast, { render: 'Failed to add sampling. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
     }finally{
@@ -216,7 +241,7 @@ const ViewAllStages = () => {
       formatDate(stage.createdAt),
       stage.title || '',
       (stage.description || '').replace(/,/g, ''),
-      stage.site || '',
+      stage.site?.name || '',
       stage.quantity ?? '',
     ]);
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -264,10 +289,12 @@ const ViewAllStages = () => {
             {/* ── Filter Bar ── */}
             <div className="border rounded p-3 mb-4" style={{ backgroundColor: '#fff' }}>
               <div className="d-flex flex-wrap gap-3 align-items-end">
-                <div style={{ minWidth: '155px' }}>
-                  <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Site</label>
-                  <SiteSelector onChange={handleSiteChange} />
-                </div>
+                {isSuperAdmin && (
+                  <div style={{ minWidth: '155px' }}>
+                    <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Site</label>
+                    <SiteSelector onChange={handleSiteChange} />
+                  </div>
+                )}
                 <div style={{ minWidth: '155px' }}>
                   <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Status</label>
                   <select
@@ -298,12 +325,12 @@ const ViewAllStages = () => {
               </div>
 
               {/* Active filter chips — only render when at least one filter is active */}
-              {(siteFilter || statusFilter) && (
+              {(isSuperAdmin && siteFilter || statusFilter) && (
                 <div className="d-flex gap-2 flex-wrap mt-3 align-items-center">
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2E3135', letterSpacing: '0.03em' }}>
                     ACTIVE FILTERS:
                   </span>
-                  {siteFilter && (
+                  {isSuperAdmin && siteFilter && (
                     <span
                       className="d-inline-flex align-items-center gap-1 px-2 py-1 rounded"
                       style={{ backgroundColor: '#FFF3CD', color: '#856404', border: '1px solid #FFE69C', fontSize: '0.78rem', fontWeight: 500 }}
@@ -366,7 +393,7 @@ const ViewAllStages = () => {
             {/* ── Table + Pagination ── */}
             {!loading && !error && displayedStages.length > 0 && (
               <>
-                <div className="border rounded overflow-hidden" style={{ backgroundColor: '#fff' }}>
+                <div className="border rounded" style={{ backgroundColor: '#fff' }}>
                   <table className="table table-hover mb-0" style={{ fontSize: '0.875rem' }}>
                     <thead style={{ backgroundColor: '#F8F9FA' }}>
                       <tr>
@@ -379,9 +406,10 @@ const ViewAllStages = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {displayedStages.map((stage) => {
+                      {displayedStages.map((stage, index) => {
                         const formattedCreatedAt = formatDate(stage.createdAt);
-                        const isHatchery = stage.site?.toLowerCase() === 'hatchery';
+                        const isHatchery = stage.site?.name?.toLowerCase() === 'hatchery';
+                        const isNearBottom = index >= displayedStages.length - 2;
                         return (
                           <tr key={stage.id} style={{ borderTop: '1px solid #F0F0F0' }}>
                             <td className="py-3 px-3 align-middle" style={{ color: '#8C949B' }}>{formattedCreatedAt}</td>
@@ -390,7 +418,7 @@ const ViewAllStages = () => {
                             </td>
                             <td className="py-3 px-3 align-middle" style={{ color: '#2E3135' }}>{stage.description}</td>
                             <td className="py-3 px-3 align-middle">
-                              {stage.site ? (
+                              {stage.site?.name ? (
                                 <span
                                   className="px-2 py-1 rounded"
                                   style={{
@@ -400,7 +428,7 @@ const ViewAllStages = () => {
                                     fontWeight: 500,
                                   }}
                                 >
-                                  {stage.site}
+                                  {stage.site.name}
                                 </span>
                               ) : (
                                 <span style={{ color: '#8C949B' }}>--</span>
@@ -411,12 +439,14 @@ const ViewAllStages = () => {
                             </td>
                             <td className="py-3 px-3 align-middle text-center" style={{ position: 'relative' }}>
                               <span
-                                style={{ cursor: 'pointer', color: '#6C757D', padding: '4px 8px', display: 'inline-block' }}
+                                style={{ cursor: 'pointer', color: '#6C757D', padding: '6px 8px', borderRadius: '6px', display: 'inline-block', transition: 'background 0.15s ease, color 0.15s ease' }}
                                 title="Actions"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setOpenMenuStageId(openMenuStageId === stage.id ? null : stage.id);
                                 }}
+                                onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6C757D'; }}
                               >
                                 <BsThreeDotsVertical size={18} />
                               </span>
@@ -428,12 +458,15 @@ const ViewAllStages = () => {
                                   />
                                   <div
                                     style={{
-                                      position: 'absolute', right: '50%', top: '100%', zIndex: 1051,
+                                      position: 'absolute',
+                                      right: '50%',
+                                      [isNearBottom ? 'bottom' : 'top']: '100%',
+                                      zIndex: 1051,
                                       backgroundColor: '#fff',
                                       border: '1px solid #e9ecef',
                                       borderRadius: '12px',
                                       boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-                                      minWidth: '200px',
+                                      minWidth: '210px',
                                       padding: '6px 0',
                                       overflow: 'hidden',
                                     }}
@@ -442,47 +475,52 @@ const ViewAllStages = () => {
                                       Pond Actions
                                     </div>
                                     <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.15s', gap: '12px' }}
-                                      onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setShowPondSummaryModal(true); }}
-                                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#F8F9FA'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
+                                      onClick={() => {
+                                        setOpenMenuStageId(null);
+                                        setSelectedStage(stage);
+                                        setShowPondSummaryPanel(true);
+                                        fetchPondDetail(stage.id);
+                                      }}
+                                      onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
+                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2E3135'; }}
                                     >
-                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#EDE7F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsInfoCircle size={14} color="#7B1FA2" /></span>
+                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#F0E4E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsInfoCircle size={14} color="#512728" /></span>
                                       Pond Summary
                                     </button>
                                     <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.15s', gap: '12px' }}
+                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
                                       onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setShowEditPondModal(true); }}
-                                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#F8F9FA'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                      onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
+                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2E3135'; }}
                                     >
-                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#E3F2FD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsPencilFill size={13} color="#1565C0" /></span>
+                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#F5E6D6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsPencilFill size={13} color="#B06426" /></span>
                                       Edit Pond
                                     </button>
                                     <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.15s', gap: '12px' }}
+                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
                                       onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setShowAddSamplingModal(true); }}
-                                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#F8F9FA'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                      onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
+                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2E3135'; }}
                                     >
-                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsClipboardData size={13} color="#2E7D32" /></span>
+                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#F0E4E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsClipboardData size={13} color="#512728" /></span>
                                       Add Sampling Record
                                     </button>
                                     <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.15s', gap: '12px' }}
+                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
                                       onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setShowAddNoteModal(true); }}
-                                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#F8F9FA'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                      onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
+                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2E3135'; }}
                                     >
-                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#FFF8E1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsSticky size={13} color="#F57F17" /></span>
+                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#F5E6D6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsSticky size={13} color="#B06426" /></span>
                                       Add Notes
                                     </button>
                                     <div style={{ height: '1px', backgroundColor: '#F0F0F0', margin: '4px 12px' }} />
                                     <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#dc3545', cursor: 'pointer', transition: 'all 0.15s', gap: '12px' }}
+                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#dc3545', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
                                       onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setTimeout(() => DeletePond(), 0); }}
-                                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#FFF5F5'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                      onMouseOver={(e) => { e.currentTarget.style.background = '#FFF0F0'; e.currentTarget.style.color = '#dc3545'; }}
+                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#dc3545'; }}
                                     >
                                       <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#FFEBEE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsTrash size={13} color="#dc3545" /></span>
                                       Delete
@@ -531,115 +569,293 @@ const ViewAllStages = () => {
 
       <ToastContainer />
 
-      {/* ── POND SUMMARY MODAL ── */}
-      <Modal show={showPondSummaryModal} onHide={() => setShowPondSummaryModal(false)} size="lg" centered>
-        <div style={{
-          background: 'linear-gradient(135deg, #4A1C1C 0%, #5A2626 50%, #6B3536 100%)',
-          borderRadius: '16px',
-          overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.08)',
-          color: '#fff',
-        }}>
-          <div style={{ padding: '24px 28px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '1.3rem' }}>🌊</span>
-                <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.2rem', color: '#fff' }}>{selectedStage?.title}</h3>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-                <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>{selectedStage?.site || '--'}</span>
-                <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)' }} />
-                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>Created {selectedStage?.createdAt ? formatDate(selectedStage.createdAt) : '--'}</span>
-              </div>
-            </div>
-            <button onClick={() => setShowPondSummaryModal(false)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>x</button>
+      {/* ── POND SUMMARY SLIDE-IN PANEL ── */}
+      <>
+        {/* Backdrop */}
+        {showPondSummaryPanel && (
+          <div
+            onClick={() => setShowPondSummaryPanel(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.45)',
+              zIndex: 1049,
+              backdropFilter: 'blur(2px)',
+              WebkitBackdropFilter: 'blur(2px)',
+              animation: 'pondBackdropIn 0.25s ease forwards',
+            }}
+          />
+        )}
+
+        {/* Slide-in Panel */}
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            height: '100vh',
+            width: '420px',
+            maxWidth: '100vw',
+            backgroundColor: '#fff',
+            zIndex: 1050,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            boxShadow: '-8px 0 48px rgba(0,0,0,0.18)',
+            transform: showPondSummaryPanel ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 0.38s cubic-bezier(0.16, 1, 0.3, 1)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* ── Panel Header ── */}
+          <div style={{
+            padding: '22px 24px 16px',
+            borderBottom: '1px solid #F0F0F0',
+            position: 'relative',
+            flexShrink: 0,
+          }}>
+            <p style={{ margin: '0 0 2px 0', fontSize: '0.7rem', fontWeight: 700, color: '#B06426', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Pond Summary
+            </p>
+            <h2 style={{ margin: '0 0 2px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1C1C1C', paddingRight: '36px', lineHeight: 1.25 }}>
+              {selectedStage?.title || '—'}
+            </h2>
+            <p style={{ margin: '0 0 1px 0', fontSize: '0.775rem', color: '#8C949B', fontWeight: 500 }}>
+              {selectedStage?.site?.name ? `${selectedStage.site.name.toUpperCase()}` : '—'}
+            </p>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: '#B0B8C1' }}>
+              Created: {selectedStage?.createdAt ? formatDate(selectedStage.createdAt) : '—'}
+            </p>
+            {/* Close button */}
+            <button
+              onClick={() => setShowPondSummaryPanel(false)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: '1px solid #EBEBEB',
+                background: '#F7F7F7',
+                color: '#555',
+                fontSize: '1rem',
+                lineHeight: 1,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'background 0.15s',
+              }}
+              onMouseOver={e => { e.currentTarget.style.background = '#EDEDED'; }}
+              onMouseOut={e => { e.currentTarget.style.background = '#F7F7F7'; }}
+            >
+              ×
+            </button>
           </div>
-          <div style={{ padding: '20px 28px 28px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+
+          {/* ── Hero Image Area ── */}
+          <div style={{ position: 'relative', width: '100%', height: '178px', flexShrink: 0, overflow: 'hidden', background: 'linear-gradient(160deg, #1A3A3A 0%, #0F2828 40%, #1B4040 70%, #2A5040 100%)' }}>
+            {/* Water ripple texture overlay */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: 'radial-gradient(ellipse 120% 60% at 50% 80%, rgba(30,80,70,0.55) 0%, transparent 70%), radial-gradient(ellipse 80% 40% at 30% 60%, rgba(20,60,55,0.45) 0%, transparent 60%)',
+              zIndex: 1,
+            }} />
+            {/* Circular pond silhouette */}
+            <div style={{ position: 'absolute', bottom: '-18px', left: '50%', transform: 'translateX(-50%)', width: '220px', height: '220px', borderRadius: '50%', border: '3px solid rgba(60,140,120,0.35)', background: 'radial-gradient(circle, rgba(25,90,80,0.55) 0%, rgba(15,55,50,0.3) 60%, transparent 100%)', zIndex: 2 }} />
+            <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', width: '140px', height: '140px', borderRadius: '50%', border: '2px solid rgba(60,160,130,0.25)', background: 'radial-gradient(circle, rgba(20,100,85,0.4) 0%, transparent 70%)', zIndex: 3 }} />
+            {/* Status badge */}
+            <div style={{
+              position: 'absolute',
+              bottom: '14px',
+              left: '16px',
+              zIndex: 10,
+              padding: '5px 12px',
+              borderRadius: '100px',
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              backgroundColor: selectedStage?.status?.toLowerCase() === 'inactive' ? '#FFEBEE' : '#E8F5E9',
+              color: selectedStage?.status?.toLowerCase() === 'inactive' ? '#C62828' : '#2E7D32',
+              border: `1px solid ${selectedStage?.status?.toLowerCase() === 'inactive' ? '#FFCDD2' : '#C8E6C9'}`,
+              backdropFilter: 'blur(4px)',
+            }}>
+              {selectedStage?.status?.toUpperCase() || 'ACTIVE'}
+            </div>
+            {/* Subtle vignette */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 40%, rgba(0,0,0,0.25) 100%)', zIndex: 4 }} />
+          </div>
+
+          {/* ── Scrollable Content Body ── */}
+          <div style={{ flex: 1, padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+            {/* 2×2 Stat Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               {[
-                { label: 'Current Stock', value: selectedStage ? new Intl.NumberFormat().format(selectedStage.quantity ?? 0) : '0', suffix: 'pcs', icon: '🐟', color: '#B06426' },
-                { label: 'Mortality', value: selectedStage?.mortalityCount != null ? new Intl.NumberFormat().format(selectedStage.mortalityCount) : '--', suffix: 'pcs', icon: '⚠️', color: '#EF5350' },
-                { label: 'Feed Consumed', value: selectedStage?.feedConsumed != null ? new Intl.NumberFormat().format(selectedStage.feedConsumed) : '--', suffix: 'kg', icon: '🌾', color: '#CC6E1A' },
-                { label: 'Status', value: selectedStage?.status?.toUpperCase() || 'ACTIVE', suffix: '', icon: '●', color: selectedStage?.status?.toLowerCase() === 'inactive' ? '#EF5350' : '#66BB6A' },
+                { label: 'Current Stock', value: selectedStage ? new Intl.NumberFormat().format(selectedStage.quantity ?? 0) : '0', suffix: 'pcs', valueColor: '#1A5276' },
+                { label: 'Mortality Count', value: pondDetail?.totalDamages != null ? new Intl.NumberFormat().format(pondDetail.totalDamages) : '--', suffix: 'pcs', valueColor: '#C0392B' },
+                { label: 'Feed Consumed', value: selectedStage?.feedConsumed != null ? new Intl.NumberFormat().format(selectedStage.feedConsumed) : '--', suffix: 'kg', valueColor: '#2E3135' },
+                { label: 'Last Activity', value: '—', suffix: '', valueColor: '#2E3135' },
               ].map((stat, i) => (
                 <div key={i} style={{
-                  background: 'rgba(255,255,255,0.04)',
+                  background: '#FAFAFA',
+                  border: '1px solid #EFEFEF',
                   borderRadius: '12px',
-                  padding: '16px 18px',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  backdropFilter: 'blur(4px)',
+                  padding: '14px 16px',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '1rem' }}>{stat.icon}</span>
-                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{stat.label}</span>
-                  </div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: stat.color, lineHeight: 1.2 }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>{stat.label}</p>
+                  <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: stat.valueColor, lineHeight: 1.1 }}>
                     {stat.value}
-                    {stat.suffix && <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 400, marginLeft: '4px' }}>{stat.suffix}</span>}
-                  </div>
+                    {stat.suffix && (
+                      <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#AAB0B7', marginLeft: '4px' }}>{stat.suffix}</span>
+                    )}
+                  </p>
                 </div>
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '16px 18px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p style={{ margin: '0 0 12px 0', fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>📊 Movement</p>
-                <div style={{ display: 'flex', gap: '24px' }}>
-                  <div>
-                    <p style={{ margin: '0 0 2px 0', fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>Fish Added</p>
-                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#B06426' }}>
-                      {selectedStage?.fishAdded != null ? `${new Intl.NumberFormat().format(selectedStage.fishAdded)} pcs` : '--'}
-                    </p>
-                  </div>
-                  <div>
-                    <p style={{ margin: '0 0 2px 0', fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>Fish Moved</p>
-                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#CC6E1A' }}>
-                      {selectedStage?.fishMoved != null ? `${new Intl.NumberFormat().format(selectedStage.fishMoved)} pcs` : '--'}
-                    </p>
-                  </div>
+            {/* Movement Stats */}
+            <div>
+              <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 800, color: '#8C949B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Movement Stats
+              </p>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ flex: 1, background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
+                  <p style={{ margin: '0 0 6px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>Fish Added</p>
+                  <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#2E3135' }}>
+                    {selectedStage?.fishAdded != null ? `${new Intl.NumberFormat().format(selectedStage.fishAdded)} pcs` : '--'}
+                  </p>
+                </div>
+                <div style={{ flex: 1, background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
+                  <p style={{ margin: '0 0 6px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>Fish Moved</p>
+                  <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#2E3135' }}>
+                    {selectedStage?.fishMoved != null ? `${new Intl.NumberFormat().format(selectedStage.fishMoved)} pcs` : '--'}
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '16px 18px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p style={{ margin: '0 0 12px 0', fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>🔬 Latest Sampling</p>
-                {sampling.length > 0 ? (
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', marginBottom: '6px' }}>
-                      <span>Date</span>
-                      <span>Data</span>
-                    </div>
-                    {sampling.slice(0, 3).map((s, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.78rem', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                        <span style={{ color: 'rgba(255,255,255,0.6)' }}>{formatDate(s.createdAt).slice(0, 5)}</span>
-                        <span style={{ color: '#fff', fontWeight: 500 }}>{s.sample_labeling?.length > 20 ? `${s.sample_labeling.slice(0, 20)}...` : s.sample_labeling || '--'}</span>
-                      </div>
+            {/* Sampling History */}
+            <div>
+              <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 800, color: '#8C949B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Sampling History
+              </p>
+              {pondDetailLoading ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#8C949B', fontSize: '0.8rem' }}>Loading…</div>
+              ) : !pondDetail?.samplings?.length ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#B0B8C1', fontSize: '0.8rem', fontStyle: 'italic', background: '#FAFAFA', borderRadius: '10px', border: '1px solid #EFEFEF' }}>
+                  No sampling records yet
+                </div>
+              ) : (
+                <div style={{ border: '1px solid #EFEFEF', borderRadius: '12px', overflow: 'hidden' }}>
+                  {/* Table header */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', padding: '8px 14px', background: '#F7F8F9', borderBottom: '1px solid #EFEFEF' }}>
+                    {['Date', 'Data', 'Status'].map(h => (
+                      <span key={h} style={{ fontSize: '0.68rem', fontWeight: 700, color: '#9AA0A6', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</span>
                     ))}
                   </div>
-                ) : (
-                  <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No sampling records yet</p>
-                )}
-              </div>
-            </div>
-
-            <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '16px 18px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p style={{ margin: '0 0 12px 0', fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>📝 Recent Notes</p>
-              {note.length > 0 ? (
-                note.slice(0, 3).map((n, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '10px', padding: '6px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: i === 0 ? '#CC6E1A' : 'rgba(255,255,255,0.2)', marginTop: '6px', flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontSize: '0.82rem', color: '#fff' }}>{n.note?.length > 50 ? `${n.note.substring(0, 50)}...` : n.note}</p>
-                      <p style={{ margin: '2px 0 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)' }}>{n.fullName || 'System'} · {formatDate(n.createdAt)}</p>
+                  {/* Table rows */}
+                  {pondDetail.samplings.slice(0, 5).map((s, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', padding: '10px 14px', borderBottom: i < Math.min(pondDetail.samplings.length, 5) - 1 ? '1px solid #F5F5F5' : 'none', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', color: '#6C757D' }}>
+                        {formatDate(s.createdAt).slice(0, 5)}
+                      </span>
+                      <span style={{ fontSize: '0.78rem', color: '#2E3135', fontWeight: 500 }}>
+                        {s.sample_labeling?.length > 12 ? `${s.sample_labeling.slice(0, 12)}…` : s.sample_labeling || '--'}
+                      </span>
+                      <span style={{
+                        display: 'inline-block',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        color: i % 2 === 0 ? '#2E7D32' : '#B06426',
+                      }}>
+                        {i % 2 === 0 ? 'Optimal' : 'Stable'}
+                      </span>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>No notes recorded yet</p>
+                  ))}
+                </div>
               )}
             </div>
+
+            {/* Recent Activity (Notes) */}
+            <div style={{ paddingBottom: '8px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 800, color: '#8C949B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Recent Activity
+              </p>
+              {pondDetailLoading ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#8C949B', fontSize: '0.8rem' }}>Loading…</div>
+              ) : !pondDetail?.recentActivities?.length ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#B0B8C1', fontSize: '0.8rem', fontStyle: 'italic', background: '#FAFAFA', borderRadius: '10px', border: '1px solid #EFEFEF' }}>
+                  No activity recorded yet
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                  {pondDetail.recentActivities.slice(0, 4).map((n, i) => {
+                    const dotColors = ['#512728', '#B06426', '#CC6E1A', '#8C949B'];
+                    return (
+                      <div key={i} style={{ display: 'flex', gap: '12px', padding: '10px 0', borderBottom: i < Math.min(pondDetail.recentActivities.length, 4) - 1 ? '1px solid #F5F5F5' : 'none' }}>
+                        <div style={{ paddingTop: '4px', flexShrink: 0 }}>
+                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: dotColors[i % dotColors.length] }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: '0 0 2px 0', fontSize: '0.82rem', color: '#2E3135', fontWeight: 500, lineHeight: 1.4 }}>
+                            {n.action?.length > 50 ? `${n.action.substring(0, 50)}…` : n.action || n.note}
+                          </p>
+                          <p style={{ margin: 0, fontSize: '0.7rem', color: '#AAB0B7' }}>
+                            {n.performer?.fullName || n.fullName || 'System'} · {formatDate(n.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+          </div>{/* end scrollable body */}
+
+          {/* ── Footer (sticky) ── */}
+          <div style={{
+            flexShrink: 0,
+            padding: '14px 20px 20px',
+            borderTop: '1px solid #F0F0F0',
+            backgroundColor: '#fff',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '10px',
+            alignItems: 'center',
+          }}>
+            <button
+              onClick={() => { setShowPondSummaryPanel(false); setShowEditPondModal(true); }}
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '12px',
+                border: '1px solid #EBEBEB',
+                background: '#FAFAFA',
+                color: '#512728',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'background 0.15s, border-color 0.15s',
+              }}
+              title="Edit Pond"
+              onMouseOver={e => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.borderColor = '#DFC4C4'; }}
+              onMouseOut={e => { e.currentTarget.style.background = '#FAFAFA'; e.currentTarget.style.borderColor = '#EBEBEB'; }}
+            >
+              <BsPencilFill size={14} />
+            </button>
           </div>
-        </div>
-      </Modal>
+
+        </div>{/* end panel */}
+      </>
 
       {/* ── EDIT POND MODAL ── */}
       <Modal show={showEditPondModal} onHide={() => setShowEditPondModal(false)} centered>
@@ -664,6 +880,15 @@ const ViewAllStages = () => {
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#2E3135', marginBottom: '6px' }}>Description</label>
                 <textarea rows={3} value={selectedStage?.description || ''} onChange={(e) => setSelectedStage(prev => prev ? { ...prev, description: e.target.value } : prev)} style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '10px', fontSize: '0.875rem', outline: 'none', color: '#2E3135', resize: 'vertical', transition: 'border 0.2s', fontFamily: 'inherit' }} onFocus={e => e.target.style.borderColor = '#512728'} onBlur={e => e.target.style.borderColor = '#E0E0E0'} />
               </div>
+              {isSuperAdmin && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#2E3135', marginBottom: '6px' }}>Site</label>
+                  <SiteSelector
+                    value={selectedStage?.siteId || ''}
+                    onChange={(id, name) => setSelectedStage(prev => prev ? { ...prev, siteId: id || '' } : prev)}
+                  />
+                </div>
+              )}
             </Form>
           </div>
           <div style={{ padding: '16px 24px', borderTop: '1px solid #F0F0F0', display: 'flex', justifyContent: 'flex-end', gap: '10px', background: '#FAFAFA' }}>
@@ -691,8 +916,17 @@ const ViewAllStages = () => {
           <div style={{ padding: '24px' }}>
             <Form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.target); handleAddSamplingSubmit({ sample_labeling: fd.get('sample_labeling') }); }}>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#2E3135', marginBottom: '6px' }}>Sampling Data / Comment</label>
-                <textarea name="sample_labeling" placeholder="Enter sampling observations, measurements, or comments..." rows={4} required style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '10px', fontSize: '0.875rem', outline: 'none', color: '#2E3135', resize: 'vertical', transition: 'border 0.2s', fontFamily: 'inherit' }} onFocus={e => e.target.style.borderColor = '#512728'} onBlur={e => e.target.style.borderColor = '#E0E0E0'} onInput={e => { e.target.value = e.target.value.replace(/\D/g, ''); }} />
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#2E3135', marginBottom: '6px' }}>Sample Count <span style={{ color: '#8C949B', fontWeight: 400 }}>(numbers only)</span></label>
+                <input
+                  type="text"
+                  name="sample_labeling"
+                  placeholder="e.g. 53"
+                  required
+                  onInput={e => { e.target.value = e.target.value.replace(/\D/g, ''); }}
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '10px', fontSize: '0.875rem', outline: 'none', color: '#2E3135', transition: 'border 0.2s' }}
+                  onFocus={e => e.target.style.borderColor = '#512728'}
+                  onBlur={e => e.target.style.borderColor = '#E0E0E0'}
+                />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button type="button" onClick={() => setShowAddSamplingModal(false)} style={{ padding: '10px 20px', borderRadius: '10px', border: '1px solid #E0E0E0', background: '#fff', color: '#2E3135', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
@@ -739,6 +973,12 @@ const ViewAllStages = () => {
         </div>
       </Modal>
 
+      <style>{`
+        @keyframes pondBackdropIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+      `}</style>
     </section>
   );
 };

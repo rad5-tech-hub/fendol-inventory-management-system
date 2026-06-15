@@ -12,7 +12,7 @@ import { Alert } from 'react-bootstrap';
 import { SkeletonTable, SkeletonFilterBar } from '../../shared/skeleton/Skeleton';
 import { FaTrashAlt, FaUserPlus, FaFilter, FaEdit } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
-import SiteSelector from '../../shared/site-selector/SiteSelector';
+import { useSelector } from 'react-redux';
 
 const avatarColors = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47'];
 
@@ -130,7 +130,6 @@ export default function ViewAll() {
             </div>
 
             <div className={styles.filterBar}>
-              <SiteSelector value={filterSite} onChange={(id) => setFilterSite(id || '')} />
               <button type="button" className={styles.filterBtn}>
                 <FaFilter /> Filter
               </button>
