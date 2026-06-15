@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Form, Row, Col, Button, Breadcrumb } from 'react-bootstrap';
+import { Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast, ToastContainer } from 'react-toastify';
@@ -473,50 +473,19 @@ export default function NewBatchFish() {
           <main className={styles.create_form}>
             <ToastContainer />
             {!showSuccessOverlay && (
-              <Form onSubmit={handleMoveFishes}>
-                <h4 className="my-5">Process Fish</h4>
-                <Row>
-                  <Col md={12} lg={12} className="mb-4">
-                    <Form.Label className="fw-semibold">Import Harvest</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="batch_no"
-                      value="Harvest"
-                      readOnly
-                      className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                    />
-                  </Col>
-                  <Col md={12} lg={12} className="mb-4">
-                    <Form.Label className="fw-semibold">Quantity</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="actual_quantity"
-                      value={moveFishData.actual_quantity || ""}
-                      readOnly
-                      className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                    />
-                    {showLoading ? (
-                      <Form.Text className="text-success mt-1 d-block">Loading...</Form.Text>
-                    ) : (
-                      (!moveFishData.actual_quantity || moveFishData.actual_quantity === 0) && (
-                        <Form.Text className="text-danger mt-1 d-block">
-                          No harvested quantity available. Please add fish to harvest to start processing.
-                        </Form.Text>
-                      )
-                    )}
-                  </Col>
-                  {/* Removed Process To and Remark fields */}
-                </Row>
-                <div className="d-flex justify-content-end my-4">
-                  <Button
-                    className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-                    disabled={loader|| moveFishData.actual_quantity === 0}
-                    type="submit"
-                  >
-                    {loader ? 'Processing' : "Process"}
-                  </Button>
-                </div>
-              </Form>
+              <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
+                <h4 className="mb-4">Process Fish</h4>
+                <p className="text-muted mb-4 text-center" style={{ maxWidth: '500px' }}>
+                  Click below to import the latest harvest batch into the washing stage and begin processing.
+                </p>
+                <Button
+                  className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}
+                  disabled={loader || showLoading}
+                  onClick={handleMoveFishes}
+                >
+                  {loader ? 'Processing...' : showLoading ? 'Loading harvest...' : 'Start Processing'}
+                </Button>
+              </div>
             )}
 
             {showSuccessOverlay && (() => {
@@ -545,7 +514,7 @@ export default function NewBatchFish() {
                           Current Operation
                         </p>
                         <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.55rem', color: '#2E3135', letterSpacing: '-0.01em' }}>
-                          Batch Harvesting: {moveFishData.batch_no || `#PR-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(moveFishData.actual_quantity || 0).padStart(3, '0')}`}
+                          Batch Processing: {moveFishData.batch_no || `#PR-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(moveFishData.actual_quantity || 0).padStart(3, '0')}`}
                         </h3>
                       </div>
                       <div style={{ textAlign: 'right' }}>
