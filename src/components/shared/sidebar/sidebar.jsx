@@ -302,9 +302,6 @@ export default function SideBar({ show, handleClose }) {
               {renderCard("feed_inventory", "Feed Inventory", <GiChipsBag size={25} className="me-1" />,
                 <>
                   {renderNavItem("View all", "/feed/inventory/view-all")}
-                  {renderNavItem("Add", "/feed/inventory/add")}
-                  {renderNavItem("Use", "/feed/inventory/use")}
-                  {renderNavItem("Top up", "/feed/inventory/top-up")}
                   {renderNavItem("History", "/feed/inventory-history")}
                 </>
               )}

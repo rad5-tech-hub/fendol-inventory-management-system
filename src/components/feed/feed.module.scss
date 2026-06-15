@@ -119,6 +119,19 @@
   transform: translateY(-50%);
 }
 
+.addFeedBtn {
+  background-color: #512728;
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  &:hover {
+    background-color: #714445;
+    color: #fff;
+  }
+}
+
 .suggestions_box {
   position: absolute;
   max-height: 170px;
