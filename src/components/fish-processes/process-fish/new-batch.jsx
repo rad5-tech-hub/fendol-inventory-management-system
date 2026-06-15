@@ -79,7 +79,13 @@ export default function NewBatchFish() {
   const fetchWashingStage = async () => {
     setStagesLoading(true);
     try {
-      const response = await Api.get('/process-stages');
+      const stageParams = {};
+      if (isSuperAdmin) {
+        if (activeSite?.id) stageParams.siteId = activeSite.id;
+      } else if (user?.siteId) {
+        stageParams.siteId = user.siteId;
+      }
+      const response = await Api.get('/process-stages', { params: stageParams });
       if (Array.isArray(response.data.data)) {
         setCheckStages(response.data.data);
         const washingStage = response.data.data.find(stage => stage.title === "Washing");
@@ -131,8 +137,8 @@ export default function NewBatchFish() {
 
       const savedProcessId = sessionStorage.getItem('batchProcessId');
       if (savedProcessId) {
+        const pid = JSON.parse(savedProcessId);
         try {
-          const pid = JSON.parse(savedProcessId);
           const res = await Api.get(`/fish-process/${pid}`);
           const data = res.data.data;
           if (data) {
@@ -150,7 +156,12 @@ export default function NewBatchFish() {
             setCumulativeDamageOrLoss(data.cumulativeDamageOrLoss || data.damageOrLoss || 0);
           }
         } catch (err) {
-          console.error('Failed to restore process data on reload:', err);
+          if (err.response?.status === 404) {
+            clearBatchStorage();
+            setShowSuccessOverlay(false);
+          } else {
+            console.error('Failed to restore process data on reload:', err);
+          }
         }
       }
     };
@@ -244,9 +255,9 @@ export default function NewBatchFish() {
       const newProcessId = response.data.data?.id;
       if (newProcessId) setProcessId(newProcessId);
 
-      const fetchProcessData = async (id) => {
+      if (newProcessId) {
         try {
-          const res = await Api.get(`/fish-process/${id}`);
+          const res = await Api.get(`/fish-process/${newProcessId}`);
           const data = res.data.data;
           if (data) {
             setQuantity({
@@ -267,10 +278,13 @@ export default function NewBatchFish() {
           }
         } catch (err) {
           console.error('Failed to fetch process data:', err);
+          setQuantity({
+            wholeFish: response.data.data?.actual_quantity || 0,
+            brokenFish: 0,
+            damage: 0,
+          });
         }
-      };
-
-      if (newProcessId) await fetchProcessData(newProcessId);
+      }
 
       toast.update(loadingToast, {
         render: "Fish moved successfully!",
@@ -315,12 +329,23 @@ export default function NewBatchFish() {
   };
 
   const getEndpoint = (stageTitle) => {
-    switch (stageTitle) {
-      case "Washing": return "/fish-process";
-      case "Smoking": return "/smoking-to-drying";
-      case "Drying": return "/add-fish-to-show-glass";
-      default: return null;
-    }
+    const normalized = (stageTitle || '').trim().toLowerCase();
+    if (normalized === "washing") return "/fish-process";
+    if (normalized === "smoking") return "/smoking-to-drying";
+    if (normalized === "drying") return "/add-fish-to-show-glass";
+    return null;
+  };
+
+  const getStageIndex = (stageId) => {
+    return orderedStages.findIndex(s => s.id === stageId);
+  };
+
+  const getEndpointByIndex = (stageId) => {
+    const idx = getStageIndex(stageId);
+    if (idx === 0) return "/fish-process";
+    if (idx === 1) return "/smoking-to-drying";
+    if (idx === 2) return "/add-fish-to-show-glass";
+    return null;
   };
 
   const handleNext = async () => {
@@ -333,7 +358,7 @@ export default function NewBatchFish() {
         throw new Error("Stages are still loading. Please wait.");
       }
 
-      const endpoint = getEndpoint(currentStage.title);
+      const endpoint = getEndpoint(currentStage.title) || getEndpointByIndex(currentStage.id);
 
       if (endpoint) {
         const payload = {
@@ -359,6 +384,14 @@ export default function NewBatchFish() {
                 brokenFish: pd.cumulativeBrokenQuantity || pd.brokenFishQuantity || 0,
                 damage: pd.cumulativeDamageOrLoss || pd.damageOrLoss || 0,
               });
+              setMoveData(prev => ({
+                ...prev,
+                stageId_from: pd.stageId_from || prev.stageId_from,
+                stageId_to: pd.stageId_to || prev.stageId_to,
+                wholeFishQuantity: '',
+                brokenFishQuantity: '',
+                damageOrLoss: '',
+              }));
               setCumulativeBrokenFishQuantity(pd.cumulativeBrokenQuantity || pd.brokenFishQuantity || 0);
               setCumulativeDamageOrLoss(pd.cumulativeDamageOrLoss || pd.damageOrLoss || 0);
             }
@@ -381,11 +414,13 @@ export default function NewBatchFish() {
         }));
 
         setMessage("Fish moved successfully!");
-        if (currentStage.title === "Drying") {
+        const isDrying = getEndpoint(currentStage.title) === "/add-fish-to-show-glass"
+          || getEndpointByIndex(currentStage.id) === "/add-fish-to-show-glass";
+        if (isDrying) {
           clearBatchStorage();
           setShowSuccessOverlay(false);
           setTimeout(() => navigate('/showcase/whole-showcase'), 2500);
-        } else {
+        } else if (!newProcessId) {
           const nextStageId = getNextStageId(moveData.stageId_from);
           if (nextStageId) {
             setMoveData(prev => ({
