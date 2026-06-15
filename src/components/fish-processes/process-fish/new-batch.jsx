@@ -21,6 +21,7 @@ export default function NewBatchFish() {
   const [stages, setStages] = useState({ washing: null });
   const [checkStages, setCheckStages] = useState([]);
   const [fishType, setFishType] = useState([]);
+  const [processId, setProcessId] = useState(null);
   const [moveFishData, setMoveFishData] = useState(() => {
     const saved = sessionStorage.getItem('batchMoveFishData');
     return saved ? JSON.parse(saved) : {
@@ -196,17 +197,42 @@ export default function NewBatchFish() {
         ),
       };
       const response = await Api.post('/harvest-washing', payload);
+      const newProcessId = response.data.data?.id;
+      if (newProcessId) setProcessId(newProcessId);
+
+      const fetchProcessData = async (id) => {
+        try {
+          const res = await Api.get(`/fish-process/${id}`);
+          const data = res.data.data;
+          if (data) {
+            setQuantity({
+              wholeFish: data.wholeFishQuantity || 0,
+              brokenFish: data.cumulativeBrokenQuantity || data.brokenFishQuantity || 0,
+              damage: data.cumulativeDamageOrLoss || data.damageOrLoss || 0,
+            });
+            setMoveData(prev => ({
+              ...prev,
+              stageId_from: data.stageId_from || prev.stageId_from,
+              stageId_to: data.stageId_to || prev.stageId_to,
+              wholeFishQuantity: '',
+              brokenFishQuantity: '',
+              damageOrLoss: '',
+            }));
+            setCumulativeBrokenFishQuantity(data.cumulativeBrokenQuantity || data.brokenFishQuantity || 0);
+            setCumulativeDamageOrLoss(data.cumulativeDamageOrLoss || data.damageOrLoss || 0);
+          }
+        } catch (err) {
+          console.error('Failed to fetch process data:', err);
+        }
+      };
+
+      if (newProcessId) await fetchProcessData(newProcessId);
+
       toast.update(loadingToast, {
         render: "Fish moved successfully!",
         type: "success",
         isLoading: false,
         autoClose: 3000,
-      });
-
-      setQuantity({
-        wholeFish: response.data.data.actual_quantity,
-        damage: 0,
-        brokenFish: 0,
       });
 
       setMoveFishData({
@@ -269,18 +295,34 @@ export default function NewBatchFish() {
           ),
         };
         const response = await Api.post(endpoint, payload);
+
         const data = response.data.data || response.data.newProcess;
+        const newProcessId = data?.id || data?.processId;
+        if (newProcessId) setProcessId(newProcessId);
 
-        const { wholeFishQuantity = 0, brokenFishQuantity = 0, damageOrLoss = 0 } = data;
+        const fetchProcessData = async (id) => {
+          try {
+            const res = await Api.get(`/fish-process/${id}`);
+            const pd = res.data.data;
+            if (pd) {
+              setQuantity({
+                wholeFish: pd.wholeFishQuantity || 0,
+                brokenFish: pd.cumulativeBrokenQuantity || pd.brokenFishQuantity || 0,
+                damage: pd.cumulativeDamageOrLoss || pd.damageOrLoss || 0,
+              });
+              setCumulativeBrokenFishQuantity(pd.cumulativeBrokenQuantity || pd.brokenFishQuantity || 0);
+              setCumulativeDamageOrLoss(pd.cumulativeDamageOrLoss || pd.damageOrLoss || 0);
+            }
+          } catch (err) {
+            console.error('Failed to fetch process data:', err);
+          }
+        };
 
-        setCumulativeBrokenFishQuantity(prev => prev + brokenFishQuantity);
-        setCumulativeDamageOrLoss(prev => prev + damageOrLoss);
-
-        setQuantity({
-          wholeFish: wholeFishQuantity,
-          brokenFish: cumulativeBrokenFishQuantity + brokenFishQuantity,
-          damage: cumulativeDamageOrLoss + damageOrLoss,
-        });
+        if (newProcessId) {
+          await fetchProcessData(newProcessId);
+        } else if (processId) {
+          await fetchProcessData(processId);
+        }
 
         setMoveData(prev => ({
           ...prev,
@@ -326,6 +368,7 @@ export default function NewBatchFish() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   const clearBatchStorage = () => {
+    setProcessId(null);
     ['batchMoveData', 'batchQuantity', 'batchMoveFishData', 'batchCumBroken', 'batchCumDamage', 'showSuccessOverlay'].forEach(k => sessionStorage.removeItem(k));
   };
 
