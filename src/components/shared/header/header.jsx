@@ -293,7 +293,7 @@ export default function Header({ toggleSidebar }) {
                     {activeSite ? <FaMapMarkerAlt /> : <FaGlobeAmericas />}
                   </span>
                   <span className={styles.sitePillText}>
-                    {activeSite ? activeSite.name : "All Sites"}
+                    {activeSite ? <>{activeSite.name} {activeSite.type && <span className={styles.sitePillType}>— {activeSite.type}</span>}</> : "All Sites"}
                   </span>
                   <FaChevronDown
                     size={10}
@@ -321,13 +321,15 @@ export default function Header({ toggleSidebar }) {
                         <button
                           key={site.id}
                           className={`${styles.siteDropdownItem} ${activeSite?.id === site.id ? styles.siteDropdownItemActive : ""}`}
-                          onClick={() => handleSiteSelect({ id: site.id, name: site.name })}
+                          onClick={() => handleSiteSelect({ id: site.id, name: site.name, type: site.type?.name })}
                         >
                           <FaMapMarkerAlt className={styles.siteDropdownIcon} />
                           <div className={styles.siteDropdownInfo}>
                             <span className={styles.siteDropdownLabel}>{site.name}</span>
-                            {site.location && (
-                              <span className={styles.siteDropdownSub}>{site.location}</span>
+                            {site.type?.name && (
+                              <span className={styles.siteDropdownSub}>
+                                {site.location ? `${site.location} — ${site.type.name}` : site.type.name}
+                              </span>
                             )}
                           </div>
                           {activeSite?.id === site.id && <FaCheck className={styles.siteDropdownCheck} />}

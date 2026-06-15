@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, Breadcrumb } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { toast, ToastContainer } from 'react-toastify';
 import { MdOutlineRefresh } from "react-icons/md";
 import { BsGrid3X3GapFill, BsXCircleFill, BsArrowRight, BsXLg, BsSave, BsExclamationCircle } from 'react-icons/bs';
@@ -12,6 +13,9 @@ import 'react-toastify/dist/ReactToastify.css';
 
 export default function NewBatchFish() {
   const navigate = useNavigate();
+  const user = useSelector((store) => store.user);
+  const activeSite = useSelector((store) => store.activeSite);
+  const isSuperAdmin = user?.userTypes?.includes('super_admin');
   const [showSidebar, setShowSidebar] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
   const [stages, setStages] = useState({ washing: null });
@@ -90,12 +94,19 @@ export default function NewBatchFish() {
   const fetchFishType = async () => {
     setShowLoading(true);
     try {
-      const response = await Api.get('/get-all-active-harvest-batch');
-      if (response.data.data.quantity) {
+      const params = {};
+      if (isSuperAdmin) {
+        if (activeSite?.id) params.siteId = activeSite.id;
+      } else if (user?.siteId) {
+        params.siteId = user.siteId;
+      }
+      const response = await Api.get('/get-all-active-harvest-batch', { params });
+      const quantity = Number(response.data.data) || 0;
+      if (quantity > 0) {
         setMoveFishData(prev => ({
           ...prev,
-          actual_quantity: response.data.data.quantity,
-          remarks: `Process started with ${response.data.data.quantity}`
+          actual_quantity: quantity,
+          remarks: `Process started with ${quantity}`
         }));
       }
     } catch (err) {

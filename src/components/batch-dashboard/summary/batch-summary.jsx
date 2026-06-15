@@ -1,105 +1,180 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
   IoArrowBackOutline,
-  IoLocationOutline,
   IoCalendarOutline,
   IoLayersOutline,
-  IoLeafOutline,
-  IoDownloadOutline,
 } from 'react-icons/io5';
 import {
-  FaCircle,
   FaSkull,
-  FaFish,
   FaArrowRight,
-  FaShoppingCart,
   FaClock,
   FaBoxOpen,
   FaPlus,
   FaCheckCircle,
 } from 'react-icons/fa';
-import { GiCirclingFish, GiCannedFish, GiChipsBag } from 'react-icons/gi';
-import { MdWarning, MdOutlinePointOfSale, MdOutlineBarChart } from 'react-icons/md';
+import { GiCirclingFish, GiCannedFish } from 'react-icons/gi';
+import { MdWarning } from 'react-icons/md';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import Api from '../../shared/api/apiLink';
+import { SkeletonTable } from '../../shared/skeleton/Skeleton';
+import { ApiV2 } from '../../shared/api/apiLink';
 import styles from '../batch-dashboard.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
 
-const infoCards = [
-  { label: 'Current Pond', value: 'Pond Alpha-02', sub: 'Main Farm', icon: IoLocationOutline, color: '#F97316' },
-  { label: 'Fish Type', value: 'Tilapia', icon: GiCirclingFish, color: '#3B82F6' },
-  { label: 'Date Introduced', value: 'May 28, 2025', icon: IoCalendarOutline, color: '#8B5CF6' },
-  { label: 'Initial Quantity', value: f(12500), icon: IoLayersOutline, color: '#F97316' },
-  { label: 'Current Quantity', value: f(12450), icon: IoLayersOutline, color: '#14B8A6' },
-  { label: 'Mortality', value: '50 (0.40%)', icon: FaSkull, color: '#EF4444' },
-  { label: 'Current Stage', value: 'Growing', icon: IoLeafOutline, color: '#22C55E' },
-];
+const stageColors = {
+  Pond: { bg: '#E8F5E9', color: '#2E7D32' },
+  Harvesting: { bg: '#FEF3C7', color: '#92400E' },
+  Processing: { bg: '#FFF3E0', color: '#E65100' },
+  Completed: { bg: '#F3F4F6', color: '#374151' },
+};
 
-const timelineData = [
-  {
-    title: 'Fish Added', date: 'May 28, 2025 \u2022 09:45 AM', icon: FaCheckCircle, color: '#22C55E',
-    detail: '12,500 Tilapia fingerlings added to Pond Alpha-01',
-    stat: '12,500 pcs', person: 'by John Doe',
-  },
-  {
-    title: 'Movement (Sorting)', date: 'Jun 05, 2025 \u2022 10:30 AM', icon: FaArrowRight, color: '#3B82F6',
-    detail: 'Moved to Pond Alpha-02 after sorting',
-    stat: '12,300 pcs', person: 'by Peter James',
-  },
-  {
-    title: 'Sampling', date: 'Jun 12, 2025 \u2022 09:00 AM', icon: FaCircle, color: '#14B8A6',
-    detail: 'Routine sampling and weight check',
-    stat: '12,250 pcs', person: 'by Esther Sunday',
-  },
-  {
-    title: 'Mortality', date: 'Jun 18, 2025 \u2022 08:15 AM', icon: FaSkull, color: '#EF4444',
-    detail: 'Natural mortality recorded',
-    stat: '50 pcs', person: 'by Samuel Okoro',
-  },
-  {
-    title: 'Broodstock Transfer', date: 'Jun 22, 2025 \u2022 02:30 PM', icon: FaArrowRight, color: '#8B5CF6',
-    detail: 'Broodstock selected and moved to hatchery',
-    stat: '100 pcs', person: 'by John Doe',
-  },
-  {
-    title: 'Fresh Fish Sale', date: 'Jun 25, 2025 \u2022 11:05 AM', icon: FaShoppingCart, color: '#F97316',
-    detail: 'Sold as fresh fish',
-    stat: '200 pcs', person: 'by Peter James',
-  },
-  {
-    title: 'Ongoing', date: '\u2014', icon: FaClock, color: '#9CA3AF',
-    detail: 'Current stage of the batch',
-    stat: '12,450 pcs Remaining', person: '',
-  },
-];
+const formatDate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+};
 
-const perfData = [
-  { label: 'Initial Quantity', value: '12,500 pcs', icon: IoLayersOutline, color: '#F97316' },
-  { label: 'Current Quantity', value: '12,450 pcs', icon: IoLayersOutline, color: '#14B8A6' },
-  { label: 'Mortality', value: '50 pcs', icon: FaSkull, color: '#EF4444', danger: true },
-  { label: 'Fresh Fish Sold', value: '200 pcs', icon: GiCirclingFish, color: '#F97316' },
-  { label: 'Broodstock Transfer', value: '100 pcs', icon: FaArrowRight, color: '#8B5CF6' },
-  { label: 'Total Harvested', value: '0 pcs', icon: GiCannedFish, color: '#14B8A6' },
-  { label: 'Whole Fish Produced', value: '0 pcs', icon: GiChipsBag, color: '#22C55E' },
-  { label: 'Broken Fish Produced', value: '0 pcs', icon: GiChipsBag, color: '#F97316' },
-  { label: 'Damaged Fish Produced', value: '0 pcs', icon: MdWarning, color: '#EF4444' },
-];
+const formatShortDate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getFullYear()}`;
+};
 
 export default function BatchSummary() {
   const { batchId } = useParams();
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [batch, setBatch] = useState(null);
   const [activeTab, setActiveTab] = useState('notes');
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await ApiV2.get(`/v2/batch-summary/${batchId}`);
+        setBatch(response.data.data);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to fetch batch summary.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (batchId) fetchSummary();
+  }, [batchId]);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
+
+  if (loading) {
+    return (
+      <section className={`${styles.body}`}>
+        <div className="sticky-top"><Header toggleSidebar={toggleSidebar} /></div>
+        <div className="d-flex gap-2">
+          <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+            <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
+          </div>
+          <section className={`${styles.content} flex-grow-1`}>
+            <main className={styles.page}>
+              <div style={{ padding: '20px 0' }}>
+                <SkeletonTable rows={6} cols={4} />
+              </div>
+            </main>
+          </section>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || !batch) {
+    return (
+      <section className={`${styles.body}`}>
+        <div className="sticky-top"><Header toggleSidebar={toggleSidebar} /></div>
+        <div className="d-flex gap-2">
+          <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+            <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
+          </div>
+          <section className={`${styles.content} flex-grow-1`}>
+            <main className={styles.page}>
+              <div className={styles.emptyState}>
+                <p>{error || 'Batch not found.'}</p>
+                <div className={styles.backLink} onClick={() => navigate('/batch-dashboard')}>
+                  <IoArrowBackOutline size={16} /> Back to Batch Dashboard
+                </div>
+              </div>
+            </main>
+          </section>
+        </div>
+      </section>
+    );
+  }
+
+  const isCompleted = !!batch.endDate;
+  const stageCfg = stageColors[batch.currentStage] || { bg: '#F3F4F6', color: '#374151' };
+
+  const totalInitial = (batch.fishStocks || []).reduce((s, x) => s + (Number(x.quantity) || 0), 0);
+  const totalHarvested = (batch.harvestLogs || []).reduce((s, x) => s + (Number(x.actual_quantity) || 0), 0);
+  const totalDamaged = (batch.damagedFish || []).length;
+  const totalProcessed = (batch.fishProcesses || []).reduce((s, x) => s + (Number(x.wholeFishQuantity) || 0) + (Number(x.brokenFishQuantity) || 0) + (Number(x.damageOrLoss) || 0), 0);
+  const currentQty = Math.max(0, totalInitial - totalHarvested - totalDamaged);
+
+  const infoCards = [
+    { label: 'Current Stage', value: batch.currentStage || '—', icon: IoLayersOutline, color: '#22C55E' },
+    { label: 'Date Created', value: formatShortDate(batch.createdAt), icon: IoCalendarOutline, color: '#8B5CF6' },
+    { label: 'Initial Quantity', value: `${f(totalInitial)} pcs`, icon: GiCirclingFish, color: '#F97316' },
+    { label: 'Current Quantity', value: `${f(currentQty)} pcs`, icon: IoLayersOutline, color: '#14B8A6' },
+    { label: 'Total Harvested', value: `${f(totalHarvested)} pcs`, icon: GiCannedFish, color: '#8B5CF6' },
+    { label: 'Mortality Events', value: `${f(totalDamaged)}`, icon: FaSkull, color: '#EF4444' },
+    { label: 'Comments', value: batch.comments || 'No comments', icon: FaCheckCircle, color: '#3B82F6' },
+  ];
+
+  const perfData = [
+    { label: 'Initial Quantity', value: `${f(totalInitial)} pcs`, icon: IoLayersOutline, color: '#F97316' },
+    { label: 'Current Quantity', value: `${f(currentQty)} pcs`, icon: IoLayersOutline, color: '#14B8A6' },
+    { label: 'Mortality Events', value: `${f(totalDamaged)}`, icon: FaSkull, color: '#EF4444', danger: true },
+    { label: 'Total Harvested', value: `${f(totalHarvested)} pcs`, icon: GiCannedFish, color: '#14B8A6' },
+    { label: 'Fish Processed', value: `${f(totalProcessed)} pcs`, icon: GiCannedFish, color: '#22C55E' },
+  ];
+
+  const harvestTimeline = (batch.harvestLogs || []).map((h) => ({
+    title: 'Harvest',
+    date: formatDate(h.createdAt),
+    icon: FaArrowRight,
+    color: '#F97316',
+    detail: `Harvest from ${h.pondName || 'pond'}`,
+    stat: `${f(Number(h.actual_quantity) || 0)} pcs`,
+    person: h.remarks ? `Remarks: ${h.remarks}` : '',
+  }));
+
+  const fishStockEvents = (batch.fishStocks || []).map((fs) => ({
+    title: 'Fish Stock',
+    date: formatDate(fs.createdAt),
+    icon: GiCirclingFish,
+    color: '#3B82F6',
+    detail: `Batch #${fs.batchNumber} — Stock entry`,
+    stat: `${f(Number(fs.quantity) || 0)} pcs`,
+    person: '',
+  }));
+
+  const timelineData = [
+    ...fishStockEvents,
+    ...harvestTimeline,
+    {
+      title: batch.endDate ? 'Completed' : 'Ongoing',
+      date: batch.endDate ? formatDate(batch.endDate) : '—',
+      icon: batch.endDate ? FaCheckCircle : FaClock,
+      color: batch.endDate ? '#22C55E' : '#9CA3AF',
+      detail: batch.endDate ? 'Batch process completed' : 'Current stage of the batch',
+      stat: batch.endDate ? '' : `${f(currentQty)} pcs Remaining`,
+      person: '',
+    },
+  ];
 
   return (
     <section className={`${styles.body}`}>
@@ -119,12 +194,14 @@ export default function BatchSummary() {
             <div className={styles.summaryHeader}>
               <div className={styles.summaryTitle}>
                 <h3>Batch Summary</h3>
-                <span className={styles.batchIdPill}>FDL-BT-2025-001</span>
-                <span className={styles.statusBadge} style={{ background: '#E8F5E9', color: '#2E7D32' }}>Active</span>
+                <span className={styles.batchIdPill}>FDL-BT-{String(batch.batchNumber).padStart(4, '0')}</span>
+                <span className={styles.statusBadge} style={{ background: isCompleted ? '#F3F4F6' : '#E8F5E9', color: isCompleted ? '#374151' : '#2E7D32' }}>
+                  {isCompleted ? 'Completed' : 'Active'}
+                </span>
               </div>
               <div className={styles.summaryActions}>
                 <button className={styles.exportBtn} onClick={() => {}}>
-                  <IoDownloadOutline size={16} /> Export Report
+                  <IoArrowBackOutline size={16} /> Export Report
                 </button>
               </div>
             </div>
@@ -137,10 +214,7 @@ export default function BatchSummary() {
                   </div>
                   <div className={styles.infoContent}>
                     <div className={styles.infoLabel}>{card.label}</div>
-                    <div className={styles.infoValue}>
-                      {card.value}
-                      {card.sub && <span style={{ fontSize: '0.72rem', color: '#8C949B', fontWeight: 500, display: 'block' }}>{card.sub}</span>}
-                    </div>
+                    <div className={styles.infoValue}>{card.value}</div>
                   </div>
                 </div>
               ))}
@@ -152,24 +226,29 @@ export default function BatchSummary() {
                 <div className={styles.colCard}>
                   <h5>Batch Journey Timeline</h5>
                   <div className={styles.timeline}>
-                    {timelineData.map((item, i) => (
-                      <div key={i} className={styles.timelineItem}>
-                        <div className={styles.timelineDot} style={{ background: item.color + '20', color: item.color }}>
-                          <item.icon size={12} />
-                        </div>
-                        <div className={styles.timelineContent}>
-                          <div className={styles.timelineTitle}>{item.title}</div>
-                          <div className={styles.timelineDate}>{item.date}</div>
-                          <div className={styles.timelineDetail}>
-                            <div>{item.detail}</div>
-                            <div><span className={styles.timelineStat}>{item.stat}</span></div>
-                            {item.person && <div className={styles.timelinePerson}>{item.person}</div>}
+                    {timelineData.length === 0 ? (
+                      <div className={styles.emptyState}>
+                        <p>No timeline events.</p>
+                      </div>
+                    ) : (
+                      timelineData.map((item, i) => (
+                        <div key={i} className={styles.timelineItem}>
+                          <div className={styles.timelineDot} style={{ background: item.color + '20', color: item.color }}>
+                            <item.icon size={12} />
+                          </div>
+                          <div className={styles.timelineContent}>
+                            <div className={styles.timelineTitle}>{item.title}</div>
+                            <div className={styles.timelineDate}>{item.date}</div>
+                            <div className={styles.timelineDetail}>
+                              <div>{item.detail}</div>
+                              {item.stat && <div><span className={styles.timelineStat}>{item.stat}</span></div>}
+                              {item.person && <div className={styles.timelinePerson}>{item.person}</div>}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
-                  <div className={styles.viewAllLink} onClick={() => {}}>View Full Timeline &rarr;</div>
                 </div>
               </div>
 
@@ -191,89 +270,87 @@ export default function BatchSummary() {
                 </div>
 
                 <div className={styles.colCard}>
-                  <h5>Processing / Harvest History</h5>
+                  <h5>Harvest History</h5>
                   <div className={styles.tableWrapper}>
                     <table className={styles.table}>
                       <thead>
                         <tr>
                           <th className="text-start">Date</th>
-                          <th className="text-start">Type</th>
-                          <th className="text-start">Qty Taken</th>
-                          <th className="text-end">Qty (pcs)</th>
+                          <th className="text-start">Pond</th>
+                          <th className="text-end">Pre Qty</th>
+                          <th className="text-end">Harvested</th>
+                          <th className="text-end">Post Qty</th>
                           <th className="text-start">Recorded By</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td style={{ fontSize: '0.82rem', color: '#8C949B' }} className="text-start">Jun 05, 2025</td>
-                          <td className="text-start">Sorting</td>
-                          <td className="text-start">Pond Alpha-01 → Pond Alpha-02</td>
-                          <td className="text-end">12,300</td>
-                          <td className="text-start">Peter James</td>
-                        </tr>
-                        <tr>
-                          <td style={{ fontSize: '0.82rem', color: '#8C949B' }} className="text-start">Jun 22, 2025</td>
-                          <td className="text-start">Broodstock</td>
-                          <td className="text-start">Pond Alpha-02 → Hatchery Unit-01</td>
-                          <td className="text-end">100</td>
-                          <td className="text-start">John Doe</td>
-                        </tr>
+                        {(batch.harvestLogs || []).length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="text-center py-3" style={{ color: '#8C949B', fontWeight: 600 }}>
+                              No harvest records.
+                            </td>
+                          </tr>
+                        ) : (
+                          (batch.harvestLogs || []).map((h, i) => (
+                            <tr key={h.id || i}>
+                              <td style={{ fontSize: '0.82rem', color: '#8C949B' }} className="text-start">
+                                {formatShortDate(h.createdAt)}
+                              </td>
+                              <td className="text-start">{h.pondName || '—'}</td>
+                              <td className="text-end">{f(Number(h.pre_quantity) || 0)}</td>
+                              <td className="text-end">{f(Number(h.actual_quantity) || 0)}</td>
+                              <td className="text-end">{f(Number(h.post_quantity) || 0)}</td>
+                              <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>
+                                {h.addedByRole || '—'}
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
-                  <div className={styles.viewAllLink} style={{ marginTop: '12px' }} onClick={() => {}}>View All Movements &rarr;</div>
                 </div>
               </div>
 
-              {/* Right: Financial + Audit */}
+              {/* Right: Audit Info */}
               <div>
                 <div className={styles.colCard}>
-                  <h5>Financial Summary</h5>
-                  <div className={styles.financialRow}>
-                    <span className={styles.finLabel}>Fresh Fish Sales</span>
-                    <span className={styles.finValue}>₦320,000</span>
+                  <h5>Batch Information</h5>
+                  <div className={styles.auditRow}>
+                    <div className={styles.auditLabel}>Batch Number</div>
+                    <div className={styles.auditValue}>FDL-BT-{String(batch.batchNumber).padStart(4, '0')}</div>
                   </div>
-                  <div className={styles.financialRow}>
-                    <span className={styles.finLabel}>Whole Fish Sales</span>
-                    <span className={styles.finValue}>₦0</span>
+                  <div className={styles.auditRow}>
+                    <div className={styles.auditLabel}>Current Stage</div>
+                    <div className={styles.auditValue}>{batch.currentStage || '—'}</div>
                   </div>
-                  <div className={styles.financialRow}>
-                    <span className={styles.finLabel}>Broken Fish Sales</span>
-                    <span className={styles.finValue}>₦0</span>
+                  <div className={styles.auditRow}>
+                    <div className={styles.auditLabel}>Status</div>
+                    <div className={styles.auditValue}>{isCompleted ? 'Completed' : 'Active'}</div>
                   </div>
-                  <div className={styles.finDivider}></div>
-                  <div className={`${styles.financialRow} ${styles.finTotal}`}>
-                    <span className={styles.finLabel}>Total Revenue</span>
-                    <span className={styles.finValue}>₦320,000</span>
+                  <div className={styles.auditRow}>
+                    <div className={styles.auditLabel}>Comments</div>
+                    <div className={styles.auditValue}>{batch.comments || '—'}</div>
                   </div>
-                  <div className={`${styles.financialRow} ${styles.finTotal}`}>
-                    <span className={styles.finLabel}>Total Costs</span>
-                    <span className={styles.finValue}>₦125,000</span>
+                  <div className={styles.auditRow}>
+                    <div className={styles.auditLabel}>Start Date</div>
+                    <div className={styles.auditValue}>{batch.startDate || '—'}</div>
                   </div>
-                  <div className={styles.finDivider}></div>
-                  <div className={`${styles.financialRow} ${styles.finProfit}`}>
-                    <span className={styles.finLabel}><MdOutlineBarChart size={16} style={{ marginRight: 4 }} />Estimated Profit</span>
-                    <span className={styles.finValue}>₦195,000</span>
+                  <div className={styles.auditRow}>
+                    <div className={styles.auditLabel}>End Date</div>
+                    <div className={styles.auditValue}>{batch.endDate || '—'}</div>
                   </div>
                 </div>
 
                 <div className={styles.colCard}>
                   <h5>Audit Information</h5>
                   <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>Created By</div>
-                    <div className={styles.auditValue}>John Doe</div>
-                  </div>
-                  <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>Date Created</div>
-                    <div className={styles.auditValue}>May 28, 2025 09:45 AM</div>
-                  </div>
-                  <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>Last Updated By</div>
-                    <div className={styles.auditValue}>Peter James</div>
+                    <div className={styles.auditLabel}>Created At</div>
+                    <div className={styles.auditValue}>{formatDate(batch.createdAt)}</div>
                   </div>
                   <div className={styles.auditRow}>
                     <div className={styles.auditLabel}>Last Updated</div>
-                    <div className={styles.auditValue}>Jun 25, 2025 11:05 AM</div>
+                    <div className={styles.auditValue}>{formatDate(batch.updatedAt)}</div>
                   </div>
                 </div>
               </div>
