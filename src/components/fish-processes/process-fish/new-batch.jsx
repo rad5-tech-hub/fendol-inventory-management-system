@@ -21,7 +21,10 @@ export default function NewBatchFish() {
   const [stages, setStages] = useState({ washing: null });
   const [checkStages, setCheckStages] = useState([]);
   const [fishType, setFishType] = useState([]);
-  const [processId, setProcessId] = useState(null);
+  const [processId, setProcessId] = useState(() => {
+    const saved = sessionStorage.getItem('batchProcessId');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [moveFishData, setMoveFishData] = useState(() => {
     const saved = sessionStorage.getItem('batchMoveFishData');
     return saved ? JSON.parse(saved) : {
@@ -147,6 +150,12 @@ export default function NewBatchFish() {
   }, [cumulativeDamageOrLoss]);
 
   useEffect(() => {
+    if (processId !== null) {
+      sessionStorage.setItem('batchProcessId', JSON.stringify(processId));
+    }
+  }, [processId]);
+
+  useEffect(() => {
     if (message) {
       const timer = setTimeout(() => setMessage(''), 2500);
       return () => clearTimeout(timer);
@@ -155,12 +164,15 @@ export default function NewBatchFish() {
 
   useEffect(() => {
     if (orderedStages.length > 0) {
-      const defaultStageId = orderedStages[0].id;
-      setMoveData(prev => ({
-        ...prev,
-        stageId_from: defaultStageId,
-        stageId_to: getNextStageId(defaultStageId),
-      }));
+      setMoveData(prev => {
+        if (prev.stageId_from) return prev;
+        const defaultStageId = orderedStages[0].id;
+        return {
+          ...prev,
+          stageId_from: defaultStageId,
+          stageId_to: getNextStageId(defaultStageId),
+        };
+      });
     }
   }, [orderedStages]);
 
@@ -369,11 +381,10 @@ export default function NewBatchFish() {
 
   const clearBatchStorage = () => {
     setProcessId(null);
-    ['batchMoveData', 'batchQuantity', 'batchMoveFishData', 'batchCumBroken', 'batchCumDamage', 'showSuccessOverlay'].forEach(k => sessionStorage.removeItem(k));
+    ['batchMoveData', 'batchQuantity', 'batchMoveFishData', 'batchCumBroken', 'batchCumDamage', 'batchProcessId', 'showSuccessOverlay'].forEach(k => sessionStorage.removeItem(k));
   };
 
   const handleSaveProgress = () => {
-    setShowSuccessOverlay(false);
     toast.success('Progress saved successfully!', { autoClose: 2000 });
   };
 
