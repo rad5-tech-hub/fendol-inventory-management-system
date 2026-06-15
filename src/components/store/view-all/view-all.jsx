@@ -4,6 +4,7 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../store.module.scss';
 import { BsThreeDotsVertical } from "react-icons/bs";
+import { useNavigate } from "react-router-dom";
 import Api from "../../shared/api/apiLink";
 import { Alert, Modal, Form, Button } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
@@ -43,7 +44,7 @@ const DropdownMenu = ({ show, onClickOutside, onAddClick, onRemoveClick, onEditC
       }}
     >
       <ul className={styles.menuList}>
-        <li className={`mx-2 mt-2 rounded ${styles.menuItem}`} onClick={onAddClick}>Top Up Store</li>
+        <li className={`mx-2 mt-2 rounded ${styles.menuItem}`} onClick={onAddClick}>Restock Store</li>
         <li className={`mx-2 rounded ${styles.menuItem}`} onClick={onRemoveClick}>Use</li>
         <li className={`mx-2 mb-2 rounded ${styles.menuItem}`} onClick={onEditClick}>Edit</li>
       </ul>
@@ -52,6 +53,7 @@ const DropdownMenu = ({ show, onClickOutside, onAddClick, onRemoveClick, onEditC
 };
 
 export default function UpdateStoreInventory() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -216,7 +218,10 @@ export default function UpdateStoreInventory() {
 
         <section className={`${styles.content} flex-grow-1`}>
           <main className={styles.create_form}>
-            <h4 className="mt-3 mb-5">View All</h4>
+            <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
+              <h4 className="m-0">View All</h4>
+              <button className={`fw-semibold ${styles.addStoreBtn}`} onClick={() => navigate('/store/add-new')}>Add store</button>
+            </div>
             <ToastContainer />
 
             {loading && <SkeletonTable cols={6} rows={5} />}
@@ -334,7 +339,7 @@ export default function UpdateStoreInventory() {
         <Modal show={showModal} onHide={() => setShowModal(false)} className="rounded-0">
           <Modal.Header closeButton className="border-0">
             <Modal.Title className="fw-semibold mx-2">
-              {modalType === 'add' ? 'Top Up Store' : modalType === 'remove' ? 'Use' : 'Edit'}
+              {modalType === 'add' ? 'Restock Store' : modalType === 'remove' ? 'Use' : 'Edit'}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body className="mt-5 mx-2">
@@ -468,7 +473,7 @@ export default function UpdateStoreInventory() {
               onClick={handleSaveClick}
               disabled={disabled}
             >
-              {modalType === 'add' ? 'Add' : modalType === 'remove' ? 'Remove' : 'Edit'}
+              {modalType === 'add' ? 'Restock' : modalType === 'remove' ? 'Remove' : 'Edit'}
             </Button>
           </Modal.Footer>
         </Modal>

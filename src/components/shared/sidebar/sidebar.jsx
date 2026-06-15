@@ -318,9 +318,6 @@ export default function SideBar({ show, handleClose }) {
               {hasPermission(userTypes, 'store') && renderCard("store", "Store", <RiStoreFill size={25} className="me-1" />,
                 <>
                   {renderNavItem("View all", "/store/view-all")}
-                  {renderNavItem("Add", "/store/add-new")}
-                  {renderNavItem("Use", "/store/stock/use")}
-                  {renderNavItem("Top up", "/store/stock/top-up")}
                   {renderNavItem("History", "/store/inventory-history")}
                 </>
               )}
