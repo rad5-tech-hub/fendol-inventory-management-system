@@ -404,3 +404,45 @@
 .selectOptionActive:hover {
   background: #F1F3F5;
 }
+
+/* ── Site Performance ── */
+.stat_grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+
+  @media (max-width: 1199px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.chart_grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr;
+  gap: 16px;
+  align-items: stretch;
+
+  @media (max-width: 991px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart_panel {
+  background: #fff;
+  border: 1px solid #EFEFEF;
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.table_wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}

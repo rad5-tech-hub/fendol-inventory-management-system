@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
@@ -52,6 +52,9 @@ export default function BatchSummary() {
   const [error, setError] = useState('');
   const [batch, setBatch] = useState(null);
   const [activeTab, setActiveTab] = useState('notes');
+  const [activeCardTip, setActiveCardTip] = useState(null);
+  const [showAllCards, setShowAllCards] = useState(false);
+  const infoStripRef = useRef(null);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -68,6 +71,22 @@ export default function BatchSummary() {
     };
     if (batchId) fetchSummary();
   }, [batchId]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (infoStripRef.current && !infoStripRef.current.contains(e.target)) {
+        setActiveCardTip(null);
+      }
+    };
+    if (activeCardTip !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [activeCardTip]);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -206,18 +225,40 @@ export default function BatchSummary() {
               </div>
             </div>
 
-            <div className={styles.infoStrip}>
-              {infoCards.map((card, i) => (
-                <div key={i} className={styles.infoCard}>
-                  <div className={styles.infoIcon} style={{ background: card.color + '1A' }}>
-                    <card.icon size={18} color={card.color} />
+            <div className={styles.infoStripWrap}>
+              <div className={styles.infoStrip} ref={infoStripRef}>
+                {infoCards.map((card, i) => (
+                  <div
+                    key={i}
+                    className={`${styles.infoCard} ${!showAllCards && i >= 4 ? styles.infoCardHidden : ''}`}
+                    onMouseEnter={() => setActiveCardTip(i)}
+                    onMouseLeave={() => setActiveCardTip(null)}
+                    onClick={() => setActiveCardTip(activeCardTip === i ? null : i)}
+                  >
+                    <div className={styles.infoIcon} style={{ background: card.color + '1A' }}>
+                      <card.icon size={18} color={card.color} />
+                    </div>
+                    <div className={styles.infoContent}>
+                      <div className={styles.infoLabel}>{card.label}</div>
+                      <div className={styles.infoValue}>{card.value}</div>
+                    </div>
+                    <div className={`${styles.infoTooltip} ${activeCardTip === i ? styles.infoTooltipVisible : ''}`}>
+                      <span className={styles.infoTooltipText}>{card.value}</span>
+                    </div>
                   </div>
-                  <div className={styles.infoContent}>
-                    <div className={styles.infoLabel}>{card.label}</div>
-                    <div className={styles.infoValue}>{card.value}</div>
-                  </div>
+                ))}
+              </div>
+              {infoCards.length > 4 && (
+                <div className={styles.showMoreDesktop}>
+                  <button
+                    className={styles.showMoreBtn}
+                    onClick={() => setShowAllCards(!showAllCards)}
+                  >
+                    {showAllCards ? 'Show less' : `Show ${infoCards.length - 4} more`}
+                    <span className={styles.showMoreArrow} style={{ transform: showAllCards ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
 
             <div className={styles.threeCol}>

@@ -312,6 +312,15 @@
   padding: 18px 20px;
   border: 1px solid #ede8e0;
   height: 100%;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
 }
 .statCardTop {
   display: flex;
@@ -334,6 +343,11 @@
   align-items: center;
   justify-content: center;
   font-size: 16px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  .statCard:hover & {
+    transform: scale(1.08);
+  }
 }
 .statIconAmber { background: #FFF0D6; }
 .statIconBrown { background: #F5E6D6; }
@@ -361,6 +375,69 @@
 .statSubGreen   { color: #2E7D32; }
 .statSubNeutral { color: #8C949B; }
 .statSubWarn    { color: #C62828; }
+
+/* ── Stat tooltip ── */
+.statTooltip {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #1F2937;
+  border-radius: 8px;
+  padding: 10px 14px;
+  max-width: 260px;
+  width: max-content;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 30;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1F2937;
+  }
+
+  @media (max-width: 576px) {
+    position: fixed;
+    bottom: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    max-width: 85vw;
+    width: auto;
+    padding: 14px 18px;
+    border-radius: 12px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+    z-index: 100;
+
+    &::after { display: none; }
+  }
+}
+
+.statTooltipVisible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+
+  @media (max-width: 576px) {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.tooltipText {
+  font-size: 0.82rem;
+  color: #F3F4F6;
+  line-height: 1.5;
+  font-weight: 400;
+  word-break: break-word;
+}
 
 /* ── Generic section card ── */
 .sectionCard {

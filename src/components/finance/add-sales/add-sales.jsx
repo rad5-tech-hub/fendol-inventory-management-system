@@ -20,7 +20,7 @@ const AddSales = () => {
     // Fetch stages
     const fetchStages = async () => {
         try {
-            const response = await Api.get('/fish-stages');
+            const response = await Api.get('/fish-stages?siteId=all');
             if (Array.isArray(response.data.data)) {
                 setStages(response.data.data);
             } else {

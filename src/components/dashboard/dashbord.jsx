@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import styles from './dashboard.module.scss';
 import Api from '../shared/api/apiLink';
@@ -47,6 +47,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [siteId, setSiteId] = useState(null);
+  const [activeTooltip, setActiveTooltip] = useState(null);
+  const tooltipRef = useRef(null);
   const user = useSelector((store) => store.user);
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
   const activeSite = useSelector((store) => store.activeSite);
@@ -69,6 +71,22 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (tooltipRef.current && !tooltipRef.current.contains(e.target)) {
+        setActiveTooltip(null);
+      }
+    };
+    if (activeTooltip !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [activeTooltip]);
 
   if (loading) {
     return (
@@ -337,57 +355,53 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <Row className="g-4 mb-4">
-                <Col xl={4} lg={6} md={6} sm={12} xs={12}>
-                  <div className={styles.statCard}>
-                    <div className={styles.statCardTop}>
-                      <span className={styles.statLabel}>TOTAL SALES</span>
-                      <div className={`${styles.statIcon} ${styles.statIconAmber}`}>🛍</div>
+              <Row className="g-4 mb-4" ref={tooltipRef}>
+                {[
+                  {
+                    label: 'TOTAL SALES', value: totalSalesFormatted,
+                    sub: '↑ +16.5% vs last month', subClass: styles.statSubGreen,
+                    icon: '🛍', iconClass: styles.statIconAmber,
+                    tooltipText: `Total revenue of ${totalSalesFormatted} recorded. +16.5% increase from the previous month.`,
+                  },
+                  {
+                    label: 'TOTAL CUSTOMERS', value: totalCustomers.toLocaleString(),
+                    sub: '↑ +42 new this week', subClass: styles.statSubGreen,
+                    icon: '👤', iconClass: styles.statIconAmber,
+                    tooltipText: `${totalCustomers.toLocaleString()} registered customers. 42 new customers joined this week.`,
+                  },
+                  {
+                    label: 'ACTIVE PONDS',
+                    value: <>{totalPonds} <span className={styles.statValueMuted}>/ 52</span></>,
+                    sub: '⊙ 4 in maintenance', subClass: styles.statSubNeutral,
+                    icon: '🐟', iconClass: styles.statIconBrown,
+                    tooltipText: `${totalPonds} of 52 ponds currently active. 4 ponds under maintenance.`,
+                  },
+                  {
+                    label: 'TOTAL STOCK', value: '84,000',
+                    sub: '⚠ Stock low in West Nursery', subClass: styles.statSubWarn,
+                    icon: '🗄', iconClass: styles.statIconGray,
+                    tooltipText: '84,000 fish in stock across all sites. Stock running low in West Nursery pond.',
+                  },
+                ].map((card, i) => (
+                  <Col key={i} xl={4} lg={6} md={6} sm={12} xs={12}>
+                    <div
+                      className={styles.statCard}
+                      onMouseEnter={() => setActiveTooltip(i)}
+                      onMouseLeave={() => setActiveTooltip(null)}
+                      onClick={() => setActiveTooltip(activeTooltip === i ? null : i)}
+                    >
+                      <div className={styles.statCardTop}>
+                        <span className={styles.statLabel}>{card.label}</span>
+                        <div className={`${styles.statIcon} ${card.iconClass}`}>{card.icon}</div>
+                      </div>
+                      <div className={styles.statValue}>{card.value}</div>
+                      <div className={`${styles.statSub} ${card.subClass}`}>{card.sub}</div>
+                      <div className={`${styles.statTooltip} ${activeTooltip === i ? styles.statTooltipVisible : ''}`}>
+                        <span className={styles.tooltipText}>{card.tooltipText}</span>
+                      </div>
                     </div>
-                    <div className={styles.statValue}>{totalSalesFormatted}</div>
-                    <div className={`${styles.statSub} ${styles.statSubGreen}`}>
-                      ↑ +16.5% vs last month
-                    </div>
-                  </div>
-                </Col>
-                <Col xl={4} lg={6} md={6} sm={12} xs={12}>
-                  <div className={styles.statCard}>
-                    <div className={styles.statCardTop}>
-                      <span className={styles.statLabel}>TOTAL CUSTOMERS</span>
-                      <div className={`${styles.statIcon} ${styles.statIconAmber}`}>👤</div>
-                    </div>
-                    <div className={styles.statValue}>{totalCustomers.toLocaleString()}</div>
-                    <div className={`${styles.statSub} ${styles.statSubGreen}`}>
-                      ↑ +42 new this week
-                    </div>
-                  </div>
-                </Col>
-                <Col xl={4} lg={6} md={6} sm={12} xs={12}>
-                  <div className={styles.statCard}>
-                    <div className={styles.statCardTop}>
-                      <span className={styles.statLabel}>ACTIVE PONDS</span>
-                      <div className={`${styles.statIcon} ${styles.statIconBrown}`}>🐟</div>
-                    </div>
-                    <div className={styles.statValue}>
-                      {totalPonds} <span className={styles.statValueMuted}>/ 52</span>
-                    </div>
-                    <div className={`${styles.statSub} ${styles.statSubNeutral}`}>
-                      ⊙ 4 in maintenance
-                    </div>
-                  </div>
-                </Col>
-                <Col xl={4} lg={6} md={6} sm={12} xs={12}>
-                  <div className={styles.statCard}>
-                    <div className={styles.statCardTop}>
-                      <span className={styles.statLabel}>TOTAL STOCK</span>
-                      <div className={`${styles.statIcon} ${styles.statIconGray}`}>🗄</div>
-                    </div>
-                    <div className={styles.statValue}>84,000</div>
-                    <div className={`${styles.statSub} ${styles.statSubWarn}`}>
-                      ⚠ Stock low in West Nursery
-                    </div>
-                  </div>
-                </Col>
+                  </Col>
+                ))}
               </Row>
 
               <div className={`${styles.sectionCard} mb-4`}>

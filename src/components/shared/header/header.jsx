@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Row, Col, Dropdown, ButtonGroup, Button, Navbar, Modal, Spinner, InputGroup } from "react-bootstrap";
 import { FiDownload } from "react-icons/fi";
 import { FaBars, FaEye, FaEyeSlash, FaChevronDown, FaMapMarkerAlt, FaGlobeAmericas, FaCheck } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import Logo from "../../../assests/logo.png";
 import Api, { ApiV2 } from '../../shared/api/apiLink';
@@ -14,6 +14,7 @@ import styles from "./header.module.scss";
 
 export default function Header({ toggleSidebar }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false); // State for notification dropdown
@@ -31,6 +32,8 @@ export default function Header({ toggleSidebar }) {
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const activeSite = useSelector((store) => store.activeSite);
   const isSuperAdmin = userTypes.includes('super_admin');
+
+  const hideSiteSelector = location.pathname === '/dashboard';
 
   const [siteOptions, setSiteOptions] = useState([]);
   const [siteLoading, setSiteLoading] = useState(false);
@@ -243,7 +246,7 @@ export default function Header({ toggleSidebar }) {
                     position: "absolute",
                     top: "100%", // Position below the icon
                     right: 0, // Align to the right of the icon
-                    width: "400px", // Fixed width
+                    width: "min(400px, 90vw)", // Responsive width
                     maxHeight: `${window.innerHeight / 2}px`, // Half of screen height
                     overflowY: "auto", // Scroll if content exceeds max height
                     backgroundColor: "#fff", // White background
@@ -283,7 +286,7 @@ export default function Header({ toggleSidebar }) {
               )}
             </div>
 
-            {isSuperAdmin && (
+            {isSuperAdmin && !hideSiteSelector && (
               <div ref={siteDropdownRef} className={`d-flex align-items-center position-relative me-2 ${styles.siteSelectorWrapper}`}>
                 <button
                   className={styles.sitePill}

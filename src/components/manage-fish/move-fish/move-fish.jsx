@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 import { toast, ToastContainer } from 'react-toastify';
+import { useSelector } from 'react-redux';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from '../product-stages.module.scss';
 import Api from '../../shared/api/apiLink';
@@ -27,17 +28,13 @@ export default function MoveFish() {
   });
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [siteFilter, setSiteFilter] = useState('');
-
-  const handleSiteChange = (id, name) => {
-    setSiteFilter(name || '');
-  };
+  const activeSite = useSelector((store) => store.activeSite);
 
   // Fetch Stages
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get('/fish-stages');
+        const response = await Api.get(`/fish-stages?siteId=${activeSite?.id || 'all'}`);
         if (Array.isArray(response.data.data)) {
           const filteredProcessStages = response.data.data.filter(
             (stage) => stage.title !== 'Smoking' && stage.title !== 'Drying'
@@ -129,12 +126,12 @@ export default function MoveFish() {
 
   // Filter Ponds
   const filteredFromPonds = stages.filter((stage) => {
-    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
     return matchesSite && stage.title?.toLowerCase().includes(pondFromSearch.toLowerCase());
   });
 
   const filteredToPonds = stages.filter((stage) => {
-    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
     return matchesSite && stage.title?.toLowerCase().includes(pondToSearch.toLowerCase());
   });
 

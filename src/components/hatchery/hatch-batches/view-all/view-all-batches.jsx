@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Pagination, Dropdown } from 'react-bootstrap';
 import { toast } from 'react-toastify';
@@ -8,17 +8,10 @@ import { FaChartLine, FaCheckCircle, FaPlus } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import SideBar from '../../../shared/sidebar/sidebar';
 import Header from '../../../shared/header/header';
-import Api from '../../../shared/api/apiLink';
+import { ApiV2 } from '../../../shared/api/apiLink';
 import styles from '../../hatchery.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
-
-const statCards = [
-  { label: 'Active Batches', value: '8', icon: GiCirclingFish, color: '#F97316' },
-  { label: 'Completed Batches', value: '32', icon: FaCheckCircle, color: '#22C55E' },
-  { label: 'Total Fry Produced', value: f(582650), icon: GiCirclingFish, color: '#3B82F6' },
-  { label: 'Average Hatchability', value: '71.6%', icon: FaChartLine, color: '#8B5CF6' },
-];
 
 const hatchabilityColor = (v) => {
   if (v >= 70) return { bg: '#E8F5E9', color: '#22C55E' };
@@ -26,24 +19,114 @@ const hatchabilityColor = (v) => {
   return { bg: '#FFEBEE', color: '#EF4444' };
 };
 
-const rows = [
-  { id: 6, batchNo: 'HB-2025-006', dateInjected: 'May 25, 2025', dateStripped: 'May 26, 2025', dateHatched: 'May 28, 2025', females: 3, males: 6, eggWeight: 1.20, hatchability: 75.4, fryProduced: 9048 },
-  { id: 5, batchNo: 'HB-2025-005', dateInjected: 'May 20, 2025', dateStripped: 'May 21, 2025', dateHatched: 'May 23, 2025', females: 2, males: 5, eggWeight: 0.95, hatchability: 70.2, fryProduced: 6669 },
-  { id: 4, batchNo: 'HB-2025-004', dateInjected: 'May 15, 2025', dateStripped: 'May 16, 2025', dateHatched: 'May 18, 2025', females: 3, males: 6, eggWeight: 1.10, hatchability: 68.9, fryProduced: 7579 },
-  { id: 3, batchNo: 'HB-2025-003', dateInjected: 'May 10, 2025', dateStripped: 'May 11, 2025', dateHatched: 'May 13, 2025', females: 2, males: 4, eggWeight: 1.05, hatchability: 65.7, fryProduced: 6899 },
-  { id: 2, batchNo: 'HB-2025-002', dateInjected: 'May 06, 2025', dateStripped: 'May 06, 2025', dateHatched: 'May 08, 2025', females: 2, males: 4, eggWeight: 0.90, hatchability: 69.8, fryProduced: 5325 },
-  { id: 1, batchNo: 'HB-2025-001', dateInjected: 'May 01, 2025', dateStripped: 'May 02, 2025', dateHatched: 'May 04, 2025', females: 3, males: 5, eggWeight: 1.25, hatchability: 72.1, fryProduced: 8512 },
+const FALLBACK_STATS = [
+  { label: 'Active Batches', value: '—', icon: GiCirclingFish, color: '#F97316' },
+  { label: 'Completed Batches', value: '—', icon: FaCheckCircle, color: '#22C55E' },
+  { label: 'Total Fry Produced', value: '—', icon: GiCirclingFish, color: '#3B82F6' },
+  { label: 'Average Hatchability', value: '—', icon: FaChartLine, color: '#8B5CF6' },
 ];
+
+const formatDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso + (iso.includes('T') ? '' : 'T00:00:00'));
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const mapApiBatchToRow = (item) => ({
+  id: item.id,
+  batchNo: item.hatchbatchNo,
+  dateInjected: formatDate(item.dateInjected),
+  dateStripped: formatDate(item.dateStripped),
+  dateHatched: formatDate(item.dateHatched),
+  _dateInjected: item.dateInjected || '',
+  _dateStripped: item.dateStripped || '',
+  _dateHatched: item.dateHatched || '',
+  females: item.noOfFemaleBroodstock,
+  males: item.maleBroodStock,
+  eggWeight: Number(item.weightOfEgg),
+  hatchability: Number(item.hatchabilityPercentage),
+  fryProduced: item.fryProduced,
+  siteId: item.siteId,
+  status: item.status,
+  comments: item.comments,
+});
 
 export default function ViewAllBatches() {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [batches, setBatches] = useState([]);
   const [activePage, setActivePage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterSiteId, setFilterSiteId] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [sites, setSites] = useState([]);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
+
+  useEffect(() => {
+    const fetchBatches = async () => {
+      try {
+        const res = await ApiV2.get('/v2/hatch-batches');
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        setBatches(data.map(mapApiBatchToRow));
+        setError('');
+      } catch {
+        setError('Failed to load hatch batches.');
+        setBatches([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBatches();
+  }, []);
+
+  useEffect(() => {
+    const fetchSites = async () => {
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        setSites(data);
+      } catch {
+        setSites([]);
+      }
+    };
+    fetchSites();
+  }, []);
+
+  const filteredBatches = batches.filter((b) => {
+    if (searchTerm && !b.batchNo.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (filterSiteId && b.siteId !== filterSiteId) return false;
+    if (filterDateFrom && b._dateInjected && b._dateInjected < filterDateFrom) return false;
+    if (filterDateTo && b._dateInjected && b._dateInjected > filterDateTo) return false;
+    return true;
+  });
+
+  const dateMin = batches.length > 0
+    ? batches.reduce((min, b) => b._dateInjected && b._dateInjected < min ? b._dateInjected : min, batches[0]._dateInjected || '')
+    : '';
+  const dateMax = batches.length > 0
+    ? batches.reduce((max, b) => b._dateInjected && b._dateInjected > max ? b._dateInjected : max, batches[0]._dateInjected || '')
+    : '';
+
+  const handleReset = () => {
+    setSearchTerm('');
+    setFilterSiteId('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+  };
+
+  const statCards = batches.length > 0
+    ? [
+        { label: 'Active Batches', value: String(batches.filter(b => b.status === 'active').length), icon: GiCirclingFish, color: '#F97316' },
+        { label: 'Completed Batches', value: String(batches.filter(b => b.status === 'completed').length), icon: FaCheckCircle, color: '#22C55E' },
+        { label: 'Total Fry Produced', value: f(batches.reduce((s, b) => s + (b.fryProduced || 0), 0)), icon: GiCirclingFish, color: '#3B82F6' },
+        { label: 'Average Hatchability', value: (batches.reduce((s, b) => s + (b.hatchability || 0), 0) / batches.length).toFixed(1) + '%', icon: FaChartLine, color: '#8B5CF6' },
+      ]
+    : FALLBACK_STATS;
 
   const ActionDropdown = ({ row }) => {
     const [open, setOpen] = useState(false);
@@ -108,21 +191,25 @@ export default function ViewAllBatches() {
 
             <div className={styles.filterBar}>
               <div className={styles.searchWrapper}>
-                <input type="text" placeholder="Search batch number&hellip;" />
+                <input type="text" placeholder="Search batch number&hellip;" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 <IoSearchOutline size={16} className={styles.searchIcon} />
               </div>
               <div className={styles.filterSelect}>
-                <Form.Select>
-                  <option>All Sites</option>
+                <Form.Select value={filterSiteId} onChange={(e) => setFilterSiteId(e.target.value)}>
+                  <option value="">All Sites</option>
+                  {sites.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
                 </Form.Select>
               </div>
               <div className={styles.dateRange}>
-                <IoFilterOutline size={14} /> May 1, 2025 – May 30, 2025
+                <IoFilterOutline size={14} />
+                <span style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600, marginRight: 2 }}>From</span>
+                <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} min={dateMin} max={dateMax} style={{ border: 'none', background: 'transparent', fontSize: '0.82rem', color: '#374151', outline: 'none', width: 120, cursor: 'pointer' }} />
+                <span style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600, margin: '0 2px 0 6px' }}>To</span>
+                <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} min={dateMin} max={dateMax} style={{ border: 'none', background: 'transparent', fontSize: '0.82rem', color: '#374151', outline: 'none', width: 120, cursor: 'pointer' }} />
               </div>
-              <button className={styles.filterBtn} onClick={() => {}}>
-                <IoFilterOutline size={16} /> Filters
-              </button>
-              <button className={styles.resetBtn} onClick={() => {}}>
+              <button className={styles.resetBtn} onClick={handleReset}>
                 <IoRefreshOutline size={14} /> Reset
               </button>
             </div>
@@ -144,33 +231,47 @@ export default function ViewAllBatches() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => {
-                    const hc = hatchabilityColor(row.hatchability);
-                    return (
-                      <tr key={row.id}>
-                        <td className="text-start" style={{ fontWeight: 600 }}>{row.batchNo}</td>
-                        <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.dateInjected}</td>
-                        <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.dateStripped}</td>
-                        <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.dateHatched}</td>
-                        <td className="text-end">{row.females}</td>
-                        <td className="text-end">{row.males}</td>
-                        <td className="text-end">{row.eggWeight.toFixed(2)}</td>
-                        <td className="text-end"><span className={styles.stageBadge} style={{ background: hc.bg, color: hc.color }}>{row.hatchability}%</span></td>
-                        <td className="text-end">{f(row.fryProduced)}</td>
-                        <td className="text-start">
-                          <div className={styles.actionsCell}>
-                            <ActionDropdown row={row} />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {loading ? (
+                    <tr>
+                      <td colSpan={10} style={{ textAlign: 'center', padding: 40, color: '#9CA3AF', fontSize: '0.9rem' }}>
+                        Loading hatch batches...
+                      </td>
+                    </tr>
+                  ) : filteredBatches.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} style={{ textAlign: 'center', padding: 40, color: '#9CA3AF', fontSize: '0.9rem' }}>
+                        {error || (batches.length > 0 ? 'No batches match your filters.' : 'No hatch batches found.')}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredBatches.map((row) => {
+                      const hc = hatchabilityColor(row.hatchability);
+                      return (
+                        <tr key={row.id}>
+                          <td className="text-start" style={{ fontWeight: 600 }}>{row.batchNo}</td>
+                          <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.dateInjected}</td>
+                          <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.dateStripped}</td>
+                          <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.dateHatched}</td>
+                          <td className="text-end">{row.females}</td>
+                          <td className="text-end">{row.males}</td>
+                          <td className="text-end">{row.eggWeight.toFixed(2)}</td>
+                          <td className="text-end"><span className={styles.stageBadge} style={{ background: hc.bg, color: hc.color }}>{row.hatchability}%</span></td>
+                          <td className="text-end">{f(row.fryProduced)}</td>
+                          <td className="text-start">
+                            <div className={styles.actionsCell}>
+                              <ActionDropdown row={row} />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
 
             <div className={styles.paginationRow}>
-              <span className={styles.paginationInfo}>Showing 1 to 6 of 40 batches</span>
+                <span className={styles.paginationInfo}>{filteredBatches.length === 0 ? 'No batches' : `Showing 1 to ${Math.min(filteredBatches.length, 6)} of ${filteredBatches.length} batches`}</span>
               <div className="d-flex align-items-center gap-3">
                 <Pagination>
                   <Pagination.First />

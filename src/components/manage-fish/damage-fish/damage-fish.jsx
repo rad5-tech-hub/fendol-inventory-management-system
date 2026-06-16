@@ -3,6 +3,7 @@ import { Form, Row, Col, Button } from 'react-bootstrap';
 import styles from '../product-stages.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useSelector } from 'react-redux';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
@@ -22,11 +23,12 @@ const DamageFish = () => {
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
   const navigate = useNavigate();
+  const activeSite = useSelector((store) => store.activeSite);
 
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get('/fish-stages');
+        const response = await Api.get(`/fish-stages?siteId=${activeSite?.id || 'all'}`);
         if (Array.isArray(response.data.data)) {
           setStages(response.data.data);
         } else {
@@ -135,9 +137,10 @@ const DamageFish = () => {
   };
 
   // Filter ponds for dropdown
-  const filteredPonds = stages.filter((stage) =>
-    stage.title?.toLowerCase().includes(pondSearch.toLowerCase())
-  );
+  const filteredPonds = stages.filter((stage) => {
+    const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
+    return matchesSite && stage.title?.toLowerCase().includes(pondSearch.toLowerCase());
+  });
 
   // Sidebar toggle handlers
   const toggleSidebar = () => setShowSidebar(!showSidebar);

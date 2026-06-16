@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 import { toast, ToastContainer } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from '../product-stages.module.scss';
 import Api from '../../shared/api/apiLink';
@@ -21,18 +22,14 @@ const AddFish = () => {
   });
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [siteFilter, setSiteFilter] = useState('');
   const navigate = useNavigate();
-
-  const handleSiteChange = (id, name) => {
-    setSiteFilter(name || '');
-  };
+  const activeSite = useSelector((store) => store.activeSite);
 
   // Fetch Data with useEffect
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get('/fish-stages');
+        const response = await Api.get(`/fish-stages?siteId=${activeSite?.id || 'all'}`);
         if (Array.isArray(response.data.data)) {
           const filteredStages = response.data.data.filter(
             (stage) => !['harvest', 'damage', 'loss'].includes(stage.title.toLowerCase())
@@ -125,7 +122,7 @@ const AddFish = () => {
 
   // Filtered Ponds for Dropdown
   const filteredPonds = stages.filter((stage) => {
-    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
     return matchesSite && stage.title?.toLowerCase().includes(pondSearch.toLowerCase());
   });
 

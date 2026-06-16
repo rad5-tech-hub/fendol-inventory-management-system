@@ -64,10 +64,13 @@ export default function NewBatchFish() {
   const [loader, setLoader] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalData, setSuccessModalData] = useState(null);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(() => {
     const savedValue = sessionStorage.getItem('showSuccessOverlay');
     return savedValue ? JSON.parse(savedValue) : false;
   });
+  const [errorDetails, setErrorDetails] = useState(null);
 
   const orderedStages = useMemo(() => {
     const stageOrder = ["Washing", "Smoking", "Drying"];
@@ -149,8 +152,8 @@ export default function NewBatchFish() {
             });
             setMoveData(prev => ({
               ...prev,
-              stageId_from: data.stageId_from || prev.stageId_from,
-              stageId_to: data.stageId_to || prev.stageId_to,
+              stageId_from: data.stageId_to || prev.stageId_from,
+              stageId_to: getNextStageId(data.stageId_to) || prev.stageId_to,
             }));
             setCumulativeBrokenFishQuantity(data.cumulativeBrokenQuantity || data.brokenFishQuantity || 0);
             setCumulativeDamageOrLoss(data.cumulativeDamageOrLoss || data.damageOrLoss || 0);
@@ -269,6 +272,7 @@ export default function NewBatchFish() {
         try {
           const res = await Api.get(`/fish-process/${newProcessId}`);
           const data = res.data.data;
+          console.log('[handleMoveFishes] GET /fish-process response', { stageId_from: data?.stageId_from, stageId_to: data?.stageId_to, data });
           if (data) {
             setQuantity({
               wholeFish: data.wholeFishQuantity || 0,
@@ -277,8 +281,8 @@ export default function NewBatchFish() {
             });
             setMoveData(prev => ({
               ...prev,
-              stageId_from: data.stageId_from || prev.stageId_from,
-              stageId_to: data.stageId_to || prev.stageId_to,
+              stageId_from: data.stageId_to || prev.stageId_from,
+              stageId_to: getNextStageId(data.stageId_to) || prev.stageId_to,
               wholeFishQuantity: '',
               brokenFishQuantity: '',
               damageOrLoss: '',
@@ -313,7 +317,7 @@ export default function NewBatchFish() {
       setShowSuccessOverlay(true);
     } catch (error) {
       toast.update(loadingToast, {
-        render: error.response?.data?.message || "Error moving fish.",
+        render: getErrorMessage(error),
         type: "error",
         isLoading: false,
         autoClose: 3000,
@@ -358,26 +362,57 @@ export default function NewBatchFish() {
     return null;
   };
 
+  const getErrorMessage = (error, stageTitle = '') => {
+    if (!error.response) {
+      if (error.code === 'ECONNABORTED') return 'Request timed out. Please check your network and try again.';
+      return 'Network error \u2014 server unreachable. Please check your internet connection.';
+    }
+    const { status, data } = error.response;
+    const context = stageTitle ? ` for ${stageTitle} stage` : '';
+    const serverMsg = data?.message || data?.response_message || '';
+    if (status === 400) return `Invalid request${context}. ${serverMsg || 'Please check your input values.'}`;
+    if (status === 404) return `The ${stageTitle || 'requested'} endpoint was not found. Please contact support.`;
+    if (status === 409) return `Conflict: ${serverMsg || 'This batch may already be processed through this stage.'}`;
+    if (status === 422) return `Validation error${context}. ${serverMsg || 'One or more fields are invalid.'}`;
+    if (status >= 500) return `Server error${context} (${status}). Please try again later.`;
+    if (!data) return `Server returned empty response${context}.`;
+    return serverMsg || `Failed to process${context}. Please try again.`;
+  };
+
   const handleNext = async () => {
     setLoading(true);
+    setErrorDetails(null);
     setMessage("Processing your request...");
+    console.log('[handleNext] entry', { moveData_stageId_from: moveData.stageId_from, orderedStageIds: orderedStages.map(s => ({ id: s.id, title: s.title })) });
     try {
       const currentStage = orderedStages.find(stage => stage.id === moveData.stageId_from);
+      console.log('[handleNext] currentStage', currentStage);
 
       if (!currentStage || stagesLoading) {
+        console.log('[handleNext] throwing: currentStage or stagesLoading', { currentStage, stagesLoading });
         throw new Error("Stages are still loading. Please wait.");
       }
 
       const endpoint = getEndpoint(currentStage.title) || getEndpointByIndex(currentStage.id);
+      console.log('[handleNext] endpoint', endpoint);
 
       if (endpoint) {
+        const wholeFish = parseFloat(moveData.wholeFishQuantity);
+        const brokenFish = parseFloat(moveData.brokenFishQuantity);
+        const damageLoss = parseFloat(moveData.damageOrLoss);
+        if (isNaN(wholeFish) || wholeFish < 0) throw new Error('Invalid quantity: Whole Fish must be 0 or greater.');
+        if (isNaN(brokenFish) || brokenFish < 0) throw new Error('Invalid quantity: Broken Fish must be 0 or greater.');
+        if (isNaN(damageLoss) || damageLoss < 0) throw new Error('Invalid quantity: Damage/Loss must be 0 or greater.');
+
         const payload = {
           ...moveData,
+          processId,
           ...(isSuperAdmin
             ? (activeSite?.id ? { siteId: activeSite.id } : {})
             : (user?.siteId ? { siteId: user.siteId } : {})
           ),
         };
+        console.log('[handleNext] POST payload', payload);
         const response = await Api.post(endpoint, payload);
 
         const data = response.data.data || response.data.newProcess;
@@ -396,8 +431,8 @@ export default function NewBatchFish() {
               });
               setMoveData(prev => ({
                 ...prev,
-                stageId_from: pd.stageId_from || prev.stageId_from,
-                stageId_to: pd.stageId_to || prev.stageId_to,
+                stageId_from: pd.stageId_to || prev.stageId_from,
+                stageId_to: getNextStageId(pd.stageId_to) || prev.stageId_to,
                 wholeFishQuantity: '',
                 brokenFishQuantity: '',
                 damageOrLoss: '',
@@ -406,7 +441,7 @@ export default function NewBatchFish() {
               setCumulativeDamageOrLoss(pd.cumulativeDamageOrLoss || pd.damageOrLoss || 0);
             }
           } catch (err) {
-            console.error('Failed to fetch process data:', err);
+            console.error(err.response?.data?.message || 'Failed to fetch updated process data');
           }
         };
 
@@ -427,9 +462,15 @@ export default function NewBatchFish() {
         const isDrying = getEndpoint(currentStage.title) === "/add-fish-to-show-glass"
           || getEndpointByIndex(currentStage.id) === "/add-fish-to-show-glass";
         if (isDrying) {
+          setSuccessModalData({
+            batch_no: moveFishData.batch_no || `#PR-${new Date().getFullYear()}`,
+            wholeFish: quantity.wholeFish,
+            brokenFish: quantity.brokenFish,
+            damage: quantity.damage,
+          });
+          setShowSuccessModal(true);
           clearBatchStorage();
           setShowSuccessOverlay(false);
-          setTimeout(() => navigate('/showcase/whole-showcase'), 2500);
         } else if (!newProcessId) {
           const nextStageId = getNextStageId(moveData.stageId_from);
           if (nextStageId) {
@@ -448,7 +489,8 @@ export default function NewBatchFish() {
       }
     } catch (error) {
       console.error("Error processing fish:", error);
-      setMessage("Error processing fish. Please try again.");
+      const stageTitle = orderedStages.find(s => s.id === moveData.stageId_from)?.title;
+      setMessage(getErrorMessage(error, stageTitle));
     } finally {
       setLoading(false);
     }
@@ -959,6 +1001,70 @@ export default function NewBatchFish() {
                 </div>
               );
             })()}
+
+          {/* ── Success Modal ── */}
+          {showSuccessModal && (
+            <div style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <div style={{
+                backgroundColor: '#fff', borderRadius: '12px', padding: '40px',
+                maxWidth: '420px', width: '90%', textAlign: 'center',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+              }}>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%',
+                  backgroundColor: '#E8F5E9', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', margin: '0 auto 16px',
+                }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 13L9 17L19 7" stroke="#28a745" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <h3 style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '1.4rem', color: '#2E3135' }}>
+                  Batch Complete!
+                </h3>
+                <p style={{ margin: '0 0 20px', fontSize: '0.9rem', color: '#6B7280' }}>
+                  Fish moved to showcase successfully.
+                </p>
+                <div style={{
+                  backgroundColor: '#F9FAFB', borderRadius: '8px', padding: '16px',
+                  marginBottom: '20px', textAlign: 'left',
+                }}>
+                  {[
+                    { label: 'Batch', value: successModalData?.batch_no || `#PR-${new Date().getFullYear()}` },
+                    { label: 'Whole Fish', value: `${successModalData?.wholeFish || 0} Kg` },
+                    { label: 'Broken Fish', value: `${successModalData?.brokenFish || 0} Kg` },
+                    { label: 'Damage/Loss', value: `${successModalData?.damage || 0} Kg` },
+                  ].map((row, i) => (
+                    <div key={i} style={{
+                      display: 'flex', justifyContent: 'space-between',
+                      padding: '6px 0', fontSize: '0.85rem',
+                      borderBottom: i < 3 ? '1px solid #E5E7EB' : 'none',
+                    }}>
+                      <span style={{ color: '#6B7280' }}>{row.label}</span>
+                      <span style={{ fontWeight: 600, color: '#2E3135' }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    navigate('/showcase/whole-showcase');
+                  }}
+                  style={{
+                    width: '100%', padding: '12px', borderRadius: '8px',
+                    border: 'none', backgroundColor: '#512728', color: '#fff',
+                    fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  View Showcase
+                </button>
+              </div>
+            </div>
+          )}
           </main>
         </section>
       </div>

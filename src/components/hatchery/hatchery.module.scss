@@ -628,7 +628,7 @@
 }
 
 .createContainer {
-  max-width: 860px;
+  max-width: 1040px;
   margin: 0 auto;
 }
 
@@ -636,8 +636,8 @@
   background: #fff;
   border: 1px solid #E5E7EB;
   border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 20px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
   position: relative;
 
   .sectionHeader {
@@ -672,8 +672,8 @@
 .createActions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 20px 0;
+  gap: 14px;
+  padding: 28px 0 40px;
 }
 
 .infoBanner {
@@ -751,18 +751,18 @@
 
 .infoStrip {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 24px;
   overflow-x: auto;
   @include hide-scrollbar;
 
   @media (max-width: 991px) {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   @media (max-width: 576px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1370,4 +1370,134 @@
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+/* Create/Edit Hatch Batch — new classes for redesign */
+.pageSubtitle {
+  font-size: 0.82rem;
+  color: #8C949B;
+  margin: 2px 0 0;
+}
+
+.broodstockColumn {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.tagSelect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  background: #F9FAFB;
+  min-height: 42px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+
+  &:focus-within {
+    border-color: #512728;
+  }
+}
+
+.tagPlaceholder {
+  color: #9CA3AF;
+  font-size: 0.85rem;
+  flex: 1;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #F0E4E4;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #512728;
+  line-height: 1.4;
+}
+
+.tagChevron {
+  color: #8C949B;
+  margin-left: auto;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tagDropdown {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 10;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 4px;
+  min-width: 200px;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tagDropdownItem {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: #2E3135;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: #F0E4E4;
+    color: #512728;
+  }
+}
+
+.tagDropdownEmpty {
+  padding: 12px;
+  font-size: 0.82rem;
+  color: #8C949B;
+  text-align: center;
+}
+
+.addMoreBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px dashed #512728;
+  border-radius: 4px;
+  background: transparent;
+  color: #512728;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: #F0E4E4;
+  }
+}
+
+.dateIconWrapper {
+  position: relative;
+
+  input {
+    padding-right: 36px;
+  }
+
+  svg {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8C949B;
+    font-size: 1.1rem;
+    pointer-events: none;
+  }
 }

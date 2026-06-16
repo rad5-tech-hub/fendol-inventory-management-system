@@ -9,6 +9,7 @@ import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
 import styled from "styled-components";
+import { useSelector } from "react-redux";
 
 const NavTab = styled.div`
   display: flex;
@@ -44,12 +45,8 @@ export default function ViewAllHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  const [siteFilter, setSiteFilter] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
-
-  const handleSiteChange = (id, name) => {
-    setSiteFilter(name || "");
-  };
+  const activeSite = useSelector((store) => store.activeSite);
 
   // Separate pagination state for each tab
   const [pagination, setPagination] = useState({
@@ -157,9 +154,9 @@ export default function ViewAllHistory() {
       });
     }
 
-    if (siteFilter) {
+    if (activeSite?.name) {
       filtered = filtered.filter((item) => {
-        return getItemSite(item)?.toLowerCase() === siteFilter.toLowerCase();
+        return getItemSite(item)?.toLowerCase() === activeSite.name.toLowerCase();
       });
     }
 

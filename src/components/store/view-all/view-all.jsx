@@ -132,7 +132,7 @@ export default function UpdateStoreInventory() {
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get('/fish-stages');
+        const response = await Api.get('/fish-stages?siteId=all');
         if (Array.isArray(response.data.data)) {
           const filteredStages = response.data.data.filter(pond => pond.quantity >= 1);
           setStages(filteredStages);

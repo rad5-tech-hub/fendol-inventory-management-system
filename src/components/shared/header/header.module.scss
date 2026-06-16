@@ -44,6 +44,27 @@ $icon-color: #512728;
 
 .siteSelectorWrapper {
     z-index: 100;
+
+    @media (max-width: 480px) {
+        max-width: 140px;
+    }
+}
+
+.hamburger {
+    background: transparent;
+    border: none;
+    color: #512728;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+
+    &:hover {
+        background: rgba(81, 39, 40, 0.08);
+    }
 }
 
 .sitePill {
@@ -78,6 +99,16 @@ $icon-color: #512728;
 
 .sitePillText {
     min-width: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @media (max-width: 767px) {
+        max-width: 80px;
+    }
+
+    @media (max-width: 480px) {
+        max-width: 60px;
+    }
 }
 
 .sitePillType {

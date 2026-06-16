@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useSelector } from 'react-redux';
 import styles from '../product-stages.module.scss';
 import Api from '../../shared/api/apiLink';
 import SideBar from '../../shared/sidebar/sidebar';
@@ -23,17 +24,13 @@ const HarvestFish = () => {
   });
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [siteFilter, setSiteFilter] = useState('');
-
-  const handleSiteChange = (id, name) => {
-    setSiteFilter(name || '');
-  };
+  const activeSite = useSelector((store) => store.activeSite);
 
   // Fetch Fish Stages
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get('/fish-stages');
+        const response = await Api.get(`/fish-stages?siteId=${activeSite?.id || 'all'}`);
         if (!Array.isArray(response.data.data)) {
           throw new Error('Expected an array of stages');
         }
@@ -70,7 +67,7 @@ const HarvestFish = () => {
 
   // Filter Ponds for Dropdown
   const filteredPonds = stages.filter((stage) => {
-    const matchesSite = siteFilter ? (stage.site?.toLowerCase() || '') === siteFilter.toLowerCase() : true;
+    const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
     return matchesSite && stage.title?.toLowerCase().includes(pondSearch.toLowerCase());
   });
 

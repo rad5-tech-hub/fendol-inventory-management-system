@@ -32,6 +32,7 @@ const ViewAllStages = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showSidebar, setShowSidebar] = useState(false);
   const [siteFilter, setSiteFilter] = useState('');
+  const [siteIdFilter, setSiteIdFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const itemsPerPage = 10;
   const [selectedStage, setSelectedStage] = useState(null);
@@ -47,11 +48,12 @@ const ViewAllStages = () => {
 
   const handleSiteChange = (id, name) => {
     setSiteFilter(name || '');
+    setSiteIdFilter(id || '');
   };
 
   const fetchStages = async () => {
     try {
-      const response = await Api.get('/fish-stages');
+      const response = await Api.get(`/fish-stages?siteId=${siteIdFilter || 'all'}`);
       if (Array.isArray(response.data.data)) {
         setStages(response.data.data);
       } else {
