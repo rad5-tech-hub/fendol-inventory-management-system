@@ -389,17 +389,25 @@ function str(val, fallback = '—') {
   return String(val);
 }
 
+function pick(obj, ...keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v != null && v !== '') return v;
+  }
+  return undefined;
+}
+
 function deriveType(history) {
-  return str(history.type || history.processType);
+  return str(pick(history, 'type', 'processType'));
 }
 
 function deriveStatus(history) {
   if (history.isCompleted === false) return 'In Progress';
-  return str(history.status, 'Completed');
+  return str(pick(history, 'status'), 'Completed');
 }
 
 function deriveSite(history) {
-  return str(history.site ?? history.location);
+  return str(pick(history, 'site', 'location'));
 }
 
 // ─── component ───────────────────────────────────────────────────────────────
@@ -520,8 +528,8 @@ export default function ViewSummary() {
   const totalProcesses = moveFishHistory.length;
   const inProgress = moveFishHistory.filter(h => deriveStatus(h) === 'In Progress').length;
   const completed   = moveFishHistory.filter(h => deriveStatus(h) === 'Completed').length;
-  const totalQty    = moveFishHistory.reduce((sum, h) => sum + (h.totalQuantity || 0), 0);
-  const totalDamage = moveFishHistory.reduce((sum, h) => sum + (h.totalDamageLoss || 0), 0);
+  const totalQty    = moveFishHistory.reduce((sum, h) => sum + (pick(h, 'actual_quantity', 'totalQuantity') || 0), 0);
+  const totalDamage = moveFishHistory.reduce((sum, h) => sum + (pick(h, 'cumulativeDamageOrLoss', 'damageOrLoss', 'totalDamageLoss') || 0), 0);
   const lossRate    = totalQty > 0 ? ((totalDamage / totalQty) * 100).toFixed(2) : '0.00';
 
   const formatBig = (n) => {
@@ -741,7 +749,7 @@ export default function ViewSummary() {
                       const status = deriveStatus(history);
                       const displayStatus = status === 'Saved Draft' ? 'In Progress' : status;
                       const site   = deriveSite(history);
-                      const batchNum = str(history.batchNumber || history.batch) || `FDL-BT-${String(index + 1).padStart(4, '0')}`;
+                      const batchNum = str(pick(history, 'batch_no', 'batchNumber', 'batch')) || `FDL-BT-${String(index + 1).padStart(4, '0')}`;
                       const isInProgress = status === 'In Progress';
                       const isSavedDraft = status === 'Saved Draft';
 
@@ -761,7 +769,7 @@ export default function ViewSummary() {
                             <span style={s.batchLink}>{batchNum}</span>
                           </td>
                           <td style={s.td}>{site}</td>
-                          <td style={s.td}>{new Intl.NumberFormat().format(history.totalQuantity)} Units</td>
+                          <td style={s.td}>{new Intl.NumberFormat().format(pick(history, 'actual_quantity', 'totalQuantity') || 0)} Units</td>
                           {isInProgress ? (
                             <>
                               <td style={{ ...s.td, textAlign: 'center' }}>
@@ -785,17 +793,17 @@ export default function ViewSummary() {
                             <>
                               <td style={{ ...s.td, textAlign: 'center' }}>
                                 <span style={{ ...pillStyle, backgroundColor: '#e6f9ee', color: '#28a745' }}>
-                                  {new Intl.NumberFormat().format(history.wholeFishQuantity)}
+                                  {new Intl.NumberFormat().format(pick(history, 'wholeFishQuantity') || 0)}
                                 </span>
                               </td>
                               <td style={{ ...s.td, textAlign: 'center' }}>
                                 <span style={{ ...pillStyle, backgroundColor: '#fff3e0', color: '#e07b00' }}>
-                                  {new Intl.NumberFormat().format(history.brokenFishQuantity)}
+                                  {new Intl.NumberFormat().format(pick(history, 'cumulativeBrokenQuantity', 'brokenFishQuantity') || 0)}
                                 </span>
                               </td>
                               <td style={{ ...s.td, textAlign: 'center' }}>
                                 <span style={{ ...pillStyle, backgroundColor: '#fdecea', color: '#dc3545' }}>
-                                  {new Intl.NumberFormat().format(history.totalDamageLoss)}
+                                  {new Intl.NumberFormat().format(pick(history, 'cumulativeDamageOrLoss', 'damageOrLoss', 'totalDamageLoss') || 0)}
                                 </span>
                               </td>
                             </>
@@ -1038,10 +1046,10 @@ export default function ViewSummary() {
                   Batch Information
                 </div>
                 {[
-                  { label: 'Batch Number', value: str(detailsPanel.batchNumber || detailsPanel.batch) },
-                  { label: 'Source Pond', value: str(detailsPanel.sourcePond || detailsPanel.pond) },
-                  { label: 'Fish Type', value: str(detailsPanel.fishType || detailsPanel.species) },
-                  { label: 'Site', value: str(detailsPanel.site || detailsPanel.location) },
+                  { label: 'Batch Number', value: str(pick(detailsPanel, 'batch_no', 'batchNumber', 'batch')) },
+                  { label: 'Source Pond', value: str(pick(detailsPanel, 'sourcePond', 'pond')) },
+                  { label: 'Fish Type', value: str(pick(detailsPanel, 'fishType', 'species')) },
+                  { label: 'Site', value: str(pick(detailsPanel, 'site', 'location')) },
                   { label: 'Date Created', value: detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '——' },
                   { label: 'Completed On', value: detailsPanel.completedAt ? formatDate(detailsPanel.completedAt) : detailsPanel.updatedAt ? formatDate(detailsPanel.updatedAt) : '——' },
                 ].map((row, i, arr) => (
@@ -1070,13 +1078,13 @@ export default function ViewSummary() {
                 }}>
                   <span style={{ fontSize: '13px', color: TEXT_MUTED }}>Quantity Before</span>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN }}>
-                    {new Intl.NumberFormat().format(detailsPanel.totalQuantity || 0)}
+                    {new Intl.NumberFormat().format(pick(detailsPanel, 'actual_quantity', 'totalQuantity') || 0)}
                   </span>
                 </div>
                 {[
-                  { label: 'Whole (W)', value: new Intl.NumberFormat().format(detailsPanel.wholeFishQuantity || 0), bg: '#E6F9EE', color: '#28a745' },
-                  { label: 'Broken (B)', value: new Intl.NumberFormat().format(detailsPanel.brokenFishQuantity || 0), bg: '#FFF3E0', color: '#E07B00' },
-                  { label: 'Damaged (D)', value: new Intl.NumberFormat().format(detailsPanel.totalDamageLoss || 0), bg: '#FDECEA', color: '#dc3545' },
+                  { label: 'Whole (W)', value: new Intl.NumberFormat().format(pick(detailsPanel, 'wholeFishQuantity') || 0), bg: '#E6F9EE', color: '#28a745' },
+                  { label: 'Broken (B)', value: new Intl.NumberFormat().format(pick(detailsPanel, 'cumulativeBrokenQuantity', 'brokenFishQuantity') || 0), bg: '#FFF3E0', color: '#E07B00' },
+                  { label: 'Damaged (D)', value: new Intl.NumberFormat().format(pick(detailsPanel, 'cumulativeDamageOrLoss', 'damageOrLoss', 'totalDamageLoss') || 0), bg: '#FDECEA', color: '#dc3545' },
                 ].map((row, i, arr) => (
                   <div key={row.label} style={{
                     display: 'flex',
