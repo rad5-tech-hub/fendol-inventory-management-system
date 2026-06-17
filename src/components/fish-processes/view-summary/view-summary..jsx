@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -7,7 +9,7 @@ import { Alert, OverlayTrigger, Popover } from "react-bootstrap";
 import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
 import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 
 
 // ─── inline style tokens (no changes to process.module.scss) ────────────────
@@ -402,20 +404,23 @@ function deriveType(history) {
 }
 
 function deriveStatus(history) {
-  if (history.isCompleted === false) return 'In Progress';
-  return str(pick(history, 'status'), 'Completed');
+  if (history.is_active) return 'In Progress';
+  return 'Completed';
 }
 
 function deriveSite(history) {
-  return str(pick(history, 'site', 'location'));
+  return str(pick(history, 'site', 'location', 'siteId'));
 }
 
 // ─── component ───────────────────────────────────────────────────────────────
 export default function ViewSummary() {
+  const navigate = useNavigate();
   const [moveFishHistory, setMoveFishHistory] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sites, setSites] = useState([]);
+  const [ponds, setPonds] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage] = useState(10);
   const [selectedDate, setSelectedDate] = useState("");
@@ -424,8 +429,10 @@ export default function ViewSummary() {
   const [siteFilter, setSiteFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [openActionMenu, setOpenActionMenu] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [detailsPanel, setDetailsPanel] = useState(null);
   const [panelVisible, setPanelVisible] = useState(false);
+  const actionBtnRefs = useRef({});
 
   const openDetails = (history) => {
     setDetailsPanel(history);
@@ -440,10 +447,16 @@ export default function ViewSummary() {
   useEffect(() => {
     const fetchMoveFishHistory = async () => {
       try {
-        const response = await Api.get('/latest-completed');
-        const data = Array.isArray(response.data.data) ? response.data.data : [];
+        const [historyRes, sitesRes, pondsRes] = await Promise.all([
+          Api.get('/latest-completed'),
+          ApiV2.get('/v2/all-site'),
+          Api.get('/fish-stages?siteId=all'),
+        ]);
+        const data = Array.isArray(historyRes.data.data) ? historyRes.data.data : [];
         setMoveFishHistory(data);
         setFilteredData(data);
+        setSites(Array.isArray(sitesRes.data?.data) ? sitesRes.data.data : []);
+        setPonds(Array.isArray(pondsRes.data?.data) ? pondsRes.data.data : []);
       } catch (error) {
         setError("Error fetching move fish history. Please try again.");
         setFilteredData([]);
@@ -459,7 +472,7 @@ export default function ViewSummary() {
 
     if (selectedDate) {
       data = data.filter((history) => {
-        const createdDate = new Date(history.date);
+        const createdDate = new Date(history.createdAt || history.date);
         const formattedDate = createdDate.toISOString().split('T')[0];
         return formattedDate === selectedDate;
       });
@@ -468,8 +481,8 @@ export default function ViewSummary() {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       data = data.filter(h =>
-        (h.batchNumber || h.batch || '').toLowerCase().includes(q) ||
-        (h.remark || '').toLowerCase().includes(q)
+        (h.batchNumber || h.batch || h.id || '').toLowerCase().includes(q) ||
+        (h.remark || (h.histories && h.histories.map(x => x.remarks).filter(Boolean).join(' ')) || '').toLowerCase().includes(q)
       );
     }
 
@@ -528,8 +541,8 @@ export default function ViewSummary() {
   const totalProcesses = moveFishHistory.length;
   const inProgress = moveFishHistory.filter(h => deriveStatus(h) === 'In Progress').length;
   const completed   = moveFishHistory.filter(h => deriveStatus(h) === 'Completed').length;
-  const totalQty    = moveFishHistory.reduce((sum, h) => sum + (pick(h, 'actual_quantity', 'totalQuantity') || 0), 0);
-  const totalDamage = moveFishHistory.reduce((sum, h) => sum + (pick(h, 'cumulativeDamageOrLoss', 'damageOrLoss', 'totalDamageLoss') || 0), 0);
+  const totalQty    = moveFishHistory.reduce((sum, h) => sum + (h.wholeFishQuantity || 0), 0);
+  const totalDamage = moveFishHistory.reduce((sum, h) => sum + (h.damageOrLoss || 0), 0);
   const lossRate    = totalQty > 0 ? ((totalDamage / totalQty) * 100).toFixed(2) : '0.00';
 
   const formatBig = (n) => {
@@ -657,6 +670,7 @@ export default function ViewSummary() {
                 <div style={s.statValueRed}>{new Intl.NumberFormat().format(totalDamage)}</div>
                 <div style={s.statSubRed}>Loss Rate: {lossRate}%</div>
               </div>
+
             </div>
 
             {/* ── filter bar ──────────────────────────────────────────────── */}
@@ -749,7 +763,7 @@ export default function ViewSummary() {
                       const status = deriveStatus(history);
                       const displayStatus = status === 'Saved Draft' ? 'In Progress' : status;
                       const site   = deriveSite(history);
-                      const batchNum = str(pick(history, 'batch_no', 'batchNumber', 'batch')) || `FDL-BT-${String(index + 1).padStart(4, '0')}`;
+                      const batchNum = str(pick(history, 'batchNumber', 'batch')) || `#${(history.id || '').slice(0, 8).toUpperCase()}`;
                       const isInProgress = status === 'In Progress';
                       const isSavedDraft = status === 'Saved Draft';
 
@@ -769,7 +783,7 @@ export default function ViewSummary() {
                             <span style={s.batchLink}>{batchNum}</span>
                           </td>
                           <td style={s.td}>{site}</td>
-                          <td style={s.td}>{new Intl.NumberFormat().format(pick(history, 'actual_quantity', 'totalQuantity') || 0)} Units</td>
+                          <td style={s.td}>{new Intl.NumberFormat().format(history.wholeFishQuantity || 0)} Units</td>
                           {isInProgress ? (
                             <>
                               <td style={{ ...s.td, textAlign: 'center' }}>
@@ -793,17 +807,17 @@ export default function ViewSummary() {
                             <>
                               <td style={{ ...s.td, textAlign: 'center' }}>
                                 <span style={{ ...pillStyle, backgroundColor: '#e6f9ee', color: '#28a745' }}>
-                                  {new Intl.NumberFormat().format(pick(history, 'wholeFishQuantity') || 0)}
+                                  {new Intl.NumberFormat().format(history.wholeFishQuantity || 0)}
                                 </span>
                               </td>
                               <td style={{ ...s.td, textAlign: 'center' }}>
                                 <span style={{ ...pillStyle, backgroundColor: '#fff3e0', color: '#e07b00' }}>
-                                  {new Intl.NumberFormat().format(pick(history, 'cumulativeBrokenQuantity', 'brokenFishQuantity') || 0)}
+                                  {new Intl.NumberFormat().format(history.brokenFishQuantity || 0)}
                                 </span>
                               </td>
                               <td style={{ ...s.td, textAlign: 'center' }}>
                                 <span style={{ ...pillStyle, backgroundColor: '#fdecea', color: '#dc3545' }}>
-                                  {new Intl.NumberFormat().format(pick(history, 'cumulativeDamageOrLoss', 'damageOrLoss', 'totalDamageLoss') || 0)}
+                                  {new Intl.NumberFormat().format(history.damageOrLoss || 0)}
                                 </span>
                               </td>
                             </>
@@ -869,18 +883,30 @@ export default function ViewSummary() {
                           <td style={s.tdLast}>
                             <div style={{ position: 'relative', display: 'inline-block' }}>
                               <button
+                                ref={btnRef => {
+                                  if (btnRef) actionBtnRefs.current[index] = btnRef;
+                                }}
                                 style={s.actionBtn}
-                                onClick={e => { e.stopPropagation(); setOpenActionMenu(openActionMenu === index ? null : index); }}
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  if (openActionMenu === index) {
+                                    setOpenActionMenu(null);
+                                  } else {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setMenuPosition({ top: rect.bottom + 4, left: rect.right - 180 });
+                                    setOpenActionMenu(index);
+                                  }
+                                }}
                               >
                                 <FaEllipsisV />
                               </button>
 
-                              {openActionMenu === index && (
+                              {openActionMenu === index && createPortal(
                                 <div style={{
-                                  position: 'absolute',
-                                  right: 0,
-                                  top: '100%',
-                                  zIndex: 100,
+                                  position: 'fixed',
+                                  top: menuPosition.top,
+                                  left: menuPosition.left,
+                                  zIndex: 9999,
                                   backgroundColor: '#fff',
                                   border: `1px solid ${BORDER}`,
                                   borderRadius: '8px',
@@ -897,12 +923,17 @@ export default function ViewSummary() {
                                       <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(history); }}>
                                         <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
                                       </button>
-                                      <button style={menuItemStyle} onClick={() => setOpenActionMenu(null)}>
+                                      <button style={menuItemStyle} onClick={() => {
+                                        setOpenActionMenu(null);
+                                        sessionStorage.setItem('batchProcessId', JSON.stringify(history.id));
+                                        navigate('/fish-processes/process-fish');
+                                      }}>
                                         <span style={{ marginRight: '8px', fontSize: '12px' }}>▶</span> Continue Progress
                                       </button>
                                     </>
                                   )}
-                                </div>
+                                </div>,
+                                document.body
                               )}
                             </div>
                           </td>
@@ -1041,18 +1072,24 @@ export default function ViewSummary() {
             <div style={{ padding: '20px 22px', flexGrow: 1, overflowY: 'auto' }}>
 
               {/* Section 1 — Batch Information */}
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
-                  Batch Information
-                </div>
-                {[
-                  { label: 'Batch Number', value: str(pick(detailsPanel, 'batch_no', 'batchNumber', 'batch')) },
-                  { label: 'Source Pond', value: str(pick(detailsPanel, 'sourcePond', 'pond')) },
-                  { label: 'Fish Type', value: str(pick(detailsPanel, 'fishType', 'species')) },
-                  { label: 'Site', value: str(pick(detailsPanel, 'site', 'location')) },
-                  { label: 'Date Created', value: detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '——' },
-                  { label: 'Completed On', value: detailsPanel.completedAt ? formatDate(detailsPanel.completedAt) : detailsPanel.updatedAt ? formatDate(detailsPanel.updatedAt) : '——' },
-                ].map((row, i, arr) => (
+                {(() => {
+                  const pondId = pick(detailsPanel, 'pondId', 'sourcePond', 'pond');
+                  const siteId = pick(detailsPanel, 'siteId', 'site', 'location');
+                  const pondName = ponds.find(p => p.id === pondId)?.title || pondId || '—';
+                  const siteName = sites.find(s => s.id === siteId)?.name || siteId || '—';
+                  return (
+                    <div style={{ marginBottom: '24px' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
+                        Batch Information
+                      </div>
+                      {[
+                        { label: 'Batch Number', value: str(pick(detailsPanel, 'batchNumber', 'batch')) || `#${(detailsPanel.id || '').slice(0, 8).toUpperCase()}` },
+                        { label: 'Source Pond', value: pondName },
+                        { label: 'Fish Type', value: str(pick(detailsPanel, 'fishType', 'species')) },
+                        { label: 'Site', value: siteName },
+                        { label: 'Date Created', value: detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '——' },
+                        { label: 'Completed On', value: detailsPanel.completedAt ? formatDate(detailsPanel.completedAt) : detailsPanel.updatedAt ? formatDate(detailsPanel.updatedAt) : '——' },
+                      ].map((row, i, arr) => (
                   <div key={row.label} style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -1063,7 +1100,9 @@ export default function ViewSummary() {
                     <span style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN }}>{row.value}</span>
                   </div>
                 ))}
-              </div>
+                </div>
+              );
+            })()}
 
               {/* Section 2 — Quantity Summary */}
               <div style={{ marginBottom: '24px' }}>
@@ -1078,13 +1117,13 @@ export default function ViewSummary() {
                 }}>
                   <span style={{ fontSize: '13px', color: TEXT_MUTED }}>Quantity Before</span>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN }}>
-                    {new Intl.NumberFormat().format(pick(detailsPanel, 'actual_quantity', 'totalQuantity') || 0)}
+                    {new Intl.NumberFormat().format(detailsPanel.wholeFishQuantity || 0)}
                   </span>
                 </div>
                 {[
-                  { label: 'Whole (W)', value: new Intl.NumberFormat().format(pick(detailsPanel, 'wholeFishQuantity') || 0), bg: '#E6F9EE', color: '#28a745' },
-                  { label: 'Broken (B)', value: new Intl.NumberFormat().format(pick(detailsPanel, 'cumulativeBrokenQuantity', 'brokenFishQuantity') || 0), bg: '#FFF3E0', color: '#E07B00' },
-                  { label: 'Damaged (D)', value: new Intl.NumberFormat().format(pick(detailsPanel, 'cumulativeDamageOrLoss', 'damageOrLoss', 'totalDamageLoss') || 0), bg: '#FDECEA', color: '#dc3545' },
+                  { label: 'Whole (W)', value: new Intl.NumberFormat().format(detailsPanel.wholeFishQuantity || 0), bg: '#E6F9EE', color: '#28a745' },
+                  { label: 'Broken (B)', value: new Intl.NumberFormat().format(detailsPanel.brokenFishQuantity || 0), bg: '#FFF3E0', color: '#E07B00' },
+                  { label: 'Damaged (D)', value: new Intl.NumberFormat().format(detailsPanel.damageOrLoss || 0), bg: '#FDECEA', color: '#dc3545' },
                 ].map((row, i, arr) => (
                   <div key={row.label} style={{
                     display: 'flex',
@@ -1176,7 +1215,8 @@ export default function ViewSummary() {
                   Remarks
                 </div>
                 {(() => {
-                  const remark = detailsPanel.remark || detailsPanel.remarks || detailsPanel.note || '——';
+                  const historyRemarks = detailsPanel.histories?.map(h => h.remarks).filter(Boolean).join('\n');
+                  const remark = historyRemarks || detailsPanel.remark || detailsPanel.remarks || detailsPanel.note || '——';
                   return (
                     <div style={{
                       fontSize: '13px',
