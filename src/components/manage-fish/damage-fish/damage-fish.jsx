@@ -146,7 +146,11 @@ const DamageFish = () => {
 
   // Filter ponds for dropdown
   const filteredPonds = stages.filter((stage) => {
-    const matchesSite = activeSite?.name ? String(stage.site ?? '').toLowerCase() === String(activeSite.name).toLowerCase() : true;
+    const matchesSite = activeSite?.id
+      ? String(stage.siteId ?? '').toLowerCase() === String(activeSite.id).toLowerCase()
+      : activeSite?.name
+        ? String(stage.site ?? '').toLowerCase() === String(activeSite.name).toLowerCase()
+        : true;
     return matchesSite && String(stage.title ?? '').toLowerCase().includes(pondSearch.toLowerCase());
   });
 

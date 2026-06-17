@@ -138,7 +138,7 @@ export default function ViewAllHistory() {
   };
 
   const getItemSite = (item) => {
-    return item.site || item.sourcePond?.site || item.pondName?.site || '';
+    return item.siteId || item.site || item.sourcePond?.site || item.pondName?.site || '';
   };
 
   const filterData = () => {
@@ -154,9 +154,13 @@ export default function ViewAllHistory() {
       });
     }
 
-    if (activeSite?.name) {
+    if (activeSite) {
       filtered = filtered.filter((item) => {
-        return String(getItemSite(item) ?? '').toLowerCase() === String(activeSite.name).toLowerCase();
+        if (activeSite.id) {
+          const itemSiteId = item.siteId || item.sourcePond?.siteId || item.pondName?.siteId || '';
+          return String(itemSiteId).toLowerCase() === String(activeSite.id).toLowerCase();
+        }
+        return String(getItemSite(item)).toLowerCase() === String(activeSite.name).toLowerCase();
       });
     }
 
