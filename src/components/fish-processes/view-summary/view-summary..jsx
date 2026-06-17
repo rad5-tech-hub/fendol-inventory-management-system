@@ -383,22 +383,23 @@ const s = {
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
+function str(val, fallback = '—') {
+  if (val == null || val === '') return fallback;
+  if (typeof val === 'object') return val.name || val.title || fallback;
+  return String(val);
+}
+
 function deriveType(history) {
-  if (history.type) return history.type;
-  if (history.processType) return history.processType;
-  return '—';
+  return str(history.type || history.processType);
 }
 
 function deriveStatus(history) {
-  if (history.status) return history.status;
   if (history.isCompleted === false) return 'In Progress';
-  return 'Completed';
+  return str(history.status, 'Completed');
 }
 
 function deriveSite(history) {
-  const site = history.site ?? history.location;
-  if (site && typeof site === 'object') return site.name || site.title || '—';
-  return site || '—';
+  return str(history.site ?? history.location);
 }
 
 // ─── component ───────────────────────────────────────────────────────────────
@@ -740,7 +741,7 @@ export default function ViewSummary() {
                       const status = deriveStatus(history);
                       const displayStatus = status === 'Saved Draft' ? 'In Progress' : status;
                       const site   = deriveSite(history);
-                      const batchNum = history.batchNumber || history.batch || `FDL-BT-${String(index + 1).padStart(4, '0')}`;
+                      const batchNum = str(history.batchNumber || history.batch) || `FDL-BT-${String(index + 1).padStart(4, '0')}`;
                       const isInProgress = status === 'In Progress';
                       const isSavedDraft = status === 'Saved Draft';
 
@@ -1037,10 +1038,10 @@ export default function ViewSummary() {
                   Batch Information
                 </div>
                 {[
-                  { label: 'Batch Number', value: detailsPanel.batchNumber || detailsPanel.batch || '——' },
-                  { label: 'Source Pond', value: detailsPanel.sourcePond || detailsPanel.pond || '——' },
-                  { label: 'Fish Type', value: detailsPanel.fishType || detailsPanel.species || '——' },
-                  { label: 'Site', value: detailsPanel.site || detailsPanel.location || '——' },
+                  { label: 'Batch Number', value: str(detailsPanel.batchNumber || detailsPanel.batch) },
+                  { label: 'Source Pond', value: str(detailsPanel.sourcePond || detailsPanel.pond) },
+                  { label: 'Fish Type', value: str(detailsPanel.fishType || detailsPanel.species) },
+                  { label: 'Site', value: str(detailsPanel.site || detailsPanel.location) },
                   { label: 'Date Created', value: detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '——' },
                   { label: 'Completed On', value: detailsPanel.completedAt ? formatDate(detailsPanel.completedAt) : detailsPanel.updatedAt ? formatDate(detailsPanel.updatedAt) : '——' },
                 ].map((row, i, arr) => (
