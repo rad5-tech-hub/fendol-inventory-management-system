@@ -396,7 +396,9 @@ function deriveStatus(history) {
 }
 
 function deriveSite(history) {
-  return history.site || history.location || '—';
+  const site = history.site ?? history.location;
+  if (site && typeof site === 'object') return site.name || site.title || '—';
+  return site || '—';
 }
 
 // ─── component ───────────────────────────────────────────────────────────────
