@@ -15,6 +15,8 @@ const HarvestFish = () => {
 
   // State Declarations
   const [stages, setStages] = useState([]);
+  const [stagesLoading, setStagesLoading] = useState(true);
+  const [stagesError, setStagesError] = useState(null);
   const [pondSearch, setPondSearch] = useState('');
   const [showPondDropdown, setShowPondDropdown] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,24 +30,40 @@ const HarvestFish = () => {
 
   // Fetch Fish Stages
   useEffect(() => {
+    let cancelled = false;
     const fetchStages = async () => {
+      setStagesLoading(true);
+      setStagesError(null);
       try {
         const siteParam = activeSite?.id || 'all';
+        console.log('[harvest] Fetching stages with siteId:', siteParam);
         const response = await Api.get(`/fish-stages?siteId=${siteParam}`);
+        console.log('[harvest] API response:', response.data);
         let list = Array.isArray(response.data?.data) ? response.data.data : [];
-        // v2 site UUID returns empty from v1 API → retry with 'all'
-        if (list.length === 0 && siteParam !== 'all') {
-          const fallback = await Api.get('/fish-stages?siteId=all');
-          list = Array.isArray(fallback.data?.data) ? fallback.data.data : [];
+        if (list.length === 0) {
+          console.log('[harvest] No stages from siteParam:', siteParam);
+          if (siteParam !== 'all') {
+            console.log('[harvest] Retrying with siteId=all');
+            const fallback = await Api.get('/fish-stages?siteId=all');
+            console.log('[harvest] Fallback response:', fallback.data);
+            list = Array.isArray(fallback.data?.data) ? fallback.data.data : [];
+          }
         }
-        setStages(list);
+        console.log('[harvest] Stages loaded:', list.length);
+        if (!cancelled) setStages(list);
       } catch (err) {
-        console.error(err.response?.data?.message || 'Failed to fetch stages');
-        setStages([]);
+        console.error('[harvest] Fetch error:', err.response?.data || err.message);
+        if (!cancelled) {
+          setStagesError(err.response?.data?.response_message || err.response?.data?.message || err.message || 'Failed to fetch stages');
+          setStages([]);
+        }
+      } finally {
+        if (!cancelled) setStagesLoading(false);
       }
     };
 
     fetchStages();
+    return () => { cancelled = true; };
   }, [activeSite?.id]);
 
   // Handle Input Changes
@@ -149,7 +167,11 @@ const HarvestFish = () => {
                     {showPondDropdown && (
                       <div className={styles.suggestions_box} style={{ maxHeight: '200px', overflowY: 'auto' }}>
                         <ul style={{ listStyle: 'none' }}>
-                          {filteredPonds.length > 0 ? (
+                          {stagesLoading ? (
+                            <li style={{ padding: '8px' }}>Loading ponds...</li>
+                          ) : stagesError ? (
+                            <li style={{ padding: '8px', color: '#dc3545' }}>{stagesError}</li>
+                          ) : filteredPonds.length > 0 ? (
                             filteredPonds.map((pond, index) => (
                               <li
                                 key={index}
@@ -160,9 +182,7 @@ const HarvestFish = () => {
                               </li>
                             ))
                           ) : (
-                            <li style={{ padding: '8px' }}>
-                              {stages.length === 0 ? 'Loading ponds...' : 'No ponds found'}
-                            </li>
+                            <li style={{ padding: '8px' }}>No ponds found</li>
                           )}
                         </ul>
                       </div>
