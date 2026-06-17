@@ -156,7 +156,7 @@ export default function ViewAllHistory() {
 
     if (activeSite?.name) {
       filtered = filtered.filter((item) => {
-        return getItemSite(item)?.toLowerCase() === activeSite.name.toLowerCase();
+        return String(getItemSite(item) ?? '').toLowerCase() === String(activeSite.name).toLowerCase();
       });
     }
 

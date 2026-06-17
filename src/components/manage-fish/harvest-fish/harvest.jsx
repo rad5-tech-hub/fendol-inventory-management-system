@@ -71,9 +71,8 @@ const HarvestFish = () => {
 
   // Filter Ponds for Dropdown
   const filteredPonds = stages.filter((stage) => {
-    const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
-    const title = stage.title;
-    return matchesSite && title && title.toLowerCase().includes(pondSearch.toLowerCase());
+    const matchesSite = activeSite?.name ? String(stage.site ?? '').toLowerCase() === String(activeSite.name).toLowerCase() : true;
+    return matchesSite && String(stage.title ?? '').toLowerCase().includes(pondSearch.toLowerCase());
   });
 
   // Handle Form Submission

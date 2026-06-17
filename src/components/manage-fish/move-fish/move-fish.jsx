@@ -136,13 +136,13 @@ export default function MoveFish() {
 
   // Filter Ponds
   const filteredFromPonds = stages.filter((stage) => {
-    const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
-    return matchesSite && (stage.title || '').toLowerCase().includes(pondFromSearch.toLowerCase());
+    const matchesSite = activeSite?.name ? String(stage.site ?? '').toLowerCase() === String(activeSite.name).toLowerCase() : true;
+    return matchesSite && String(stage.title ?? '').toLowerCase().includes(pondFromSearch.toLowerCase());
   });
 
   const filteredToPonds = stages.filter((stage) => {
-    const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
-    return matchesSite && (stage.title || '').toLowerCase().includes(pondToSearch.toLowerCase());
+    const matchesSite = activeSite?.name ? String(stage.site ?? '').toLowerCase() === String(activeSite.name).toLowerCase() : true;
+    return matchesSite && String(stage.title ?? '').toLowerCase().includes(pondToSearch.toLowerCase());
   });
 
   // Get Selected Stage Names for Confirmation
