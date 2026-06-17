@@ -34,11 +34,21 @@ export default function MoveFish() {
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get(`/fish-stages?siteId=${activeSite?.id || 'all'}`);
+        const siteId = activeSite?.id || 'all';
+        const response = await Api.get(`/fish-stages?siteId=${siteId}`);
         if (Array.isArray(response.data.data)) {
           const filteredProcessStages = response.data.data.filter(
             (stage) => stage.title !== 'Smoking' && stage.title !== 'Drying'
           );
+          if (filteredProcessStages.length === 0 && siteId !== 'all' && /^[a-f0-9-]{36}$/i.test(siteId)) {
+            const fallbackResponse = await Api.get('/fish-stages?siteId=all');
+            if (Array.isArray(fallbackResponse.data.data)) {
+              setStages(fallbackResponse.data.data.filter(
+                (stage) => stage.title !== 'Smoking' && stage.title !== 'Drying'
+              ));
+              return;
+            }
+          }
           setStages(filteredProcessStages);
         } else {
           throw new Error('Expected an array of stages');
@@ -48,7 +58,7 @@ export default function MoveFish() {
       }
     };
     fetchStages();
-  }, []);
+  }, [activeSite?.id]);
 
   // Handle Input Changes
   const handleInputChangeMoveFish = (e) => {
@@ -127,12 +137,12 @@ export default function MoveFish() {
   // Filter Ponds
   const filteredFromPonds = stages.filter((stage) => {
     const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
-    return matchesSite && stage.title?.toLowerCase().includes(pondFromSearch.toLowerCase());
+    return matchesSite && (stage.title || '').toLowerCase().includes(pondFromSearch.toLowerCase());
   });
 
   const filteredToPonds = stages.filter((stage) => {
     const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
-    return matchesSite && stage.title?.toLowerCase().includes(pondToSearch.toLowerCase());
+    return matchesSite && (stage.title || '').toLowerCase().includes(pondToSearch.toLowerCase());
   });
 
   // Get Selected Stage Names for Confirmation

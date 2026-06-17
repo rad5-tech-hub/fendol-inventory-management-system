@@ -89,7 +89,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
     const filtered = searchTerm
       ? stage.filter(
           (s) =>
-            s.title?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            (s.title || '').toLowerCase().includes(searchTerm.toLowerCase()) &&
             (parseFloat(s.quantity || 0) >= 1)
         )
       : stage.filter((s) => parseFloat(s.quantity || 0) >= 1);
@@ -119,7 +119,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
     setFingerlingsData((prevData) => ({ ...prevData, fullName: searchTerm }));
 
     const filtered = searchTerm
-      ? customer.filter((c) => c.fullName?.toLowerCase().includes(searchTerm.toLowerCase()))
+      ? customer.filter((c) => (c.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()))
       : customer;
     setFilteredCustomer(filtered);
     setShowCustomerDropdown(true);

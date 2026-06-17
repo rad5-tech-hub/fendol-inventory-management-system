@@ -30,11 +30,15 @@ const HarvestFish = () => {
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get(`/fish-stages?siteId=${activeSite?.id || 'all'}`);
-        if (!Array.isArray(response.data.data)) {
-          throw new Error('Expected an array of stages');
+        const siteParam = activeSite?.id || 'all';
+        const response = await Api.get(`/fish-stages?siteId=${siteParam}`);
+        let list = Array.isArray(response.data?.data) ? response.data.data : [];
+        // v2 site UUID returns empty from v1 API → retry with 'all'
+        if (list.length === 0 && siteParam !== 'all') {
+          const fallback = await Api.get('/fish-stages?siteId=all');
+          list = Array.isArray(fallback.data?.data) ? fallback.data.data : [];
         }
-        setStages(response.data.data);
+        setStages(list);
       } catch (err) {
         console.error(err.response?.data?.message || 'Failed to fetch stages');
         setStages([]);
@@ -42,7 +46,7 @@ const HarvestFish = () => {
     };
 
     fetchStages();
-  }, []);
+  }, [activeSite?.id]);
 
   // Handle Input Changes
   const handleInputChange = (e) => {
@@ -68,7 +72,8 @@ const HarvestFish = () => {
   // Filter Ponds for Dropdown
   const filteredPonds = stages.filter((stage) => {
     const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
-    return matchesSite && stage.title?.toLowerCase().includes(pondSearch.toLowerCase());
+    const title = stage.title;
+    return matchesSite && title && title.toLowerCase().includes(pondSearch.toLowerCase());
   });
 
   // Handle Form Submission

@@ -28,8 +28,16 @@ const DamageFish = () => {
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get(`/fish-stages?siteId=${activeSite?.id || 'all'}`);
+        const siteId = activeSite?.id || 'all';
+        const response = await Api.get(`/fish-stages?siteId=${siteId}`);
         if (Array.isArray(response.data.data)) {
+          if (response.data.data.length === 0 && siteId !== 'all' && /^[a-f0-9-]{36}$/i.test(siteId)) {
+            const fallbackResponse = await Api.get('/fish-stages?siteId=all');
+            if (Array.isArray(fallbackResponse.data.data)) {
+              setStages(fallbackResponse.data.data);
+              return;
+            }
+          }
           setStages(response.data.data);
         } else {
           throw new Error('Expected an array of stages');
@@ -40,7 +48,7 @@ const DamageFish = () => {
     };
 
     fetchStages();
-  }, []);
+  }, [activeSite?.id]);
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -139,7 +147,7 @@ const DamageFish = () => {
   // Filter ponds for dropdown
   const filteredPonds = stages.filter((stage) => {
     const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
-    return matchesSite && stage.title?.toLowerCase().includes(pondSearch.toLowerCase());
+    return matchesSite && (stage.title || '').toLowerCase().includes(pondSearch.toLowerCase());
   });
 
   // Sidebar toggle handlers

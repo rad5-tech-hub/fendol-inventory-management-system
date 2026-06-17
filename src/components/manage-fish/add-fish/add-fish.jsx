@@ -29,11 +29,21 @@ const AddFish = () => {
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get(`/fish-stages?siteId=${activeSite?.id || 'all'}`);
+        const siteId = activeSite?.id || 'all';
+        const response = await Api.get(`/fish-stages?siteId=${siteId}`);
         if (Array.isArray(response.data.data)) {
           const filteredStages = response.data.data.filter(
-            (stage) => !['harvest', 'damage', 'loss'].includes(stage.title.toLowerCase())
+            (stage) => !['harvest', 'damage', 'loss'].includes((stage.title || '').toLowerCase())
           );
+          if (filteredStages.length === 0 && siteId !== 'all' && /^[a-f0-9-]{36}$/i.test(siteId)) {
+            const fallbackResponse = await Api.get('/fish-stages?siteId=all');
+            if (Array.isArray(fallbackResponse.data.data)) {
+              setStages(fallbackResponse.data.data.filter(
+                (stage) => !['harvest', 'damage', 'loss'].includes((stage.title || '').toLowerCase())
+              ));
+              return;
+            }
+          }
           setStages(filteredStages);
         } else {
           throw new Error('Expected an array of stages');
@@ -44,7 +54,7 @@ const AddFish = () => {
     };
 
     fetchStages();
-  }, []);
+  }, [activeSite?.id]);
 
   useEffect(() => {
     const fetchFishType = async () => {
@@ -123,7 +133,7 @@ const AddFish = () => {
   // Filtered Ponds for Dropdown
   const filteredPonds = stages.filter((stage) => {
     const matchesSite = activeSite?.name ? (stage.site?.toLowerCase() || '') === activeSite.name.toLowerCase() : true;
-    return matchesSite && stage.title?.toLowerCase().includes(pondSearch.toLowerCase());
+    return matchesSite && (stage.title || '').toLowerCase().includes(pondSearch.toLowerCase());
   });
 
   // JSX Rendering
