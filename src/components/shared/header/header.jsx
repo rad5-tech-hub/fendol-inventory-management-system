@@ -33,8 +33,6 @@ export default function Header({ toggleSidebar }) {
   const activeSite = useSelector((store) => store.activeSite);
   const isSuperAdmin = userTypes.includes('super_admin');
 
-  const hideSiteSelector = location.pathname === '/dashboard';
-
   const [siteOptions, setSiteOptions] = useState([]);
   const [siteLoading, setSiteLoading] = useState(false);
   const [showSiteDropdown, setShowSiteDropdown] = useState(false);
@@ -286,7 +284,7 @@ export default function Header({ toggleSidebar }) {
               )}
             </div>
 
-            {isSuperAdmin && !hideSiteSelector && (
+            {isSuperAdmin && (
               <div ref={siteDropdownRef} className={`d-flex align-items-center position-relative me-2 ${styles.siteSelectorWrapper}`}>
                 <button
                   className={styles.sitePill}

@@ -37,7 +37,6 @@ export default function SideBar({ show, handleClose }) {
       if (path.includes('/hatchery/cost-analysis')) updates.cost_analysis = true;
     }
     if (path.includes("/ponds")) updates.pond_management = true;
-    if (path.includes("/batch-dashboard")) updates.batch_dashboard = true;
     if (path.includes("/manage-fish")) updates.fish_activities = true;
     if (path.includes("/fish-processes")) updates.processing = true;
     if (path.includes("/feed")) {
@@ -252,12 +251,7 @@ export default function SideBar({ show, handleClose }) {
                   {renderNavItem("Create ponds", "/ponds/create")}
                 </>
               )}
-              {hasPermission(userTypes, 'batch-dashboard') && renderCard("batch_dashboard", "Batch Dashboard", <MdOutlineBarChart size={25} className="me-1" />,
-                <>
-                  {renderNavItem("Dashboard Home", "/batch-dashboard")}
-                  {renderNavItemStartsWith("Batch Summary", "/batch-dashboard/summary")}
-                </>
-              )}
+              {hasPermission(userTypes, 'batch-dashboard') && renderDirectLink("Batch Dashboard", "/batch-dashboard", <MdOutlineBarChart size={25} className="me-1" />)}
               {hasPermission(userTypes, 'manage-fish') && renderCard("fish_activities", "Fish Activities", <GiCirclingFish size={25} className="me-1" />,
                 <>
                   {renderNavItem("Add Fish (Transfer to Nursery)", "/manage-fish/add-fish")}

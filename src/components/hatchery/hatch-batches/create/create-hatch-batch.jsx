@@ -3,8 +3,10 @@ import { Form, Row, Col, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
-import { IoArrowBackOutline, IoInformationCircleOutline, IoCheckmarkCircle, IoCalendarOutline, IoSaveOutline } from 'react-icons/io5';
+import { IoArrowBackOutline, IoInformationCircleOutline, IoCheckmarkCircle, IoCalendarOutline, IoSaveOutline, IoClose } from 'react-icons/io5';
 import { GiCirclingFish } from 'react-icons/gi';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import SideBar from '../../../shared/sidebar/sidebar';
 import Header from '../../../shared/header/header';
 import { ApiV2 } from '../../../shared/api/apiLink';
@@ -12,11 +14,46 @@ import styles from '../../hatchery.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
 
+const DRAFT_KEY = 'hatchery_hatchBatchDraft';
+
 const generateBatchNo = () => {
   const year = new Date().getFullYear();
   const seq = String(Date.now()).slice(-4);
   return `HB-${year}-${seq}`;
 };
+
+const parseDate = (str) => {
+  if (!str) return null;
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+const formatDate = (date) => {
+  if (!date) return '';
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return '';
+};
+
+const serializeForm = (form) => ({
+  ...form,
+  dateInjected: form.dateInjected instanceof Date ? formatDate(form.dateInjected) : null,
+  dateStripped: form.dateStripped instanceof Date ? formatDate(form.dateStripped) : null,
+  dateHatched: form.dateHatched instanceof Date ? formatDate(form.dateHatched) : null,
+});
+
+const deserializeForm = (data) => ({
+  ...data,
+  dateInjected: data.dateInjected ? parseDate(data.dateInjected) : null,
+  dateStripped: data.dateStripped ? parseDate(data.dateStripped) : null,
+  dateHatched: data.dateHatched ? parseDate(data.dateHatched) : null,
+});
 
 export default function CreateHatchBatch() {
   const navigate = useNavigate();
@@ -35,18 +72,26 @@ export default function CreateHatchBatch() {
 
   const [form, setForm] = useState(() => {
     if (!editData) {
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.hatchbatchNo) return deserializeForm(parsed);
+        }
+      } catch {}
       return {
         hatchbatchNo: generateBatchNo(),
         site: activeSite?.name || '',
         siteId: activeSite?.id || '',
-        dateInjected: '',
-        dateStripped: '',
-        dateHatched: '',
+        dateInjected: null,
+        dateStripped: null,
+        dateHatched: null,
         numFemales: '',
         avgWeightFemale: '',
         numMales: '',
         avgWeightMale: '',
         eggWeight: '',
+        numberOfEggs: '',
         hatchability: '',
         notes: '',
       };
@@ -56,18 +101,62 @@ export default function CreateHatchBatch() {
       hatchbatchNo: e.hatchbatchNo || e.batchNo || generateBatchNo(),
       site: e.site || '',
       siteId: e.siteId || activeSite?.id || '',
-      dateInjected: e.dateInjected || '',
-      dateStripped: e.dateStripped || '',
-      dateHatched: e.dateHatched || '',
+      dateInjected: parseDate(e.dateInjected),
+      dateStripped: parseDate(e.dateStripped),
+      dateHatched: parseDate(e.dateHatched),
       numFemales: e.noOfFemaleBroodstock ?? e.females ?? '',
       avgWeightFemale: e.avgWeightOfFemale ?? e.avgWeightFemale ?? '',
       numMales: e.maleBroodStock ?? e.males ?? '',
       avgWeightMale: e.avgWeightOfMaleBroodstock ?? e.avgWeightMale ?? '',
       eggWeight: e.weightOfEgg ?? e.eggWeight ?? '',
+      numberOfEggs: e.numberOfEggs ?? '',
       hatchability: e.hatchabilityPercentage ?? e.hatchability ?? '',
       notes: e.comments ?? e.notes ?? '',
     };
   });
+
+  const [selectedFemales, setSelectedFemales] = useState([]);
+  const [selectedMales, setSelectedMales] = useState([]);
+  const [femaleInput, setFemaleInput] = useState('');
+  const [maleInput, setMaleInput] = useState('');
+
+  const addFemale = () => {
+    const val = femaleInput.trim();
+    if (val && !selectedFemales.includes(val)) {
+      setSelectedFemales([...selectedFemales, val]);
+      setFemaleInput('');
+    }
+  };
+
+  const removeFemale = (index) => {
+    setSelectedFemales(selectedFemales.filter((_, i) => i !== index));
+  };
+
+  const addMale = () => {
+    const val = maleInput.trim();
+    if (val && !selectedMales.includes(val)) {
+      setSelectedMales([...selectedMales, val]);
+      setMaleInput('');
+    }
+  };
+
+  const removeMale = (index) => {
+    setSelectedMales(selectedMales.filter((_, i) => i !== index));
+  };
+
+  const handleFemaleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addFemale();
+    }
+  };
+
+  const handleMaleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addMale();
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,21 +168,26 @@ export default function CreateHatchBatch() {
     }
   };
 
-  const estimatedFryCount = Math.round(Number(form.eggWeight) * 9500 * (Number(form.hatchability) / 100));
+  const handleDateChange = (name, date) => {
+    setForm((prev) => ({ ...prev, [name]: date }));
+  };
+
+  const estimatedFryCount = Math.round(Number(form.numberOfEggs) * (Number(form.hatchability) / 100));
   const notesLength = form.notes.length;
 
   const buildPayload = (status) => {
     const resolvedSiteId = form.siteId || activeSite?.id || sites.find((s) => s.name === form.site)?.id || '';
     const p = {
       hatchbatchNo: form.hatchbatchNo,
-      dateInjected: toApiDate(form.dateInjected),
-      dateStripped: toApiDate(form.dateStripped),
-      dateHatched: toApiDate(form.dateHatched),
+      dateInjected: formatDate(form.dateInjected),
+      dateStripped: formatDate(form.dateStripped),
+      dateHatched: formatDate(form.dateHatched),
       noOfFemaleBroodstock: Number(form.numFemales),
       avgWeightOfFemale: Number(form.avgWeightFemale),
       maleBroodStock: Number(form.numMales),
       avgWeightOfMaleBroodstock: Number(form.avgWeightMale),
       weightOfEgg: Number(form.eggWeight),
+      numberOfEggs: Number(form.numberOfEggs) || 0,
       hatchabilityPercentage: Number(form.hatchability),
       fryProduced: estimatedFryCount,
       comments: form.notes || '',
@@ -132,6 +226,10 @@ export default function CreateHatchBatch() {
       toast.error('Please enter a valid egg weight.', { className: 'dark-toast' });
       return false;
     }
+    if (!form.numberOfEggs || Number(form.numberOfEggs) <= 0) {
+      toast.error('Please enter a valid number of eggs.', { className: 'dark-toast' });
+      return false;
+    }
     if (!form.hatchability || Number(form.hatchability) <= 0) {
       toast.error('Please enter a valid hatchability percentage.', { className: 'dark-toast' });
       return false;
@@ -140,10 +238,11 @@ export default function CreateHatchBatch() {
   };
 
   const handleSaveDraft = async () => {
-    if (!validateForm()) return;
     setLoading(true);
     const loadingToast = toast.loading('Saving draft...', { className: 'dark-toast' });
     try {
+      const data = { ...serializeForm(form), selectedFemales, selectedMales };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
       const payload = buildPayload(null);
       await ApiV2.post('/v2/hatch-batches', payload);
       toast.update(loadingToast, {
@@ -183,6 +282,7 @@ export default function CreateHatchBatch() {
       if (isEditing) {
         const payload = buildPayload('completed');
         await ApiV2.put(`/v2/hatch-batches/${editData.id}`, payload);
+        localStorage.removeItem(DRAFT_KEY);
         toast.update(loadingToast, {
           render: 'Hatch batch completed!',
           type: 'success', isLoading: false, autoClose: 3000, className: 'dark-toast',
@@ -195,6 +295,7 @@ export default function CreateHatchBatch() {
         const completePayload = buildPayload('completed');
         delete completePayload.siteId;
         await ApiV2.put(`/v2/hatch-batches/${created.id}`, completePayload);
+        localStorage.removeItem(DRAFT_KEY);
         toast.update(loadingToast, {
           render: 'Hatch batch completed!',
           type: 'success', isLoading: false, autoClose: 3000, className: 'dark-toast',
@@ -225,6 +326,19 @@ export default function CreateHatchBatch() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   useEffect(() => {
+    if (!isEditing) {
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.selectedFemales)) setSelectedFemales(parsed.selectedFemales);
+          if (Array.isArray(parsed.selectedMales)) setSelectedMales(parsed.selectedMales);
+        }
+      } catch {}
+    }
+  }, [isEditing]);
+
+  useEffect(() => {
     const fetchSites = async () => {
       try {
         const res = await ApiV2.get('/v2/all-site');
@@ -247,16 +361,6 @@ export default function CreateHatchBatch() {
       }
     }
   }, [sitesLoaded, editData, sites]);
-
-  const toApiDate = (dateStr) => {
-    if (!dateStr) return '';
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-    }
-    return dateStr;
-  };
 
   return (
     <section className={`${styles.body}`}>
@@ -295,11 +399,11 @@ export default function CreateHatchBatch() {
                   <h5>Batch Information</h5>
                 </div>
                 <Row className="g-3">
-                  <Col md={4}>
+                  <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Hatch Batch Number</Form.Label>
-                    <Form.Control type="text" value={form.hatchbatchNo} disabled className="bg-light" />
+                    <Form.Control type="text" value={form.hatchbatchNo} disabled className="bg-light" style={{ height: 38 }} />
                   </Col>
-                  <Col md={4}>
+                  <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Site</Form.Label>
                     <Form.Select name="site" value={form.site} onChange={handleChange}>
                       <option value="">Select site</option>
@@ -314,37 +418,76 @@ export default function CreateHatchBatch() {
                       )}
                     </Form.Select>
                   </Col>
-                  <Col md={4}>
+                  <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Date Injected</Form.Label>
-                    <div className={styles.dateIconWrapper}>
-                      <Form.Control type="text" name="dateInjected" value={form.dateInjected} onChange={handleChange} placeholder="May 28, 2025" />
+                    <div className={styles.dateIconWrapper} style={{ height: 38 }}>
+                      <DatePicker
+                        selected={form.dateInjected}
+                        onChange={(date) => handleDateChange('dateInjected', date)}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="DD/MM/YYYY"
+                        className="form-control"
+                        wrapperClassName="w-100"
+                      />
                       <IoCalendarOutline />
                     </div>
                   </Col>
-                  <Col md={6}>
+                  <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Date Stripped</Form.Label>
-                    <div className={styles.dateIconWrapper}>
-                      <Form.Control type="text" name="dateStripped" value={form.dateStripped} onChange={handleChange} placeholder="May 28, 2025" />
+                    <div className={styles.dateIconWrapper} style={{ height: 38 }}>
+                      <DatePicker
+                        selected={form.dateStripped}
+                        onChange={(date) => handleDateChange('dateStripped', date)}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="DD/MM/YYYY"
+                        className="form-control"
+                        wrapperClassName="w-100"
+                      />
                       <IoCalendarOutline />
                     </div>
                   </Col>
-                  <Col md={6}>
+                  <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Date Hatched</Form.Label>
-                    <div className={styles.dateIconWrapper}>
-                      <Form.Control type="text" name="dateHatched" value={form.dateHatched} onChange={handleChange} placeholder="May 28, 2025" />
+                    <div className={styles.dateIconWrapper} style={{ height: 38 }}>
+                      <DatePicker
+                        selected={form.dateHatched}
+                        onChange={(date) => handleDateChange('dateHatched', date)}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="DD/MM/YYYY"
+                        className="form-control"
+                        wrapperClassName="w-100"
+                      />
                       <IoCalendarOutline />
                     </div>
                   </Col>
                 </Row>
               </div>
 
-              {/* Sections 2 + 3 - Female & Male Broodstock side by side */}
-              <Row className="g-3">
-                <Col md={6}>
-                  <div className={styles.sectionCard}>
-                    <div className={styles.sectionHeader}>
-                      <span className={styles.sectionBadge}>2</span>
-                      <h5>Female Broodstock</h5>
+              {/* Section 2 - Broodstock Information */}
+              <div className={styles.sectionCard}>
+                <div className={styles.sectionHeader}>
+                  <span className={styles.sectionBadge}>2</span>
+                  <h5>Broodstock Information</h5>
+                </div>
+                <Row className="g-3">
+                  <Col md={6}>
+                    <h6 style={{ fontSize: '0.88rem', fontWeight: 600, color: '#2E3135', marginBottom: 12 }}>Female</h6>
+                    <div style={{ marginBottom: 16 }}>
+                      <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Select Female(s)</Form.Label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', border: '1px solid #D1D5DB', borderRadius: 6, background: '#fff', minHeight: 38 }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, flex: 1 }}>
+                          {selectedFemales.map((item, i) => (
+                            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: '#E5E7EB', borderRadius: 6, fontSize: '0.8rem', color: '#1F2937' }}>
+                              {item}
+                              <IoClose size={13} style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => removeFemale(i)} />
+                            </span>
+                          ))}
+                          <input type="text" value={femaleInput} onChange={(e) => setFemaleInput(e.target.value)} onKeyDown={handleFemaleKeyDown} placeholder="Type..." style={{ border: 'none', outline: 'none', flex: 1, minWidth: 80, fontSize: '0.8rem', padding: '2px 0', background: 'transparent' }} />
+                        </div>
+                        <button type="button" onClick={addFemale} style={{ flexShrink: 0, fontSize: '0.8rem', padding: '4px 12px', background: 'none', border: '1px solid #D1D5DB', borderRadius: 6, color: '#6B7280', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          + Add More
+                        </button>
+                      </div>
                     </div>
                     <Row className="g-2">
                       <Col xs={6}>
@@ -356,13 +499,25 @@ export default function CreateHatchBatch() {
                         <Form.Control type="number" step="0.01" name="avgWeightFemale" value={form.avgWeightFemale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                     </Row>
-                  </div>
-                </Col>
-                <Col md={6}>
-                  <div className={styles.sectionCard}>
-                    <div className={styles.sectionHeader}>
-                      <span className={styles.sectionBadge}>3</span>
-                      <h5>Male Broodstock</h5>
+                  </Col>
+                  <Col md={6}>
+                    <h6 style={{ fontSize: '0.88rem', fontWeight: 600, color: '#2E3135', marginBottom: 12 }}>Male</h6>
+                    <div style={{ marginBottom: 16 }}>
+                      <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Select Male(s)</Form.Label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', border: '1px solid #D1D5DB', borderRadius: 6, background: '#fff', minHeight: 38 }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, flex: 1 }}>
+                          {selectedMales.map((item, i) => (
+                            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: '#E5E7EB', borderRadius: 6, fontSize: '0.8rem', color: '#1F2937' }}>
+                              {item}
+                              <IoClose size={13} style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => removeMale(i)} />
+                            </span>
+                          ))}
+                          <input type="text" value={maleInput} onChange={(e) => setMaleInput(e.target.value)} onKeyDown={handleMaleKeyDown} placeholder="Type..." style={{ border: 'none', outline: 'none', flex: 1, minWidth: 80, fontSize: '0.8rem', padding: '2px 0', background: 'transparent' }} />
+                        </div>
+                        <button type="button" onClick={addMale} style={{ flexShrink: 0, fontSize: '0.8rem', padding: '4px 12px', background: 'none', border: '1px solid #D1D5DB', borderRadius: 6, color: '#6B7280', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          + Add More
+                        </button>
+                      </div>
                     </div>
                     <Row className="g-2">
                       <Col xs={6}>
@@ -374,42 +529,46 @@ export default function CreateHatchBatch() {
                         <Form.Control type="number" step="0.01" name="avgWeightMale" value={form.avgWeightMale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                     </Row>
-                  </div>
-                </Col>
-              </Row>
+                  </Col>
+                </Row>
+              </div>
 
-              {/* Section 4 - Egg Information */}
+              {/* Section 3 - Egg Information */}
               <div className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
-                  <span className={styles.sectionBadge}>4</span>
+                  <span className={styles.sectionBadge}>3</span>
                   <h5>Egg Information</h5>
                 </div>
                 <Row className="g-3">
-                  <Col md={6}>
+                  <Col md>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Weight of Eggs (kg)</Form.Label>
                     <Form.Control type="number" step="0.01" name="eggWeight" value={form.eggWeight} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                   </Col>
-                  <Col md={6}>
+                  <Col md>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Hatchability Percentage (%)</Form.Label>
                     <div style={{ position: 'relative' }}>
                       <Form.Control type="number" step="0.1" name="hatchability" value={form.hatchability} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       <span style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 4, padding: '1px 8px', color: '#8C949B', fontSize: '0.8rem', fontWeight: 600, pointerEvents: 'none', lineHeight: '1.5' }}>%</span>
                     </div>
                   </Col>
+                  <Col md>
+                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Number of Eggs</Form.Label>
+                    <Form.Control type="number" name="numberOfEggs" value={form.numberOfEggs} onChange={handleChange} onWheel={(e) => e.target.blur()} />
+                  </Col>
                 </Row>
               </div>
 
-              {/* Sections 4 + 5 side by side on desktop */}
+              {/* Section 4 - Production Estimate + Section 5 - Remarks */}
               <Row className="g-3">
                 <Col lg={6}>
                   <div className={styles.sectionCard} style={{ height: '100%' }}>
                     <div className={styles.sectionHeader}>
-                      <span className={styles.sectionBadge}>5</span>
+                      <span className={styles.sectionBadge}>4</span>
                       <h5>Production Estimate</h5>
                     </div>
                     <div className={styles.infoBanner}>
                       <IoInformationCircleOutline size={20} color="#28a745" style={{ flexShrink: 0, marginTop: 2 }} />
-                      <span>This is an auto-calculated estimate based on the weight of eggs and hatchability percentage.</span>
+                      <span>This is an auto-calculated estimate based on the number of eggs and hatchability percentage.</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
@@ -417,14 +576,24 @@ export default function CreateHatchBatch() {
                         <span className={styles.estimateValue}>{f(estimatedFryCount)}</span>
                         <span className={styles.estimateUnit} style={{ marginLeft: 8 }}>pcs</span>
                       </div>
-                      <GiCirclingFish size={64} color="#E5E7EB" />
+                      <div style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: '50%',
+                        backgroundColor: '#D1FAE5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <GiCirclingFish size={48} color="#22C55E" />
+                      </div>
                     </div>
                   </div>
                 </Col>
                 <Col lg={6}>
                   <div className={styles.sectionCard} style={{ height: '100%' }}>
                     <div className={styles.sectionHeader}>
-                      <span className={styles.sectionBadge}>6</span>
+                      <span className={styles.sectionBadge}>5</span>
                       <h5>Remarks</h5>
                     </div>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Notes</Form.Label>

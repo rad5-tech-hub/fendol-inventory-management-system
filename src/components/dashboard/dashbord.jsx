@@ -48,6 +48,9 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [siteId, setSiteId] = useState(null);
   const [activeTooltip, setActiveTooltip] = useState(null);
+  const [salesDateRange, setSalesDateRange] = useState('1M');
+  const [customDateFrom, setCustomDateFrom] = useState('');
+  const [customDateTo, setCustomDateTo] = useState('');
   const tooltipRef = useRef(null);
   const user = useSelector((store) => store.user);
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
@@ -146,35 +149,105 @@ const Dashboard = () => {
   const totalPonds = dashboardData?.totalPonds ?? 0;
 
   // Chart data with fallbacks
-  const salesSummaryData = {
-    labels: dashboardData?.salesSummary?.data?.map((item) => item.date) || [],
-    datasets: [
-      {
+  const getFilteredSalesData = () => {
+    const allData = dashboardData?.salesSummary?.data || [];
+    if (!allData.length) return { labels: [], datasets: [] };
+    let filtered = [...allData];
+    const now = new Date();
+    let cutoff = null;
+    switch (salesDateRange) {
+      case '1W':  cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7); break;
+      case '1M':  cutoff = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()); break;
+      case '6M':  cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()); break;
+      case '1Y':  cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()); break;
+      case 'CUSTOM':
+        if (customDateFrom && customDateTo) {
+          const from = new Date(customDateFrom);
+          const to = new Date(customDateTo);
+          to.setHours(23, 59, 59, 999);
+          filtered = allData.filter(item => { const d = new Date(item.date); return d >= from && d <= to; });
+        }
+        break;
+    }
+    if (cutoff) filtered = allData.filter(item => new Date(item.date) >= cutoff);
+    return {
+      labels: filtered.map(item => item.date),
+      datasets: [{
         label: 'Sales',
-        data: dashboardData?.salesSummary?.data?.map((item) => item.totalSales) || [],
+        data: filtered.map(item => item.totalSales),
         borderColor: '#2E3135',
-        backgroundColor: 'rgba(46, 49, 53, 0.2)',
-        tension: 0.4,
-        fill: false,
-      },
-    ],
+        backgroundColor: 'rgba(46, 49, 53, 0.06)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointBackgroundColor: '#2E3135',
+        borderWidth: 1.5,
+      }],
+    };
   };
+  const salesSummaryData = getFilteredSalesData();
+  const salesDateRangeLabel = salesSummaryData.labels.length > 0
+    ? `${salesSummaryData.labels[0]} — ${salesSummaryData.labels[salesSummaryData.labels.length - 1]}`
+    : '';
 
-  const financeSummaryData = {
-    labels: dashboardData?.financeSummary?.salesByMonth?.map((item) => item.month) || [],
-    datasets: [
-      {
-        label: 'Sales',
-        data: dashboardData?.financeSummary?.salesByMonth?.map((item) => item.totalSales) || [],
-        backgroundColor: '#2E3135',
-      },
-      {
-        label: 'Expenses',
-        data: dashboardData?.financeSummary?.expensesByMonth?.map((item) => item.totalExpenses || 0) || [],
-        backgroundColor: '#B06426',
-      },
-    ],
+  const getFilteredFinanceData = () => {
+    const months = dashboardData?.financeSummary?.salesByMonth || [];
+    const expenses = dashboardData?.financeSummary?.expensesByMonth || [];
+    if (!months.length) return { labels: [], datasets: [] };
+    const now = new Date();
+    let cutoff = null;
+    switch (salesDateRange) {
+      case '1W':  cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7); break;
+      case '1M':  cutoff = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()); break;
+      case '6M':  cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()); break;
+      case '1Y':  cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()); break;
+      case 'CUSTOM':
+        if (customDateFrom && customDateTo) {
+          const from = new Date(customDateFrom);
+          const to = new Date(customDateTo);
+          to.setHours(23, 59, 59, 999);
+          const filteredMonths = months.filter(item => {
+            const d = new Date(item.month);
+            return d >= from && d <= to;
+          });
+          const filteredExpenses = expenses.filter(item => {
+            const d = new Date(item.month);
+            return d >= from && d <= to;
+          });
+          return {
+            labels: filteredMonths.map(item => item.month),
+            datasets: [
+              { label: 'Sales', data: filteredMonths.map(item => item.totalSales), backgroundColor: '#2E3135', barPercentage: 0.5, categoryPercentage: 0.7 },
+              { label: 'Expenses', data: filteredExpenses.map(item => item.totalExpenses || 0), backgroundColor: '#B06426', barPercentage: 0.5, categoryPercentage: 0.7 },
+            ],
+          };
+        }
+        break;
+    }
+    if (cutoff) {
+      const filteredMonths = months.filter(item => new Date(item.month) >= cutoff);
+      const filteredExpenses = expenses.filter(item => new Date(item.month) >= cutoff);
+      return {
+        labels: filteredMonths.map(item => item.month),
+        datasets: [
+          { label: 'Sales', data: filteredMonths.map(item => item.totalSales), backgroundColor: '#2E3135' },
+          { label: 'Expenses', data: filteredExpenses.map(item => item.totalExpenses || 0), backgroundColor: '#B06426' },
+        ],
+      };
+    }
+    return {
+      labels: months.map(item => item.month),
+      datasets: [
+        { label: 'Sales', data: months.map(item => item.totalSales), backgroundColor: '#2E3135', barPercentage: 0.5, categoryPercentage: 0.7 },
+        { label: 'Expenses', data: expenses.map(item => item.totalExpenses || 0), backgroundColor: '#B06426', barPercentage: 0.5, categoryPercentage: 0.7 },
+      ],
+    };
   };
+  const financeSummaryData = getFilteredFinanceData();
+  const financeDateRangeLabel = financeSummaryData.labels.length > 0
+    ? `${financeSummaryData.labels[0]} — ${financeSummaryData.labels[financeSummaryData.labels.length - 1]}`
+    : '';
 
   const topSellingProductsData = {
     labels: dashboardData?.topProducts?.map((item) => item.productName) || [],
@@ -251,14 +324,40 @@ const Dashboard = () => {
     if (type === 'line') {
       if (title === 'Sales Summary') {
         return {
-          ...baseOptions,
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1F2937',
+              titleFont: { size: 12, weight: '600' },
+              bodyFont: { size: 13 },
+              padding: 10,
+              cornerRadius: 8,
+              displayColors: false,
+              callbacks: {
+                title: (items) => items[0]?.label || '',
+                label: (ctx) => `₦${Number(ctx.raw).toLocaleString()}`,
+              },
+            },
+          },
           scales: {
+            x: {
+              grid: { display: false },
+              ticks: { display: false },
+            },
             y: {
               beginAtZero: true,
-              title: { display: true, text: 'SALES (₦)' },
-              ticks: { callback: (value) => `₦${value.toLocaleString()}` },
+              grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
+              border: { display: false },
+              ticks: {
+                callback: (v) => `₦${(v / 1000).toFixed(0)}k`,
+                font: { size: 11 },
+                color: '#9CA3AF',
+                maxTicksLimit: 6,
+              },
             },
-            x: { title: { display: true, text: 'PERIOD OF TIME' } },
           },
         };
       }
@@ -271,6 +370,50 @@ const Dashboard = () => {
             stacked: true,
           },
           x: { title: { display: true, text: 'PERIOD OF TIME' } },
+        },
+      };
+    }
+
+    if (title === 'Finance Summary') {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1F2937',
+            titleFont: { size: 12, weight: '600' },
+            bodyFont: { size: 13 },
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: true,
+            boxPadding: { x: 4, y: 2 },
+            callbacks: {
+              title: (items) => items[0]?.label || '',
+              label: (ctx) => {
+                const label = ctx.dataset.label || '';
+                return `${label}: ₦${Number(ctx.raw).toLocaleString()}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { display: false },
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
+            border: { display: false },
+            ticks: {
+              callback: (v) => `₦${(v / 1000).toFixed(0)}k`,
+              font: { size: 11 },
+              color: '#9CA3AF',
+              maxTicksLimit: 6,
+            },
+          },
         },
       };
     }
@@ -336,11 +479,6 @@ const Dashboard = () => {
               <div className={styles.pageTitleRow}>
                   <div className={styles.pageTitleLeft}>
                     <h1 className={styles.pageTitle}>Dashboard Overview</h1>
-                    {isSuperAdmin && (
-                      <select className="form-select form-select-sm shadow-none" style={{ width: '180px' }} value={siteId || ''} onChange={(e) => setSiteId(e.target.value || null)}>
-                        <option value="">All Sites</option>
-                      </select>
-                    )}
                   </div>
                 <div className={styles.pageTitleRight}>
                   <div className={styles.searchBar}>
@@ -446,10 +584,30 @@ const Dashboard = () => {
                         <span className={styles.chartSiteIndicator}>
                           {activeSite ? activeSite.name : 'All Sites'}
                         </span>
-                        <span className={styles.viewDetails}>View Details &rsaquo;</span>
                       </div>
                     </div>
-                    {renderChart(salesSummaryData, 'Sales Summary', 'line')}
+                    <div className={styles.dateRangeGroup}>
+                      {['1W', '1M', '6M', '1Y', 'Custom'].map((range) => (
+                        <button
+                          key={range}
+                          className={`${styles.dateRangeBtn} ${salesDateRange === range ? styles.dateRangeBtnActive : ''}`}
+                          onClick={() => setSalesDateRange(range)}
+                        >
+                          {range === 'Custom' ? 'Custom' : range}
+                        </button>
+                      ))}
+                    </div>
+                    {salesDateRange === 'Custom' && (
+                      <div className={styles.customDateRow}>
+                        <input type="date" value={customDateFrom} onChange={(e) => setCustomDateFrom(e.target.value)} className={styles.customDateInput} />
+                        <span className={styles.customDateSep}>to</span>
+                        <input type="date" value={customDateTo} onChange={(e) => setCustomDateTo(e.target.value)} className={styles.customDateInput} />
+                      </div>
+                    )}
+                    {salesDateRangeLabel && <div className={styles.dateRangeLabel}>{salesDateRangeLabel}</div>}
+                    <div style={{ position: 'relative', width: '100%', minWidth: '300px', height: '380px' }}>
+                      <Chart type="line" data={salesSummaryData} options={chartOptions('Sales Summary', 'line')} />
+                    </div>
                   </div>
                 </Col>
                 <Col lg={6} md={12} sm={12} xs={12}>
@@ -460,7 +618,28 @@ const Dashboard = () => {
                         {activeSite ? activeSite.name : 'All Sites'}
                       </span>
                     </div>
-                    {renderChart(financeSummaryData, 'Finance Summary', 'bar')}
+                    <div className={styles.dateRangeGroup}>
+                      {['1W', '1M', '6M', '1Y', 'Custom'].map((range) => (
+                        <button
+                          key={range}
+                          className={`${styles.dateRangeBtn} ${salesDateRange === range ? styles.dateRangeBtnActive : ''}`}
+                          onClick={() => setSalesDateRange(range)}
+                        >
+                          {range === 'Custom' ? 'Custom' : range}
+                        </button>
+                      ))}
+                    </div>
+                    {salesDateRange === 'Custom' && (
+                      <div className={styles.customDateRow}>
+                        <input type="date" value={customDateFrom} onChange={(e) => setCustomDateFrom(e.target.value)} className={styles.customDateInput} />
+                        <span className={styles.customDateSep}>to</span>
+                        <input type="date" value={customDateTo} onChange={(e) => setCustomDateTo(e.target.value)} className={styles.customDateInput} />
+                      </div>
+                    )}
+                    {financeDateRangeLabel && <div className={styles.dateRangeLabel}>{financeDateRangeLabel}</div>}
+                    <div style={{ position: 'relative', width: '100%', minWidth: '300px', height: '380px' }}>
+                      <Chart type="bar" data={financeSummaryData} options={chartOptions('Finance Summary', 'bar')} />
+                    </div>
                   </div>
                 </Col>
               </Row>

@@ -513,6 +513,11 @@
   align-items: center;
   gap: 12px;
 }
+.chartSiteIndicator {
+  font-size: 0.72rem;
+  color: #9CA3AF;
+  font-weight: 500;
+}
 .chartSiteDropdown {
   background: #F8F4EF;
   border: 1px solid #e0d8cc;
@@ -530,6 +535,72 @@
   cursor: pointer;
 }
 .viewDetails:hover { text-decoration: underline; }
+
+/* ── Date Range Selector ── */
+.dateRangeGroup {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.dateRangeBtn {
+  background: #F3F4F6;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.6;
+}
+.dateRangeBtn:hover {
+  background: #E5E7EB;
+  color: #374151;
+}
+.dateRangeBtnActive {
+  background: #2563EB;
+  border-color: #2563EB;
+  color: #fff;
+}
+.dateRangeBtnActive:hover {
+  background: #1D4ED8;
+  color: #fff;
+}
+.customDateRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.customDateInput {
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  color: #374151;
+  background: #fff;
+  outline: none;
+  flex: 1;
+  max-width: 170px;
+}
+.customDateInput:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+.customDateSep {
+  font-size: 0.82rem;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+.dateRangeLabel {
+  font-size: 0.72rem;
+  color: #9CA3AF;
+  font-weight: 500;
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
 
 /* ── Top Selling Products list ── */
 .productList { display: flex; flex-direction: column; gap: 0; }
