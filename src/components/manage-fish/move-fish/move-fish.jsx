@@ -7,9 +7,11 @@ import styles from '../product-stages.module.scss';
 import Api from '../../shared/api/apiLink';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
+import { useConfirm } from '../../shared/confirm-modal';
 
 
 export default function MoveFish() {
+  const [ConfirmDialog, confirm] = useConfirm();
   // State Declarations
   const [stages, setStages] = useState([]);
   const [fishType, setFishType] = useState('');
@@ -163,10 +165,8 @@ export default function MoveFish() {
   const handleMoveFishes = async (e) => {
     e.preventDefault();
 
-    const isConfirmed = window.confirm(
-      `Are you sure you want to move ${moveFishData.actual_quantity} fish from ${selectedStageNames} to ${selectedTitle}?`
-    );
-    if (!isConfirmed) return;
+    const ok = await confirm({ message: `Are you sure you want to move ${moveFishData.actual_quantity} fish from ${selectedStageNames} to ${selectedTitle}?`, title: "Move Fish", variant: "danger" });
+    if (!ok) return;
 
     setLoader(true);
     const loadingToast = toast.loading('Moving fish...', { className: 'dark-toast' });
@@ -343,6 +343,7 @@ export default function MoveFish() {
           </main>
         </section>
       </div>
+      <ConfirmDialog />
     </section>
   );
 }

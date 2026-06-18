@@ -4,6 +4,7 @@ import { Form, Row, Col, Button } from "react-bootstrap";
 import Api from "../../shared/api/apiLink";
 import styles from "../finance.module.scss";
 import ReceiptModal from "./receipt";
+import { useConfirm } from '../../shared/confirm-modal';
 
 const FingerlingsForm = ({ customers, stages, products }) => {
   const [fingerlingsData, setFingerlingsData] = useState({
@@ -36,6 +37,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
   const [showPondDropdown, setShowPondDropdown] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [ConfirmDialog, confirm] = useConfirm();
 
   // Initialize data from props
   useEffect(() => {
@@ -197,7 +199,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
   // Handle form submission with separate toasts for sales and receipt
   const handleAddSales = async (e) => {
     e.preventDefault();
-    if (!window.confirm("Are you sure you want to add this sale?")) return;
+    const ok = await confirm({ message: "Are you sure you want to add this sale?", title: "Confirm Sale", variant: "primary" }); if (!ok) return;
 
     setLoader(true);
     const salesToast = toast.loading("Adding sale...", { className: "dark-toast" });
@@ -523,6 +525,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
         </div>
       </Form>
       <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
+      <ConfirmDialog />
     </div>
   );
 };

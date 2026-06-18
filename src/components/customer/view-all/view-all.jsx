@@ -13,6 +13,7 @@ import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
 import { FaTrash } from "react-icons/fa6";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import { useConfirm } from '../../shared/confirm-modal';
 
 export default function ViewAll() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function ViewAll() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [loadingEdit, setLoadingEdit] = useState(false);
+  const [ConfirmDialog, confirm] = useConfirm();
 
   // Fetch all customers
   const fetchAllCustomers = async () => {
@@ -353,8 +355,8 @@ export default function ViewAll() {
                                     onClick={async (e) => {
                                       e.stopPropagation();
 
-                                      const confirmDelete = window.confirm("Are you sure you want to delete this customer?");
-                                      if (!confirmDelete) return;
+                                      const ok = await confirm({ message: "Are you sure you want to delete this customer?", title: "Confirm Delete", variant: "danger" });
+                                      if (!ok) return;
 
                                       const loadingToast = toast.loading("Deleting Customer...");
                                       try {
@@ -560,6 +562,7 @@ export default function ViewAll() {
           </Button>
         </Modal.Footer>
       </Modal>
+      <ConfirmDialog />
       <ToastContainer />
     </section>
   );

@@ -8,8 +8,10 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
+import { useConfirm } from '../../shared/confirm-modal';
 
 const DamageFish = () => {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [stages, setStages] = useState([]);
   const [fishType, setFishType] = useState('');
   const [selectedQuantity, setSelectedQuantity] = useState('');
@@ -108,8 +110,8 @@ const DamageFish = () => {
   // Handle form submission
   const handleAddFish = async (e) => {
     e.preventDefault();
-    const userConfirmed = window.confirm("Are you sure you want to Remove Damage fish?");
-    if (!userConfirmed) return;
+    const ok = await confirm({ message: "Are you sure you want to remove this damage record?", title: "Remove Damage Fish", variant: "danger" });
+    if (!ok) return;
 
     setLoader(true);
     const loadingToast = toast.loading("Removing Damaged fish...", { className: 'dark-toast' });
@@ -255,6 +257,7 @@ const DamageFish = () => {
           </main>
         </section>
       </div>
+      <ConfirmDialog />
     </section>
   );
 };

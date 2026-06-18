@@ -13,6 +13,7 @@ import { SkeletonTable, SkeletonFilterBar } from '../../shared/skeleton/Skeleton
 import { FaTrashAlt, FaUserPlus, FaFilter, FaEdit } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useConfirm } from '../../shared/confirm-modal';
 
 const avatarColors = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47'];
 
@@ -44,6 +45,7 @@ export default function ViewAll() {
   const [adminsPerPage] = useState(10);
   const [showSidebar, setShowSidebar] = useState(false);
   const [filterSite, setFilterSite] = useState('');
+  const [ConfirmDialog, confirm] = useConfirm();
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -68,27 +70,27 @@ export default function ViewAll() {
   }, []);
 
   const handleDelete = async (adminId) => {
+    const ok = await confirm({ message: "Are you sure you want to delete this Admin?", title: "Confirm Delete", variant: "danger" });
+    if (!ok) return;
     const loadingToast = toast.loading("Deleting Admin...", { className: 'dark-toast' });
-    if (window.confirm("Are you sure you want to delete this Admin?")) {
-      try {
-        await Api.delete(`/delete-admin/${adminId}`);
-        toast.update(loadingToast, {
-          render: "Admin deleted successfully!",
-          type: "success",
-          isLoading: false,
-          autoClose: 3000,
-          className: 'dark-toast'
-        });
-        fetchData();
-      } catch (error) {
-        toast.update(loadingToast, {
-          render: "Failed to delete Admin. Please try again.",
-          type: "error",
-          isLoading: false,
-          autoClose: 3000,
-          className: 'dark-toast'
-        });
-      }
+    try {
+      await Api.delete(`/delete-admin/${adminId}`);
+      toast.update(loadingToast, {
+        render: "Admin deleted successfully!",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+        className: 'dark-toast'
+      });
+      fetchData();
+    } catch (error) {
+      toast.update(loadingToast, {
+        render: "Failed to delete Admin. Please try again.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+        className: 'dark-toast'
+      });
     }
   };
 
@@ -117,7 +119,8 @@ export default function ViewAll() {
         </div>
 
         <section className={`${styles.content}`}>
-          <main>
+            <main>
+            <ConfirmDialog />
             <ToastContainer />
 
             <div className={styles.pageHeader}>

@@ -12,6 +12,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import SiteSelector from "../../shared/site-selector/SiteSelector";
+import { useConfirm } from "../../shared/confirm-modal";
 
 const ViewAllStages = () => {
   const [stages, setStages] = useState([]);
@@ -42,6 +43,7 @@ const ViewAllStages = () => {
   const [showAddSamplingModal, setShowAddSamplingModal] = useState(false);
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
 
+  const [ConfirmDialog, confirm] = useConfirm();
   const navigate = useNavigate();
   const user = useSelector((store) => store.user);
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
@@ -207,8 +209,8 @@ const ViewAllStages = () => {
   };
 
   const DeletePond = async () => {
-    const userConfirmed = window.confirm("Are you sure you want to delete this pond?");
-    if (!userConfirmed) return;
+    const ok = await confirm({ message: "Are you sure you want to delete this pond?", title: "Confirm Delete", variant: "danger" });
+    if (!ok) return;
 
     const loadingToast = toast.loading('Deleting pond...');
     try {
@@ -975,6 +977,7 @@ const ViewAllStages = () => {
         </div>
       </Modal>
 
+      <ConfirmDialog />
       <style>{`
         @keyframes pondBackdropIn {
           from { opacity: 0; }

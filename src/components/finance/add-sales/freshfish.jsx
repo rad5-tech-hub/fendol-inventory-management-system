@@ -4,6 +4,7 @@ import { Form, Row, Col, Button } from "react-bootstrap";
 import Api from "../../shared/api/apiLink";
 import styles from "../finance.module.scss";
 import ReceiptModal from "./receipt";
+import { useConfirm } from '../../shared/confirm-modal';
 
 const FreshForm = ({ customers, stages, products }) => {
   const [freshData, setFreshData] = useState({
@@ -37,6 +38,7 @@ const FreshForm = ({ customers, stages, products }) => {
   const [showPondDropdown, setShowPondDropdown] = useState(false);
   const [customerSearch, setCustomerSearch] = useState(""); // New state for customer search
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false); // Toggle customer dropdown
+  const [ConfirmDialog, confirm] = useConfirm();
 
   useEffect(() => {
     setCustomer(customers);
@@ -197,7 +199,7 @@ const FreshForm = ({ customers, stages, products }) => {
 
   const handleAddSales = async (e) => {
     e.preventDefault();
-    if (!window.confirm("Are you sure you want to add this sale?")) return;
+    const ok = await confirm({ message: "Are you sure you want to add this sale?", title: "Confirm Sale", variant: "primary" }); if (!ok) return;
 
     setLoader(true);
     const salesToast = toast.loading("Adding sale...", { className: "dark-toast" });
@@ -533,6 +535,7 @@ const FreshForm = ({ customers, stages, products }) => {
       </Form>
 
       <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
+      <ConfirmDialog />
     </div>
   );
 };

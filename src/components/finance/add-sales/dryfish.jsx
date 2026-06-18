@@ -5,6 +5,7 @@ import Api from '../../shared/api/apiLink';
 import styles from '../finance.module.scss';
 import { BsExclamationTriangleFill } from 'react-icons/bs';
 import ReceiptModal from './receipt';
+import { useConfirm } from '../../shared/confirm-modal';
 
 const SalesForm = ({ customers, stages, products }) => {
     const [dryData, setDryData] = useState({
@@ -28,7 +29,8 @@ const SalesForm = ({ customers, stages, products }) => {
     const [customer, setCustomer] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
     const [formSubmitted, setFormSubmitted] = useState(false);
-    const [balance, setBalance] = useState();    
+    const [balance, setBalance] = useState();
+    const [ConfirmDialog, confirm] = useConfirm();    
 
     useEffect(() => {
         setCustomer(customers || []);
@@ -222,7 +224,7 @@ const SalesForm = ({ customers, stages, products }) => {
     };
     const handleAddSales = async (e) => {
         e.preventDefault();
-        if (!window.confirm("Are you sure you want to add this sale?")) return;
+        const ok = await confirm({ message: "Are you sure you want to add this sale?", title: "Confirm Sale", variant: "primary" }); if (!ok) return;
     
         setLoader(true);
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
@@ -578,6 +580,7 @@ const SalesForm = ({ customers, stages, products }) => {
                 </Form>
             )}
             <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
+            <ConfirmDialog />
         </div>
     );
 };

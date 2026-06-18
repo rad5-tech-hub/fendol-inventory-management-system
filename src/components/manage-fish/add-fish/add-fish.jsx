@@ -8,9 +8,11 @@ import styles from '../product-stages.module.scss';
 import Api from '../../shared/api/apiLink';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
+import { useConfirm } from '../../shared/confirm-modal';
 
 
 const AddFish = () => {
+  const [ConfirmDialog, confirm] = useConfirm();
   const [stages, setStages] = useState([]);
   const [fishType, setFishType] = useState([]);
   const [pondSearch, setPondSearch] = useState('');
@@ -96,8 +98,8 @@ const AddFish = () => {
   const handleAddFish = async (e) => {
     e.preventDefault();
 
-    const userConfirmed = window.confirm('Are you sure you want to add this fish?');
-    if (!userConfirmed) return;
+    const ok = await confirm({ message: "Are you sure you want to add this fish?", title: "Add Fish", variant: "danger" });
+    if (!ok) return;
 
     setLoader(true);
     const loadingToast = toast.loading('Adding fish...', { className: 'dark-toast' });
@@ -242,6 +244,7 @@ const AddFish = () => {
           </main>
         </section>
       </div>
+      <ConfirmDialog />
     </section>
   );
 };

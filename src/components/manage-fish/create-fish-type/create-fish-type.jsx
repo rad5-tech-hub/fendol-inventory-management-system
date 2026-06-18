@@ -9,6 +9,7 @@ import Api from '../../shared/api/apiLink';
 import { FaTrashAlt } from "react-icons/fa";
 import styles from '../product-stages.module.scss';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import { useConfirm } from '../../shared/confirm-modal';
 
 const AddSpecies = () => {
     const [formData, setFormData] = useState({
@@ -24,6 +25,7 @@ const AddSpecies = () => {
     const [selectedStage, setSelectedStage] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+    const [ConfirmDialog, confirm] = useConfirm();
 
     // Fetching the stages
     const fetchStages = async () => {
@@ -125,27 +127,27 @@ const AddSpecies = () => {
 
     // Delete species or fish type
     const handleDelete = async (stageId) => {
+        const ok = await confirm({ message: "Are you sure you want to delete this Fish Type?", title: "Confirm Delete", variant: "danger" });
+        if (!ok) return;
         const loadingToast = toast.loading("Deleting Fish Type...", { className: 'dark-toast' });
-        if (window.confirm("Are you sure you want to delete this Fish Type?")) {
-            try {
-                await Api.delete(`/specie/${stageId}`);
-                toast.update(loadingToast, {
-                    render: "Fish Type deleted successfully!",
-                    type: "success",
-                    isLoading: false,
-                    autoClose: 3000,
-                    className: 'dark-toast'
-                });
-                fetchStages();
-            } catch (error) {
-                toast.update(loadingToast, {
-                    render: "Failed to delete Fish Type. Please try again.",
-                    type: "error",
-                    isLoading: false,
-                    autoClose: 3000,
-                    className: 'dark-toast'
-                });
-            }
+        try {
+            await Api.delete(`/specie/${stageId}`);
+            toast.update(loadingToast, {
+                render: "Fish Type deleted successfully!",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000,
+                className: 'dark-toast'
+            });
+            fetchStages();
+        } catch (error) {
+            toast.update(loadingToast, {
+                render: "Failed to delete Fish Type. Please try again.",
+                type: "error",
+                isLoading: false,
+                autoClose: 3000,
+                className: 'dark-toast'
+            });
         }
     };
 
@@ -328,6 +330,7 @@ const AddSpecies = () => {
                     </Modal>
                 </section>
             </div>
+            <ConfirmDialog />
         </section>
     );
 };

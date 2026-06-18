@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
+import { useConfirm } from '../../shared/confirm-modal';
 
 // Utility function to format numbers with commas
 const formatNumberWithCommas = (number) => {
@@ -21,6 +22,7 @@ const AddExpense = () => {
     const [unformattedPrice, setUnformattedPrice] = useState(0);
     const [loader, setLoader] = useState(false);
     const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+    const [ConfirmDialog, confirm] = useConfirm();
 
     // Handle input changes
     const handleInputChange = (e) => {
@@ -42,8 +44,7 @@ const AddExpense = () => {
     const handleAddExpense = async (e) => {
         e.preventDefault();
 
-        const isConfirmed = window.confirm("Are you sure you want to add this expense?");
-        if (!isConfirmed) return;
+        const ok = await confirm({ message: "Are you sure you want to add this expense?", title: "Confirm Expense", variant: "primary" }); if (!ok) return;
 
         setLoader(true);
         const loadingToast = toast.loading("Adding expense...", { className: 'dark-toast' });
@@ -150,6 +151,7 @@ const AddExpense = () => {
                                 </Button>
                             </div>
                         </Form>
+                        <ConfirmDialog />
                     </main>
                 </section>
             </div>
