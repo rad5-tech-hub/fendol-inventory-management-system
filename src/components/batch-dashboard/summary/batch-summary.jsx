@@ -5,6 +5,8 @@ import {
   IoArrowBackOutline,
   IoCalendarOutline,
   IoLayersOutline,
+  IoLocationOutline,
+  IoArrowUpOutline,
 } from 'react-icons/io5';
 import {
   FaSkull,
@@ -53,7 +55,6 @@ export default function BatchSummary() {
   const [batch, setBatch] = useState(null);
   const [activeTab, setActiveTab] = useState('notes');
   const [activeCardTip, setActiveCardTip] = useState(null);
-  const [showAllCards, setShowAllCards] = useState(false);
   const infoStripRef = useRef(null);
 
   useEffect(() => {
@@ -140,30 +141,105 @@ export default function BatchSummary() {
   const totalInitial = (batch.fishStocks || []).reduce((s, x) => s + (Number(x.quantity) || 0), 0);
   const totalHarvested = (batch.harvestLogs || []).reduce((s, x) => s + (Number(x.actual_quantity) || 0), 0);
   const totalDamaged = (batch.damagedFish || []).length;
-  const totalProcessed = (batch.fishProcesses || []).reduce((s, x) => s + (Number(x.wholeFishQuantity) || 0) + (Number(x.brokenFishQuantity) || 0) + (Number(x.damageOrLoss) || 0), 0);
+  const totalWholeProduced = (batch.fishProcesses || []).reduce((s, x) => s + (Number(x.wholeFishQuantity) || 0), 0);
+  const totalBrokenProduced = (batch.fishProcesses || []).reduce((s, x) => s + (Number(x.brokenFishQuantity) || 0), 0);
+  const totalDamagedProduced = (batch.fishProcesses || []).reduce((s, x) => s + (Number(x.damageOrLoss) || 0), 0);
+  const totalProcessed = totalWholeProduced + totalBrokenProduced + totalDamagedProduced;
   const currentQty = Math.max(0, totalInitial - totalHarvested - totalDamaged);
 
+  const mortalityPct = totalInitial > 0 ? ((totalDamaged / totalInitial) * 100).toFixed(2) : '0.00';
+
+  // TODO: confirm field names with backend
+  const movements = batch.movements || [];
+  const samplings = batch.samplings || [];
+  const broodstockTransfers = batch.broodstockTransfers || [];
+  const salesLogs = batch.salesLogs || [];
+
+  // Financial placeholder fields (TODO: confirm field names with backend)
+  const freshFishSales = batch.freshFishSales || 0;
+  const wholeFishSales = batch.wholeFishSales || 0;
+  const brokenFishSales = batch.brokenFishSales || 0;
+  const totalRevenue = batch.totalRevenue || 0;
+  const totalCosts = batch.totalCosts || 0;
+  const estimatedProfit = batch.estimatedProfit || 0;
+
+  // TODO: confirm field names with backend
+  const createdBy = batch.createdBy || '—';
+  const updatedBy = batch.updatedBy || '—';
+
   const infoCards = [
-    { label: 'Current Stage', value: batch.currentStage || '—', icon: IoLayersOutline, color: '#22C55E' },
-    { label: 'Date Created', value: formatShortDate(batch.createdAt), icon: IoCalendarOutline, color: '#8B5CF6' },
-    { label: 'Initial Quantity', value: `${f(totalInitial)} pcs`, icon: GiCirclingFish, color: '#F97316' },
-    { label: 'Current Quantity', value: `${f(currentQty)} pcs`, icon: IoLayersOutline, color: '#14B8A6' },
-    { label: 'Total Harvested', value: `${f(totalHarvested)} pcs`, icon: GiCannedFish, color: '#8B5CF6' },
-    { label: 'Mortality Events', value: `${f(totalDamaged)}`, icon: FaSkull, color: '#EF4444' },
-    { label: 'Comments', value: batch.comments || 'No comments', icon: FaCheckCircle, color: '#3B82F6' },
+    {
+      label: 'Current Pond',
+      value: batch.pondName || 'Pond Alpha-02',
+      subLabel: 'Main Farm',
+      tooltipText: `${batch.pondName || 'Pond Alpha-02'} — Main Farm`,
+      icon: IoLocationOutline,
+      color: '#3B82F6',
+    },
+    {
+      label: 'Fish Type',
+      value: batch.fishType || 'Tilapia',
+      subLabel: '',
+      icon: GiCirclingFish,
+      color: '#3B82F6',
+    },
+    {
+      label: 'Date Introduced',
+      value: formatShortDate(batch.createdAt),
+      subLabel: '',
+      icon: IoCalendarOutline,
+      color: '#8B5CF6',
+    },
+    {
+      label: 'Initial Quantity',
+      value: `${f(totalInitial)} pcs`,
+      subLabel: '',
+      icon: IoLayersOutline,
+      color: '#F97316',
+    },
+    {
+      label: 'Current Quantity',
+      value: `${f(currentQty)} pcs`,
+      subLabel: '',
+      icon: GiCannedFish,
+      color: '#14B8A6',
+    },
+    {
+      label: 'Mortality',
+      value: `${f(totalDamaged)} (${mortalityPct}%)`,
+      subLabel: '',
+      icon: FaSkull,
+      color: '#EF4444',
+      danger: true,
+    },
+    {
+      label: 'Current Stage',
+      value: batch.currentStage || '—',
+      subLabel: '',
+      icon: FaCheckCircle,
+      color: '#22C55E',
+    },
   ];
+
+  const totalFreshFishSold = (salesLogs).reduce((s, x) => s + (Number(x.quantity) || 0), 0); // TODO: confirm field name with backend
+  const totalBroodstockTransferred = (broodstockTransfers).reduce((s, x) => s + (Number(x.quantity) || 0), 0); // TODO: confirm field name with backend
 
   const perfData = [
     { label: 'Initial Quantity', value: `${f(totalInitial)} pcs`, icon: IoLayersOutline, color: '#F97316' },
-    { label: 'Current Quantity', value: `${f(currentQty)} pcs`, icon: IoLayersOutline, color: '#14B8A6' },
-    { label: 'Mortality Events', value: `${f(totalDamaged)}`, icon: FaSkull, color: '#EF4444', danger: true },
+    { label: 'Current Quantity', value: `${f(currentQty)} pcs`, icon: GiCannedFish, color: '#14B8A6' },
+    { label: 'Mortality', value: `${f(totalDamaged)} pcs`, icon: FaSkull, color: '#EF4444', danger: true },
+    { label: 'Fresh Fish Sold', value: `${f(totalFreshFishSold)} pcs`, icon: GiCannedFish, color: '#3B82F6' },
+    { label: 'Broodstock Transfer', value: `${f(totalBroodstockTransferred)} pcs`, icon: GiCirclingFish, color: '#8B5CF6' },
     { label: 'Total Harvested', value: `${f(totalHarvested)} pcs`, icon: GiCannedFish, color: '#14B8A6' },
-    { label: 'Fish Processed', value: `${f(totalProcessed)} pcs`, icon: GiCannedFish, color: '#22C55E' },
+    { label: 'Whole Fish Produced', value: `${f(totalWholeProduced)} pcs`, icon: GiCannedFish, color: '#22C55E' },
+    { label: 'Broken Fish Produced', value: `${f(totalBrokenProduced)} pcs`, icon: GiCannedFish, color: '#F97316' },
+    { label: 'Damaged Fish Produced', value: `${f(totalDamagedProduced)} pcs`, icon: FaSkull, color: '#EF4444' },
   ];
 
   const harvestTimeline = (batch.harvestLogs || []).map((h) => ({
     title: 'Harvest',
     date: formatDate(h.createdAt),
+    _sortDate: new Date(h.createdAt).getTime(),
     icon: FaArrowRight,
     color: '#F97316',
     detail: `Harvest from ${h.pondName || 'pond'}`,
@@ -171,9 +247,71 @@ export default function BatchSummary() {
     person: h.remarks ? `Remarks: ${h.remarks}` : '',
   }));
 
+  // TODO: confirm field name/shape with backend
+  const movementEvents = movements.map((m) => ({
+    title: 'Movement (Sorting)',
+    date: formatDate(m.createdAt),
+    _sortDate: new Date(m.createdAt).getTime(),
+    icon: GiCannedFish,
+    color: '#8B5CF6',
+    detail: m.detail || `Movement from ${m.fromPond || 'pond'} to ${m.toPond || 'pond'}`,
+    stat: m.quantity ? `${f(Number(m.quantity))} pcs` : '',
+    person: m.addedBy ? `by ${m.addedBy}` : '',
+  }));
+
+  // TODO: confirm field name/shape with backend
+  const samplingEvents = samplings.map((s) => ({
+    title: 'Sampling',
+    date: formatDate(s.createdAt),
+    _sortDate: new Date(s.createdAt).getTime(),
+    icon: GiCirclingFish,
+    color: '#F97316',
+    detail: s.detail || 'Routine sampling / weight check',
+    stat: s.avgWeight ? `${s.avgWeight} g` : '',
+    person: s.addedBy ? `by ${s.addedBy}` : '',
+  }));
+
+  const mortalityEvents = (batch.damagedFish || []).map((d) => ({
+    title: 'Mortality',
+    date: formatDate(d.createdAt),
+    _sortDate: new Date(d.createdAt).getTime(),
+    icon: FaSkull,
+    color: '#EF4444',
+    detail: d.reason || d.cause || 'Mortality event',
+    stat: d.quantity ? `${f(Number(d.quantity))} pcs` : '',
+    person: d.addedBy ? `by ${d.addedBy}` : '',
+    danger: true,
+  }));
+
+  // TODO: confirm field name/shape with backend
+  const broodstockEvents = broodstockTransfers.map((b) => ({
+    title: 'Broodstock Transfer',
+    date: formatDate(b.createdAt),
+    _sortDate: new Date(b.createdAt).getTime(),
+    icon: GiCirclingFish,
+    color: '#8B5CF6',
+    detail: b.detail || `Transfer to ${b.toHatchery || 'hatchery unit'}`,
+    stat: b.quantity ? `${f(Number(b.quantity))} pcs` : '',
+    person: b.addedBy ? `by ${b.addedBy}` : '',
+    emphasizeTitle: true,
+  }));
+
+  // TODO: confirm field name/shape with backend
+  const salesEvents = salesLogs.map((sl) => ({
+    title: 'Fresh Fish Sale',
+    date: formatDate(sl.createdAt),
+    _sortDate: new Date(sl.createdAt).getTime(),
+    icon: GiCannedFish,
+    color: '#22C55E',
+    detail: sl.detail || `Sale of fresh fish`,
+    stat: sl.quantity ? `${f(Number(sl.quantity))} pcs` : '',
+    person: sl.addedBy ? `by ${sl.addedBy}` : '',
+  }));
+
   const fishStockEvents = (batch.fishStocks || []).map((fs) => ({
-    title: 'Fish Stock',
+    title: 'Fish Added',
     date: formatDate(fs.createdAt),
+    _sortDate: new Date(fs.createdAt).getTime(),
     icon: GiCirclingFish,
     color: '#3B82F6',
     detail: `Batch #${fs.batchNumber} — Stock entry`,
@@ -181,9 +319,18 @@ export default function BatchSummary() {
     person: '',
   }));
 
-  const timelineData = [
+  const allSortedEvents = [
     ...fishStockEvents,
+    ...movementEvents,
+    ...samplingEvents,
+    ...mortalityEvents,
+    ...broodstockEvents,
+    ...salesEvents,
     ...harvestTimeline,
+  ].sort((a, b) => a._sortDate - b._sortDate);
+
+  const timelineData = [
+    ...allSortedEvents,
     {
       title: batch.endDate ? 'Completed' : 'Ongoing',
       date: batch.endDate ? formatDate(batch.endDate) : '—',
@@ -219,10 +366,11 @@ export default function BatchSummary() {
                 </span>
               </div>
               <div className={styles.summaryActions}>
-                <button className={styles.exportBtn} onClick={() => {}}>
-                  <IoArrowBackOutline size={16} /> Export Report
-                </button>
               </div>
+            </div>
+
+            <div className={styles.pageSubtitle}>
+              Complete lifecycle and performance summary of this fish batch.
             </div>
 
             <div className={styles.infoStripWrap}>
@@ -230,7 +378,8 @@ export default function BatchSummary() {
                 {infoCards.map((card, i) => (
                   <div
                     key={i}
-                    className={`${styles.infoCard} ${!showAllCards && i >= 4 ? styles.infoCardHidden : ''}`}
+                    className={styles.infoCard}
+                    style={{ borderLeft: `3px solid ${activeCardTip === i ? card.color : 'transparent'}` }}
                     onMouseEnter={() => setActiveCardTip(i)}
                     onMouseLeave={() => setActiveCardTip(null)}
                     onClick={() => setActiveCardTip(activeCardTip === i ? null : i)}
@@ -240,25 +389,15 @@ export default function BatchSummary() {
                     </div>
                     <div className={styles.infoContent}>
                       <div className={styles.infoLabel}>{card.label}</div>
-                      <div className={styles.infoValue}>{card.value}</div>
+                      <div className={`${styles.infoValue}${card.danger ? ' ' + styles.infoValueDanger : ''}`}>{card.value}</div>
+                      {card.subLabel && <div className={styles.infoSubLabel}>{card.subLabel}</div>}
                     </div>
                     <div className={`${styles.infoTooltip} ${activeCardTip === i ? styles.infoTooltipVisible : ''}`}>
-                      <span className={styles.infoTooltipText}>{card.value}</span>
+                      <span className={styles.infoTooltipText}>{card.tooltipText || card.value}</span>
                     </div>
                   </div>
                 ))}
               </div>
-              {infoCards.length > 4 && (
-                <div className={styles.showMoreDesktop}>
-                  <button
-                    className={styles.showMoreBtn}
-                    onClick={() => setShowAllCards(!showAllCards)}
-                  >
-                    {showAllCards ? 'Show less' : `Show ${infoCards.length - 4} more`}
-                    <span className={styles.showMoreArrow} style={{ transform: showAllCards ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
-                  </button>
-                </div>
-              )}
             </div>
 
             <div className={styles.threeCol}>
@@ -278,17 +417,34 @@ export default function BatchSummary() {
                             <item.icon size={12} />
                           </div>
                           <div className={styles.timelineContent}>
-                            <div className={styles.timelineTitle}>{item.title}</div>
+                            {item.emphasizeTitle ? (
+                              <div className={styles.timelineEmphasizedTitle} style={{ color: item.color }}>
+                                {item.title}
+                              </div>
+                            ) : (
+                              <div className={styles.timelineTitle}>{item.title}</div>
+                            )}
                             <div className={styles.timelineDate}>{item.date}</div>
                             <div className={styles.timelineDetail}>
                               <div>{item.detail}</div>
-                              {item.stat && <div><span className={styles.timelineStat}>{item.stat}</span></div>}
+                              {item.stat && (
+                                <div>
+                                  <span className={`${styles.timelineStat}${item.danger ? ' ' + styles.danger : ''}`}>
+                                    {item.stat}
+                                  </span>
+                                </div>
+                              )}
                               {item.person && <div className={styles.timelinePerson}>{item.person}</div>}
                             </div>
                           </div>
                         </div>
                       ))
                     )}
+                  </div>
+                  {/* View Full Timeline link */}
+                  <div className={styles.viewAllRow} onClick={() => { console.log('View Full Timeline clicked'); /* TODO: confirm navigation target */ }}>
+                    <span className={styles.viewAllRowLabel}>View Full Timeline</span>
+                    <span className={styles.viewAllRowArrow}><FaArrowRight size={12} /></span>
                   </div>
                 </div>
               </div>
@@ -311,24 +467,35 @@ export default function BatchSummary() {
                 </div>
 
                 <div className={styles.colCard}>
-                  <h5>Harvest History</h5>
+                  <h5>Processing / Harvest History</h5>
                   <div className={styles.tableWrapper}>
                     <table className={styles.table}>
                       <thead>
                         <tr>
-                          <th className="text-start">Date</th>
-                          <th className="text-start">Pond</th>
-                          <th className="text-end">Pre Qty</th>
-                          <th className="text-end">Harvested</th>
-                          <th className="text-end">Post Qty</th>
-                          <th className="text-start">Recorded By</th>
+                          <th rowSpan={2} className="text-start">Date</th>
+                          <th rowSpan={2} className="text-start">Type</th>
+                          <th rowSpan={2} className="text-end">Qty Taken</th>
+                          <th colSpan={3} className="text-center" style={{ letterSpacing: '0.04em', textTransform: 'uppercase' }}>Output (pcs)</th>
+                          <th rowSpan={2} className="text-end">Qty (pcs)</th>
+                          <th rowSpan={2} className="text-start">Recorded By</th>
+                        </tr>
+                        <tr>
+                          <th className="text-end">Whole</th>
+                          <th className="text-end">Broken</th>
+                          <th className="text-end">Damaged</th>
                         </tr>
                       </thead>
                       <tbody>
+                        {/*
+                          TODO: confirm field-to-column mapping with user.
+                          The screenshot shows rows mixing pond-to-pond sorting and broodstock transfer.
+                          The exact mapping of fields to columns is ambiguous.
+                          Currently showing harvestLogs only as a safe fallback.
+                        */}
                         {(batch.harvestLogs || []).length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="text-center py-3" style={{ color: '#8C949B', fontWeight: 600 }}>
-                              No harvest records.
+                            <td colSpan={9} className="text-center py-3" style={{ color: '#8C949B', fontWeight: 600 }}>
+                              No processing or harvest records.
                             </td>
                           </tr>
                         ) : (
@@ -337,10 +504,12 @@ export default function BatchSummary() {
                               <td style={{ fontSize: '0.82rem', color: '#8C949B' }} className="text-start">
                                 {formatShortDate(h.createdAt)}
                               </td>
-                              <td className="text-start">{h.pondName || '—'}</td>
+                              <td className="text-start">Harvest</td>
                               <td className="text-end">{f(Number(h.pre_quantity) || 0)}</td>
+                              <td className="text-end">{h.wholeFishQuantity ? f(Number(h.wholeFishQuantity)) : '—'}</td>
+                              <td className="text-end">{h.brokenFishQuantity ? f(Number(h.brokenFishQuantity)) : '—'}</td>
+                              <td className="text-end">{h.damageOrLoss ? f(Number(h.damageOrLoss)) : '—'}</td>
                               <td className="text-end">{f(Number(h.actual_quantity) || 0)}</td>
-                              <td className="text-end">{f(Number(h.post_quantity) || 0)}</td>
                               <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>
                                 {h.addedByRole || '—'}
                               </td>
@@ -350,44 +519,65 @@ export default function BatchSummary() {
                       </tbody>
                     </table>
                   </div>
+                  {/* View All Movements link */}
+                  <div className={styles.viewAllRow} onClick={() => { console.log('View All Movements clicked'); /* TODO: confirm navigation target */ }}>
+                    <span className={styles.viewAllRowLabel}>View All Movements</span>
+                    <span className={styles.viewAllRowArrow}><FaArrowRight size={12} /></span>
+                  </div>
                 </div>
               </div>
 
-              {/* Right: Audit Info */}
+              {/* Right: Financial Summary + Batch Info + Audit Info */}
               <div>
+                {/* NEW: Financial Summary card — placed above Batch Information; confirm placement with user */}
                 <div className={styles.colCard}>
-                  <h5>Batch Information</h5>
-                  <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>Batch Number</div>
-                    <div className={styles.auditValue}>FDL-BT-{String(batch.batchNumber).padStart(4, '0')}</div>
+                  <h5>Financial Summary</h5>
+                  {/* TODO: confirm field names with backend */}
+                  <div className={styles.financialRow}>
+                    <span className={styles.finLabel}>Fresh Fish Sales</span>
+                    <span className={styles.finValue}>₦{f(freshFishSales)}</span>
                   </div>
-                  <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>Current Stage</div>
-                    <div className={styles.auditValue}>{batch.currentStage || '—'}</div>
+                  <div className={styles.financialRow}>
+                    <span className={styles.finLabel}>Whole Fish Sales</span>
+                    <span className={styles.finValue}>₦{f(wholeFishSales)}</span>
                   </div>
-                  <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>Status</div>
-                    <div className={styles.auditValue}>{isCompleted ? 'Completed' : 'Active'}</div>
+                  <div className={styles.financialRow}>
+                    <span className={styles.finLabel}>Broken Fish Sales</span>
+                    <span className={styles.finValue}>₦{f(brokenFishSales)}</span>
                   </div>
-                  <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>Comments</div>
-                    <div className={styles.auditValue}>{batch.comments || '—'}</div>
+                  <div className={styles.finDivider} />
+                  <div className={`${styles.financialRow} ${styles.finTotal}`}>
+                    <span className={styles.finLabel}>Total Revenue</span>
+                    <span className={styles.finValue} style={{ color: '#22C55E' }}>₦{f(totalRevenue)}</span>
                   </div>
-                  <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>Start Date</div>
-                    <div className={styles.auditValue}>{batch.startDate || '—'}</div>
+                  <div className={`${styles.financialRow} ${styles.finTotal}`}>
+                    <span className={styles.finLabel}>Total Costs</span>
+                    <span className={styles.finValue} style={{ color: '#EF4444' }}>₦{f(totalCosts)}</span>
                   </div>
-                  <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>End Date</div>
-                    <div className={styles.auditValue}>{batch.endDate || '—'}</div>
+                  <div className={styles.finCallout}>
+                    <span className={styles.finCalloutLabel}>
+                      <IoArrowUpOutline size={14} /> Estimated Profit
+                    </span>
+                    <span className={styles.finCalloutValue}>₦{f(estimatedProfit)}</span>
                   </div>
                 </div>
 
+                {/* Batch Information was removed per user request — Financial Summary above replaces it */}
+
+                {/* MODIFIED: Audit Information — split Created At into Created By / Date Created */}
                 <div className={styles.colCard}>
                   <h5>Audit Information</h5>
                   <div className={styles.auditRow}>
-                    <div className={styles.auditLabel}>Created At</div>
+                    <div className={styles.auditLabel}>Created By</div>
+                    <div className={styles.auditValue}>{createdBy}</div>
+                  </div>
+                  <div className={styles.auditRow}>
+                    <div className={styles.auditLabel}>Date Created</div>
                     <div className={styles.auditValue}>{formatDate(batch.createdAt)}</div>
+                  </div>
+                  <div className={styles.auditRow}>
+                    <div className={styles.auditLabel}>Last Updated By</div>
+                    <div className={styles.auditValue}>{updatedBy}</div>
                   </div>
                   <div className={styles.auditRow}>
                     <div className={styles.auditLabel}>Last Updated</div>

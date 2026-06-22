@@ -635,17 +635,17 @@
 
 .infoStrip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
 
-  @media (max-width: 991px) {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
   }
 
   @media (max-width: 767px) {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 8px;
   }
 
   @media (max-width: 400px) {
@@ -653,64 +653,19 @@
   }
 }
 
-.infoCardHidden {
-  @media (min-width: 992px) {
-    display: none;
-  }
-}
-
-.showMoreDesktop {
-  display: flex;
-  justify-content: center;
-  margin-top: 14px;
-
-  @media (max-width: 991px) {
-    display: none;
-  }
-}
-
-.showMoreBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 24px;
-  border: 1px solid #E5E7EB;
-  border-radius: 8px;
-  background: #fff;
-  color: #512728;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-
-  &:hover {
-    background: #F9FAFB;
-    border-color: #D1D5DB;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  }
-}
-
-.showMoreArrow {
-  display: inline-block;
-  font-size: 0.7rem;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  line-height: 1;
-}
-
 .infoCard {
   background: #fff;
   border: 1px solid #E5E7EB;
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
   position: relative;
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
     transform: translateY(-1px);
@@ -718,22 +673,22 @@
   }
 
   .infoIcon {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
     .infoCard:hover & {
-      transform: scale(1.06);
+      transform: scale(1.08);
     }
 
     @media (max-width: 576px) {
-      width: 30px;
-      height: 30px;
+      width: 28px;
+      height: 28px;
     }
   }
 
@@ -742,23 +697,23 @@
     overflow: hidden;
 
     .infoLabel {
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       color: #8C949B;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
 
       @media (max-width: 576px) {
-        font-size: 0.62rem;
+        font-size: 0.58rem;
       }
     }
 
     .infoValue {
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #2E3135;
       white-space: nowrap;
@@ -766,8 +721,23 @@
       text-overflow: ellipsis;
 
       @media (max-width: 576px) {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
       }
+    }
+  }
+
+  @media (max-width: 1200px) {
+    padding: 12px 14px;
+    gap: 10px;
+
+    .infoIcon {
+      width: 34px;
+      height: 34px;
+    }
+
+    .infoContent {
+      .infoLabel { font-size: 0.65rem; }
+      .infoValue { font-size: 0.85rem; }
     }
   }
 
@@ -1005,18 +975,18 @@
 /* Performance grid */
 .perfGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-bottom: 20px;
   overflow-x: auto;
   @include hide-scrollbar;
 
   @media (max-width: 1200px) {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
 
-  @media (max-width: 576px) {
+  @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
   }
@@ -1321,5 +1291,165 @@
     font-size: 1.1rem;
     font-weight: 700;
     color: #2E3135;
+  }
+}
+
+/* ── Page Subtitle ── */
+.pageSubtitle {
+  font-size: 0.85rem;
+  color: #8C949B;
+  font-weight: 400;
+  margin-top: 4px;
+  margin-bottom: 16px;
+}
+
+/* ── More Actions Button ── */
+.moreActionsBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  background: #fff;
+  color: #2E3135;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+
+  &:hover {
+    background: #F9FAFB;
+  }
+
+  @media (max-width: 576px) {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.moreActionsChevron {
+  display: inline-block;
+  font-size: 0.65rem;
+  margin-left: auto;
+  line-height: 1;
+}
+
+.actionsMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  min-width: 190px;
+  z-index: 40;
+  padding: 6px 0;
+}
+
+.actionsMenuItem {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: #2E3135;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #F9FAFB;
+  }
+
+  &.actionsMenuItemDanger {
+    color: #dc3545;
+  }
+}
+
+/* ── Info card enhancements ── */
+.infoSubLabel {
+  font-size: 0.65rem;
+  color: #8C949B;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.infoValueDanger {
+  color: #dc3545 !important;
+}
+
+/* ── Timeline emphasized title (colored + bold) ── */
+.timelineEmphasizedTitle {
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+/* ── View All link row (full-width footer inside card) ── */
+.viewAllRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 14px;
+  margin-top: 16px;
+  margin-bottom: -8px;
+  background: #F9FAFB;
+  border-radius: 0 0 8px 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #F3F4F6;
+  }
+
+  .viewAllRowLabel {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #512728;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .viewAllRowArrow {
+    color: #512728;
+    font-size: 0.78rem;
+  }
+}
+
+/* ── Profit Callout Box ── */
+.finCallout {
+  background: #FEF3E2;
+  border: 1px solid #FDE68A;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  .finCalloutLabel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #92400E;
+  }
+
+  .finCalloutValue {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #92400E;
   }
 }
