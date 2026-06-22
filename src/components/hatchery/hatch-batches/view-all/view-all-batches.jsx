@@ -241,7 +241,7 @@ export default function ViewAllBatches() {
                 </div>
               </div>
 
-            <div className={styles.statGrid}>
+            <div className={styles.statGridFill}>
               {statCards.map((card, i) => (
                 <div key={i} className={styles.statCard}>
                   <div className={styles.statHeader}>

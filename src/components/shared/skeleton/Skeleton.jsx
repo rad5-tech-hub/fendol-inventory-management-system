@@ -44,7 +44,7 @@ export function SkeletonTable({ rows = 5, cols = 6 }) {
 
 export function SkeletonStatGrid({ count = 4 }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(count, 4)}, 1fr)`, gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(count, 6)}, 1fr)`, gap: 16 }}>
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 8, padding: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>

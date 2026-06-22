@@ -5,8 +5,9 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer,
 } from 'recharts';
 import { GiCirclingFish, GiEggClutch } from 'react-icons/gi';
-import { FaChartLine, FaExchangeAlt } from 'react-icons/fa';
-import { IoArrowBackOutline, IoPrintOutline } from 'react-icons/io5';
+import { FaChartLine, FaExchangeAlt, FaHeartbeat, FaChevronDown, FaChevronUp, FaSkull } from 'react-icons/fa';
+import { BsGenderFemale, BsGenderMale } from 'react-icons/bs';
+import { IoArrowBackOutline, IoPrintOutline, IoPencilOutline } from 'react-icons/io5';
 import SideBar from '../../../shared/sidebar/sidebar';
 import Header from '../../../shared/header/header';
 import Api, { ApiV2 } from '../../../shared/api/apiLink';
@@ -18,7 +19,24 @@ const FALLBACK_INFO_CARDS = [
   { label: 'Eggs Produced', value: f(120000), sub: '1.20 kg', icon: GiEggClutch, color: '#8B5CF6' },
   { label: 'Hatchability Rate', value: '75.4%', sub: '90,480 hatched', icon: FaChartLine, color: '#22C55E' },
   { label: 'Fry Produced', value: f(87360), sub: 'Estimated', icon: GiCirclingFish, color: '#F97316' },
+  { label: 'Survival Rate', value: '89.2%', sub: 'After 7 Days', icon: FaHeartbeat, color: '#F43F5E' },
+  { label: 'Total Mortality', value: f(10720), sub: '11.8%', icon: FaSkull, color: '#dc3545' },
   { label: 'Transferred to Nursery', value: f(66500), sub: 'Last: May 24, 2025', icon: FaExchangeAlt, color: '#3B82F6' },
+];
+
+const FALLBACK_FEMALE_BROODSTOCK = [
+  { tag: 'F-001', avgWeight: 3.20, role: 'Primary' },
+  { tag: 'F-002', avgWeight: 3.10, role: 'Primary' },
+  { tag: 'F-003', avgWeight: 3.00, role: 'Secondary' },
+];
+
+const FALLBACK_MALE_BROODSTOCK = [
+  { tag: 'M-001', avgWeight: 2.70, role: 'Primary' },
+  { tag: 'M-002', avgWeight: 2.60, role: 'Primary' },
+  { tag: 'M-003', avgWeight: 2.50, role: 'Secondary' },
+  { tag: 'M-004', avgWeight: 2.70, role: 'Secondary' },
+  { tag: 'M-005', avgWeight: 2.60, role: 'Secondary' },
+  { tag: 'M-006', avgWeight: 2.55, role: 'Secondary' },
 ];
 
 const FALLBACK_TIMELINE = [
@@ -73,6 +91,7 @@ export default function HatchBatchSummary() {
   const [error, setError] = useState('');
   const [batchData, setBatchData] = useState(null);
   const [sites, setSites] = useState([]);
+  const [showAllMales, setShowAllMales] = useState(false);
 
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferStep, setTransferStep] = useState('form');
@@ -165,6 +184,15 @@ export default function HatchBatchSummary() {
         if (i === 0) {
           updated.sub = `${batchData.weightOfEgg} kg`;
         }
+        if (i === 3) {
+          updated.value = `${batchData.survivalRate || 89.2}%`;
+          updated.sub = batchData.survivalRateSub || 'After 7 Days';
+        }
+        // TODO: confirm calculation/source with backend
+        if (i === 4) {
+          updated.value = f(batchData.totalMortality || 10720);
+          updated.sub = `${batchData.totalMortalityPercentage || 11.8}%`;
+        }
         return updated;
       })
     : FALLBACK_INFO_CARDS;
@@ -199,6 +227,11 @@ export default function HatchBatchSummary() {
   const avgFemaleWeight = batchData ? Number(batchData.avgWeightOfFemale).toFixed(2) : '3.10';
   const avgMaleWeight = batchData ? Number(batchData.avgWeightOfMaleBroodstock).toFixed(2) : '2.63';
 
+  const femaleBroodstock = batchData?.femaleBroodstock || FALLBACK_FEMALE_BROODSTOCK;
+  const maleBroodstock = batchData?.maleBroodstock || FALLBACK_MALE_BROODSTOCK;
+  const visibleMales = showAllMales ? maleBroodstock : maleBroodstock.slice(0, 3);
+  const extraMalesCount = Math.max(0, maleBroodstock.length - 3);
+
   const transferRows = (batchData?.events || [])
     .filter(ev => ev.action === 'transferred')
     .map(ev => ({
@@ -206,6 +239,7 @@ export default function HatchBatchSummary() {
       dest: ev.details || 'Nursery Pond',
       qty: Number(ev.quantity) || 0,
       size: ev.size || '—',
+      transferredBy: ev.transferredBy || ev.by || 'John Doe',
     }));
   const totalTransferred = transferRows.reduce((s, r) => s + r.qty, 0);
   const pondTitle = ponds.find(p => p.id === selectedPondId)?.title || selectedPondId;
@@ -235,8 +269,8 @@ export default function HatchBatchSummary() {
                 <StatusBadge status={batchData ? batchData.status : 'Completed'} />
               </div>
               <div className={styles.summaryActions}>
-                <button className={styles.outlineBtn} onClick={() => navigate('/hatchery/hatch-batches/create', { state: { batch: batchData } })}>Edit Batch</button>
-                <button className={styles.outlineBtn} onClick={openTransferModal}>Transfer to Nursery</button>
+                <button className={styles.outlineBtn} onClick={() => navigate('/hatchery/hatch-batches/create', { state: { batch: batchData } })}><IoPencilOutline size={16} /> Edit Batch</button>
+                <button className={styles.outlineBtn} onClick={openTransferModal}><FaExchangeAlt size={14} /> Transfer to Nursery</button>
                 <button className={styles.primaryBtn} onClick={() => {}}>
                   <IoPrintOutline size={16} /> Print Summary
                 </button>
@@ -253,6 +287,7 @@ export default function HatchBatchSummary() {
               </div>
             ) : (
               <>
+                <div className={styles.summarySubtitle}>Detailed overview of the hatch batch from spawning to fry production.</div>
             <div className={styles.infoStrip}>
               {infoCards.map((card, i) => (
                 <div key={i} className={styles.infoCard}>
@@ -281,6 +316,10 @@ export default function HatchBatchSummary() {
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Site</span>
                     <span className={styles.detailValue}>{siteName}</span>
+                  </div>
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Tank / Incubator</span>
+                    <span className={styles.detailValue}>{batchData ? (batchData.tankNumber || batchData.incubatorTank) : 'Incubator Tank - 03'}</span>
                   </div>
                   <div className={styles.detailDivider} />
                   <div className={styles.detailRow}>
@@ -357,6 +396,14 @@ export default function HatchBatchSummary() {
                     <span className={styles.detailLabel}>Final Fry Count (7 Days)</span>
                     <span className={styles.detailValue}>{f(77920)}</span>
                   </div>
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Total Mortality</span>
+                    <span className={`${styles.detailValue} ${styles.dangerValue}`}>{batchData ? f(batchData.totalMortality || 10720) : f(10720)}</span>
+                  </div>
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Survival Rate (%)</span>
+                    <span className={`${styles.detailValue} ${styles.successValue}`}>{batchData ? `${batchData.survivalRate || 89.2}%` : '89.2%'}</span>
+                  </div>
                 </div>
               </div>
 
@@ -367,14 +414,62 @@ export default function HatchBatchSummary() {
                   <h5>Broodstock Used</h5>
                   <div className={styles.broodstockGrid}>
                     <div>
-                      <div className={styles.broodstockSubtitle}>Female Broodstock ({femaleCount})</div>
+                      <div className={styles.broodstockTagFemale}>
+                        <BsGenderFemale size={14} /> Female Broodstock ({femaleCount})
+                      </div>
+                      <table className={styles.broodstockTable}>
+                        <thead>
+                          <tr>
+                            <th>ID / Tag No.</th>
+                            <th>Avg. Weight (kg)</th>
+                            <th>Role</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {femaleBroodstock.map((b, i) => (
+                            <tr key={i}>
+                              <td className={styles.broodstockTagId}>{b.tag}</td>
+                              <td>{b.avgWeight.toFixed(2)}</td>
+                              <td style={{ color: '#8C949B' }}>{b.role}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                       <div className={styles.broodstockTotal}>
                         <span className={styles.totalItem}>Total Females: <strong>{femaleCount}</strong></span>
                         <span className={styles.totalItem}>Avg Weight: <strong>{avgFemaleWeight} kg</strong></span>
                       </div>
                     </div>
                     <div>
-                      <div className={styles.broodstockSubtitle}>Male Broodstock ({maleCount})</div>
+                      <div className={styles.broodstockTagMale}>
+                        <BsGenderMale size={14} /> Male Broodstock ({maleCount})
+                      </div>
+                      <table className={styles.broodstockTable}>
+                        <thead>
+                          <tr>
+                            <th>ID / Tag No.</th>
+                            <th>Avg. Weight (kg)</th>
+                            <th>Role</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {visibleMales.map((b, i) => (
+                            <tr key={i}>
+                              <td className={styles.broodstockTagId}>{b.tag}</td>
+                              <td>{b.avgWeight.toFixed(2)}</td>
+                              <td style={{ color: '#8C949B' }}>{b.role}</td>
+                            </tr>
+                          ))}
+                          {extraMalesCount > 0 && (
+                            <tr className={styles.expandRow} onClick={() => setShowAllMales(!showAllMales)}>
+                              <td colSpan={3}>
+                                {showAllMales ? 'Show less' : `+ ${extraMalesCount} more males`}
+                                {showAllMales ? <FaChevronUp className={styles.expandIcon} /> : <FaChevronDown className={styles.expandIcon} />}
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                       <div className={styles.broodstockTotal}>
                         <span className={styles.totalItem}>Total Males: <strong>{maleCount}</strong></span>
                         <span className={styles.totalItem}>Avg Weight: <strong>{avgMaleWeight} kg</strong></span>
@@ -428,6 +523,7 @@ export default function HatchBatchSummary() {
                               <th>Destination</th>
                               <th>Qty</th>
                               <th>Avg Size</th>
+                              <th>Transferred By</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -437,6 +533,7 @@ export default function HatchBatchSummary() {
                                 <td>{r.dest}</td>
                                 <td>{f(r.qty)}</td>
                                 <td>{r.size}</td>
+                                <td>{r.transferredBy}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -454,10 +551,25 @@ export default function HatchBatchSummary() {
               </div>
             </div>
 
-            {/* Remarks / Notes */}
-            <div className={styles.notesCard}>
-              <h5>Remarks / Notes</h5>
-              <p>{batchData ? (batchData.comments || 'No remarks.') : 'Water temperature maintained between 27\u00B0C \u2013 29\u00B0C throughout incubation. Good water quality and aeration resulted in high hatchability.'}</p>
+            {/* Bottom two-column: Remarks + Audit */}
+            <div className={styles.summaryBottomGrid}>
+              <div className={styles.notesCard}>
+                <h5>Remarks / Notes</h5>
+                <p>{batchData ? (batchData.comments || 'No remarks.') : 'Water temperature maintained between 27\u00B0C \u2013 29\u00B0C throughout incubation. Good water quality and aeration resulted in high hatchability.'}</p>
+              </div>
+              <div className={styles.colCard} style={{ marginBottom: 0 }}>
+                <h5>Audit Information</h5>
+                <div className={styles.auditRow}>
+                  <span className={styles.auditLabel}>Created By</span>
+                  <span className={styles.auditName}>{batchData?.createdBy || 'John Doe'}</span>
+                  <span className={styles.auditDate}>{batchData ? formatDateTime(batchData.createdAt) : 'May 25, 2025 08:45 AM'}</span>
+                </div>
+                <div className={styles.auditRow}>
+                  <span className={styles.auditLabel}>Last Updated By</span>
+                  <span className={styles.auditName}>{batchData?.updatedBy || 'John Doe'}</span>
+                  <span className={styles.auditDate}>{batchData ? formatDateTime(batchData.updatedAt) : 'May 28, 2025 02:35 PM'}</span>
+                </div>
+              </div>
             </div>
               </>
             )}
