@@ -8,6 +8,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import SiteSelector from "../../shared/site-selector/SiteSelector";
 
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
@@ -85,8 +86,8 @@ export default function CreateProducts() {
                 unit: formData.unit,
                 basePrice: parseFloat(removeCommas(formData.basePrice)) || 0,
                 showOnwebsite: formData.showOnwebsite,
+                siteId: formData.siteId,
             };
-            if (formData.siteId) formDataToSubmit.siteId = formData.siteId;
 
             const response = await ApiV2.post('/api/v1/product', formDataToSubmit);
 
@@ -102,7 +103,7 @@ export default function CreateProducts() {
 
             // After a successful API call
             toast.update(loadingToast, {
-                render: "Created Product successfully!",
+                render: response.data?.response_message || "Product created successfully",
                 type: "success",
                 isLoading: false,
                 autoClose: 3000,
@@ -196,13 +197,7 @@ export default function CreateProducts() {
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Assign to Site</Form.Label>
                                     {isSuperAdmin ? (
-                                        <Form.Control
-                                            placeholder="Enter site ID"
-                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                            type="text"
-                                            value={formData.siteId}
-                                            onChange={(e) => setFormData({ ...formData, siteId: e.target.value })}
-                                        />
+                                        <SiteSelector value={formData.siteId} onChange={(id) => setFormData({ ...formData, siteId: id || '' })} />
                                     ) : (
                                         <Form.Control
                                             value={profileSiteId}
