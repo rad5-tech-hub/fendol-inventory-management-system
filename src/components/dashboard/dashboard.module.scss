@@ -740,6 +740,141 @@
 }
 .viewAllLogs:hover { text-decoration: underline; }
 
+/* ── Top Performing Products ── */
+.topProductsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.topProductsControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.filterDropdownBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+.filterDropdownBtn:hover {
+  background: #F3F4F6;
+  border-color: #D1D5DB;
+}
+.filterChevron {
+  font-size: 0.65rem;
+  color: #9CA3AF;
+  line-height: 1;
+}
+
+/* Table wrapper — horizontal scroll on small viewports */
+.topProductsTable {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.topProductsTable table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+  font-size: 0.82rem;
+}
+.topProductsTable thead th {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #F0F0F0;
+  white-space: nowrap;
+}
+.topProductsTable thead th:nth-child(3),
+.topProductsTable thead th:nth-child(4),
+.topProductsTable thead th:nth-child(5),
+.topProductsTable thead th:nth-child(6) {
+  text-align: right;
+}
+.topProductsTable thead th:nth-child(8) {
+  text-align: right;
+}
+.topProductsTable tbody td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #F3F4F6;
+  white-space: nowrap;
+  vertical-align: middle;
+  color: #1F2937;
+  font-size: 0.82rem;
+}
+.topProductsTable tbody tr:last-child td {
+  border-bottom: none;
+}
+.topProductsTable tbody tr {
+  transition: background-color 0.15s ease;
+}
+.topProductsTable tbody tr:hover {
+  background-color: #FAFAFA;
+}
+
+/* Product cell with icon */
+.productCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.productIconBadge {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.productIconBadge svg {
+  font-size: 15px;
+}
+.productName {
+  font-weight: 500;
+  color: #1F2937;
+  font-size: 0.82rem;
+}
+
+/* Right-aligned cells */
+.cellRight {
+  text-align: right;
+}
+
+/* Pill badges (category & status) */
+.categoryPill,
+.statusPill {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* Trend icon container */
+.trendIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+
 @keyframes skeletonShimmer {
   0% { background-position: -200px 0; }
   100% { background-position: calc(200px + 100%) 0; }

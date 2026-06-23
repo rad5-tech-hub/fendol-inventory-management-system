@@ -6,6 +6,7 @@ import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
 import { useSelector } from 'react-redux';
 import { SkeletonStatGrid, SkeletonFilterBar } from '../shared/skeleton/Skeleton';
+import { GiCirclingFish } from 'react-icons/gi';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -48,6 +49,8 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [siteId, setSiteId] = useState(null);
   const [activeTooltip, setActiveTooltip] = useState(null);
+  const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
+  const [dateFilterOpen, setDateFilterOpen] = useState(false);
   const [salesDateRange, setSalesDateRange] = useState('1M');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
@@ -452,6 +455,40 @@ const Dashboard = () => {
     };
   };
 
+  const CATEGORY_COLORS = {
+    'Fish (Live)': { bg: '#F3E8FF', text: '#7C3AED' },
+    'Processed Fish': { bg: '#FEE2E2', text: '#DC2626' },
+    'Fingerlings': { bg: '#D1FAE5', text: '#047857' },
+    'Feeds': { bg: '#DBEAFE', text: '#1D4ED8' },
+  };
+  const STATUS_COLORS = {
+    'In Stock': { bg: '#D1FAE5', text: '#15803D' },
+    'Low Stock': { bg: '#FEF3C7', text: '#B45309' },
+    'Out of Stock': { bg: '#FEE2E2', text: '#DC2626' },
+  };
+
+  const getCategoryStyle = (category) => {
+    const c = CATEGORY_COLORS[category];
+    return c || { bg: '#F3F4F6', text: '#374151' };
+  };
+  const getStatusStyle = (status) => {
+    const c = STATUS_COLORS[status];
+    return c || { bg: '#F3F4F6', text: '#374151' };
+  };
+
+  const TrendUpIcon = () => (
+    <svg width="44" height="18" viewBox="0 0 44 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline
+        points="2,14 10,10 18,13 26,6 34,9 42,2"
+        stroke="#16A34A"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
@@ -645,25 +682,119 @@ const Dashboard = () => {
               </Row>
 
               <Row className="g-4 mb-4">
-                <Col lg={6} md={12} sm={12} xs={12}>
+                {/* REPLACED: Top Selling Products → Top Performing Products table */}
+                <Col lg={12} md={12} sm={12} xs={12}>
                   <div className={styles.sectionCard}>
-                    <h6 className={styles.sectionTitle}>Top Selling Products</h6>
-                    <div className={styles.productList}>
-                      {(dashboardData?.topProducts || []).length === 0 && (
+                    <div className={styles.topProductsHeader}>
+                      <h6 className={styles.sectionTitle}>Top Performing Products</h6>
+                      <div className={styles.topProductsControls}>
+                        <button
+                          className={styles.filterDropdownBtn}
+                          onClick={() => setCategoryFilterOpen(!categoryFilterOpen)}
+                        >
+                          All Categories <span className={styles.filterChevron}>▾</span>
+                        </button>
+                        <button
+                          className={styles.filterDropdownBtn}
+                          onClick={() => setDateFilterOpen(!dateFilterOpen)}
+                        >
+                          This Month <span className={styles.filterChevron}>▾</span>
+                        </button>
+                      </div>
+                    </div>
+                    {/* TODO: wire to real category/date filter logic once backend supports it */}
+                    <div className={styles.topProductsTable}>
+                      {(dashboardData?.topProducts || []).length === 0 ? (
                         <p className={styles.emptyText}>No product data available.</p>
+                      ) : (
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Product</th>
+                              <th>Category</th>
+                              <th>Total Qty Sold</th>
+                              <th>Sales (₦)</th>
+                              <th>Stock Qty</th>
+                              <th>Stock Value (₦)</th>
+                              <th>Status</th>
+                              <th>Trend</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(dashboardData?.topProducts || []).map((item, idx) => {
+                              // TODO: confirm field name/shape with backend
+                              const category = item.category || 'Uncategorized';
+                              const totalQtySold = item.totalQtySold ?? 0;
+                              const stockQty = item.stockQty ?? 0;
+                              const stockValue = item.stockValue ?? 0;
+                              const status = item.status || 'In Stock';
+                              const catStyle = getCategoryStyle(category);
+                              const stsStyle = getStatusStyle(status);
+                              return (
+                                <tr key={item.id || idx}>
+                                  <td>
+                                    <div className={styles.productCell}>
+                                      <div
+                                        className={styles.productIconBadge}
+                                        style={{ background: '#E0F2FE' }}
+                                      >
+                                        <GiCirclingFish style={{ color: '#0EA5E9', fontSize: '15px' }} />
+                                      </div>
+                                      <span className={styles.productName}>{item.productName}</span>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <span
+                                      className={styles.categoryPill}
+                                      style={{ background: catStyle.bg, color: catStyle.text }}
+                                    >
+                                      {category}
+                                    </span>
+                                  </td>
+                                  <td className={styles.cellRight}>
+                                    {totalQtySold.toLocaleString()}
+                                  </td>
+                                  <td className={styles.cellRight}>
+                                    ₦{(item.totalRevenue ?? 0).toLocaleString()}
+                                  </td>
+                                  <td className={styles.cellRight}>
+                                    {stockQty.toLocaleString()}
+                                  </td>
+                                  <td className={styles.cellRight}>
+                                    ₦{stockValue.toLocaleString()}
+                                  </td>
+                                  <td>
+                                    <span
+                                      className={styles.statusPill}
+                                      style={{ background: stsStyle.bg, color: stsStyle.text }}
+                                    >
+                                      {status}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    {/* TODO: wire real per-product trend/sparkline data once backend provides historical sales-by-day for each product */}
+                                    <div className={styles.trendIcon}>
+                                      <TrendUpIcon />
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       )}
-                      {(dashboardData?.topProducts || []).map((item, idx) => (
-                        <div key={idx} className={styles.productListRow}>
-                          <span className={styles.productListName}>{item.productName}</span>
-                          <span className={styles.productListRevenue}>
-                            ₦ {item.totalRevenue?.toLocaleString?.() ?? item.totalRevenue}
-                          </span>
-                        </div>
-                      ))}
+                    </div>
+                    <div
+                      className={styles.viewAllLogs}
+                      onClick={() => console.log('Navigate to /products/view-all')}
+                    >
+                      View all products →
                     </div>
                   </div>
                 </Col>
-                <Col lg={6} md={12} sm={12} xs={12}>
+              </Row>
+              <Row className="g-4 mb-4">
+                <Col lg={12} md={12} sm={12} xs={12}>
                   <div className={styles.sectionCard}>
                     <h6 className={styles.sectionTitle}>Major Sites Summary</h6>
                     <Row className="g-3">

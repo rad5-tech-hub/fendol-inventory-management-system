@@ -32,7 +32,7 @@ const ProductTable = ({ rows, avatarColors }) => (
     <thead>
       <tr>
         <th>Product Name</th>
-        <th>Site</th>
+        <th>Category</th>
         <th>Created By</th>
         <th>Date Created</th>
       </tr>
@@ -41,7 +41,7 @@ const ProductTable = ({ rows, avatarColors }) => (
       {rows.map((product, idx) => (
         <tr key={product.id}>
           <td className={styles.productNameCell}>{product.productName}</td>
-          <td>{product.site?.name || '—'}</td>
+          <td>{product.category?.name || '—'}</td>
           <td>
             {product.creator?.fullName ? (
               <div className={styles.createdByCell}>
@@ -83,16 +83,18 @@ export default function ViewAllProducts() {
   const itemsPerPage = 10;
   const [showSidebar, setShowSidebar] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [viewMode, setViewMode] = useState('by-site');
-  const [selectedSite, setSelectedSite] = useState(null);
+  const [viewMode, setViewMode] = useState('all');
   const [collapsedSites, setCollapsedSites] = useState(new Set());
+  const [siteTypes, setSiteTypes] = useState([]);
+  const [selectedSiteTypeFilter, setSelectedSiteTypeFilter] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await ApiV2.get('/api/v1/products');
-        setProducts(response.data.data);
+        const data = response.data.data;
+        setProducts(data);
       } catch (err) {
         setError('Failed to fetch data. Please try again.');
       } finally {
@@ -103,20 +105,51 @@ export default function ViewAllProducts() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const fetchSiteTypes = async () => {
+      try {
+        const res = await ApiV2.get('/v2/site-types');
+        if (res.data?.data) {
+          setSiteTypes(res.data.data);
+        }
+      } catch {
+        // silently fail
+      }
+    };
+    fetchSiteTypes();
+  }, []);
+
   const userTypes = useSelector((state) => state.user?.userTypes || []);
 
   const canAssignSite = hasPermission(userTypes, 'products', 'assign-site');
 
-  const groupedBySite = canAssignSite && viewMode === 'by-site'
-    ? products.reduce((acc, product) => {
-      const siteName = product.site?.name || 'Unassigned';
-      if (!acc[siteName]) acc[siteName] = [];
-      acc[siteName].push(product);
-      return acc;
-    }, {})
+  const siteTypeMap = Object.fromEntries(siteTypes.map(st => [st.id, st.name]));
+
+  const resolveSiteTypeName = (product) => siteTypeMap[product.siteType] || 'Unassigned';
+
+  const productsForSiteType = canAssignSite && viewMode === 'by-site-type' && selectedSiteTypeFilter
+    ? products.filter(p => resolveSiteTypeName(p) === selectedSiteTypeFilter)
+    : products;
+
+  const groupedBySiteType = canAssignSite && viewMode === 'by-site-type'
+    ? (selectedSiteTypeFilter
+        ? { [selectedSiteTypeFilter]: productsForSiteType }
+        : products.reduce((acc, product) => {
+            const name = resolveSiteTypeName(product);
+            if (!acc[name]) acc[name] = [];
+            acc[name].push(product);
+            return acc;
+          }, {}))
     : {};
 
-  const siteNames = Object.keys(groupedBySite).sort();
+  const siteTypeNames = Object.keys(groupedBySiteType).sort();
+
+  useEffect(() => {
+    if (viewMode === 'by-site-type') {
+      const names = new Set(products.map(p => resolveSiteTypeName(p)));
+      setCollapsedSites(names);
+    }
+  }, [viewMode, products, siteTypes]);
 
   const handleEditClick = (product) => {
     setSelectedProduct(product);
@@ -247,9 +280,9 @@ export default function ViewAllProducts() {
               {canAssignSite && (
                 <button
                   className={styles.assignBtn}
-                  onClick={() => navigate('/products/create')}
+                  onClick={() => navigate('/products/create-products')}
                 >
-                  <BsPlusLg /> Assign Product
+                  <BsPlusLg /> Create Products
                 </button>
               )}
             </div>
@@ -264,11 +297,27 @@ export default function ViewAllProducts() {
                   All Products
                 </button>
                 <button
-                  className={viewMode === 'by-site' ? styles.filterBtnActive : styles.filterBtnOutline}
-                  onClick={() => setViewMode('by-site')}
+                  className={viewMode === 'by-site-type' ? styles.filterBtnActive : styles.filterBtnOutline}
+                  onClick={() => { setViewMode('by-site-type'); setSelectedSiteTypeFilter(''); }}
                 >
-                  By Site
+                  By Site Type
                 </button>
+              </div>
+            )}
+
+            {/* ── Site type dropdown (only in by-site-type mode) ── */}
+            {canAssignSite && viewMode === 'by-site-type' && (
+              <div className={styles.filterBar}>
+                <select
+                  className={`form-select ${styles.filterSelect}`}
+                  value={selectedSiteTypeFilter}
+                  onChange={(e) => setSelectedSiteTypeFilter(e.target.value)}
+                >
+                  <option value="">All Site Types</option>
+                  {siteTypes.map(st => (
+                    <option key={st.id} value={st.name}>{st.name}</option>
+                  ))}
+                </select>
               </div>
             )}
 
@@ -285,40 +334,45 @@ export default function ViewAllProducts() {
               <Alert variant="info">No products available.</Alert>
             )}
 
-            {/* ── SUPER ADMIN: By Site ── */}
-            {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'by-site' && (
+            {/* ── SUPER ADMIN: By Site Type (collapsible cards) ── */}
+            {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'by-site-type' && (
               <>
-                {siteNames.map((siteName, siteIdx) => (
-                  <div key={siteName} className={styles.siteCard}>
-                    <div className={styles.siteCardHeader}>
+                {siteTypeNames.length === 0 && selectedSiteTypeFilter && (
+                  <Alert variant="info">No products found for "{selectedSiteTypeFilter}".</Alert>
+                )}
+                {siteTypeNames.map((stName, stIdx) => (
+                  <div key={stName} className={styles.siteCard}>
+                    <div
+                      className={styles.siteCardHeader}
+                      onClick={() => toggleSiteCollapse(stName)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <div className={styles.siteCardHeaderLeft}>
                         <div
                           className={styles.siteIcon}
-                          style={{ background: SITE_ICON_COLORS[siteIdx % SITE_ICON_COLORS.length] }}
+                          style={{ background: SITE_ICON_COLORS[stIdx % SITE_ICON_COLORS.length] }}
                         >
                           <BsBarChartFill />
                         </div>
-                        <h5 className={styles.siteName}>{siteName}</h5>
+                        <h5 className={styles.siteName}>{stName}</h5>
                       </div>
                       <div className={styles.siteCardHeaderRight}>
                         <span className={styles.assignmentsBadge}>
-                          {groupedBySite[siteName].length}&nbsp;
-                          {groupedBySite[siteName].length === 1 ? 'Assignment' : 'Assignments'}
+                          {groupedBySiteType[stName].length}&nbsp;
+                          {groupedBySiteType[stName].length === 1 ? 'Assignment' : 'Assignments'}
                         </span>
                         <span
-                          className={`${styles.collapseChevron} ${collapsedSites.has(siteName) ? styles.collapseChevronClosed : ''}`}
-                          onClick={() => toggleSiteCollapse(siteName)}
-                          title={collapsedSites.has(siteName) ? 'Expand' : 'Collapse'}
+                          className={`${styles.collapseChevron} ${collapsedSites.has(stName) ? styles.collapseChevronClosed : ''}`}
                         >
                           <BsChevronDown />
                         </span>
                       </div>
                     </div>
-                    {!collapsedSites.has(siteName) && (
+                    {!collapsedSites.has(stName) && (
                       <>
                         <hr className={styles.siteCardDivider} />
                         <ProductTable
-                          rows={groupedBySite[siteName]}
+                          rows={groupedBySiteType[stName]}
                           avatarColors={AVATAR_COLORS}
                         />
                       </>

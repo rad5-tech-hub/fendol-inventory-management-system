@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -8,12 +8,12 @@ import { toast, ToastContainer } from 'react-toastify';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import SiteSelector from "../../shared/site-selector/SiteSelector";
 
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
     const navigate = useNavigate();
     const [showSidebar, setShowSidebar] = useState(false);
+    const [siteTypes, setSiteTypes] = useState([]);
     const user = useSelector((store) => store.user);
     const isSuperAdmin = user?.userTypes?.includes('super_admin');
     const profileSiteId = user?.siteId || '';
@@ -24,6 +24,73 @@ export default function CreateProducts() {
         }
     }, [isSuperAdmin, profileSiteId]);
 
+    useEffect(() => {
+        const fetchSiteTypes = async () => {
+            try {
+                const res = await ApiV2.get('/v2/site-types');
+                if (res.data?.data) {
+                    setSiteTypes(res.data.data);
+                }
+            } catch {
+                // silently fail
+            }
+        };
+        fetchSiteTypes();
+    }, []);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await ApiV2.get('/api/v1/product-types');
+                if (res.data?.data) {
+                    setCategories(res.data.data);
+                }
+            } catch {
+                // silently fail
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (categoryRef.current && !categoryRef.current.contains(e.target)) {
+                setShowCategoryDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Category state
+    const [categories, setCategories] = useState([]);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    const [dropdownMode, setDropdownMode] = useState('categories'); // 'categories' | 'create'
+    const [creatingCategory, setCreatingCategory] = useState(false);
+    const categoryRef = useRef(null);
+
+    const handleCreateCategory = async () => {
+        const name = newCategoryName.trim();
+        if (!name || creatingCategory) return;
+        setCreatingCategory(true);
+        try {
+            const res = await ApiV2.post('/api/v1/product-type', { name });
+            const created = res.data?.data;
+            if (created?.id && created?.name) {
+                setCategories(prev => [...prev, { id: created.id, name: created.name }]);
+                setFormData(prev => ({ ...prev, categoryId: created.id }));
+            }
+            setNewCategoryName('');
+            setShowCategoryDropdown(false);
+            setDropdownMode('categories');
+        } catch {
+            toast.error('Failed to create category.', { className: 'dark-toast' });
+        } finally {
+            setCreatingCategory(false);
+        }
+    };
+
     // Form fields state
     const [formData, setFormData] = useState({
         productName: "",
@@ -31,7 +98,8 @@ export default function CreateProducts() {
         unit: "",
         basePrice: "",
         siteId: "",
-        showOnwebsite: false
+        showOnwebsite: false,
+        categoryId: ""
     });
 
     // Function to format numbers with commas
@@ -70,7 +138,7 @@ export default function CreateProducts() {
         setLoader(true);
 
         if (!formData.siteId) {
-            toast.error("Please select a site.", { className: 'dark-toast' });
+            toast.error("Please select a site type.", { className: 'dark-toast' });
             setLoader(false);
             return;
         }
@@ -86,7 +154,8 @@ export default function CreateProducts() {
                 unit: formData.unit,
                 basePrice: parseFloat(removeCommas(formData.basePrice)) || 0,
                 showOnwebsite: formData.showOnwebsite,
-                siteId: formData.siteId,
+                siteType: formData.siteId,
+                productType: formData.categoryId,
             };
 
             const response = await ApiV2.post('/api/v1/product', formDataToSubmit);
@@ -98,7 +167,8 @@ export default function CreateProducts() {
                 unit: "",
                 basePrice: "",
                 siteId: "",
-                showOnwebsite: false
+                showOnwebsite: false,
+                categoryId: ""
             });
 
             // After a successful API call
@@ -197,7 +267,17 @@ export default function CreateProducts() {
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Assign to Site</Form.Label>
                                     {isSuperAdmin ? (
-                                        <SiteSelector value={formData.siteId} onChange={(id) => setFormData({ ...formData, siteId: id || '' })} />
+                                        <Form.Select
+                                            name="siteId"
+                                            value={formData.siteId}
+                                            onChange={handleInputChange}
+                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                        >
+                                            <option value="" disabled>Select Site Type</option>
+                                            {siteTypes.map((type) => (
+                                                <option key={type.id} value={type.id}>{type.name}</option>
+                                            ))}
+                                        </Form.Select>
                                     ) : (
                                         <Form.Control
                                             value={profileSiteId}
@@ -205,6 +285,166 @@ export default function CreateProducts() {
                                             className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                         />
                                     )}
+                                </Col>
+                                <Col className="mb-4">
+                                    <Form.Label className="fw-semibold">Category</Form.Label>
+                                    <div ref={categoryRef} className="position-relative">
+                                        <div
+                                            className={`py-2 px-3 bg-light-subtle d-flex justify-content-between align-items-center ${styles.inputs}`}
+                                            style={{ borderRadius: '0.375rem', cursor: 'pointer', minHeight: '48px' }}
+                                            onClick={() => {
+                                                if (!showCategoryDropdown) setDropdownMode('categories');
+                                                setShowCategoryDropdown(!showCategoryDropdown);
+                                            }}
+                                        >
+                                            <span style={{ opacity: formData.categoryId ? 1 : 0.5, color: formData.categoryId ? '#212529' : '#6c757d' }}>
+                                                {categories.find(c => c.id === formData.categoryId)?.name || 'Select Category'}
+                                            </span>
+                                            <span style={{
+                                                fontSize: '0.75rem',
+                                                color: '#6c757d',
+                                                transition: 'transform 0.25s',
+                                                transform: showCategoryDropdown ? 'rotate(180deg)' : 'none'
+                                            }}>▾</span>
+                                        </div>
+                                        {showCategoryDropdown && (
+                                            <div
+                                                className="position-absolute w-100 bg-white shadow-sm"
+                                                style={{
+                                                    zIndex: 1050,
+                                                    borderRadius: '10px',
+                                                    marginTop: '6px',
+                                                    border: '1px solid #e0e0e0',
+                                                    overflow: 'hidden',
+                                                    boxShadow: '0 8px 25px rgba(0,0,0,0.1)'
+                                                }}
+                                            >
+                                                {dropdownMode === 'categories' ? (
+                                                    <>
+                                                        <div style={{ maxHeight: '190px', overflowY: 'auto' }}>
+                                                            {categories.map((cat, i) => (
+                                                                <div
+                                                                    key={cat.id}
+                                                                    style={{
+                                                                        padding: '12px 16px',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '14px',
+                                                                        fontWeight: formData.categoryId === cat.id ? 600 : 400,
+                                                                        color: formData.categoryId === cat.id ? '#512728' : '#2E3135',
+                                                                        backgroundColor: formData.categoryId === cat.id ? '#fdf5f5' : 'transparent',
+                                                                        borderBottom: i < categories.length - 1 ? '1px solid #f0f0f0' : 'none',
+                                                                        transition: 'background-color 0.12s'
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        setFormData({ ...formData, categoryId: cat.id });
+                                                                        setShowCategoryDropdown(false);
+                                                                    }}
+                                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = formData.categoryId === cat.id ? '#fdf5f5' : '#FAFCFF'}
+                                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = formData.categoryId === cat.id ? '#fdf5f5' : 'transparent'}
+                                                                >
+                                                                    {cat.name}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                padding: '12px 16px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '14px',
+                                                                fontWeight: 600,
+                                                                color: '#512728',
+                                                                borderTop: '1px solid #e8e8e8',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '10px',
+                                                                transition: 'background-color 0.12s'
+                                                            }}
+                                                            onClick={() => {
+                                                                setNewCategoryName('');
+                                                                setDropdownMode('create');
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FAFCFF'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                        >
+                                                            <span style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                width: '22px',
+                                                                height: '22px',
+                                                                borderRadius: '50%',
+                                                                backgroundColor: '#512728',
+                                                                color: '#fff',
+                                                                fontSize: '16px',
+                                                                fontWeight: 400,
+                                                                lineHeight: 1
+                                                            }}>+</span>
+                                                            Create category
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div style={{ padding: '14px 16px' }}>
+                                                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#2E3135', marginBottom: '10px' }}>
+                                                            New Category
+                                                        </div>
+                                                        <div className="d-flex gap-2">
+                                                            <Form.Control
+                                                                type="text"
+                                                                placeholder="Enter category name"
+                                                                value={newCategoryName}
+                                                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                                                style={{
+                                                                    fontSize: '14px',
+                                                                    border: '1px solid #d0d6db',
+                                                                    boxShadow: 'none',
+                                                                    padding: '8px 12px',
+                                                                    borderRadius: '6px'
+                                                                }}
+                                                                autoFocus
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') handleCreateCategory();
+                                                                }}
+                                                            />
+                                                            <Button
+                                                                size="sm"
+                                                                style={{
+                                                                    backgroundColor: '#512728',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    padding: '8px 16px',
+                                                                    fontSize: '13px',
+                                                                    fontWeight: 600,
+                                                                    whiteSpace: 'nowrap'
+                                                                }}
+                                                                onClick={handleCreateCategory}
+                                                                disabled={creatingCategory || !newCategoryName.trim()}
+                                                            >
+                                                                {creatingCategory ? 'Adding...' : 'Add'}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline-secondary"
+                                                                style={{
+                                                                    borderRadius: '6px',
+                                                                    padding: '8px 12px',
+                                                                    fontSize: '13px',
+                                                                    border: '1px solid #d0d6db',
+                                                                    color: '#6c757d',
+                                                                    whiteSpace: 'nowrap'
+                                                                }}
+                                                                onClick={() => {
+                                                                    setNewCategoryName('');
+                                                                    setDropdownMode('categories');
+                                                                }}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </Col>
                             </Row>
                             <Row>
