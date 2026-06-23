@@ -1,3 +1,34 @@
 $sidebar-width: 17%;
 $content-width: 83%;
 $text-color: #2E3135;
+
+/* ── Global Pagination (applied via @import in each module) ── */
+:global {
+  .pagination .page-item .page-link {
+    color: #374151;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin: 0 2px;
+    border: 1px solid #e5e7eb;
+  }
+  .pagination .page-item .page-link:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+  }
+  .pagination .page-item .page-link:focus {
+    box-shadow: 0 0 0 0.2rem rgba(81, 39, 40, 0.15);
+  }
+  .pagination .page-item.active .page-link {
+    background-color: #512728;
+    border-color: #512728;
+    color: #ffffff;
+  }
+  .pagination .page-item.disabled .page-link {
+    color: #8C949B;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #e5e7eb;
+  }
+}

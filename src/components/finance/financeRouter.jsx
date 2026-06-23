@@ -7,6 +7,7 @@ import CashDrawer from './cash-drawer/cash-drawer';
 import NewSupplier from './supplier/new-supplier';
 import ViewAllSupplier from './supplier/view-all-supplier';
 import SupplierDashboard from './supplier/supplier-dashboard';
+import SupplierLedger from './supplier/supplier-ledger';
 import StaffDirectory from './staff/staff-directory';
 import StaffPayroll from './staff/payroll';
 import StaffAttendance from './staff/attendance';
@@ -21,6 +22,7 @@ const FinanceNavigations = () => {
       <Route path='cash-drawer' element={<CashDrawer />} />
       <Route path='supplier/new' element={<NewSupplier />} />
       <Route path='supplier/view-all' element={<ViewAllSupplier />} />
+      <Route path='supplier/ledger' element={<SupplierLedger />} />
       <Route path='supplier/dashboard' element={<SupplierDashboard />} />
       <Route path='staff/directory' element={<StaffDirectory />} />
       <Route path='staff/payroll' element={<StaffPayroll />} />

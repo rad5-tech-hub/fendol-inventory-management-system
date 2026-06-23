@@ -407,7 +407,7 @@ export default function ViewAll() {
                         nextLinkClassName={"page-link"}
                         breakClassName={"page-item"}
                         breakLinkClassName={"page-link"}
-                        activeClassName={"active-light"}
+                        activeClassName={"active"}
                       />
                     </div>
                   </div>
@@ -474,7 +474,7 @@ export default function ViewAll() {
                         nextLinkClassName={"page-link"}
                         breakClassName={"page-item"}
                         breakLinkClassName={"page-link"}
-                        activeClassName={"active-light"}
+                        activeClassName={"active"}
                       />
                     </div>
                   </div>

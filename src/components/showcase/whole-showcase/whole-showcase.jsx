@@ -292,7 +292,7 @@ export default function ViewWholeHistory() {
                     nextLinkClassName={"page-link"}
                     breakClassName={"page-item disabled"}
                     breakLinkClassName={"page-link"}
-                    activeClassName={"active-light"}
+                    activeClassName={"active"}
                   />
                 </div>
               </>

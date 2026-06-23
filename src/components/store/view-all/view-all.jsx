@@ -328,7 +328,7 @@ export default function UpdateStoreInventory() {
                     nextLinkClassName={"page-link"}
                     breakClassName={"page-item"}
                     breakLinkClassName={"page-link"}
-                    activeClassName={"dark active-light"}
+                    activeClassName={"active"}
                   />
                 </div>
               </>

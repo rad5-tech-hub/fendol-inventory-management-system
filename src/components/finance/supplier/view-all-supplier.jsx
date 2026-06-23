@@ -51,6 +51,45 @@ const getInitials = (name) => {
   return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
 };
 
+const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick, onViewLedgerClick, position }) => {
+  const localRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutsideEvent = (event) => {
+      if (localRef.current && !localRef.current.contains(event.target)) {
+        onClickOutside();
+      }
+    };
+    if (show) {
+      document.addEventListener('mousedown', handleClickOutsideEvent);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideEvent);
+    };
+  }, [show, onClickOutside]);
+
+  if (!show) return null;
+
+  return (
+    <div
+      ref={localRef}
+      className={styles.dropdownMenu}
+      style={{
+        position: 'fixed',
+        top: `${position.top}px`,
+        left: `${position.left}px`,
+        transform: 'translate(-100%, 0)',
+      }}
+    >
+      <ul className={styles.menuList}>
+        <li className={`mx-2 mt-2 rounded ${styles.menuItem}`} onClick={onEditClick}>Edit</li>
+        <li className={`mx-2 rounded ${styles.menuItem}`} onClick={onDeleteClick}>Delete</li>
+        <li className={`mx-2 mb-2 rounded ${styles.menuItem}`} onClick={onViewLedgerClick}>View Ledger</li>
+      </ul>
+    </div>
+  );
+};
+
 const MOCK_SUPPLIERS = [
   { id: '1', createdAt: '2025-04-12T10:00:00Z', name: 'Aqua Feed Supplies Ltd.', supplierId: 'SUP-0021', supplierType: 'Feed Supplier', site: 'Main Farm', phone: '+234 801 234 5678', totalCredit: 450000, totalDebit: 120000, balance: 330000 },
   { id: '2', createdAt: '2025-03-28T08:30:00Z', name: 'PondPro Equipment Co.', supplierId: 'SUP-0018', supplierType: 'Equipment Supplier', site: 'THE HATCHERY SITE', phone: '+234 802 345 6789', totalCredit: 890000, totalDebit: 890000, balance: 0 },
@@ -81,6 +120,7 @@ export default function ViewAllSupplier() {
   const [balanceFilter, setBalanceFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const typeFilterRef = useRef(null);
   const itemsPerPage = 10;
@@ -117,6 +157,17 @@ export default function ViewAllSupplier() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleActionClickOutside = () => setActiveDropdown(null);
+
+  const handleDropdownToggle = (supplierId, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+    });
+    setActiveDropdown(activeDropdown === supplierId ? null : supplierId);
+  };
 
   useEffect(() => {
     setCurrentPage(0);
@@ -574,66 +625,18 @@ export default function ViewAllSupplier() {
                               <div style={{ fontSize: '14px', fontWeight: 700, color: balanceColor }}>{formatCurrency(balance)}</div>
                               <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
                             </td>
-                            <td style={{ textAlign: 'center', position: 'relative' }}>
-                              <span
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '30px',
-                                  height: '30px',
-                                  borderRadius: '8px',
-                                  cursor: 'pointer',
-                                  color: '#6B7280',
-                                  transition: 'background 0.12s ease',
-                                }}
-                                onClick={() => setActiveDropdown(activeDropdown === supplier.id ? null : supplier.id)}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#374151'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280'; }}
-                              >
+                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                              <span style={{ cursor: 'pointer' }} onClick={(e) => handleDropdownToggle(supplier.id, e)}>
                                 <BsThreeDotsVertical style={{ fontSize: '15px' }} />
                               </span>
-                              {activeDropdown === supplier.id && (
-                                <div
-                                  style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    right: 0,
-                                    zIndex: 10000,
-                                    background: '#4F2A25',
-                                    color: '#ffffff',
-                                    borderRadius: '8px',
-                                    boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-                                    minWidth: '160px',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  <div
-                                    style={{ padding: '10px 16px', cursor: 'pointer', fontSize: '13px', transition: 'background 0.12s ease' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#FAFCFF'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                    onClick={() => { setActiveDropdown(null); /* handle edit */ }}
-                                  >
-                                    Edit
-                                  </div>
-                                  <div
-                                    style={{ padding: '10px 16px', cursor: 'pointer', fontSize: '13px', transition: 'background 0.12s ease' }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#FAFCFF'; e.currentTarget.style.color = '#2E3135'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ffffff'; }}
-                                    onClick={() => { setActiveDropdown(null); handleDelete(supplier); }}
-                                  >
-                                    Delete
-                                  </div>
-                                  <div
-                                    style={{ padding: '10px 16px', cursor: 'pointer', fontSize: '13px', transition: 'background 0.12s ease' }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#FAFCFF'; e.currentTarget.style.color = '#2E3135'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ffffff'; }}
-                                    onClick={() => { setActiveDropdown(null); navigate(`/finance/supplier/ledger?id=${supplier.id}`); }}
-                                  >
-                                    View Ledger
-                                  </div>
-                                </div>
-                              )}
+                              <DropdownMenu
+                                show={activeDropdown === supplier.id}
+                                onClickOutside={handleActionClickOutside}
+                                onEditClick={() => { setActiveDropdown(null); /* handle edit */ }}
+                                onDeleteClick={() => { setActiveDropdown(null); handleDelete(supplier); }}
+                                onViewLedgerClick={() => { setActiveDropdown(null); navigate(`/finance/supplier/ledger?id=${supplier.id}`); }}
+                                position={dropdownPosition}
+                              />
                             </td>
                           </tr>
                         );
@@ -664,7 +667,7 @@ export default function ViewAllSupplier() {
                     nextLinkClassName={"page-link"}
                     breakClassName={"page-item"}
                     breakLinkClassName={"page-link"}
-                    activeClassName={"active-dark"}
+                    activeClassName={"active"}
                     forcePage={currentPage}
                   />
                 </div>

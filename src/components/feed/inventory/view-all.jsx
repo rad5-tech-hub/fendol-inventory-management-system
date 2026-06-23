@@ -382,7 +382,7 @@ export default function FeedInventoryViewAll() {
                     nextLinkClassName={"page-link"}
                     breakClassName={"page-item"}
                     breakLinkClassName={"page-link"}
-                    activeClassName={"dark"}
+                    activeClassName={"active"}
                   />
                 </div>
               </>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -14,11 +14,36 @@ import { useSelector } from 'react-redux';
 import { hasPermission } from '../../shared/permissions/permissions';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
-const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick }) => {
+const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick, position }) => {
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutsideEvent = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        onClickOutside();
+      }
+    };
+    if (show) {
+      document.addEventListener('mousedown', handleClickOutsideEvent);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideEvent);
+    };
+  }, [show, onClickOutside]);
+
   if (!show) return null;
 
   return (
-    <div className={styles.dropdownMenu} onClick={onClickOutside}>
+    <div
+      ref={dropdownRef}
+      className={styles.dropdownMenu}
+      style={{
+        position: 'fixed',
+        top: `${position.top}px`,
+        left: `${position.left}px`,
+        transform: 'translate(-100%, 0)',
+      }}
+    >
       <ul className={styles.menuList}>
         <li className={styles.menuItem} onClick={onEditClick}>Edit</li>
         <li className={styles.menuItem} onClick={onDeleteClick}>Delete</li>
@@ -27,7 +52,7 @@ const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick }) => {
   );
 };
 
-const ProductTable = ({ rows, avatarColors }) => (
+const ProductTable = ({ rows, avatarColors, activeDropdown, dropdownPosition, onDropdownToggle, onEditClick, onDeleteClick, onClickOutside }) => (
   <table className={styles.productTable}>
     <thead>
       <tr>
@@ -35,6 +60,7 @@ const ProductTable = ({ rows, avatarColors }) => (
         <th>Category</th>
         <th>Created By</th>
         <th>Date Created</th>
+        <th style={{ width: '50px' }}></th>
       </tr>
     </thead>
     <tbody>
@@ -66,6 +92,33 @@ const ProductTable = ({ rows, avatarColors }) => (
               });
             })()}
           </td>
+          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '30px',
+                height: '30px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                color: '#6B7280',
+                transition: 'background 0.12s ease',
+              }}
+              onClick={(e) => onDropdownToggle(product.id, e)}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#374151'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280'; }}
+            >
+              <BsThreeDotsVertical style={{ fontSize: '15px' }} />
+            </span>
+            <DropdownMenu
+              show={activeDropdown === product.id}
+              onClickOutside={onClickOutside}
+              onEditClick={() => onEditClick(product)}
+              onDeleteClick={() => onDeleteClick(product.id)}
+              position={dropdownPosition}
+            />
+          </td>
         </tr>
       ))}
     </tbody>
@@ -83,6 +136,7 @@ export default function ViewAllProducts() {
   const itemsPerPage = 10;
   const [showSidebar, setShowSidebar] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [viewMode, setViewMode] = useState('all');
   const [collapsedSites, setCollapsedSites] = useState(new Set());
   const [siteTypes, setSiteTypes] = useState([]);
@@ -213,7 +267,12 @@ export default function ViewAllProducts() {
     return `${formattedDate} ${formattedTime}`;
   };
 
-  const handleDropdownToggle = (productId) => {
+  const handleDropdownToggle = (productId, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+    });
     setActiveDropdown(activeDropdown === productId ? null : productId);
   };
 
@@ -374,6 +433,12 @@ export default function ViewAllProducts() {
                         <ProductTable
                           rows={groupedBySiteType[stName]}
                           avatarColors={AVATAR_COLORS}
+                          activeDropdown={activeDropdown}
+                          dropdownPosition={dropdownPosition}
+                          onDropdownToggle={handleDropdownToggle}
+                          onEditClick={handleEditClick}
+                          onDeleteClick={handleDeleteClick}
+                          onClickOutside={handleClickOutside}
                         />
                       </>
                     )}
@@ -385,7 +450,16 @@ export default function ViewAllProducts() {
             {/* ── SUPER ADMIN: All Products flat ── */}
             {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'all' && (
               <>
-                <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
+                <ProductTable
+                  rows={currentProducts}
+                  avatarColors={AVATAR_COLORS}
+                  activeDropdown={activeDropdown}
+                  dropdownPosition={dropdownPosition}
+                  onDropdownToggle={handleDropdownToggle}
+                  onEditClick={handleEditClick}
+                  onDeleteClick={handleDeleteClick}
+                  onClickOutside={handleClickOutside}
+                />
                 <div className="d-flex justify-content-center mt-4">
                   <ReactPaginate
                     previousLabel={"< "}
@@ -404,7 +478,7 @@ export default function ViewAllProducts() {
                     nextLinkClassName={"page-link"}
                     breakClassName={"page-item"}
                     breakLinkClassName={"page-link"}
-                    activeClassName={"dark"}
+                    activeClassName={"active"}
                   />
                 </div>
               </>
@@ -413,7 +487,16 @@ export default function ViewAllProducts() {
             {/* ── NON-SUPER-ADMIN: flat list, no site headers ── */}
             {!loading && !error && products.length > 0 && !canAssignSite && (
               <>
-                <ProductTable rows={currentProducts} avatarColors={AVATAR_COLORS} />
+                <ProductTable
+                  rows={currentProducts}
+                  avatarColors={AVATAR_COLORS}
+                  activeDropdown={activeDropdown}
+                  dropdownPosition={dropdownPosition}
+                  onDropdownToggle={handleDropdownToggle}
+                  onEditClick={handleEditClick}
+                  onDeleteClick={handleDeleteClick}
+                  onClickOutside={handleClickOutside}
+                />
                 <div className="d-flex justify-content-center mt-4">
                   <ReactPaginate
                     previousLabel={"< "}
@@ -432,7 +515,7 @@ export default function ViewAllProducts() {
                     nextLinkClassName={"page-link"}
                     breakClassName={"page-item"}
                     breakLinkClassName={"page-link"}
-                    activeClassName={"dark"}
+                    activeClassName={"active"}
                   />
                 </div>
               </>
