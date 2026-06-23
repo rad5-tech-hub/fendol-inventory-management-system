@@ -7,6 +7,7 @@ import Header from '../shared/header/header';
 import { useSelector } from 'react-redux';
 import { SkeletonStatGrid, SkeletonFilterBar } from '../shared/skeleton/Skeleton';
 import { GiCirclingFish } from 'react-icons/gi';
+import { BsSearch } from 'react-icons/bs';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -54,6 +55,7 @@ const Dashboard = () => {
   const [salesDateRange, setSalesDateRange] = useState('1M');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const tooltipRef = useRef(null);
   const user = useSelector((store) => store.user);
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
@@ -489,6 +491,12 @@ const Dashboard = () => {
     </svg>
   );
 
+  const filteredProducts = searchQuery
+    ? (dashboardData?.topProducts || []).filter(p =>
+        p.productName?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : (dashboardData?.topProducts || []);
+
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
@@ -519,13 +527,19 @@ const Dashboard = () => {
                   </div>
                 <div className={styles.pageTitleRight}>
                   <div className={styles.searchBar}>
-                    <span className={styles.searchIcon}>🔍</span>
+                    <BsSearch className={styles.searchIcon} />
                     <input
                       className={styles.searchInput}
                       type="text"
-                      placeholder="Search ponds, inventory..."
-                      readOnly
+                      placeholder="Search products, sites..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
+                    {searchQuery && (
+                      <span className={styles.searchClear} onClick={() => setSearchQuery('')}>
+                        ✕
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -704,8 +718,8 @@ const Dashboard = () => {
                     </div>
                     {/* TODO: wire to real category/date filter logic once backend supports it */}
                     <div className={styles.topProductsTable}>
-                      {(dashboardData?.topProducts || []).length === 0 ? (
-                        <p className={styles.emptyText}>No product data available.</p>
+                      {filteredProducts.length === 0 ? (
+                        <p className={styles.emptyText}>{searchQuery ? `No products matching "${searchQuery}".` : 'No product data available.'}</p>
                       ) : (
                         <table>
                           <thead>
@@ -721,7 +735,7 @@ const Dashboard = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {(dashboardData?.topProducts || []).map((item, idx) => {
+                            {filteredProducts.map((item, idx) => {
                               // TODO: confirm field name/shape with backend
                               const category = item.category || 'Uncategorized';
                               const totalQtySold = item.totalQtySold ?? 0;

@@ -350,14 +350,12 @@ export default function SideBar({ show, handleClose }) {
                 <>
                   {renderNavItem("New Customer", "/customer/add")}
                   {renderNavItem("All Customer", "/customer/view-all")}
-                  {renderNavItem("Customers Dashboard", "/customer/personal-ledger")}
                 </>
               )}
               {hasPermission(userTypes, 'supplier') && renderCard("supplier", "Supplier", <FaHandHoldingUsd size={25} className="me-1" />,
                 <>
                   {renderNavItem("New Supplier", "/finance/supplier/new")}
                   {renderNavItem("All Supplier", "/finance/supplier/view-all")}
-                  {renderNavItem("Supplier Dashboard", "/finance/supplier/dashboard")}
                 </>
               )}
               {hasPermission(userTypes, 'finance:cash-drawer') && renderDirectLink("Cash Drawer", "/finance/cash-drawer", <MdAttachMoney size={25} className="me-1" />)}

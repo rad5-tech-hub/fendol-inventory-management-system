@@ -261,23 +261,42 @@
   display: flex;
   align-items: center;
   background: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 20px;
-  padding: 7px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 14px;
   gap: 8px;
   min-width: 220px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.searchBar:focus-within {
+  border-color: #512728;
+  box-shadow: 0 0 0 3px rgba(81, 39, 40, 0.1);
 }
 .searchIcon {
-  font-size: 13px;
+  font-size: 14px;
   color: #8C949B;
+  flex-shrink: 0;
 }
 .searchInput {
   border: none;
   outline: none;
   font-size: 13px;
-  color: #8C949B;
+  color: #2E3135;
   background: transparent;
   width: 100%;
+}
+.searchInput::placeholder {
+  color: #8C949B;
+}
+.searchClear {
+  font-size: 13px;
+  color: #8C949B;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px;
+}
+.searchClear:hover {
+  color: #2E3135;
 }
 .iconBtn {
   width: 36px;
