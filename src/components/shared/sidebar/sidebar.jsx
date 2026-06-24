@@ -15,6 +15,7 @@ const computeOpenFromPath = (path) => {
   }
   if (path.includes("/ponds")) open.pond_management = true;
   if (path.includes("/manage-fish")) open.fish_activities = true;
+  if (path.includes("/site-transfers")) open.site_transfers = true;
   if (path.includes("/fish-processes")) open.processing = true;
   if (path.includes("/feed")) {
     open.feed_management = true;
@@ -81,6 +82,7 @@ export default function SideBar({ show, handleClose }) {
     }
     if (path.includes("/ponds")) updates.pond_management = true;
     if (path.includes("/manage-fish")) updates.fish_activities = true;
+    if (path.includes("/site-transfers")) updates.site_transfers = true;
     if (path.includes("/fish-processes")) updates.processing = true;
     if (path.includes("/feed")) {
       updates.feed_management = true;
@@ -300,6 +302,13 @@ export default function SideBar({ show, handleClose }) {
                   {renderNavItem("Sampling", "/manage-fish/sampling")}
                   {renderNavItem("Harvest", "/manage-fish/harvest-fish")}
                   {renderNavItem("Mortality", "/manage-fish/mortality")}
+                  {renderCard("site_transfers", "Site Transfers", <GiFishingNet size={25} className="me-1" />,
+                    <>
+                      {renderNavItem("View Fish", "/manage-fish/site-transfers")}
+                      {renderNavItem("Transfer", "/manage-fish/site-transfers/transfer")}
+                      {renderNavItem("History", "/manage-fish/site-transfers/history")}
+                    </>
+                  )}
                 </>
               )}
             </>

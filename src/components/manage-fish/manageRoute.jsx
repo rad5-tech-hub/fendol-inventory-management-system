@@ -8,6 +8,9 @@ import DamageFish from './damage-fish/damage-fish';
 import ViewAllHistory from './view-all-histories/view-all-histories';
 import Sampling from './sampling/sampling';
 import Mortality from './mortality/mortality';
+import ViewFish from './site-transfers/ViewFish';
+import TransferFish from './site-transfers/TransferFish';
+import History from './site-transfers/History';
 
 const ManageNavigations = () => {
     
@@ -21,6 +24,9 @@ const ManageNavigations = () => {
       <Route path='view-all-histories' element={<ViewAllHistory/>}/>
       <Route path='sampling' element={<Sampling/>}/>
       <Route path='mortality' element={<Mortality/>}/>
+      <Route path='site-transfers' element={<ViewFish/>}/>
+      <Route path='site-transfers/transfer' element={<TransferFish/>}/>
+      <Route path='site-transfers/history' element={<History/>}/>
     </Routes>
   );
 };
