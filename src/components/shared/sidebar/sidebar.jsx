@@ -43,7 +43,7 @@ const scrollActiveIntoView = (containerEl) => {
   const cr = containerEl.getBoundingClientRect();
   const ar = activeEl.getBoundingClientRect();
   if (ar.top < cr.top || ar.bottom > cr.bottom) {
-    activeEl.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+    activeEl.scrollIntoView({ block: 'center', behavior: 'auto' });
   }
 };
 import { FaChevronRight, FaChevronDown, FaMapMarkerAlt, FaCircle, FaHouseUser, FaExchangeAlt, FaUsers, FaTrophy, FaTree, FaHandHoldingUsd, FaUserTie, FaMoneyCheckAlt, FaClock, FaClipboardList } from "react-icons/fa";
@@ -101,38 +101,30 @@ export default function SideBar({ show, handleClose }) {
     if (path.includes("/referral")) updates.referral = true;
     if (path.includes("/mlm")) updates.mlm = true;
 
-    // Path B: section needs to expand — set ref so Collapse onEntered handles it
     const expandingKey = Object.keys(updates).find(k => updates[k] && !open[k]);
-    if (expandingKey) {
-      expandedCallbackRef.current = () => {
-        expandedCallbackRef.current = null;
-        const section = sidebarRef.current;
-        if (!section) return;
-        const navsEl = section.querySelector(`.${styles.navs}`);
-        scrollActiveIntoView(navsEl);
-      };
-    }
 
     setOpen((prev) => ({ ...prev, ...updates }));
 
-    // Path A: no expansion needed — scroll NOW, before paint
-    if (!expandingKey) {
+    const scrollToActive = () => {
       const section = sidebarRef.current;
       if (!section) return;
       const navsEl = section.querySelector(`.${styles.navs}`);
       scrollActiveIntoView(navsEl);
+    };
+
+    if (expandingKey) {
+      expandedCallbackRef.current = () => {
+        expandedCallbackRef.current = null;
+        scrollToActive();
+      };
+    } else {
+      // No sections to expand — active element is already rendered
+      scrollToActive();
     }
   }, [location.pathname]);
 
   const handleToggle = (key) => {
-    setOpen((prev) => {
-      if (!prev[key]) {
-        const only = {};
-        only[key] = true;
-        return only;
-      }
-      return { ...prev, [key]: false };
-    });
+    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const renderNavItem = (label, route, icon) => (
