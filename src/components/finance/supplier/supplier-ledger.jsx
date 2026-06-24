@@ -252,66 +252,66 @@ export default function SupplierLedger() {
                     padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '20px',
                   }}
                 >
-                  <div className="d-flex flex-wrap align-items-start justify-content-between gap-3">
+                  <div className="d-flex flex-wrap align-items-start" style={{ gap: '8px', justifyContent: 'space-between' }}>
                     {/* Left: Avatar + Info */}
                     <div className="d-flex align-items-start gap-3">
                       <div
                         style={{
-                          width: '56px', height: '56px', borderRadius: '50%',
+                          width: '60px', height: '60px', borderRadius: '50%',
                           background: AVATAR_COLORS[0], display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', fontSize: '20px', fontWeight: 700,
+                          justifyContent: 'center', fontSize: '22px', fontWeight: 700,
                           color: '#ffffff', flexShrink: 0,
                         }}
                       >
                         {getInitials(supplier.name)}
                       </div>
                       <div>
-                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#2E3135', marginBottom: '4px' }}>
+                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1C1E', marginBottom: '4px' }}>
                           {supplier.name}
                         </h3>
-                        <p style={{ fontSize: '13px', color: '#6B7280', margin: '0 0 6px 0' }}>
+                        <p style={{ fontSize: '14px', color: '#374151', fontWeight: 500, margin: '0 0 8px 0' }}>
                           {supplier.description || supplier.supplierType}
                         </p>
-                        <div className="d-flex align-items-center gap-3 flex-wrap" style={{ fontSize: '12px', color: '#8C949B' }}>
+                        <div className="d-flex align-items-center gap-3 flex-wrap" style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>
                           <span className="d-flex align-items-center gap-1">
-                            <BsGeoAlt style={{ fontSize: '11px' }} /> {supplier.location || 'N/A'}
+                            <BsGeoAlt style={{ fontSize: '12px' }} /> {supplier.location || 'N/A'}
                           </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Right: Metric Cards */}
-                    <div className="d-flex gap-3 flex-wrap">
+                    <div className="d-flex gap-2 flex-wrap">
                       <div style={{
-                        minWidth: '150px', background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                       }}>
                         <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
                           Total Credit (N)
                         </div>
-                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#16A34A' }}>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#16A34A' }}>
                           {formatCurrency(supplier.totalCredit)}
                         </div>
                       </div>
                       <div style={{
-                        minWidth: '150px', background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                       }}>
                         <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
                           Total Debit (N)
                         </div>
-                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#DC2626' }}>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#DC2626' }}>
                           {formatCurrency(supplier.totalDebit)}
                         </div>
                       </div>
                       <div style={{
-                        minWidth: '150px', background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                       }}>
                         <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
                           Balance (N)
                         </div>
-                        <div style={{ fontSize: '18px', fontWeight: 700, color: balanceColor }}>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: balanceColor }}>
                           {formatCurrency(bal)}
                         </div>
                         <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>
