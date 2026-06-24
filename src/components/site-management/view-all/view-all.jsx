@@ -3,8 +3,8 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../site-management.module.scss';
-import { BsExclamationTriangleFill } from "react-icons/bs";
-import { Alert, Modal } from 'react-bootstrap';
+import { BsExclamationTriangleFill, BsThreeDotsVertical } from "react-icons/bs";
+import { Alert, Modal, Dropdown } from 'react-bootstrap';
 import { ApiV2 } from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { ToastContainer } from 'react-toastify';
@@ -187,13 +187,15 @@ const ViewAllSites = () => {
                               <span style={{ color: '#8C949B', fontStyle: 'italic' }}>No contact</span>
                             )}
                           </td>
-                          <td>
-                            <span
-                              style={{ color: '#F57C00', cursor: 'pointer', fontWeight: 500 }}
-                              onClick={(e) => { e.stopPropagation(); handleEdit(site); }}
-                            >
-                              Edit
-                            </span>
+                          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                            <Dropdown align="end">
+                              <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
+                                <BsThreeDotsVertical size={16} />
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu style={{ minWidth: 180 }}>
+                                <Dropdown.Item onClick={(e) => { e.stopPropagation(); handleEdit(site); }}>Edit</Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
                           </td>
                         </tr>
                       ))}

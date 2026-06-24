@@ -4,13 +4,13 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../admin-styles.module.scss';
-import { BsExclamationTriangleFill } from "react-icons/bs";
+import { BsExclamationTriangleFill, BsThreeDotsVertical } from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert } from 'react-bootstrap';
+import { Alert, Dropdown } from 'react-bootstrap';
 import { SkeletonTable, SkeletonFilterBar } from '../../shared/skeleton/Skeleton';
-import { FaTrashAlt, FaUserPlus, FaFilter, FaEdit } from "react-icons/fa";
+import { FaUserPlus, FaFilter } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useConfirm } from '../../shared/confirm-modal';
@@ -187,12 +187,13 @@ export default function ViewAll() {
                           <td>{formatRole(admin.roleRef?.name || admin.role)}</td>
                           <td>{admin.UserSites?.length ? admin.UserSites.map(us => us.Site?.name).filter(Boolean).join(', ') : '-'}</td>
                           <td>{formatDate(admin.createdAt)}</td>
-                          <td>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                              <FaEdit
-                                style={{ cursor: 'pointer', color: '#512728' }}
-                                title="Edit Admin"
-                                onClick={(e) => {
+                          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                            <Dropdown align="end">
+                              <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
+                                <BsThreeDotsVertical size={16} />
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu style={{ minWidth: 180 }}>
+                                <Dropdown.Item onClick={(e) => {
                                   e.stopPropagation();
                                   navigate('/admin/add-new-admin', {
                                     state: {
@@ -207,17 +208,11 @@ export default function ViewAll() {
                                       }
                                     }
                                   });
-                                }}
-                              />
-                              <FaTrashAlt
-                                style={{ cursor: 'pointer', color: '#dc3545' }}
-                                title="Delete Admin"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(admin.id);
-                                }}
-                              />
-                            </div>
+                                }}>Edit</Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item onClick={(e) => { e.stopPropagation(); handleDelete(admin.id); }} style={{ color: '#dc3545', fontWeight: 600 }}>Delete</Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
                           </td>
                         </tr>
                       ))}

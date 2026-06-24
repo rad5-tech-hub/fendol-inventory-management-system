@@ -272,6 +272,10 @@
   }
 }
 
+[id="dropdown-custom-components"]::after {
+  display: none !important;
+}
+
 .fade_in {
   opacity: 1;
   transition: opacity 0.5s ease-in;

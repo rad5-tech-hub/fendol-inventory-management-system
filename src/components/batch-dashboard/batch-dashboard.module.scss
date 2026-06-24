@@ -435,6 +435,10 @@
     background: #F0E4E4;
     color: #512728;
   }
+
+  &::after {
+    display: none !important;
+  }
 }
 
 .paginationRow {

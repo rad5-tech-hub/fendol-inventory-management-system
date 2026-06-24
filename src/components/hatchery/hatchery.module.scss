@@ -473,6 +473,10 @@
     color: #512728;
     box-shadow: 0 2px 8px rgba(81,39,40,0.12);
   }
+
+  &::after {
+    display: none !important;
+  }
 }
 
 .exportBtn {
