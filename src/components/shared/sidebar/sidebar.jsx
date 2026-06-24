@@ -1,8 +1,50 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useLayoutEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-let sidebarScrollPos = 0;
 import { Nav, Card, Collapse, Tooltip, OverlayTrigger, Offcanvas } from "react-bootstrap";
+
+const computeOpenFromPath = (path) => {
+  const open = {};
+  if (path.includes("/site-management")) open.site_management = true;
+  if (path.includes("/admin")) open.users_and_roles = true;
+  if (path.includes("/hatchery")) {
+    open.hatchery = true;
+    if (path.includes('/hatchery/hatch-batches')) open.hatch_batches = true;
+    if (path.includes('/hatchery/broodstock')) open.broodstock = true;
+    if (path.includes('/hatchery/cost-analysis')) open.cost_analysis = true;
+  }
+  if (path.includes("/ponds")) open.pond_management = true;
+  if (path.includes("/manage-fish")) open.fish_activities = true;
+  if (path.includes("/fish-processes")) open.processing = true;
+  if (path.includes("/feed")) {
+    open.feed_management = true;
+    if (path.includes('/feed/production')) open.feed_production = true;
+    if (path.includes('/feed/inventory')) open.feed_inventory = true;
+  }
+  if (path.includes("/store")) open.store = true;
+  if (path.includes("/products")) open.product = true;
+  if (path.includes("/showcase")) open.showcase = true;
+  if (path.includes("/finance")) {
+    open.finance = true;
+    if (path.includes('/finance/supplier')) open.supplier = true;
+    if (path.includes('/finance/staff')) open.staff = true;
+  }
+  if (path.includes("/customer")) open.customer = true;
+  if (path.includes("/referral")) open.referral = true;
+  if (path.includes("/mlm")) open.mlm = true;
+  return open;
+};
+
+const scrollActiveIntoView = (containerEl) => {
+  if (!containerEl) return;
+  const activeEl = containerEl.querySelector('[data-active="true"]');
+  if (!activeEl) return;
+  const cr = containerEl.getBoundingClientRect();
+  const ar = activeEl.getBoundingClientRect();
+  if (ar.top < cr.top || ar.bottom > cr.bottom) {
+    activeEl.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+  }
+};
 import { FaChevronRight, FaChevronDown, FaMapMarkerAlt, FaCircle, FaHouseUser, FaExchangeAlt, FaUsers, FaTrophy, FaTree, FaHandHoldingUsd, FaUserTie, FaMoneyCheckAlt, FaClock, FaClipboardList } from "react-icons/fa";
 import { IoGridOutline } from "react-icons/io5";
 import { BsShopWindow } from "react-icons/bs";
@@ -20,12 +62,13 @@ import { hasPermission } from "../permissions/permissions";
 export default function SideBar({ show, handleClose }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [open, setOpen] = useState({});
+  const [open, setOpen] = useState(() => computeOpenFromPath(location.pathname));
   const sidebarRef = useRef(null);
+  const expandedCallbackRef = useRef(null);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const user = useSelector((store) => store.user);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const path = location.pathname;
     const updates = {};
     if (path.includes("/site-management")) updates.site_management = true;
@@ -55,35 +98,29 @@ export default function SideBar({ show, handleClose }) {
     if (path.includes("/customer")) updates.customer = true;
     if (path.includes("/referral")) updates.referral = true;
     if (path.includes("/mlm")) updates.mlm = true;
+
+    // Path B: section needs to expand — set ref so Collapse onEntered handles it
+    const expandingKey = Object.keys(updates).find(k => updates[k] && !open[k]);
+    if (expandingKey) {
+      expandedCallbackRef.current = () => {
+        expandedCallbackRef.current = null;
+        const section = sidebarRef.current;
+        if (!section) return;
+        const navsEl = section.querySelector(`.${styles.navs}`);
+        scrollActiveIntoView(navsEl);
+      };
+    }
+
     setOpen((prev) => ({ ...prev, ...updates }));
 
-    // Restore sidebar scroll on the .navs element after open state settles
-    requestAnimationFrame(() => {
+    // Path A: no expansion needed — scroll NOW, before paint
+    if (!expandingKey) {
       const section = sidebarRef.current;
       if (!section) return;
-      const navsEl = section.querySelector(`[class*="${styles.navs}"]`);
-      if (navsEl) navsEl.scrollTop = sidebarScrollPos;
-    });
-
-    // Save scroll on cleanup (unmount/navigation away)
-    return () => {
-      const section = sidebarRef.current;
-      if (!section) return;
-      const navsEl = section.querySelector(`[class*="${styles.navs}"]`);
-      if (navsEl) sidebarScrollPos = navsEl.scrollTop;
-    };
+      const navsEl = section.querySelector(`.${styles.navs}`);
+      scrollActiveIntoView(navsEl);
+    }
   }, [location.pathname]);
-
-  // Save sidebar scroll position on the actual scrollable element (.navs)
-  useEffect(() => {
-    const section = sidebarRef.current;
-    if (!section) return;
-    const navsEl = section.querySelector(`[class*="${styles.navs}"]`);
-    if (!navsEl) return;
-    const handleScroll = () => { sidebarScrollPos = navsEl.scrollTop; };
-    navsEl.addEventListener('scroll', handleScroll, { passive: true });
-    return () => navsEl.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleToggle = (key) => {
     setOpen((prev) => {
@@ -102,6 +139,7 @@ export default function SideBar({ show, handleClose }) {
         <div
           onClick={() => navigate(route)}
           className={`${location.pathname === route ? styles.activeLink : styles.nonactiveLink}`}
+          data-active={location.pathname === route ? "true" : undefined}
           style={{ cursor: "pointer" }}
         >
           {icon || <FaCircle size={10} className="me-2" />} {label}
@@ -116,6 +154,7 @@ export default function SideBar({ show, handleClose }) {
         <div
           onClick={() => navigate(route)}
           className={`${location.pathname.startsWith(route) ? styles.activeLink : styles.nonactiveLink}`}
+          data-active={location.pathname.startsWith(route) ? "true" : undefined}
           style={{ cursor: "pointer" }}
         >
           {icon || <FaCircle size={10} className="me-2" />} {label}
@@ -138,7 +177,7 @@ export default function SideBar({ show, handleClose }) {
         </span>
         <span>{open[sectionKey] ? <FaChevronDown size={14} className="text-light" /> : <FaChevronRight size={14} className="text-light" />}</span>
       </Card.Header>
-      <Collapse in={open[sectionKey]} style={{ transitionDuration: "0s" }}>
+      <Collapse in={open[sectionKey]} style={{ transitionDuration: "0s" }} onEntered={() => expandedCallbackRef.current?.()}>
         <div id={`${sectionKey}-collapse-text`} className="px-2">
           <Card.Body className={styles.navigationLinks}>
             {children}
@@ -153,6 +192,7 @@ export default function SideBar({ show, handleClose }) {
       <Card.Header
         onClick={() => navigate(route)}
         className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader} ${location.pathname === route ? styles.dashboardLinkActive : ""} ${extraClass}`}
+        data-active={location.pathname === route ? "true" : undefined}
         style={{ cursor: "pointer" }}
       >
         <span className={`${styles.title}`}>
@@ -170,6 +210,7 @@ export default function SideBar({ show, handleClose }) {
           <Card.Header
             onClick={() => navigate("/dashboard")}
             className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader} ${location.pathname === "/dashboard" ? styles.dashboardLinkActive : ""}`}
+            data-active={location.pathname === "/dashboard" ? "true" : undefined}
             style={{ cursor: "pointer" }}
           >
             <span className={`${styles.title}`}>
@@ -407,6 +448,7 @@ export default function SideBar({ show, handleClose }) {
                 <Nav.Link
                   onClick={() => navigate("/damage-loss")}
                   className={`${location.pathname === "/damage-loss" ? styles.activeLink : styles.nonactiveLink}`}
+                  data-active={location.pathname === "/damage-loss" ? "true" : undefined}
                 >
                   <GiDamagedHouse size={25} className="me-1 text-light" /> <span className={styles.title}>Damage/Loss</span>
                 </Nav.Link>
