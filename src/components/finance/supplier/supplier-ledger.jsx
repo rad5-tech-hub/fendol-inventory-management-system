@@ -8,7 +8,7 @@ import { BsThreeDotsVertical, BsCalendar3, BsGeoAlt } from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert } from 'react-bootstrap';
+import { Alert, Dropdown } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 const formatCurrency = (value) => {
@@ -79,8 +79,6 @@ export default function SupplierLedger() {
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const itemsPerPage = 7;
 
   const [dateFrom, setDateFrom] = useState('');
@@ -145,17 +143,6 @@ export default function SupplierLedger() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  const handleDropdownToggle = (transactionId, event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setDropdownPosition({
-      top: rect.bottom + window.scrollY,
-      left: rect.left + window.scrollX,
-    });
-    setActiveDropdown(activeDropdown === transactionId ? null : transactionId);
-  };
-
-  const handleClickOutside = () => setActiveDropdown(null);
-
   const balanceColor = supplier
     ? supplier.balance > 0 ? '#16A34A' : supplier.balance < 0 ? '#DC2626' : '#6B7280'
     : '#6B7280';
@@ -203,7 +190,6 @@ export default function SupplierLedger() {
                 <p style={{ fontSize: '14px', color: '#8C949B', margin: 0 }}>
                   View all transactions and account balance for suppliers.
                 </p>
-              </div>
               </div>
             </div>
 
@@ -461,9 +447,17 @@ export default function SupplierLedger() {
                                     {formatCurrency(tx.balance)}
                                   </td>
                                   <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                    <span style={{ cursor: 'pointer' }} onClick={(e) => handleDropdownToggle(tx.id, e)}>
-                                      <BsThreeDotsVertical style={{ fontSize: '15px', color: '#6B7280' }} />
-                                    </span>
+                                    <Dropdown align="end">
+                                      <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
+                                        <BsThreeDotsVertical size={16} />
+                                      </Dropdown.Toggle>
+                                      <Dropdown.Menu style={{ minWidth: 180 }}>
+                                        <Dropdown.Item onClick={() => {}}>Edit</Dropdown.Item>
+                                        <Dropdown.Item onClick={() => {}}>View Details</Dropdown.Item>
+                                        <Dropdown.Divider />
+                                        <Dropdown.Item onClick={() => {}} style={{ color: '#dc3545', fontWeight: 600 }}>Delete</Dropdown.Item>
+                                      </Dropdown.Menu>
+                                    </Dropdown>
                                   </td>
                                 </tr>
                               );
