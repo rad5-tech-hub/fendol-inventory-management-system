@@ -187,9 +187,9 @@ const ViewAllSites = () => {
                               <span style={{ color: '#8C949B', fontStyle: 'italic' }}>No contact</span>
                             )}
                           </td>
-                          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                          <td style={{ textAlign: 'center', verticalAlign: 'middle', overflow: 'visible' }}>
                             <Dropdown align="end">
-                              <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
+                              <Dropdown.Toggle as="button" className={styles.threeDotBtn} onClick={(e) => e.stopPropagation()}>
                                 <BsThreeDotsVertical size={16} />
                               </Dropdown.Toggle>
                               <Dropdown.Menu style={{ minWidth: 180 }}>
