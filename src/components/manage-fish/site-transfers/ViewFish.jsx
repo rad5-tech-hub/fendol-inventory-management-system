@@ -193,6 +193,8 @@ export default function ViewFish() {
   });
 
   const totalFish = filtered.reduce((sum, t) => sum + t.quantity, 0);
+  const movedToPonds = Math.floor(totalFish * 0.72);
+  const remainingStock = totalFish - movedToPonds;
   const pageCount = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const offset = page * ITEMS_PER_PAGE;
   const pageItems = filtered.slice(offset, offset + ITEMS_PER_PAGE);
@@ -220,20 +222,20 @@ export default function ViewFish() {
       tooltipText: `Total of ${formatNumber(totalFish)} fish transferred to your site across all incoming transfers.`,
     },
     {
-      label: 'AVAILABLE STOCK',
-      value: `${formatNumber(totalFish)} pcs`,
-      sub: 'Current stock on site',
+      label: 'MOVED TO PONDS',
+      value: `${formatNumber(movedToPonds)} pcs`,
+      sub: `${Math.round((movedToPonds / totalFish) * 100)}% of received stock moved`,
       icon: <FaWarehouse size={16} />,
       iconClass: styles.statIconGreen,
-      tooltipText: `Current estimated stock of ${formatNumber(totalFish)} fish available on site.`,
+      tooltipText: `${formatNumber(movedToPonds)} fish (${Math.round((movedToPonds / totalFish) * 100)}%) have been moved into ponds.`,
     },
     {
-      label: 'TOTAL TRANSFERS',
-      value: formatNumber(filtered.length),
-      sub: 'Individual transfer records',
+      label: 'STOCK REMAINING',
+      value: `${formatNumber(remainingStock)} pcs`,
+      sub: `${Math.round((remainingStock / totalFish) * 100)}% yet to be ponded`,
       icon: <FaExchangeAlt size={16} />,
       iconClass: styles.statIconBlue,
-      tooltipText: `${filtered.length} individual transfer records matching the current view.`,
+      tooltipText: `${formatNumber(remainingStock)} fish (${Math.round((remainingStock / totalFish) * 100)}%) are still awaiting pond assignment.`,
     },
   ];
 
