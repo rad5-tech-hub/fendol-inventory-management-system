@@ -453,7 +453,7 @@ export default function ViewAllSupplier() {
             {/* ── Table ── */}
             {!loading && !error && filteredSuppliers.length > 0 && (
               <>
-                <div className="table-responsive">
+                <div className="table-responsive" style={{ overflow: 'visible' }}>
                   <table className={`table ${styles.styled_table} mb-0`} style={{ tableLayout: 'fixed' }}>
                     <thead className={styles.theader}>
                       <tr>
