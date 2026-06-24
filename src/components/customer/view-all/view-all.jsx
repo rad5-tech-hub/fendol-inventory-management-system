@@ -418,7 +418,7 @@ export default function ViewAllCustomers() {
                         const bal = Number(customer.balance) || 0;
                         const displayBal = Math.abs(bal);
                         const balanceColor = bal < 0 ? '#DC2626' : bal > 0 ? '#16A34A' : '#6B7280';
-                        const balanceLabel = bal < 0 ? 'Owes Us' : bal > 0 ? 'We Owe' : 'Settled';
+                        const balanceLabel = bal < 0 ? 'Owes Us' : bal > 0 ? 'We Owe' : '';
                         const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
 
                         return (

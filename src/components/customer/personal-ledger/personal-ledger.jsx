@@ -475,7 +475,7 @@ export default function PersonalLedger() {
                 </div>
 
                 {/* ── Ledger Table ── */}
-                <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+                <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'visible' }}>
                   <div className="d-flex align-items-center justify-content-between px-4 pt-4 pb-2">
                     <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#2E3135', margin: 0 }}>
                       Ledger Transactions ({filteredLedgerData.length})
@@ -490,7 +490,7 @@ export default function PersonalLedger() {
                     </div>
                   ) : (
                     <>
-                      <div className="table-responsive">
+                      <div className="table-responsive" style={{ overflow: 'visible' }}>
                         <table className={`table ${styles.styled_tables} mb-0`} style={{ tableLayout: 'fixed' }}>
                           <thead className={styles.theaders}>
                             <tr>
