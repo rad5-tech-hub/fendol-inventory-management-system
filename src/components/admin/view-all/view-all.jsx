@@ -157,7 +157,7 @@ export default function ViewAll() {
               </div>
             ) : (
               <>
-                <div style={{ overflowX: 'auto' }}>
+                <div>
                   <table className={styles.adminTable}>
                     <thead>
                       <tr>

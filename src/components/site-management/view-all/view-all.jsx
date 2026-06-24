@@ -144,7 +144,7 @@ const ViewAllSites = () => {
 
             {!loading && !error && displayedSites.length > 0 && (
               <>
-                <div style={{ overflowX: 'auto' }}>
+                <div>
                   <table className={`${styles.styled_table} ${styles.viewSitesTable}`}>
                     <thead>
                       <tr>
