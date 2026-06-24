@@ -5,32 +5,51 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import Api from '../../shared/api/apiLink';
-import { useNavigate } from 'react-router-dom';
-
-const INITIAL_SUPPLIER_TYPES = [
-  { id: '1', name: 'Wholesale' },
-  { id: '2', name: 'Retail' },
-  { id: '3', name: 'Manufacturer' },
-];
+import Api, { ApiV2 } from '../../shared/api/apiLink';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function NewSupplier() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const editSupplier = location.state?.supplier || null;
+  const isEditing = !!editSupplier;
+
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    address: "",
-    supplierType: "",
+    fullName: editSupplier?.name || "",
+    phone: editSupplier?.phone || "",
+    address: editSupplier?.address || "",
+    supplierType: editSupplier?.supplierTypeId || "",
   });
 
-  const [supplierTypes, setSupplierTypes] = useState(INITIAL_SUPPLIER_TYPES);
+  const [supplierTypes, setSupplierTypes] = useState([]);
+  const [typesLoading, setTypesLoading] = useState(true);
   const [newTypeName, setNewTypeName] = useState('');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [dropdownMode, setDropdownMode] = useState('types');
   const [creatingType, setCreatingType] = useState(false);
   const typeRef = useRef(null);
+
+  useEffect(() => {
+    fetchSupplierTypes();
+  }, []);
+
+  const fetchSupplierTypes = async () => {
+    setTypesLoading(true);
+    try {
+      const res = await ApiV2.get('/supplier-type');
+      const types = res.data?.data || [];
+      setSupplierTypes(types);
+    } catch {
+      toast.error("Failed to load supplier types.", {
+        className: 'dark-toast',
+        autoClose: 5000,
+      });
+    } finally {
+      setTypesLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -47,26 +66,22 @@ export default function NewSupplier() {
     if (!name || creatingType) return;
     setCreatingType(true);
     try {
-      const res = await Api.post('/supplier-types', { name });
-      const created = res.data?.data || res.data;
+      const res = await ApiV2.post('/supplier-type', { name });
+      const created = res.data?.data;
       if (created?.id) {
         setSupplierTypes(prev => [...prev, { id: created.id, name: created.name }]);
         setFormData(prev => ({ ...prev, supplierType: created.id }));
-      } else {
-        const tempId = Date.now().toString();
-        setSupplierTypes(prev => [...prev, { id: tempId, name }]);
-        setFormData(prev => ({ ...prev, supplierType: tempId }));
+        toast.success(res.data?.response_message || "Supplier type created!", {
+          className: 'dark-toast',
+          autoClose: 3000,
+        });
       }
       setNewTypeName('');
       setShowTypeDropdown(false);
       setDropdownMode('types');
-    } catch {
-      const tempId = Date.now().toString();
-      setSupplierTypes(prev => [...prev, { id: tempId, name }]);
-      setFormData(prev => ({ ...prev, supplierType: tempId }));
-      setNewTypeName('');
-      setShowTypeDropdown(false);
-      setDropdownMode('types');
+    } catch (error) {
+      const msg = error.response?.data?.response_message || error.response?.data?.message || "Failed to create supplier type.";
+      toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
     } finally {
       setCreatingType(false);
     }
@@ -81,38 +96,45 @@ export default function NewSupplier() {
     e.preventDefault();
     setLoader(true);
 
-    const loadingToast = toast.loading("Adding New Supplier...", {
+    const loadingToast = toast.loading(isEditing ? "Updating Supplier..." : "Adding New Supplier...", {
       className: 'dark-toast'
     });
 
     try {
+      const selectedType = supplierTypes.find(t => t.id === formData.supplierType);
+
       const payload = {
-        fullName: formData.fullName,
+        name: formData.fullName,
         phone: formData.phone,
+        supplierTypeId: selectedType?.id || formData.supplierType,
         address: formData.address,
-        supplierType: supplierTypes.find(t => t.id === formData.supplierType)?.name || formData.supplierType,
       };
 
-      const response = await Api.post('/suppliers', payload);
+      if (isEditing) {
+        await ApiV2.patch(`/supplier/${editSupplier.id}`, payload);
 
-      setFormData({
-        fullName: "",
-        phone: "",
-        address: "",
-        supplierType: "",
-      });
+        toast.update(loadingToast, {
+          render: "Supplier updated successfully!",
+          type: "success",
+          isLoading: false,
+          autoClose: 3000,
+          className: 'dark-toast'
+        });
+      } else {
+        await ApiV2.post('/supplier', payload);
 
-      toast.update(loadingToast, {
-        render: response.data?.message || "Supplier added successfully!",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000,
-        className: 'dark-toast'
-      });
+        toast.update(loadingToast, {
+          render: "Supplier added successfully!",
+          type: "success",
+          isLoading: false,
+          autoClose: 3000,
+          className: 'dark-toast'
+        });
+      }
 
       navigate('/finance/supplier/view-all');
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Error adding supplier. Please try again.";
+      const errorMessage = error.response?.data?.response_message || error.response?.data?.message || "Something went wrong. Please try again.";
       toast.update(loadingToast, {
         render: errorMessage,
         type: "error",
@@ -141,7 +163,7 @@ export default function NewSupplier() {
           <main>
             <ToastContainer />
             <Form className={styles.create_form} onSubmit={handleSubmit}>
-              <h4 className="mt-3 mb-5">Add Supplier</h4>
+              <h4 className="mt-3 mb-5">{isEditing ? 'Edit Supplier' : 'Add Supplier'}</h4>
               <Row xxl={2} xl={2} lg={2} md={1} sm={1} xs={1}>
                 <Col className="mb-4">
                   <Form.Label className="fw-semibold">Full Name</Form.Label>
@@ -162,6 +184,7 @@ export default function NewSupplier() {
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                     type="tel"
                     name="phone"
+                    required
                     value={formData.phone}
                     onChange={handleInputChange}
                   />
@@ -173,12 +196,15 @@ export default function NewSupplier() {
                       className={`py-2 px-3 bg-light-subtle d-flex justify-content-between align-items-center ${styles.inputs}`}
                       style={{ borderRadius: '0.375rem', cursor: 'pointer', minHeight: '48px' }}
                       onClick={() => {
+                        if (typesLoading) return;
                         if (!showTypeDropdown) setDropdownMode('types');
                         setShowTypeDropdown(!showTypeDropdown);
                       }}
                     >
                       <span style={{ opacity: formData.supplierType ? 1 : 0.5, color: formData.supplierType ? '#212529' : '#6c757d' }}>
-                        {supplierTypes.find(t => t.id === formData.supplierType)?.name || 'Select Supplier Type'}
+                        {typesLoading
+                          ? 'Loading types...'
+                          : supplierTypes.find(t => t.id === formData.supplierType)?.name || 'Select Supplier Type'}
                       </span>
                       <span style={{
                         fontSize: '0.75rem',
@@ -202,29 +228,35 @@ export default function NewSupplier() {
                         {dropdownMode === 'types' ? (
                           <>
                             <div style={{ maxHeight: '190px', overflowY: 'auto' }}>
-                              {supplierTypes.map((t, i) => (
-                                <div
-                                  key={t.id}
-                                  style={{
-                                    padding: '12px 16px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px',
-                                    fontWeight: formData.supplierType === t.id ? 600 : 400,
-                                    color: formData.supplierType === t.id ? '#512728' : '#2E3135',
-                                    backgroundColor: formData.supplierType === t.id ? '#fdf5f5' : 'transparent',
-                                    borderBottom: i < supplierTypes.length - 1 ? '1px solid #f0f0f0' : 'none',
-                                    transition: 'background-color 0.12s',
-                                  }}
-                                  onClick={() => {
-                                    setFormData({ ...formData, supplierType: t.id });
-                                    setShowTypeDropdown(false);
-                                  }}
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = formData.supplierType === t.id ? '#fdf5f5' : '#FAFCFF'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = formData.supplierType === t.id ? '#fdf5f5' : 'transparent'}
-                                >
-                                  {t.name}
+                              {supplierTypes.length === 0 ? (
+                                <div style={{ padding: '16px', fontSize: '13px', color: '#8C949B', textAlign: 'center' }}>
+                                  No supplier types available. Create one below.
                                 </div>
-                              ))}
+                              ) : (
+                                supplierTypes.map((t, i) => (
+                                  <div
+                                    key={t.id}
+                                    style={{
+                                      padding: '12px 16px',
+                                      cursor: 'pointer',
+                                      fontSize: '14px',
+                                      fontWeight: formData.supplierType === t.id ? 600 : 400,
+                                      color: formData.supplierType === t.id ? '#512728' : '#2E3135',
+                                      backgroundColor: formData.supplierType === t.id ? '#fdf5f5' : 'transparent',
+                                      borderBottom: i < supplierTypes.length - 1 ? '1px solid #f0f0f0' : 'none',
+                                      transition: 'background-color 0.12s',
+                                    }}
+                                    onClick={() => {
+                                      setFormData({ ...formData, supplierType: t.id });
+                                      setShowTypeDropdown(false);
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = formData.supplierType === t.id ? '#fdf5f5' : '#FAFCFF'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = formData.supplierType === t.id ? '#fdf5f5' : 'transparent'}
+                                  >
+                                    {t.name}
+                                  </div>
+                                ))
+                              )}
                             </div>
                             <div
                               style={{
@@ -342,10 +374,10 @@ export default function NewSupplier() {
               <div className="d-flex justify-content-end my-5">
                 <Button
                   className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-                  disabled={loader}
+                  disabled={loader || typesLoading}
                   type="submit"
                 >
-                  {loader ? 'Adding...' : 'Add'}
+                  {loader ? (isEditing ? 'Updating...' : 'Adding...') : (isEditing ? 'Update' : 'Add')}
                 </Button>
               </div>
             </Form>
