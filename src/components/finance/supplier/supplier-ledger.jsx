@@ -276,39 +276,39 @@ export default function SupplierLedger() {
                           <span className="d-flex align-items-center gap-1">
                             <BsGeoAlt style={{ fontSize: '11px' }} /> {supplier.location || 'N/A'}
                           </span>
-                          <span>{supplier.supplierId}</span>
-                          <span
-                            style={{
-                              background: '#DCFCE7', color: '#166534', borderRadius: '12px',
-                              padding: '2px 10px', fontWeight: 600, fontSize: '11px',
-                            }}
-                          >
-                            {supplier.status || 'Active'} Supplier
-                          </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Right: Metric Boxes */}
+                    {/* Right: Metric Cards */}
                     <div className="d-flex gap-3 flex-wrap">
-                      <div style={{ minWidth: '140px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>
+                      <div style={{
+                        minWidth: '150px', background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                      }}>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
                           Total Credit (N)
                         </div>
                         <div style={{ fontSize: '18px', fontWeight: 700, color: '#16A34A' }}>
                           {formatCurrency(supplier.totalCredit)}
                         </div>
                       </div>
-                      <div style={{ minWidth: '140px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>
+                      <div style={{
+                        minWidth: '150px', background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                      }}>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
                           Total Debit (N)
                         </div>
                         <div style={{ fontSize: '18px', fontWeight: 700, color: '#DC2626' }}>
                           {formatCurrency(supplier.totalDebit)}
                         </div>
                       </div>
-                      <div style={{ minWidth: '140px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>
+                      <div style={{
+                        minWidth: '150px', background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                      }}>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
                           Balance (N)
                         </div>
                         <div style={{ fontSize: '18px', fontWeight: 700, color: balanceColor }}>
