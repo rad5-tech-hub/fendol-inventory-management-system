@@ -4,13 +4,13 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../finance.module.scss';
-import { BsThreeDotsVertical, BsCalendar3, BsGeoAlt } from "react-icons/bs";
-import Api from '../../shared/api/apiLink';
+import { BsThreeDotsVertical, BsCalendar3, BsGeoAlt, BsArrowLeft } from "react-icons/bs";
+import { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Alert, Dropdown } from 'react-bootstrap';
-import ReactPaginate from 'react-paginate';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+
 const formatCurrency = (value) => {
   if (value == null) return '₦0.00';
   return `₦${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -24,49 +24,6 @@ const getInitials = (name) => {
   return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
 };
 
-const MOCK_SUPPLIER = {
-  id: '1',
-  name: 'Aqua Feed Supplies Ltd.',
-  supplierId: 'SUP-0021',
-  supplierType: 'Feed Supplier',
-  description: 'Premium fish feed and aquaculture supplies',
-  location: 'Lagos, Nigeria',
-  phone: '+234 801 234 5678',
-  email: 'info@aquafeed.com',
-  status: 'Active',
-  totalCredit: 4250000,
-  totalDebit: 2750000,
-  balance: 1500000,
-};
-
-const MOCK_TRANSACTIONS = [
-  { id: 'T1', date: '2025-05-31T10:30:00Z', description: 'Payment received for outstanding invoice', reference: 'PAY-0525-018', credit: 0, debit: 500000, balance: 1500000, type: 'payment' },
-  { id: 'T2', date: '2025-05-28T14:15:00Z', description: 'Feed supply delivery - 500 bags Premium Grower', reference: 'BIL-0525-042', credit: 850000, debit: 0, balance: 2000000, type: 'bill' },
-  { id: 'T3', date: '2025-05-25T09:00:00Z', description: 'Payment received - Bank Transfer', reference: 'PAY-0525-015', credit: 0, debit: 300000, balance: 1150000, type: 'payment' },
-  { id: 'T4', date: '2025-05-22T11:45:00Z', description: 'Feed supply delivery - 300 bags Starter Feed', reference: 'BIL-0525-039', credit: 510000, debit: 0, balance: 1450000, type: 'bill' },
-  { id: 'T5', date: '2025-05-20T08:30:00Z', description: 'Payment received - POS', reference: 'PAY-0525-012', credit: 0, debit: 200000, balance: 940000, type: 'payment' },
-  { id: 'T6', date: '2025-05-18T16:00:00Z', description: 'Feed supply delivery - 200 bags Finisher Feed', reference: 'BIL-0525-036', credit: 360000, debit: 0, balance: 1140000, type: 'bill' },
-  { id: 'T7', date: '2025-05-15T13:20:00Z', description: 'Opening balance carried forward', reference: 'OPN-0525-001', credit: 780000, debit: 0, balance: 780000, type: 'opening' },
-  { id: 'T8', date: '2025-05-12T10:00:00Z', description: 'Payment received for outstanding invoice', reference: 'PAY-0525-010', credit: 0, debit: 400000, balance: 0, type: 'payment' },
-  { id: 'T9', date: '2025-05-10T09:30:00Z', description: 'Feed supply delivery - 400 bags Starter Feed', reference: 'BIL-0525-033', credit: 680000, debit: 0, balance: 400000, type: 'bill' },
-  { id: 'T10', date: '2025-05-08T14:00:00Z', description: 'Payment received - Bank Transfer', reference: 'PAY-0525-008', credit: 0, debit: 150000, balance: -280000, type: 'payment' },
-  { id: 'T11', date: '2025-05-05T11:15:00Z', description: 'Feed supply delivery - 250 bags Grower Feed', reference: 'BIL-0525-030', credit: 425000, debit: 0, balance: -130000, type: 'bill' },
-  { id: 'T12', date: '2025-05-03T08:45:00Z', description: 'Payment received - POS', reference: 'PAY-0525-005', credit: 0, debit: 100000, balance: -555000, type: 'payment' },
-  { id: 'T13', date: '2025-05-01T10:00:00Z', description: 'Feed supply delivery - 350 bags Premium Grower', reference: 'BIL-0525-027', credit: 595000, debit: 0, balance: -455000, type: 'bill' },
-  { id: 'T14', date: '2025-04-28T09:30:00Z', description: 'Payment received for outstanding invoice', reference: 'PAY-0425-022', credit: 0, debit: 250000, balance: -1050000, type: 'payment' },
-  { id: 'T15', date: '2025-04-25T15:00:00Z', description: 'Feed supply delivery - 500 bags Finisher Feed', reference: 'BIL-0425-024', credit: 900000, debit: 0, balance: -800000, type: 'bill' },
-  { id: 'T16', date: '2025-04-22T11:30:00Z', description: 'Payment received - Bank Transfer', reference: 'PAY-0425-019', credit: 0, debit: 350000, balance: -1700000, type: 'payment' },
-  { id: 'T17', date: '2025-04-20T08:00:00Z', description: 'Feed supply delivery - 200 bags Starter Feed', reference: 'BIL-0425-021', credit: 340000, debit: 0, balance: -1350000, type: 'bill' },
-  { id: 'T18', date: '2025-04-18T13:45:00Z', description: 'Opening balance carried forward', reference: 'OPN-0425-001', credit: 1690000, debit: 0, balance: -1690000, type: 'opening' },
-];
-
-const TRANSACTION_TYPES = [
-  { value: 'all', label: 'All Types' },
-  { value: 'bill', label: 'Bills/Invoices' },
-  { value: 'payment', label: 'Payments' },
-  { value: 'opening', label: 'Opening Balance' },
-];
-
 export default function SupplierLedger() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -74,40 +31,56 @@ export default function SupplierLedger() {
   const supplierId = queryParams.get('id');
 
   const [supplier, setSupplier] = useState(null);
-  const [transactions, setTransactions] = useState([]);
+  const [entries, setEntries] = useState([]);
+  const [summary, setSummary] = useState({ totalCredits: 0, totalDebits: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
-  const itemsPerPage = 7;
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
 
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [referenceSearch, setReferenceSearch] = useState('');
 
   useEffect(() => {
-    fetchData();
+    if (supplierId) fetchData();
   }, [supplierId]);
 
-  const fetchData = async () => {
+  const fetchData = async (nextCursor) => {
     try {
       setLoading(true);
       setError('');
-      const response = await Api.get(`/supplier-ledger/${supplierId}`);
-      const data = response.data?.data;
+      const params = nextCursor ? { cursor: nextCursor } : {};
+      const response = await ApiV2.get(`/v2/supplier-ledger/${supplierId}`, { params });
+      const body = response.data;
+      const data = body?.data;
+
       if (data) {
-        setSupplier(data.supplier || MOCK_SUPPLIER);
-        setTransactions(data.transactions || MOCK_TRANSACTIONS);
+        setSupplier(data.supplier || null);
+        const newEntries = data.entries || [];
+        if (nextCursor) {
+          setEntries(prev => [...prev, ...newEntries]);
+        } else {
+          setEntries(newEntries);
+        }
+        setSummary(body.summary || { totalCredits: 0, totalDebits: 0 });
+        setCursor(body.pagination?.nextCursor || null);
+        setHasMore(body.pagination?.hasMore || false);
       } else {
-        setSupplier(MOCK_SUPPLIER);
-        setTransactions(MOCK_TRANSACTIONS);
+        setError("No ledger data found for this supplier.");
       }
-    } catch {
-      setSupplier(MOCK_SUPPLIER);
-      setTransactions(MOCK_TRANSACTIONS);
+    } catch (err) {
+      const msg = err.response?.data?.response_message || err.response?.data?.message || "Failed to load supplier ledger.";
+      setError(msg);
+      toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (cursor && hasMore && !loading) {
+      fetchData(cursor);
     }
   };
 
@@ -116,44 +89,20 @@ export default function SupplierLedger() {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const filteredTransactions = transactions.filter(t => {
-    const tDate = new Date(t.date);
-    if (dateFrom && tDate < new Date(dateFrom)) return false;
-    if (dateTo && tDate > new Date(dateTo + 'T23:59:59')) return false;
-    if (typeFilter !== 'all' && t.type !== typeFilter) return false;
-    if (referenceSearch && !t.reference.toLowerCase().includes(referenceSearch.toLowerCase())) return false;
+  const filteredEntries = entries.filter(e => {
+    const eDate = new Date(e.createdAt);
+    if (dateFrom && eDate < new Date(dateFrom)) return false;
+    if (dateTo && eDate > new Date(dateTo + 'T23:59:59')) return false;
     return true;
   });
-
-  const pageCount = Math.ceil(filteredTransactions.length / itemsPerPage);
-  const offset = currentPage * itemsPerPage;
-  const currentTransactions = filteredTransactions.slice(offset, offset + itemsPerPage);
-
-  const handlePageChange = (data) => setCurrentPage(data.selected);
-
-  const applyFilters = () => setCurrentPage(0);
-  const resetFilters = () => {
-    setDateFrom('');
-    setDateTo('');
-    setTypeFilter('all');
-    setReferenceSearch('');
-    setCurrentPage(0);
-  };
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  const balanceColor = supplier
-    ? supplier.balance > 0 ? '#16A34A' : supplier.balance < 0 ? '#DC2626' : '#6B7280'
-    : '#6B7280';
-
-  const balanceLabel = supplier
-    ? supplier.balance < 0 ? 'Amount Owed to Supplier' : supplier.balance > 0 ? 'Supplier Owes Us' : 'Settled'
-    : '';
-
-  const hasActiveFilters = dateFrom || dateTo || typeFilter !== 'all' || referenceSearch;
-
-  const bal = supplier?.balance ?? 0;
+  const totalBalance = entries.reduce((sum, e) => sum + Number(e.balance || 0), 0);
+  const balanceColor = totalBalance > 0 ? '#16A34A' : totalBalance < 0 ? '#DC2626' : '#6B7280';
+  const balanceLabel = totalBalance < 0 ? 'Amount Owed to Supplier' : totalBalance > 0 ? 'Supplier Owes Us' : 'Settled';
+  const hasActiveFilters = dateFrom || dateTo;
 
   return (
     <section className={`${styles.body}`}>
@@ -194,10 +143,10 @@ export default function SupplierLedger() {
             </div>
 
             {/* ── Loading ── */}
-            {loading && <SkeletonTable cols={7} rows={5} />}
+            {loading && entries.length === 0 && <SkeletonTable cols={6} rows={5} />}
 
             {/* ── Error ── */}
-            {error && (
+            {error && !supplier && (
               <div className="d-flex justify-content-center mb-4">
                 <Alert variant="danger" className="text-center w-50 py-4">{error}</Alert>
               </div>
@@ -230,12 +179,9 @@ export default function SupplierLedger() {
                         <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1C1E', marginBottom: '4px' }}>
                           {supplier.name}
                         </h3>
-                        <p style={{ fontSize: '14px', color: '#374151', fontWeight: 500, margin: '0 0 8px 0' }}>
-                          {supplier.description || supplier.supplierType}
-                        </p>
                         <div className="d-flex align-items-center gap-3 flex-wrap" style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>
                           <span className="d-flex align-items-center gap-1">
-                            <BsGeoAlt style={{ fontSize: '12px' }} /> {supplier.location || 'N/A'}
+                            <BsGeoAlt style={{ fontSize: '12px' }} /> {supplier.address || 'N/A'}
                           </span>
                         </div>
                       </div>
@@ -251,7 +197,7 @@ export default function SupplierLedger() {
                           Total Credit (N)
                         </div>
                         <div style={{ fontSize: '20px', fontWeight: 700, color: '#16A34A' }}>
-                          {formatCurrency(supplier.totalCredit)}
+                          {formatCurrency(summary.totalCredits)}
                         </div>
                       </div>
                       <div style={{
@@ -262,7 +208,7 @@ export default function SupplierLedger() {
                           Total Debit (N)
                         </div>
                         <div style={{ fontSize: '20px', fontWeight: 700, color: '#DC2626' }}>
-                          {formatCurrency(supplier.totalDebit)}
+                          {formatCurrency(summary.totalDebits)}
                         </div>
                       </div>
                       <div style={{
@@ -273,7 +219,7 @@ export default function SupplierLedger() {
                           Balance (N)
                         </div>
                         <div style={{ fontSize: '20px', fontWeight: 700, color: balanceColor }}>
-                          {formatCurrency(bal)}
+                          {formatCurrency(totalBalance)}
                         </div>
                         <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>
                           {balanceLabel}
@@ -291,7 +237,7 @@ export default function SupplierLedger() {
                   }}
                 >
                   <div className="d-flex flex-wrap align-items-end gap-3">
-                    {/* Date From */}
+                    {/* Date From / To */}
                     <div style={{ flex: '1 1 160px', minWidth: '140px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px', display: 'block' }}>
                         Date Range
@@ -329,43 +275,11 @@ export default function SupplierLedger() {
                       </div>
                     </div>
 
-                    {/* Transaction Type */}
-                    <div style={{ flex: '1 1 140px', minWidth: '120px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px', display: 'block' }}>
-                        Transaction Type
-                      </label>
-                      <select
-                        value={typeFilter}
-                        onChange={(e) => setTypeFilter(e.target.value)}
-                        style={{
-                          width: '100%', padding: '7px 10px', border: '1px solid #e5e7eb',
-                          borderRadius: '6px', fontSize: '12px', color: '#374151', outline: 'none',
-                          background: '#ffffff', cursor: 'pointer',
-                        }}
-                      >
-                        {TRANSACTION_TYPES.map(t => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
-                    </div>
-
                     {/* Buttons */}
                     <div className="d-flex gap-2" style={{ alignSelf: 'flex-end', paddingBottom: '1px' }}>
-                      <button
-                        onClick={applyFilters}
-                        style={{
-                          padding: '7px 16px', background: '#512728', color: '#ffffff',
-                          border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
-                          cursor: 'pointer', transition: 'background 0.12s ease',
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#714445'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = '#512728'; }}
-                      >
-                        Apply Filter
-                      </button>
                       {hasActiveFilters && (
                         <button
-                          onClick={resetFilters}
+                          onClick={() => { setDateFrom(''); setDateTo(''); }}
                           style={{
                             padding: '7px 16px', background: '#ffffff', color: '#6B7280',
                             border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
@@ -380,22 +294,22 @@ export default function SupplierLedger() {
                 </div>
 
                 {/* ── Ledger Table ── */}
-                <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+                <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'visible' }}>
                   <div className="d-flex align-items-center justify-content-between px-4 pt-4 pb-2">
                     <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#2E3135', margin: 0 }}>
-                      Ledger Transactions ({filteredTransactions.length})
+                      Ledger Transactions ({filteredEntries.length})
                     </h4>
                   </div>
 
-                  {filteredTransactions.length === 0 ? (
+                  {filteredEntries.length === 0 ? (
                     <div className="text-center py-5">
                       <Alert variant="info" className="mx-auto" style={{ maxWidth: '400px' }}>
-                        No transactions match your filters.
+                        {entries.length === 0 ? 'Loading transactions...' : 'No transactions match your filters.'}
                       </Alert>
                     </div>
                   ) : (
                     <>
-                      <div className="table-responsive">
+                      <div className="table-responsive" style={{ overflow: 'visible' }}>
                         <table className={`table ${styles.styled_table} mb-0`} style={{ tableLayout: 'fixed' }}>
                           <thead className={styles.theader}>
                             <tr>
@@ -408,8 +322,11 @@ export default function SupplierLedger() {
                             </tr>
                           </thead>
                           <tbody>
-                            {currentTransactions.map((tx) => {
-                              const txBalColor = tx.balance > 0 ? '#16A34A' : tx.balance < 0 ? '#DC2626' : '#6B7280';
+                            {filteredEntries.map((tx) => {
+                              const credit = Number(tx.credit || 0);
+                              const debit = Number(tx.debit || 0);
+                              const balance = Number(tx.balance || 0);
+                              const txBalColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';
                               return (
                                 <tr
                                   key={tx.id}
@@ -418,33 +335,19 @@ export default function SupplierLedger() {
                                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                 >
                                   <td style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>
-                                    {formatDate(tx.date)}
+                                    {formatDate(tx.createdAt)}
                                   </td>
                                   <td style={{ fontSize: '13px', color: '#2E3135' }}>
-                                    <div className="d-flex align-items-center gap-2">
-                                      {tx.type === 'payment' && (
-                                        <span
-                                          style={{
-                                            width: '22px', height: '22px', borderRadius: '50%',
-                                            background: '#DCFCE7', color: '#16A34A', display: 'inline-flex',
-                                            alignItems: 'center', justifyContent: 'center',
-                                            fontSize: '11px', fontWeight: 700, flexShrink: 0,
-                                          }}
-                                        >
-                                          C
-                                        </span>
-                                      )}
-                                      <span>{tx.description}</span>
-                                    </div>
+                                    {tx.comment || '-'}
                                   </td>
                                   <td style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A', textAlign: 'right' }}>
-                                    {tx.credit ? formatCurrency(tx.credit) : '-'}
+                                    {credit ? formatCurrency(credit) : '-'}
                                   </td>
                                   <td style={{ fontSize: '13px', fontWeight: 600, color: '#DC2626', textAlign: 'right' }}>
-                                    {tx.debit ? formatCurrency(tx.debit) : '-'}
+                                    {debit ? formatCurrency(debit) : '-'}
                                   </td>
                                   <td style={{ fontSize: '13px', fontWeight: 600, color: txBalColor, textAlign: 'right' }}>
-                                    {formatCurrency(tx.balance)}
+                                    {formatCurrency(balance)}
                                   </td>
                                   <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                                     <Dropdown align="end">
@@ -452,10 +355,7 @@ export default function SupplierLedger() {
                                         <BsThreeDotsVertical size={16} />
                                       </Dropdown.Toggle>
                                       <Dropdown.Menu style={{ minWidth: 180 }}>
-                                        <Dropdown.Item onClick={() => {}}>Edit</Dropdown.Item>
                                         <Dropdown.Item onClick={() => {}}>View Details</Dropdown.Item>
-                                        <Dropdown.Divider />
-                                        <Dropdown.Item onClick={() => {}} style={{ color: '#dc3545', fontWeight: 600 }}>Delete</Dropdown.Item>
                                       </Dropdown.Menu>
                                     </Dropdown>
                                   </td>
@@ -466,32 +366,22 @@ export default function SupplierLedger() {
                         </table>
                       </div>
 
-                      {/* ── Pagination ── */}
-                      <div className="d-flex justify-content-between align-items-center px-4 py-3 border-top" style={{ borderColor: '#e5e7eb' }}>
-                        <div style={{ fontSize: '13px', color: '#8C949B' }}>
-                          Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} records
+                      {/* ── Load More (cursor-based pagination) ── */}
+                      {hasMore && (
+                        <div className="text-center py-3 border-top" style={{ borderColor: '#e5e7eb' }}>
+                          <button
+                            onClick={loadMore}
+                            disabled={loading}
+                            style={{
+                              padding: '8px 24px', background: '#512728', color: '#ffffff',
+                              border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+                              cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1,
+                            }}
+                          >
+                            {loading ? 'Loading...' : 'Load More'}
+                          </button>
                         </div>
-                        <ReactPaginate
-                          previousLabel={"‹"}
-                          nextLabel={"›"}
-                          breakLabel="..."
-                          pageCount={pageCount}
-                          marginPagesDisplayed={2}
-                          pageRangeDisplayed={3}
-                          onPageChange={handlePageChange}
-                          containerClassName={"pagination mb-0"}
-                          pageClassName={"page-item"}
-                          pageLinkClassName={"page-link"}
-                          previousClassName={"page-item"}
-                          previousLinkClassName={"page-link"}
-                          nextClassName={"page-item"}
-                          nextLinkClassName={"page-link"}
-                          breakClassName={"page-item"}
-                          breakLinkClassName={"page-link"}
-                          activeClassName={"active"}
-                          forcePage={currentPage}
-                        />
-                      </div>
+                      )}
                     </>
                   )}
                 </div>
