@@ -4,11 +4,11 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../finance.module.scss';
-import { BsThreeDotsVertical, BsCalendar3, BsGeoAlt, BsArrowLeft, BsPlusCircle, BsX, BsSend } from "react-icons/bs";
+import { BsCalendar3, BsGeoAlt, BsPlusCircle, BsX, BsSend } from "react-icons/bs";
 import { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Dropdown, Modal, Button } from 'react-bootstrap';
+import { Alert, Modal } from 'react-bootstrap';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 const formatCurrency = (value) => {
@@ -379,7 +379,6 @@ export default function SupplierLedger() {
                               <th style={{ width: '16%', fontSize: '11px', textAlign: 'right' }}>CREDIT (₦)</th>
                               <th style={{ width: '16%', fontSize: '11px', textAlign: 'right' }}>DEBIT (₦)</th>
                               <th style={{ width: '16%', fontSize: '11px', textAlign: 'right' }}>BALANCE (₦)</th>
-                              <th style={{ width: '40px', fontSize: '11px', textAlign: 'center' }}></th>
                             </tr>
                           </thead>
                           <tbody>
@@ -409,16 +408,6 @@ export default function SupplierLedger() {
                                   </td>
                                   <td style={{ fontSize: '13px', fontWeight: 600, color: txBalColor, textAlign: 'right' }}>
                                     {formatCurrency(balance)}
-                                  </td>
-                                  <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                    <Dropdown align="end">
-                                      <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                        <BsThreeDotsVertical size={16} />
-                                      </Dropdown.Toggle>
-                                      <Dropdown.Menu style={{ minWidth: 180 }}>
-                                        <Dropdown.Item onClick={() => {}}>View Details</Dropdown.Item>
-                                      </Dropdown.Menu>
-                                    </Dropdown>
                                   </td>
                                 </tr>
                               );
