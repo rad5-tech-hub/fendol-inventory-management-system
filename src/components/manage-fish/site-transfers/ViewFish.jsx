@@ -57,15 +57,6 @@ const siteColor = (name) => {
   return SITE_COLORS[Math.abs(hash) % SITE_COLORS.length];
 };
 
-/* ── Derived display tag from description text — not a real backend field ── */
-const deriveCategory = (desc) => {
-  const d = desc.toLowerCase();
-  if (d.includes('fingerling')) return { label: 'Fingerlings', cls: styles.pillFingerlings };
-  if (d.includes('broodstock')) return { label: 'Broodstock', cls: styles.pillBroodstock };
-  if (d.includes('table-size') || d.includes('harvest')) return { label: 'Ready for Harvest', cls: styles.pillHarvest };
-  return { label: 'General Stock', cls: styles.pillGeneral };
-};
-
 export default function ViewFish() {
   const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -256,7 +247,6 @@ export default function ViewFish() {
         <Modal.Body className={styles.modalBody}>
           {selectedTransfer && (() => {
             const color = siteColor(selectedTransfer.siteFrom);
-            const cat = deriveCategory(selectedTransfer.description);
             return (
               <>
                 <div className={styles.modalSiteBlock}>
@@ -275,10 +265,7 @@ export default function ViewFish() {
                 </div>
                 <div className={styles.modalDetailRow}>
                   <span className={styles.modalLabel}>Description</span>
-                  <span className={styles.modalValue}>
-                    <span className={`${styles.categoryPill} ${cat.cls}`}>{cat.label}</span>
-                    <span className="d-block mt-1" style={{ fontWeight: 400 }}>{selectedTransfer.description}</span>
-                  </span>
+                  <span className={styles.modalValue}>{selectedTransfer.description}</span>
                 </div>
               </>
             );
@@ -512,8 +499,8 @@ export default function ViewFish() {
                   ))}
                 </div>
 
-                {/* ── Move to Pond button ── */}
-                <div style={{ marginBottom: '16px' }}>
+                {/* ── Move to Pond button (right-aligned) ── */}
+                <div className="d-flex justify-content-end" style={{ marginBottom: '16px' }}>
                   <button
                     onClick={openMoveModal}
                     style={{
@@ -677,7 +664,6 @@ export default function ViewFish() {
                         <tbody>
                           {pageItems.map((t) => {
                             const color = siteColor(t.siteFrom);
-                            const cat = deriveCategory(t.description);
                             return (
                               <tr key={t.id} className={styles.trow}>
                                 <td style={{ color: '#8C949B' }}>{t.date}</td>
@@ -695,10 +681,7 @@ export default function ViewFish() {
                                     <div className={styles.qtyBarFill} style={{ width: `${(t.quantity / pageMaxQty) * 100}%` }} />
                                   </div>
                                 </td>
-                                <td>
-                                  <span className={`${styles.categoryPill} ${cat.cls}`}>{cat.label}</span>
-                                  <span className="d-block mt-1" style={{ color: '#2E3135', fontWeight: 400 }}>{t.description}</span>
-                                </td>
+                                <td style={{ color: '#2E3135', fontWeight: 400 }}>{t.description}</td>
                                 <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                                   <div onClick={(e) => e.stopPropagation()}>
                                     <Dropdown align="end">
