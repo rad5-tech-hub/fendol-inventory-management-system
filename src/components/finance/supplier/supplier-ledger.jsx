@@ -143,7 +143,7 @@ export default function SupplierLedger() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  const totalBalance = entries.reduce((sum, e) => sum + Number(e.balance || 0), 0);
+  const totalBalance = Number(summary.totalCredits || 0) - Number(summary.totalDebits || 0);
   const balanceColor = totalBalance > 0 ? '#16A34A' : totalBalance < 0 ? '#DC2626' : '#6B7280';
   const balanceLabel = totalBalance < 0 ? 'Amount Owed to Supplier' : totalBalance > 0 ? 'Supplier Owes Us' : 'Settled';
   const hasActiveFilters = dateFrom || dateTo;
