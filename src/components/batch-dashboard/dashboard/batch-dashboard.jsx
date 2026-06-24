@@ -210,7 +210,7 @@ export default function BatchDashboard() {
                       <tr>
                         <th className="text-start">Batch Number</th>
                         <th className="text-start">Date Created <span style={{ cursor: 'pointer' }}>↕</span></th>
-                        <th className="text-start">Comments</th>
+                        <th className="text-start">Descriptions</th>
                         <th className="text-start">Current Stage</th>
                         <th className="text-end">Fish Stocks</th>
                         <th className="text-end">Processed</th>
