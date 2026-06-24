@@ -4,11 +4,11 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../finance.module.scss';
-import { BsThreeDotsVertical, BsCalendar3, BsGeoAlt, BsArrowLeft } from "react-icons/bs";
+import { BsThreeDotsVertical, BsCalendar3, BsGeoAlt, BsArrowLeft, BsPlusCircle, BsX, BsSend } from "react-icons/bs";
 import { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Dropdown } from 'react-bootstrap';
+import { Alert, Dropdown, Modal, Button } from 'react-bootstrap';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 const formatCurrency = (value) => {
@@ -41,6 +41,10 @@ export default function SupplierLedger() {
 
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ comment: '', expectedAmountToPay: '', amountPaid: '' });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (supplierId) fetchData();
@@ -96,6 +100,46 @@ export default function SupplierLedger() {
     return true;
   });
 
+  const openPaymentModal = () => {
+    setPaymentForm({ comment: '', expectedAmountToPay: '', amountPaid: '' });
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!paymentForm.comment.trim() || !paymentForm.expectedAmountToPay || !paymentForm.amountPaid) {
+      toast.warn("All fields are required.", { className: 'dark-toast', autoClose: 3000 });
+      return;
+    }
+    setSubmitting(true);
+    const loadingToast = toast.loading("Recording payment...", { className: 'dark-toast' });
+    try {
+      const payload = {
+        supplierId,
+        expectedAmountToPay: Number(paymentForm.expectedAmountToPay),
+        amountPaid: Number(paymentForm.amountPaid),
+        comment: paymentForm.comment.trim(),
+      };
+      await ApiV2.post('/v2/supplier-ledger', payload);
+      toast.update(loadingToast, {
+        render: "Payment recorded successfully!",
+        type: 'success', isLoading: false, autoClose: 3000, className: 'dark-toast'
+      });
+      setShowPaymentModal(false);
+      setEntries([]);
+      setCursor(null);
+      setHasMore(false);
+      fetchData();
+    } catch (err) {
+      const msg = err.response?.data?.response_message || err.response?.data?.message || "Failed to record payment.";
+      toast.update(loadingToast, {
+        render: msg, type: 'error', isLoading: false, autoClose: 5000, className: 'dark-toast'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
@@ -140,6 +184,23 @@ export default function SupplierLedger() {
                   View all transactions and account balance for suppliers.
                 </p>
               </div>
+              {supplier && (
+                <button
+                  onClick={openPaymentModal}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)',
+                    color: '#ffffff', border: 'none', borderRadius: '10px',
+                    padding: '10px 20px', fontSize: '14px', fontWeight: 600,
+                    cursor: 'pointer', boxShadow: '0 4px 14px rgba(81,39,40,0.25)',
+                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(81,39,40,0.35)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(81,39,40,0.25)'; }}
+                >
+                  <BsPlusCircle size={18} /> Add Payment
+                </button>
+              )}
             </div>
 
             {/* ── Loading ── */}
@@ -387,6 +448,182 @@ export default function SupplierLedger() {
                 </div>
               </>
             )}
+          {/* ── Add Payment Modal ── */}
+            <Modal show={showPaymentModal} onHide={() => setShowPaymentModal(false)} centered size="md">
+              <div style={{
+                background: '#ffffff', borderRadius: '16px', overflow: 'hidden',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+              }}>
+                {/* Gradient Header */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)',
+                  padding: '24px 28px', position: 'relative',
+                }}>
+                  <button
+                    onClick={() => setShowPaymentModal(false)}
+                    style={{
+                      position: 'absolute', top: '16px', right: '16px',
+                      background: 'rgba(255,255,255,0.15)', border: 'none',
+                      borderRadius: '50%', width: '32px', height: '32px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#ffffff', cursor: 'pointer', fontSize: '18px',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                  >
+                    <BsX />
+                  </button>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.15)', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '14px', fontSize: '22px', color: '#ffffff',
+                  }}>
+                    <BsSend />
+                  </div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                    Record Payment
+                  </h3>
+                  <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '4px 0 0 0' }}>
+                    {supplier?.name || 'Supplier'}
+                  </p>
+                </div>
+
+                {/* Form Body */}
+                <form onSubmit={handlePaymentSubmit} style={{ padding: '28px' }}>
+                  {/* Description */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{
+                      fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                      textTransform: 'uppercase', letterSpacing: '0.3px',
+                      marginBottom: '6px', display: 'block',
+                    }}>
+                      Description
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Payment for fish feed supply"
+                      value={paymentForm.comment}
+                      onChange={(e) => setPaymentForm(p => ({ ...p, comment: e.target.value }))}
+                      required
+                      style={{
+                        width: '100%', padding: '12px 14px', fontSize: '14px',
+                        border: '1px solid #e5e7eb', borderRadius: '10px',
+                        outline: 'none', color: '#2E3135', background: '#FAFCFF',
+                        transition: 'border-color 0.2s, box-shadow 0.2s',
+                      }}
+                      onFocus={(e) => { e.target.style.borderColor = '#512728'; e.target.style.boxShadow = '0 0 0 3px rgba(81,39,40,0.08)'; }}
+                      onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; }}
+                    />
+                  </div>
+
+                  {/* Two-column: Purchase Amount + Amount Paid */}
+                  <div className="d-flex gap-3">
+                    <div style={{ flex: 1, marginBottom: '20px' }}>
+                      <label style={{
+                        fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                        textTransform: 'uppercase', letterSpacing: '0.3px',
+                        marginBottom: '6px', display: 'block',
+                      }}>
+                        Purchase Amount (₦)
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <span style={{
+                          position: 'absolute', left: '14px', top: '50%',
+                          transform: 'translateY(-50%)', fontSize: '14px',
+                          fontWeight: 600, color: '#8C949B', pointerEvents: 'none',
+                        }}>₦</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={paymentForm.expectedAmountToPay}
+                          onChange={(e) => setPaymentForm(p => ({ ...p, expectedAmountToPay: e.target.value }))}
+                          required
+                          style={{
+                            width: '100%', padding: '12px 14px 12px 30px', fontSize: '14px',
+                            border: '1px solid #e5e7eb', borderRadius: '10px',
+                            outline: 'none', color: '#2E3135', background: '#FAFCFF',
+                            transition: 'border-color 0.2s, box-shadow 0.2s',
+                          }}
+                          onFocus={(e) => { e.target.style.borderColor = '#512728'; e.target.style.boxShadow = '0 0 0 3px rgba(81,39,40,0.08)'; }}
+                          onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, marginBottom: '20px' }}>
+                      <label style={{
+                        fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                        textTransform: 'uppercase', letterSpacing: '0.3px',
+                        marginBottom: '6px', display: 'block',
+                      }}>
+                        Amount Paid (₦)
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <span style={{
+                          position: 'absolute', left: '14px', top: '50%',
+                          transform: 'translateY(-50%)', fontSize: '14px',
+                          fontWeight: 600, color: '#8C949B', pointerEvents: 'none',
+                        }}>₦</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={paymentForm.amountPaid}
+                          onChange={(e) => setPaymentForm(p => ({ ...p, amountPaid: e.target.value }))}
+                          required
+                          style={{
+                            width: '100%', padding: '12px 14px 12px 30px', fontSize: '14px',
+                            border: '1px solid #e5e7eb', borderRadius: '10px',
+                            outline: 'none', color: '#2E3135', background: '#FAFCFF',
+                            transition: 'border-color 0.2s, box-shadow 0.2s',
+                          }}
+                          onFocus={(e) => { e.target.style.borderColor = '#512728'; e.target.style.boxShadow = '0 0 0 3px rgba(81,39,40,0.08)'; }}
+                          onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div style={{ height: '1px', background: '#F3F4F6', margin: '4px 0 20px' }} />
+
+                  {/* Buttons */}
+                  <div className="d-flex gap-2 justify-content-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowPaymentModal(false)}
+                      style={{
+                        padding: '10px 24px', fontSize: '14px', fontWeight: 500,
+                        border: '1px solid #e5e7eb', borderRadius: '10px',
+                        background: '#ffffff', color: '#6B7280', cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      style={{
+                        padding: '10px 24px', fontSize: '14px', fontWeight: 600,
+                        border: 'none', borderRadius: '10px',
+                        background: submitting ? '#9CA3AF' : '#512728',
+                        color: '#ffffff', cursor: submitting ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        boxShadow: submitting ? 'none' : '0 4px 12px rgba(81,39,40,0.2)',
+                      }}
+                    >
+                      {submitting ? 'Recording...' : (
+                        <><BsSend size={14} /> Record Payment</>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </Modal>
           </main>
         </section>
       </div>
