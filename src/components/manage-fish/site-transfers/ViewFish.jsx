@@ -4,13 +4,13 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from './ViewFish.module.scss';
 import {
-  BsSearch, BsThreeDotsVertical, BsChevronDown
+  BsSearch, BsThreeDotsVertical, BsChevronDown, BsPlusCircle, BsX
 } from "react-icons/bs";
 import {
-  FaExchangeAlt, FaMapMarkerAlt, FaBoxOpen
+  FaExchangeAlt, FaMapMarkerAlt, FaBoxOpen, FaWarehouse, FaFish
 } from "react-icons/fa";
-import { GiFishingNet } from "react-icons/gi";
-import { Dropdown, Modal, Button } from 'react-bootstrap';
+import { GiFishingNet, GiWaterTank } from "react-icons/gi";
+import { Dropdown, Modal, Button, Form } from 'react-bootstrap';
 import { SkeletonTable, SkeletonStatGrid, SkeletonFilterBar } from "../../shared/skeleton/Skeleton";
 import ReactPaginate from 'react-paginate';
 import { ToastContainer } from 'react-toastify';
@@ -93,7 +93,51 @@ export default function ViewFish() {
   const [customEndDate, setCustomEndDate] = useState('');
   const [siteOptions, setSiteOptions] = useState([]);
 
-  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const user = useSelector((store) => store.user);
+  const userTypes = user?.userTypes || [];
+
+  /* ── Move to Pond modal ── */
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [pondOptions, setPondOptions] = useState([]);
+  const [pondsLoading, setPondsLoading] = useState(false);
+  const [moveForm, setMoveForm] = useState({ pondId: '', quantity: '' });
+  const [moveSiteId, setMoveSiteId] = useState(user?.siteId || '');
+  const [submittingMove, setSubmittingMove] = useState(false);
+  const isSuperAdmin = userTypes.includes('super_admin');
+
+  const fetchPonds = async (siteId) => {
+    if (!siteId) return;
+    setPondsLoading(true);
+    try {
+      const res = await Api.get(`/fish-stages?siteId=${siteId}`);
+      const list = res.data?.data || [];
+      setPondOptions(list);
+      setMoveForm(prev => ({ ...prev, pondId: '' }));
+    } catch {
+      setPondOptions([]);
+    } finally {
+      setPondsLoading(false);
+    }
+  };
+
+  const openMoveModal = () => {
+    const id = moveSiteId || user?.siteId || '';
+    setMoveSiteId(id);
+    setMoveForm({ pondId: '', quantity: '' });
+    setShowMoveModal(true);
+    if (id) fetchPonds(id);
+  };
+
+  const handleMoveSubmit = async (e) => {
+    e.preventDefault();
+    if (!moveForm.pondId || !moveForm.quantity) return;
+    setSubmittingMove(true);
+    // TODO: wire actual API when available
+    setTimeout(() => {
+      setSubmittingMove(false);
+      setShowMoveModal(false);
+    }, 500);
+  };
 
   /* ── Click-outside for tooltips ── */
   useEffect(() => {
@@ -174,15 +218,23 @@ export default function ViewFish() {
   /* ── Unique site names from backend fetch — falls back to transfer data ── */
   const allSites = siteOptions.length > 0 ? siteOptions : [...new Set(transfers.map((t) => t.siteFrom))].sort();
 
-  /* ── Stat card definitions (first 2 cards only) ── */
+  /* ── Stat card definitions ── */
   const statCards = [
     {
-      label: 'TOTAL TRANSFERRED',
+      label: 'TOTAL RECEIVED',
       value: `${formatNumber(totalFish)} pcs`,
       sub: 'All incoming fish across transfers',
       icon: <GiFishingNet size={18} />,
       iconClass: styles.statIconMaroon,
       tooltipText: `Total of ${formatNumber(totalFish)} fish transferred to your site across all incoming transfers.`,
+    },
+    {
+      label: 'AVAILABLE STOCK',
+      value: `${formatNumber(totalFish)} pcs`,
+      sub: 'Current stock on site',
+      icon: <FaWarehouse size={16} />,
+      iconClass: styles.statIconGreen,
+      tooltipText: `Current estimated stock of ${formatNumber(totalFish)} fish available on site.`,
     },
     {
       label: 'TOTAL TRANSFERS',
@@ -237,6 +289,160 @@ export default function ViewFish() {
         </Modal.Footer>
       </Modal>
 
+      {/* ── Move to Pond Modal ── */}
+      <Modal show={showMoveModal} onHide={() => setShowMoveModal(false)} centered size="md">
+        <div style={{
+          background: '#ffffff', borderRadius: '16px', overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+        }}>
+          {/* Gradient Header */}
+          <div style={{
+            background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)',
+            padding: '24px 28px', position: 'relative',
+          }}>
+            <button
+              onClick={() => setShowMoveModal(false)}
+              style={{
+                position: 'absolute', top: '16px', right: '16px',
+                background: 'rgba(255,255,255,0.15)', border: 'none',
+                borderRadius: '50%', width: '32px', height: '32px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#ffffff', cursor: 'pointer', fontSize: '18px',
+              }}
+            >
+              <BsX />
+            </button>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '12px',
+              background: 'rgba(255,255,255,0.15)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              marginBottom: '14px', fontSize: '22px', color: '#ffffff',
+            }}>
+              <GiWaterTank />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+              Move to Pond
+            </h3>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '4px 0 0 0' }}>
+              Transfer received fish into a pond on your site.
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleMoveSubmit} style={{ padding: '28px' }}>
+            {isSuperAdmin && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                  textTransform: 'uppercase', letterSpacing: '0.3px',
+                  marginBottom: '6px', display: 'block',
+                }}>
+                  Site
+                </label>
+                <Form.Select
+                  value={moveSiteId}
+                  onChange={(e) => { setMoveSiteId(e.target.value); fetchPonds(e.target.value); }}
+                  style={{
+                    fontSize: '14px', padding: '10px 12px',
+                    border: '1px solid #e5e7eb', borderRadius: '10px',
+                    color: '#2E3135', background: '#FAFCFF',
+                  }}
+                >
+                  <option value="">Select a site...</option>
+                  {(user?.userSites || []).map(s => (
+                    <option key={s.id || s} value={s.id || s}>{s.name || s}</option>
+                  ))}
+                </Form.Select>
+              </div>
+            )}
+
+            {/* Pond dropdown */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                textTransform: 'uppercase', letterSpacing: '0.3px',
+                marginBottom: '6px', display: 'block',
+              }}>
+                Pond
+              </label>
+              <Form.Select
+                value={moveForm.pondId}
+                onChange={(e) => setMoveForm(p => ({ ...p, pondId: e.target.value }))}
+                disabled={pondsLoading || !moveSiteId}
+                style={{
+                  fontSize: '14px', padding: '10px 12px',
+                  border: '1px solid #e5e7eb', borderRadius: '10px',
+                  color: '#2E3135', background: '#FAFCFF',
+                }}
+              >
+                <option value="">{pondsLoading ? 'Loading ponds...' : 'Select a pond'}</option>
+                {pondOptions.map(p => (
+                  <option key={p.id} value={p.id}>{p.title || p.name}</option>
+                ))}
+              </Form.Select>
+            </div>
+
+            {/* Quantity */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                textTransform: 'uppercase', letterSpacing: '0.3px',
+                marginBottom: '6px', display: 'block',
+              }}>
+                Quantity (pcs)
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Enter quantity"
+                  value={moveForm.quantity}
+                  onChange={(e) => setMoveForm(p => ({ ...p, quantity: e.target.value }))}
+                  required
+                  style={{
+                    width: '100%', padding: '12px 14px', fontSize: '14px',
+                    border: '1px solid #e5e7eb', borderRadius: '10px',
+                    outline: 'none', color: '#2E3135', background: '#FAFCFF',
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = '#512728'; e.target.style.boxShadow = '0 0 0 3px rgba(81,39,40,0.08)'; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; }}
+                />
+              </div>
+            </div>
+
+            <div style={{ height: '1px', background: '#F3F4F6', marginBottom: '20px' }} />
+
+            <div className="d-flex gap-2 justify-content-end">
+              <button
+                type="button"
+                onClick={() => setShowMoveModal(false)}
+                style={{
+                  padding: '10px 24px', fontSize: '14px', fontWeight: 500,
+                  border: '1px solid #e5e7eb', borderRadius: '10px',
+                  background: '#ffffff', color: '#6B7280', cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submittingMove || !moveForm.pondId || !moveForm.quantity}
+                style={{
+                  padding: '10px 24px', fontSize: '14px', fontWeight: 600,
+                  border: 'none', borderRadius: '10px',
+                  background: (submittingMove || !moveForm.pondId || !moveForm.quantity) ? '#9CA3AF' : '#512728',
+                  color: '#ffffff', cursor: (submittingMove || !moveForm.pondId || !moveForm.quantity) ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  boxShadow: (submittingMove || !moveForm.pondId || !moveForm.quantity) ? 'none' : '0 4px 12px rgba(81,39,40,0.2)',
+                }}
+              >
+                <GiWaterTank size={14} /> {submittingMove ? 'Moving...' : 'Move to Pond'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -268,7 +474,7 @@ export default function ViewFish() {
             {/* ── Loading state ── */}
             {loading && (
               <>
-                <SkeletonStatGrid count={2} />
+                <SkeletonStatGrid count={3} />
                 <div className="mt-4"><SkeletonFilterBar /><SkeletonTable rows={6} /></div>
               </>
             )}
@@ -304,6 +510,25 @@ export default function ViewFish() {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* ── Move to Pond button ── */}
+                <div style={{ marginBottom: '16px' }}>
+                  <button
+                    onClick={openMoveModal}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '8px',
+                      background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)',
+                      color: '#ffffff', border: 'none', borderRadius: '10px',
+                      padding: '10px 22px', fontSize: '14px', fontWeight: 600,
+                      cursor: 'pointer', boxShadow: '0 4px 14px rgba(81,39,40,0.25)',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(81,39,40,0.35)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(81,39,40,0.25)'; }}
+                  >
+                    <GiWaterTank size={18} /> Move to Pond
+                  </button>
                 </div>
 
                 {/* ── Filter / search row — always visible ── */}
