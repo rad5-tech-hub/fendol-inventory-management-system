@@ -4,7 +4,7 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../finance.module.scss';
-import { BsThreeDotsVertical, BsDownload, BsFunnel, BsCalendar3, BsSearch, BsGeoAlt, BsChevronDown } from "react-icons/bs";
+import { BsThreeDotsVertical, BsCalendar3, BsGeoAlt } from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -204,31 +204,6 @@ export default function SupplierLedger() {
                   View all transactions and account balance for suppliers.
                 </p>
               </div>
-              <div className="d-flex gap-2">
-                <button
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    background: '#ffffff', color: '#374151', border: '1px solid #e5e7eb',
-                    borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 500,
-                    cursor: 'pointer', transition: 'all 0.12s ease',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#F9FAFB'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; }}
-                >
-                  <BsDownload /> Export Report
-                </button>
-                <button
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    background: '#512728', color: '#ffffff', border: 'none',
-                    borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 500,
-                    cursor: 'pointer', transition: 'all 0.12s ease',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#714445'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = '#512728'; }}
-                >
-                  <BsFunnel /> Filter
-                </button>
               </div>
             </div>
 
@@ -388,28 +363,6 @@ export default function SupplierLedger() {
                       </select>
                     </div>
 
-                    {/* Reference Search */}
-                    <div style={{ flex: '1 1 160px', minWidth: '120px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px', display: 'block' }}>
-                        Reference
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <input
-                          type="text"
-                          value={referenceSearch}
-                          onChange={(e) => setReferenceSearch(e.target.value)}
-                          placeholder="Search reference..."
-                          style={{
-                            width: '100%', padding: '7px 10px 7px 28px',
-                            border: '1px solid #e5e7eb', borderRadius: '6px',
-                            fontSize: '12px', color: '#374151', outline: 'none',
-                            background: '#ffffff',
-                          }}
-                        />
-                        <BsSearch style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#8C949B' }} />
-                      </div>
-                    </div>
-
                     {/* Buttons */}
                     <div className="d-flex gap-2" style={{ alignSelf: 'flex-end', paddingBottom: '1px' }}>
                       <button
@@ -460,12 +413,11 @@ export default function SupplierLedger() {
                         <table className={`table ${styles.styled_table} mb-0`} style={{ tableLayout: 'fixed' }}>
                           <thead className={styles.theader}>
                             <tr>
-                              <th style={{ width: '15%', fontSize: '11px' }}>DATE</th>
-                              <th style={{ width: '28%', fontSize: '11px' }}>DESCRIPTION</th>
-                              <th style={{ width: '15%', fontSize: '11px' }}>REFERENCE</th>
-                              <th style={{ width: '14%', fontSize: '11px', textAlign: 'right' }}>CREDIT (₦)</th>
-                              <th style={{ width: '14%', fontSize: '11px', textAlign: 'right' }}>DEBIT (₦)</th>
-                              <th style={{ width: '14%', fontSize: '11px', textAlign: 'right' }}>BALANCE (₦)</th>
+                              <th style={{ width: '16%', fontSize: '11px' }}>DATE</th>
+                              <th style={{ width: '34%', fontSize: '11px' }}>DESCRIPTION</th>
+                              <th style={{ width: '16%', fontSize: '11px', textAlign: 'right' }}>CREDIT (₦)</th>
+                              <th style={{ width: '16%', fontSize: '11px', textAlign: 'right' }}>DEBIT (₦)</th>
+                              <th style={{ width: '16%', fontSize: '11px', textAlign: 'right' }}>BALANCE (₦)</th>
                               <th style={{ width: '40px', fontSize: '11px', textAlign: 'center' }}></th>
                             </tr>
                           </thead>
@@ -498,15 +450,6 @@ export default function SupplierLedger() {
                                       )}
                                       <span>{tx.description}</span>
                                     </div>
-                                  </td>
-                                  <td>
-                                    <span style={{
-                                      fontFamily: "'Roboto Mono', monospace", fontSize: '12px',
-                                      color: '#6B7280', background: '#F3F4F6', padding: '2px 8px',
-                                      borderRadius: '4px',
-                                    }}>
-                                      {tx.reference}
-                                    </span>
                                   </td>
                                   <td style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A', textAlign: 'right' }}>
                                     {tx.credit ? formatCurrency(tx.credit) : '-'}
