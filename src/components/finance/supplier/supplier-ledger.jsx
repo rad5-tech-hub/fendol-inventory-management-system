@@ -148,7 +148,7 @@ export default function SupplierLedger() {
     : '#6B7280';
 
   const balanceLabel = supplier
-    ? supplier.balance > 0 ? 'Amount Owed to Supplier' : supplier.balance < 0 ? 'Supplier Owes Us' : 'Settled'
+    ? supplier.balance < 0 ? 'Amount Owed to Supplier' : supplier.balance > 0 ? 'Supplier Owes Us' : 'Settled'
     : '';
 
   const hasActiveFilters = dateFrom || dateTo || typeFilter !== 'all' || referenceSearch;

@@ -242,9 +242,9 @@ export default function ViewAllCustomers() {
                 </div>
                 <div>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: '#8C949B', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                    Total Outstanding
+                    Total Outstanding Debt
                   </div>
-                  <div style={{ fontSize: '26px', fontWeight: 700, color: '#16A34A', lineHeight: 1.2 }}>
+                  <div style={{ fontSize: '26px', fontWeight: 700, color: '#dc3545', lineHeight: 1.2 }}>
                     {formatCurrency(totalOutstanding)}
                   </div>
                 </div>

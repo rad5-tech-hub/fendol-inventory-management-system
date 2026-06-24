@@ -585,9 +585,11 @@
 }
 
 /* ── Action cell ── */
+.styled_table td.actionCell,
 .actionCell {
   text-align: center;
   vertical-align: middle;
+  overflow: visible;
 }
 
 /* ── Search input ── */
@@ -714,7 +716,7 @@
   background: #fff;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
