@@ -1,23 +1,43 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../customer.module.scss';
-import { BsExclamationTriangleFill, BsPrinter } from "react-icons/bs";
-import { FaArrowLeft } from "react-icons/fa";
-import { Spinner, Alert, Button, Form, Modal } from 'react-bootstrap';
+import { BsThreeDotsVertical, BsCalendar3, BsPrinter } from "react-icons/bs";
 import Api from "../../shared/api/apiLink";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Alert, Button, Dropdown, Form, Modal, Spinner } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import ReceiptModal from "../../finance/add-sales/receipt";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
-const PersonalLedger = () => {
+const formatCurrency = (value) => {
+  if (value == null) return '₦0.00';
+  return `₦${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
+
+const getInitials = (name) => {
+  if (!name) return '?';
+  const parts = name.trim().split(' ');
+  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+};
+
+const TRANSACTION_TYPES = [
+  { value: 'all', label: 'All Types' },
+  { value: 'payment', label: 'Payments' },
+  { value: 'sale', label: 'Sales' },
+  { value: 'opening', label: 'Opening Balance' },
+];
+
+export default function PersonalLedger() {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
-  const id = queryParams.get('id');
+  const customerId = queryParams.get('id');
 
   const [ledgerData, setLedgerData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,15 +46,18 @@ const PersonalLedger = () => {
   const [category, setCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
-  const itemsPerPage = 10;
-  const [balance, setBalance] = useState(0);
-  const [selectedDate, setSelectedDate] = useState("");
+  const itemsPerPage = 7;
+
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+
   const [receiptData, setReceiptData] = useState({});
   const [showReceipt, setShowReceipt] = useState(false);
   const [pendingSales, setPendingSales] = useState([]);
   const [pendingSalesLoading, setPendingSalesLoading] = useState(false);
   const [pendingSalesError, setPendingSalesError] = useState('');
-  const [selectedPendingSale, setSelectedPendingSale] = useState(""); // Holds salesId
+  const [selectedPendingSale, setSelectedPendingSale] = useState("");
   const [amountPaid, setAmountPaid] = useState("");
   const [amountPaidB, setAmountPaidB] = useState("");
   const [transactionId, setTransactionId] = useState("");
@@ -45,21 +68,18 @@ const PersonalLedger = () => {
   const [pendingSearch, setPendingSearch] = useState("");
   const [showPendingDropdown, setShowPendingDropdown] = useState(false);
   const [loadingPayment, setLoadingPayment] = useState(false);
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    navigate("/customer/view-all");
-  };
 
   useEffect(() => {
-    if (id) {
+    if (customerId) {
       fetchLedgerData();
     }
-  }, [id]);
+  }, [customerId]);
 
   const fetchLedgerData = async () => {
     try {
-      const response = await Api.get(`/customer/${id}`);
+      setLoading(true);
+      setError('');
+      const response = await Api.get(`/customer/${customerId}`);
       if (Array.isArray(response.data.data)) {
         setLedgerData(response.data.data);
         if (response.data.data.length > 0) {
@@ -81,7 +101,7 @@ const PersonalLedger = () => {
     setPendingSalesLoading(true);
     setPendingSalesError('');
     try {
-      const response = await Api.get(`/customer/${id}/pending-sales`);
+      const response = await Api.get(`/customer/${customerId}/pending-sales`);
       const pending = response.data.data;
       setPendingSales(pending);
     } catch (err) {
@@ -93,42 +113,43 @@ const PersonalLedger = () => {
   };
 
   const formatDate = (isoDate) => {
-    const date = new Date(isoDate);
-    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${date.getFullYear()}`;
-    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
-    return `${formattedDate} ${formattedTime}`;
+    const d = new Date(isoDate);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
+  const filteredLedgerData = useMemo(() => {
+    return ledgerData.filter(record => {
+      const tDate = new Date(record.date);
+      if (dateFrom && tDate < new Date(dateFrom)) return false;
+      if (dateTo && tDate > new Date(dateTo + 'T23:59:59')) return false;
+      if (typeFilter !== 'all') {
+        const type = record.productName ? 'sale' : (record.credit > 0 ? 'payment' : 'payment');
+        if (type !== typeFilter && typeFilter !== 'all') return false;
+      }
+      return true;
+    });
+  }, [ledgerData, dateFrom, dateTo, typeFilter]);
+
+  const pageCount = Math.ceil(filteredLedgerData.length / itemsPerPage);
+  const offset = currentPage * itemsPerPage;
+  const displayedLedgerData = filteredLedgerData.slice(offset, offset + itemsPerPage);
+
+  const totalCredit = ledgerData.reduce((sum, r) => sum + (Number(r.credit) || 0), 0);
+  const totalDebit = ledgerData.reduce((sum, r) => sum + (Number(r.debit) || 0), 0);
+  const balance = ledgerData.length > 0 ? ledgerData[0].balanceWithRollover ?? 0 : 0;
+  const balanceColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';
+  const balanceLabel = balance > 0 ? 'Customer Owes Us' : balance < 0 ? 'We Owe Customer' : 'Settled';
+
+  const handlePageChange = (data) => setCurrentPage(data.selected);
+
+  const resetFilters = () => {
+    setDateFrom('');
+    setDateTo('');
+    setTypeFilter('all');
     setCurrentPage(0);
   };
 
-  const filteredLedgerData = React.useMemo(() => {
-    if (!selectedDate) {
-      return ledgerData;
-    }
-    return ledgerData.filter(record => formatDate(record.date) === selectedDate);
-  }, [ledgerData, selectedDate]);
-
-  const handlePageChange = ({ selected }) => {
-    setCurrentPage(selected);
-  };
-
-  const startIndex = currentPage * itemsPerPage;
-  const displayedLedgerData = React.useMemo(() => {
-    return filteredLedgerData.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredLedgerData, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    if (displayedLedgerData.length > 0) {
-      setBalance(displayedLedgerData[0].balanceWithRollover);
-    }
-  }, [displayedLedgerData]);
+  const hasActiveFilters = dateFrom || dateTo || typeFilter !== 'all';
 
   const handleAddMoney = () => {
     setShowModal(true);
@@ -142,11 +163,11 @@ const PersonalLedger = () => {
   };
 
   const handlePendingSelect = (sale) => {
-    setSelectedPendingSale(sale.id || ""); // Use salesId
+    setSelectedPendingSale(sale.id || "");
     setTransactionId(sale.transactionId || "");
     setTotalAmount(sale.totalPrice - sale.totalPaid - (sale.discount || 0));
     setAmountPaidB(sale.totalPaid || 0);
-    setSalesType(sale.paymentType || ""); // Set payment type from pending
+    setSalesType(sale.paymentType || "");
     setPendingSearch(`${sale.transactionId} - ${sale.salesCategory || 'Unknown Sales Type'} - ₦${(sale.totalPrice - (sale.discount || 0)).toLocaleString()}`);
     setShowPendingDropdown(false);
     setAmountPaid("");
@@ -187,56 +208,32 @@ const PersonalLedger = () => {
 
   const handleSubmitAmountPaid = async () => {
     if (!amountPaid) {
-      toast.error("Please enter an amount to pay.", {
-        position: "top-center",
-        autoClose: 3000,
-      });
+      toast.error("Please enter an amount to pay.", { position: "top-center", autoClose: 3000 });
       return;
     }
     if (!salesType) {
-      toast.error("Please select a payment type.", {
-        position: "top-center",
-        autoClose: 3000,
-      });
+      toast.error("Please select a payment type.", { position: "top-center", autoClose: 3000 });
       return;
     }
-
-    const loadingToastId = toast.loading("Processing payment...", {
-      position: "top-center",
-    });
+    const loadingToastId = toast.loading("Processing payment...", { position: "top-center" });
     setLoadingPayment(true);
-
     try {
       const paymentData = {
-        customerId: id,
-        salesId: selectedPendingSale || null, // Send salesId, allow null if no pending sale selected
+        customerId,
+        salesId: selectedPendingSale || null,
         amountPaid: parseFloat(amountPaid),
         paymentType: salesType,
         description: description || "",
       };
-
       const response = await Api.post("/add-payment", paymentData);
-      toast.update(loadingToastId, {
-        render: "Payment added successfully!",
-        type: "success",
-        isLoading: false,
-        position: "top-center",
-        autoClose: 3000,
-      });
-
+      toast.update(loadingToastId, { render: "Payment added successfully!", type: "success", isLoading: false, position: "top-center", autoClose: 3000 });
       setShowModal(false);
       resetForm();
       fetchLedgerData();
       fetchPendingSales();
     } catch (error) {
       console.error("Error recording payment:", error);
-      toast.update(loadingToastId, {
-        render: error.response?.data?.response_message || "Failed to add payment. Please try again.",
-        type: "error",
-        isLoading: false,
-        position: "top-center",
-        autoClose: 3000,
-      });
+      toast.update(loadingToastId, { render: error.response?.data?.response_message || "Failed to add payment.", type: "error", isLoading: false, position: "top-center", autoClose: 3000 });
     } finally {
       setLoadingPayment(false);
     }
@@ -246,33 +243,15 @@ const PersonalLedger = () => {
     const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
     try {
       const receiptResponse = await Api.get(`/sales-receipts/${record.transactionId}`);
-      if (receiptResponse.status === 404) {
-        throw new Error(receiptResponse.data.message || "Receipt not found.");
-      }
-      if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
-        throw new Error("Receipt could not be fetched.");
-      }
+      if (receiptResponse.status === 404) throw new Error(receiptResponse.data.message || "Receipt not found.");
+      if (receiptResponse.status < 200 || receiptResponse.status >= 300) throw new Error("Receipt could not be fetched.");
       setReceiptData(receiptResponse);
-      toast.update(receiptToast, {
-        render: "Receipt fetched successfully!",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000,
-        className: 'dark-toast'
-      });
+      toast.update(receiptToast, { render: "Receipt fetched successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
       setShowReceipt(true);
     } catch (error) {
-      toast.update(receiptToast, {
-        render: error.message,
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-        className: 'dark-toast'
-      });
+      toast.update(receiptToast, { render: error.message, type: "error", isLoading: false, autoClose: 3000, className: 'dark-toast' });
     }
   };
-
-  const pageCount = Math.ceil(filteredLedgerData.length / itemsPerPage);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -283,123 +262,345 @@ const PersonalLedger = () => {
         <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        <div className={`${styles.sidebar} ${showSidebar ? 'd-none' : 'd-block'}`}>
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-
         <section className={styles.content}>
           <main className={styles.create_form}>
-            <div className="mt-3 mb-2 d-flex justify-content-between">
-              <div>
-                <h4>{fullName?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}</h4>
-                <p className="fw-light">Category: {category}</p>
-              </div>
-              <div>
-                <button
-                  onClick={handleBack}
-                  className={`border-1 btn btn-light shadow-sm py-2 px-3 fs-6 fw-semibold`}
-                  style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-                >
-                  <FaArrowLeft size={16} />
-                  Back
-                </button>
-              </div>
-            </div>
+            <ToastContainer />
 
-            <div className="d-flex gap-2 justify-content-between">
-              <div className="w-50 mb-4">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  className="form-control"
-                  placeholder="Filter By Date"
-                />
-              </div>
-              <div>
+            {/* ── Breadcrumb ── */}
+            <div className="d-flex align-items-center gap-2 mb-3" style={{ fontSize: '13px' }}>
+              <span style={{ cursor: 'pointer', color: '#8C949B' }} onClick={() => navigate('/customer/view-all')}>
+                Customers
+              </span>
+              <span className="text-muted">›</span>
+              <span className="fw-semibold" style={{ color: '#2E3135' }}>Customer Ledger</span>
+              <div className="ms-auto d-flex gap-2">
                 <Button
                   onClick={handleAddMoney}
-                  className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+                  className={`border-0 btn-dark shadow py-2 px-4 fs-6 fw-semibold ${styles.submit}`}
+                  style={{ fontSize: '13px !important', padding: '6px 14px !important', borderRadius: '6px' }}
                 >
                   Add Payment
                 </Button>
               </div>
             </div>
 
-            {loading && <SkeletonTable cols={6} rows={5} />}
+            {/* ── Page Title ── */}
+            <div className="d-flex justify-content-between align-items-start mb-4">
+              <div>
+                <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#2E3135', marginBottom: '4px' }}>
+                  Customer Ledger
+                </h2>
+                <p style={{ fontSize: '14px', color: '#8C949B', margin: 0 }}>
+                  View all transactions and account balance for customers.
+                </p>
+              </div>
+            </div>
 
+            {/* ── Loading ── */}
+            {loading && <SkeletonTable cols={7} rows={5} />}
+
+            {/* ── Error ── */}
             {error && (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
-                  <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">{error}</span>
-                </Alert>
+              <div className="d-flex justify-content-center mb-4">
+                <Alert variant="danger" className="text-center w-50 py-4">{error}</Alert>
               </div>
             )}
 
-            {!loading && !error && filteredLedgerData.length > 0 && (
+            {/* ── Content ── */}
+            {!loading && !error && ledgerData.length > 0 && (
               <>
-                <div  className='table-responsive'>
-                  <table className={`table ${styles.styled_tables}`}>
-                    <thead className={`rounded-2 ${styles.theaders}`}>
-                      <tr>
-                        <th>DATE</th>
-                        <th>DESCRIPTION</th>
-                        <th>PAYMENT</th>
-                        <th style={{ color: 'green' }}>CREDIT(₦)</th>
-                        <th style={{ color: 'red' }}>DEBIT(₦)</th>
-                        <th>BALANCE(₦)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {displayedLedgerData.map((record) => (
-                        <tr key={record.id} className="text-start">
-                          <td>{formatDate(record.date)}</td>
-                          <td>{record.productName || record.description}</td>
-                          <td>{record.paymentType}</td>
-                          <td style={{ color: 'green' }}>{record.credit ? record.credit.toLocaleString() : '-'}</td>
-                          <td style={{ color: 'red' }}>{record.debit ? record.debit.toLocaleString() : '-'}</td>
-                          <td>
-                            <div className="d-flex gap-3 align-items-center">
-                              <span>{record.balance.toLocaleString()}</span>
-                              {record.productName && (<span className="bg-white p-2 rounded-circle badge">
-                                <BsPrinter
-                                  style={{ cursor: 'pointer' }}
-                                  onClick={() => handleReceipt(record)}
-                                  className="text-primary"
-                                  size={28}
-                                />
-                              </span>)}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* ── Customer Header Card ── */}
+                <div
+                  style={{
+                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px',
+                    padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '20px',
+                  }}
+                >
+                  <div className="d-flex flex-wrap align-items-start" style={{ gap: '8px', justifyContent: 'space-between' }}>
+                    <div className="d-flex align-items-start gap-3">
+                      <div
+                        style={{
+                          width: '60px', height: '60px', borderRadius: '50%',
+                          background: AVATAR_COLORS[0], display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontSize: '22px', fontWeight: 700,
+                          color: '#ffffff', flexShrink: 0,
+                        }}
+                      >
+                        {getInitials(fullName)}
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1C1E', marginBottom: '4px' }}>
+                          {fullName?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
+                        </h3>
+                        <p style={{ fontSize: '14px', color: '#374151', fontWeight: 500, margin: '0 0 8px 0' }}>
+                          {category || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Metric Cards */}
+                    <div className="d-flex gap-2 flex-wrap">
+                      <div style={{
+                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                      }}>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
+                          Total Credit (N)
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#16A34A' }}>
+                          {formatCurrency(totalCredit)}
+                        </div>
+                      </div>
+                      <div style={{
+                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                      }}>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
+                          Total Debit (N)
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#DC2626' }}>
+                          {formatCurrency(totalDebit)}
+                        </div>
+                      </div>
+                      <div style={{
+                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                      }}>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
+                          Balance (N)
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: balanceColor }}>
+                          {formatCurrency(balance)}
+                        </div>
+                        <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>
+                          {balanceLabel}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="d-flex justify-content-center mt-4">
-                  <ReactPaginate
-                    previousLabel={"< "}
-                    nextLabel={" >"}
-                    breakLabel={"..."}
-                    pageCount={pageCount}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    containerClassName={"pagination"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
+
+                {/* ── Filter Bar ── */}
+                <div
+                  style={{
+                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
+                    padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '20px',
+                  }}
+                >
+                  <div className="d-flex flex-wrap align-items-end gap-3">
+                    <div style={{ flex: '1 1 160px', minWidth: '140px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px', display: 'block' }}>
+                        Date Range
+                      </label>
+                      <div className="d-flex align-items-center gap-2">
+                        <div style={{ position: 'relative', flex: 1 }}>
+                          <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            style={{
+                              width: '100%', padding: '7px 10px 7px 30px',
+                              border: '1px solid #e5e7eb', borderRadius: '6px',
+                              fontSize: '12px', color: '#374151', outline: 'none', background: '#ffffff',
+                            }}
+                          />
+                          <BsCalendar3 style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#8C949B' }} />
+                        </div>
+                        <span style={{ fontSize: '12px', color: '#8C949B' }}>–</span>
+                        <div style={{ position: 'relative', flex: 1 }}>
+                          <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            style={{
+                              width: '100%', padding: '7px 10px 7px 30px',
+                              border: '1px solid #e5e7eb', borderRadius: '6px',
+                              fontSize: '12px', color: '#374151', outline: 'none', background: '#ffffff',
+                            }}
+                          />
+                          <BsCalendar3 style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#8C949B' }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ flex: '1 1 140px', minWidth: '120px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px', display: 'block' }}>
+                        Transaction Type
+                      </label>
+                      <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        style={{
+                          width: '100%', padding: '7px 10px', border: '1px solid #e5e7eb',
+                          borderRadius: '6px', fontSize: '12px', color: '#374151', outline: 'none',
+                          background: '#ffffff', cursor: 'pointer',
+                        }}
+                      >
+                        {TRANSACTION_TYPES.map(t => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="d-flex gap-2" style={{ alignSelf: 'flex-end', paddingBottom: '1px' }}>
+                      <button
+                        onClick={() => setCurrentPage(0)}
+                        style={{
+                          padding: '7px 16px', background: '#512728', color: '#ffffff',
+                          border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
+                          cursor: 'pointer', transition: 'background 0.12s ease',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#714445'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = '#512728'; }}
+                      >
+                        Apply Filter
+                      </button>
+                      {hasActiveFilters && (
+                        <button
+                          onClick={resetFilters}
+                          style={{
+                            padding: '7px 16px', background: '#ffffff', color: '#6B7280',
+                            border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Ledger Table ── */}
+                <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+                  <div className="d-flex align-items-center justify-content-between px-4 pt-4 pb-2">
+                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#2E3135', margin: 0 }}>
+                      Ledger Transactions ({filteredLedgerData.length})
+                    </h4>
+                  </div>
+
+                  {filteredLedgerData.length === 0 ? (
+                    <div className="text-center py-5">
+                      <Alert variant="info" className="mx-auto" style={{ maxWidth: '400px' }}>
+                        No transactions match your filters.
+                      </Alert>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="table-responsive">
+                        <table className={`table ${styles.styled_tables} mb-0`} style={{ tableLayout: 'fixed' }}>
+                          <thead className={styles.theaders}>
+                            <tr>
+                              <th style={{ width: '14%', fontSize: '11px' }}>DATE</th>
+                              <th style={{ width: '28%', fontSize: '11px' }}>DESCRIPTION</th>
+                              <th style={{ width: '14%', fontSize: '11px' }}>PAYMENT</th>
+                              <th style={{ width: '14%', fontSize: '11px', textAlign: 'right' }}>CREDIT (₦)</th>
+                              <th style={{ width: '14%', fontSize: '11px', textAlign: 'right' }}>DEBIT (₦)</th>
+                              <th style={{ width: '14%', fontSize: '11px', textAlign: 'right' }}>BALANCE (₦)</th>
+                              <th style={{ width: '40px', fontSize: '11px', textAlign: 'center' }}></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {displayedLedgerData.map((record) => {
+                              const balColor = record.balance > 0 ? '#16A34A' : record.balance < 0 ? '#DC2626' : '#6B7280';
+                              return (
+                                <tr
+                                  key={record.id}
+                                  style={{ transition: 'background-color 0.12s ease', verticalAlign: 'middle' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                  <td style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>
+                                    {formatDate(record.date)}
+                                  </td>
+                                  <td style={{ fontSize: '13px', color: '#2E3135' }}>
+                                    <div className="d-flex align-items-center gap-2">
+                                      {record.productName && (
+                                        <span
+                                          style={{
+                                            width: '22px', height: '22px', borderRadius: '50%',
+                                            background: '#DBEAFE', color: '#1D4ED8', display: 'inline-flex',
+                                            alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '11px', fontWeight: 700, flexShrink: 0,
+                                          }}
+                                        >
+                                          S
+                                        </span>
+                                      )}
+                                      <span>{record.productName || record.description || '-'}</span>
+                                    </div>
+                                  </td>
+                                  <td style={{ fontSize: '13px', color: '#374151' }}>{record.paymentType || '-'}</td>
+                                  <td style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A', textAlign: 'right' }}>
+                                    {record.credit ? formatCurrency(record.credit) : '-'}
+                                  </td>
+                                  <td style={{ fontSize: '13px', fontWeight: 600, color: '#DC2626', textAlign: 'right' }}>
+                                    {record.debit ? formatCurrency(record.debit) : '-'}
+                                  </td>
+                                  <td style={{ fontSize: '13px', fontWeight: 600, color: balColor, textAlign: 'right' }}>
+                                    {record.balance != null ? formatCurrency(record.balance) : '-'}
+                                  </td>
+                                  <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                    <Dropdown align="end">
+                                      <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
+                                        <BsThreeDotsVertical size={16} />
+                                      </Dropdown.Toggle>
+                                      <Dropdown.Menu style={{ minWidth: 180 }}>
+                                        {record.productName && (
+                                          <>
+                                            <Dropdown.Item onClick={() => handleReceipt(record)}>
+                                              <BsPrinter size={14} style={{ marginRight: '8px' }} /> Print Receipt
+                                            </Dropdown.Item>
+                                            <Dropdown.Divider />
+                                          </>
+                                        )}
+                                        <Dropdown.Item onClick={() => {}}>View Details</Dropdown.Item>
+                                      </Dropdown.Menu>
+                                    </Dropdown>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* ── Pagination ── */}
+                      <div className="d-flex justify-content-between align-items-center px-4 py-3 border-top" style={{ borderColor: '#e5e7eb' }}>
+                        <div style={{ fontSize: '13px', color: '#8C949B' }}>
+                          Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredLedgerData.length)} of {filteredLedgerData.length} records
+                        </div>
+                        <ReactPaginate
+                          previousLabel={"‹"}
+                          nextLabel={"›"}
+                          breakLabel="..."
+                          pageCount={pageCount}
+                          marginPagesDisplayed={2}
+                          pageRangeDisplayed={3}
+                          onPageChange={handlePageChange}
+                          containerClassName={"pagination mb-0"}
+                          pageClassName={"page-item"}
+                          pageLinkClassName={"page-link"}
+                          previousClassName={"page-item"}
+                          previousLinkClassName={"page-link"}
+                          nextClassName={"page-item"}
+                          nextLinkClassName={"page-link"}
+                          breakClassName={"page-item"}
+                          breakLinkClassName={"page-link"}
+                          activeClassName={"active"}
+                          forcePage={currentPage}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </>
             )}
-            {!loading && !error && filteredLedgerData.length < 1 && (
+
+            {!loading && !error && ledgerData.length < 1 && (
               <Alert variant="info" className="text-center w-100 py-5">
                 <p className="text-center fw-semibold">No Ledger found</p>
               </Alert>
@@ -408,7 +609,7 @@ const PersonalLedger = () => {
         </section>
       </div>
 
-      {/* Modal for Adding Payment */}
+      {/* ── Add Payment Modal ── */}
       <Modal show={showModal} size="md" onHide={() => { setShowModal(false); resetForm(); }}>
         <Modal.Header closeButton>
           <Modal.Title>Add Payment</Modal.Title>
@@ -424,40 +625,38 @@ const PersonalLedger = () => {
           ) : pendingSalesError ? (
             <p className="text-danger text-center">{pendingSalesError}</p>
           ) : pendingSales.length > 0 ? (
-            <>
-              <Form.Group className="mb-3">
-                <Form.Label>Select Pending Sales (Optional)</Form.Label>
-                <div style={{ position: "relative" }}>
-                  <Form.Control
-                    type="text"
-                    placeholder="Search by Receipt Id or Sales Type..."
-                    value={pendingSearch}
-                    onChange={handlePendingSearchChange}
-                    onFocus={() => setShowPendingDropdown(true)}
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  />
-                  {showPendingDropdown && (
-                    <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
-                      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                        {filteredPendingSales.length > 0 ? (
-                          filteredPendingSales.map((sale, index) => (
-                            <li
-                              key={index}
-                              onClick={() => handlePendingSelect(sale)}
-                              style={{ cursor: "pointer", padding: "8px" }}
-                            >
-                              {`${sale.transactionId} - ${sale.salesCategory || "Unknown Sale Type"} - ₦${(sale.totalPrice - (sale.discount || 0)).toLocaleString()}`}
-                            </li>
-                          ))
-                        ) : (
-                          <li style={{ padding: "8px" }}>No pending sales found</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </Form.Group>
-            </>
+            <Form.Group className="mb-3">
+              <Form.Label>Select Pending Sales (Optional)</Form.Label>
+              <div style={{ position: "relative" }}>
+                <Form.Control
+                  type="text"
+                  placeholder="Search by Receipt Id or Sales Type..."
+                  value={pendingSearch}
+                  onChange={handlePendingSearchChange}
+                  onFocus={() => setShowPendingDropdown(true)}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                />
+                {showPendingDropdown && (
+                  <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {filteredPendingSales.length > 0 ? (
+                        filteredPendingSales.map((sale, index) => (
+                          <li
+                            key={index}
+                            onClick={() => handlePendingSelect(sale)}
+                            style={{ cursor: "pointer", padding: "8px" }}
+                          >
+                            {`${sale.transactionId} - ${sale.salesCategory || "Unknown Sale Type"} - ₦${(sale.totalPrice - (sale.discount || 0)).toLocaleString()}`}
+                          </li>
+                        ))
+                      ) : (
+                        <li style={{ padding: "8px" }}>No pending sales found</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </Form.Group>
           ) : null}
           {selectedPendingSale && (
             <>
@@ -511,11 +710,8 @@ const PersonalLedger = () => {
           </div>
         </Modal.Body>
       </Modal>
-
-      <ToastContainer />
       <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
+      <ToastContainer />
     </section>
   );
-};
-
-export default PersonalLedger;
+}

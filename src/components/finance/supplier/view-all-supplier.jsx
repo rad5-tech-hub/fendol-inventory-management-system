@@ -7,7 +7,7 @@ import { BsSearch, BsThreeDotsVertical, BsPlusLg, BsChevronDown, BsX } from "rea
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert } from 'react-bootstrap';
+import { Alert, Dropdown } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
@@ -51,45 +51,6 @@ const getInitials = (name) => {
   return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
 };
 
-const DropdownMenu = ({ show, onClickOutside, onEditClick, onDeleteClick, onViewLedgerClick, position }) => {
-  const localRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutsideEvent = (event) => {
-      if (localRef.current && !localRef.current.contains(event.target)) {
-        onClickOutside();
-      }
-    };
-    if (show) {
-      document.addEventListener('mousedown', handleClickOutsideEvent);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutsideEvent);
-    };
-  }, [show, onClickOutside]);
-
-  if (!show) return null;
-
-  return (
-    <div
-      ref={localRef}
-      className={styles.dropdownMenu}
-      style={{
-        position: 'fixed',
-        top: `${position.top}px`,
-        left: `${position.left}px`,
-        transform: 'translate(-100%, 0)',
-      }}
-    >
-      <ul className={styles.menuList}>
-        <li className={`mx-2 mt-2 rounded ${styles.menuItem}`} onClick={onEditClick}>Edit</li>
-        <li className={`mx-2 rounded ${styles.menuItem}`} onClick={onDeleteClick}>Delete</li>
-        <li className={`mx-2 mb-2 rounded ${styles.menuItem}`} onClick={onViewLedgerClick}>View Ledger</li>
-      </ul>
-    </div>
-  );
-};
-
 const MOCK_SUPPLIERS = [
   { id: '1', createdAt: '2025-04-12T10:00:00Z', name: 'Aqua Feed Supplies Ltd.', supplierId: 'SUP-0021', supplierType: 'Feed Supplier', site: 'Main Farm', phone: '+234 801 234 5678', totalCredit: 450000, totalDebit: 120000, balance: 330000 },
   { id: '2', createdAt: '2025-03-28T08:30:00Z', name: 'PondPro Equipment Co.', supplierId: 'SUP-0018', supplierType: 'Equipment Supplier', site: 'THE HATCHERY SITE', phone: '+234 802 345 6789', totalCredit: 890000, totalDebit: 890000, balance: 0 },
@@ -119,8 +80,6 @@ export default function ViewAllSupplier() {
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('');
   const [balanceFilter, setBalanceFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const typeFilterRef = useRef(null);
   const itemsPerPage = 10;
@@ -157,17 +116,6 @@ export default function ViewAllSupplier() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleActionClickOutside = () => setActiveDropdown(null);
-
-  const handleDropdownToggle = (supplierId, event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setDropdownPosition({
-      top: rect.bottom + window.scrollY,
-      left: rect.left + window.scrollX,
-    });
-    setActiveDropdown(activeDropdown === supplierId ? null : supplierId);
-  };
 
   useEffect(() => {
     setCurrentPage(0);
@@ -626,17 +574,17 @@ export default function ViewAllSupplier() {
                               <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
                             </td>
                             <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                              <span style={{ cursor: 'pointer' }} onClick={(e) => handleDropdownToggle(supplier.id, e)}>
-                                <BsThreeDotsVertical style={{ fontSize: '15px' }} />
-                              </span>
-                              <DropdownMenu
-                                show={activeDropdown === supplier.id}
-                                onClickOutside={handleActionClickOutside}
-                                onEditClick={() => { setActiveDropdown(null); /* handle edit */ }}
-                                onDeleteClick={() => { setActiveDropdown(null); handleDelete(supplier); }}
-                                onViewLedgerClick={() => { setActiveDropdown(null); navigate(`/finance/supplier/ledger?id=${supplier.id}`); }}
-                                position={dropdownPosition}
-                              />
+                              <Dropdown align="end">
+                                <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
+                                  <BsThreeDotsVertical size={16} />
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu style={{ minWidth: 180 }}>
+                                  <Dropdown.Item onClick={() => { /* handle edit */ }}>Edit</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => { handleDelete(supplier); }}>Delete</Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Item onClick={() => { navigate(`/finance/supplier/ledger?id=${supplier.id}`); }}>View Ledger</Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
                             </td>
                           </tr>
                         );

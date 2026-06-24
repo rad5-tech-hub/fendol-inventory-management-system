@@ -3,8 +3,8 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product-stages.module.scss';
-import { BsExclamationTriangleFill, BsPencilFill, BsTrash, BsSearch, BsDownload, BsThreeDotsVertical, BsInfoCircle, BsWater, BsClipboardData, BsSticky } from "react-icons/bs";
-import { Form, Button, Spinner, Alert, Modal } from 'react-bootstrap';
+import { BsExclamationTriangleFill, BsPencilFill, BsSearch, BsThreeDotsVertical } from "react-icons/bs";
+import { Dropdown, Form, Button, Spinner, Alert, Modal } from 'react-bootstrap';
 import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
@@ -37,7 +37,6 @@ const ViewAllStages = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const itemsPerPage = 10;
   const [selectedStage, setSelectedStage] = useState(null);
-  const [openMenuStageId, setOpenMenuStageId] = useState(null);
   const [showPondSummaryPanel, setShowPondSummaryPanel] = useState(false);
   const [showEditPondModal, setShowEditPondModal] = useState(false);
   const [showAddSamplingModal, setShowAddSamplingModal] = useState(false);
@@ -413,7 +412,6 @@ const ViewAllStages = () => {
                       {displayedStages.map((stage, index) => {
                         const formattedCreatedAt = formatDate(stage.createdAt);
                         const isHatchery = stage.site?.name?.toLowerCase() === 'hatchery';
-                        const isNearBottom = index >= displayedStages.length - 2;
                         return (
                           <tr key={stage.id} style={{ borderTop: '1px solid #F0F0F0' }}>
                             <td className="py-3 px-3 align-middle" style={{ color: '#8C949B' }}>{formattedCreatedAt}</td>
@@ -441,97 +439,20 @@ const ViewAllStages = () => {
                             <td className="py-3 px-3 align-middle text-end" style={{ fontWeight: 600, color: '#2E3135' }}>
                               {new Intl.NumberFormat().format(stage.quantity)} pcs
                             </td>
-                            <td className="py-3 px-3 align-middle text-center" style={{ position: 'relative' }}>
-                              <span
-                                style={{ cursor: 'pointer', color: '#6C757D', padding: '6px 8px', borderRadius: '6px', display: 'inline-block', transition: 'background 0.15s ease, color 0.15s ease' }}
-                                title="Actions"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenMenuStageId(openMenuStageId === stage.id ? null : stage.id);
-                                }}
-                                onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
-                                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6C757D'; }}
-                              >
-                                <BsThreeDotsVertical size={18} />
-                              </span>
-                              {openMenuStageId === stage.id && (
-                                <>
-                                  <div
-                                    style={{ position: 'fixed', inset: 0, zIndex: 1050 }}
-                                    onClick={() => setOpenMenuStageId(null)}
-                                  />
-                                  <div
-                                    style={{
-                                      position: 'absolute',
-                                      right: '50%',
-                                      [isNearBottom ? 'bottom' : 'top']: '100%',
-                                      zIndex: 1051,
-                                      backgroundColor: '#fff',
-                                      border: '1px solid #e9ecef',
-                                      borderRadius: '12px',
-                                      boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-                                      minWidth: '210px',
-                                      padding: '6px 0',
-                                      overflow: 'hidden',
-                                    }}
-                                  >
-                                    <div style={{ padding: '8px 16px 4px', fontSize: '0.7rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.08em', textTransform: 'uppercase', borderBottom: '1px solid #F0F0F0', marginBottom: '4px' }}>
-                                      Pond Actions
-                                    </div>
-                                    <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
-                                      onClick={() => {
-                                        setOpenMenuStageId(null);
-                                        setSelectedStage(stage);
-                                        setShowPondSummaryPanel(true);
-                                        fetchPondDetail(stage.id);
-                                      }}
-                                      onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2E3135'; }}
-                                    >
-                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#F0E4E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsInfoCircle size={14} color="#512728" /></span>
-                                      Pond Summary
-                                    </button>
-                                    <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
-                                      onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setShowEditPondModal(true); }}
-                                      onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2E3135'; }}
-                                    >
-                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#F5E6D6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsPencilFill size={13} color="#B06426" /></span>
-                                      Edit Pond
-                                    </button>
-                                    <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
-                                      onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setShowAddSamplingModal(true); }}
-                                      onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2E3135'; }}
-                                    >
-                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#F0E4E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsClipboardData size={13} color="#512728" /></span>
-                                      Add Sampling Record
-                                    </button>
-                                    <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#2E3135', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
-                                      onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setShowAddNoteModal(true); }}
-                                      onMouseOver={(e) => { e.currentTarget.style.background = '#F0E4E4'; e.currentTarget.style.color = '#512728'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2E3135'; }}
-                                    >
-                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#F5E6D6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsSticky size={13} color="#B06426" /></span>
-                                      Add Notes
-                                    </button>
-                                    <div style={{ height: '1px', backgroundColor: '#F0F0F0', margin: '4px 12px' }} />
-                                    <button
-                                      style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '10px 16px', border: 'none', background: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#dc3545', cursor: 'pointer', transition: 'all 0.1s ease', gap: '12px' }}
-                                      onClick={() => { setOpenMenuStageId(null); setSelectedStage(stage); setTimeout(() => DeletePond(), 0); }}
-                                      onMouseOver={(e) => { e.currentTarget.style.background = '#FFF0F0'; e.currentTarget.style.color = '#dc3545'; }}
-                                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#dc3545'; }}
-                                    >
-                                      <span style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: '#FFEBEE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BsTrash size={13} color="#dc3545" /></span>
-                                      Delete
-                                    </button>
-                                  </div>
-                                </>
-                              )}
+                            <td className="py-3 px-3 align-middle text-center">
+                              <Dropdown align="end">
+                                <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
+                                  <BsThreeDotsVertical size={16} />
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu style={{ minWidth: 180 }}>
+                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); setShowPondSummaryPanel(true); fetchPondDetail(stage.id); }}>Pond Summary</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); setShowEditPondModal(true); }}>Edit Pond</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); setShowAddSamplingModal(true); }}>Add Sampling Record</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); setShowAddNoteModal(true); }}>Add Notes</Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); DeletePond(); }} style={{ color: '#dc3545', fontWeight: 600 }}>Delete</Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
                             </td>
                           </tr>
                         );

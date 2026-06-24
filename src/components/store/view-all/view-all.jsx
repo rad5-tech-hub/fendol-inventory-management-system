@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -6,51 +6,11 @@ import styles from '../store.module.scss';
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
 import Api from "../../shared/api/apiLink";
-import { Alert, Modal, Form, Button } from 'react-bootstrap';
+import { Alert, Modal, Form, Button, Dropdown } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
-
-const DropdownMenu = ({ show, onClickOutside, onAddClick, onRemoveClick, onEditClick, position }) => {
-  const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutsideEvent = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        onClickOutside();
-      }
-    };
-    if (show) {
-      document.addEventListener('mousedown', handleClickOutsideEvent);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutsideEvent);
-    };
-  }, [show, onClickOutside]);
-
-  if (!show) return null;
-
-  return (
-    <div
-      ref={dropdownRef}
-      className={styles.dropdownMenu}
-      style={{
-        position: 'fixed',
-        top: `${position.top}px`,
-        left: `${position.left}px`,
-        transform: 'translate(-100%, 0)', // Position left of the icon
-        zIndex: 5, // Ensure it’s below the three-dot icon
-      }}
-    >
-      <ul className={styles.menuList}>
-        <li className={`mx-2 mt-2 rounded ${styles.menuItem}`} onClick={onAddClick}>Restock Store</li>
-        <li className={`mx-2 rounded ${styles.menuItem}`} onClick={onRemoveClick}>Use</li>
-        <li className={`mx-2 mb-2 rounded ${styles.menuItem}`} onClick={onEditClick}>Edit</li>
-      </ul>
-    </div>
-  );
-};
 
 export default function UpdateStoreInventory() {
   const navigate = useNavigate();
@@ -62,8 +22,6 @@ export default function UpdateStoreInventory() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 5;
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [stages, setStages] = useState([]);
   const [quantity, setQuantity] = useState(null);
   const [quantityUsed, setQuantityUsed] = useState(null);
@@ -171,17 +129,6 @@ export default function UpdateStoreInventory() {
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
   };
 
-  const handleDropdownToggle = (productId, event) => {
-    const rect = event.target.getBoundingClientRect();
-    setDropdownPosition({
-      top: rect.bottom + window.scrollY, // Position below the icon
-      left: rect.left + window.scrollX, // Align with the left of the icon
-    });
-    setActiveDropdown(activeDropdown === productId ? null : productId);
-  };
-
-  const handleClickOutside = () => setActiveDropdown(null);
-
   const handlePageChange = (data) => {
     setCurrentPage(data.selected);
   };
@@ -268,41 +215,17 @@ export default function UpdateStoreInventory() {
                             }>
                               {product.status}
                             </span>
-                            <div className="position-relative">
-                              <span
-                                style={{
-                                  display: "inline-block",
-                                  textAlign: "center",
-                                  backgroundColor: "#f8f9fa",
-                                  padding: "0.5rem",
-                                  borderRadius: "50%",
-                                  boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = "translateY(-5px)";
-                                  e.currentTarget.style.boxShadow = "0 8px 15px rgba(0, 0, 0, 0.2)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = "translateY(0)";
-                                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
-                                }}
-                              >
-                                <BsThreeDotsVertical
-                                  className="cursor-pointer"
-                                  style={{ cursor: "pointer", zIndex: 10 }}
-                                  onClick={(e) => handleDropdownToggle(product.id, e)}
-                                />
-                              </span>
-                              <DropdownMenu
-                                show={activeDropdown === product.id}
-                                onClickOutside={handleClickOutside}
-                                onAddClick={() => handleAddClick(product)}
-                                onRemoveClick={() => handleRemoveClick(product)}
-                                onEditClick={() => handleEditClick(product)}
-                                position={dropdownPosition}
-                              />
-                            </div>
+                            <Dropdown align="end" className="position-relative">
+                              <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
+                                <BsThreeDotsVertical size={16} />
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu style={{ minWidth: 180 }}>
+                                <Dropdown.Item onClick={() => handleAddClick(product)}>Restock Store</Dropdown.Item>
+                                <Dropdown.Item onClick={() => handleRemoveClick(product)}>Use</Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item onClick={() => handleEditClick(product)}>Edit</Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
                           </td>
                         </tr>
                       ))}
