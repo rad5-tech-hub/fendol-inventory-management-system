@@ -57,7 +57,7 @@ export default function ViewAllSupplier() {
     try {
       setLoading(true);
       setError('');
-      const response = await ApiV2.get('/supplier');
+      const response = await ApiV2.get('/v2/supplier');
       const data = response.data?.data;
       const summ = response.data?.summary;
       if (Array.isArray(data)) {
@@ -75,7 +75,7 @@ export default function ViewAllSupplier() {
 
   const fetchSupplierTypes = async () => {
     try {
-      const res = await ApiV2.get('/supplier-type');
+      const res = await ApiV2.get('/v2/supplier-type');
       const types = res.data?.data || [];
       setSupplierTypes(types);
     } catch {
@@ -131,7 +131,7 @@ export default function ViewAllSupplier() {
     if (!ok) return;
     const loadingToast = toast.loading('Deleting Supplier...', { className: 'dark-toast' });
     try {
-      const res = await ApiV2.delete(`/supplier/${supplier.id}`);
+      const res = await ApiV2.delete(`/v2/supplier/${supplier.id}`);
       setSuppliers(prev => prev.filter(s => s.id !== supplier.id));
       toast.update(loadingToast, {
         render: res.data?.response_message || 'Supplier deleted successfully!',

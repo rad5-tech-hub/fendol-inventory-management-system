@@ -38,7 +38,7 @@ export default function NewSupplier() {
   const fetchSupplierTypes = async () => {
     setTypesLoading(true);
     try {
-      const res = await ApiV2.get('/supplier-type');
+      const res = await ApiV2.get('/v2/supplier-type');
       const types = res.data?.data || [];
       setSupplierTypes(types);
     } catch {
@@ -66,7 +66,7 @@ export default function NewSupplier() {
     if (!name || creatingType) return;
     setCreatingType(true);
     try {
-      const res = await ApiV2.post('/supplier-type', { name });
+      const res = await ApiV2.post('/v2/supplier-type', { name });
       const created = res.data?.data;
       if (created?.id) {
         setSupplierTypes(prev => [...prev, { id: created.id, name: created.name }]);
@@ -111,7 +111,7 @@ export default function NewSupplier() {
       };
 
       if (isEditing) {
-        await ApiV2.patch(`/supplier/${editSupplier.id}`, payload);
+        await ApiV2.patch(`/v2/supplier/${editSupplier.id}`, payload);
 
         toast.update(loadingToast, {
           render: "Supplier updated successfully!",
@@ -121,7 +121,7 @@ export default function NewSupplier() {
           className: 'dark-toast'
         });
       } else {
-        await ApiV2.post('/supplier', payload);
+        await ApiV2.post('/v2/supplier', payload);
 
         toast.update(loadingToast, {
           render: "Supplier added successfully!",
