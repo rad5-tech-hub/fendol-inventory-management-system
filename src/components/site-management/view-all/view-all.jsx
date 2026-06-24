@@ -188,14 +188,16 @@ const ViewAllSites = () => {
                             )}
                           </td>
                           <td style={{ textAlign: 'center', verticalAlign: 'middle', overflow: 'visible' }}>
-                            <Dropdown align="end">
-                              <Dropdown.Toggle as="button" className={styles.threeDotBtn} onClick={(e) => e.stopPropagation()}>
-                                <BsThreeDotsVertical size={16} />
-                              </Dropdown.Toggle>
-                              <Dropdown.Menu style={{ minWidth: 180 }}>
-                                <Dropdown.Item onClick={(e) => { e.stopPropagation(); handleEdit(site); }}>Edit</Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Dropdown align="end">
+                                <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
+                                  <BsThreeDotsVertical size={16} />
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu style={{ minWidth: 180 }}>
+                                  <Dropdown.Item onClick={(e) => { e.stopPropagation(); handleEdit(site); }}>Edit</Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
+                            </div>
                           </td>
                         </tr>
                       ))}
