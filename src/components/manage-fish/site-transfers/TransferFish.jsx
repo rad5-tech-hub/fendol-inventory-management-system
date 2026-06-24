@@ -1,84 +1,79 @@
 import React, { useState, useEffect } from "react";
-import { Form, Row, Col, Button, Alert, Spinner } from 'react-bootstrap';
+import { Form, Button, Spinner } from 'react-bootstrap';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useSelector } from 'react-redux';
 import styles from '../product-stages.module.scss';
+import Api, { ApiV2 } from "../../shared/api/apiLink";
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { useConfirm } from '../../shared/confirm-modal';
-
-const MOCK_SITES = [
-  { id: "s1", name: "Riverside Hatchery" },
-  { id: "s2", name: "Mountain View Farm" },
-  { id: "s3", name: "Green Valley Aquaculture" },
-  { id: "s4", name: "Coastal Fish Farm" },
-  { id: "s5", name: "Sunrise Tilapia Ltd" },
-  { id: "s6", name: "Riverbend Aqua" },
-  { id: "s7", name: "Highland Fisheries" },
-  { id: "s8", name: "Delta Fish Co" },
-];
-
-const MOCK_PONDS = [
-  { id: "p1", title: "Nursery Pond A", siteId: "s1", quantity: 5000 },
-  { id: "p2", title: "Grow-out Pond B", siteId: "s1", quantity: 12000 },
-  { id: "p3", title: "Hatchery Tank 1", siteId: "s1", quantity: 8000 },
-  { id: "p4", title: "Nursery Pond B", siteId: "s2", quantity: 3500 },
-  { id: "p5", title: "Grow-out Pond C", siteId: "s2", quantity: 9500 },
-  { id: "p6", title: "Broodstock Pond", siteId: "s3", quantity: 2000 },
-  { id: "p7", title: "Fry Tank 2", siteId: "s3", quantity: 15000 },
-  { id: "p8", title: "Nursery Pond C", siteId: "s4", quantity: 6000 },
-];
 
 export default function TransferFish() {
   const [ConfirmDialog, confirm] = useConfirm();
   const activeSite = useSelector((store) => store.activeSite);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [pondsLoading, setPondsLoading] = useState(true);
+  const [sitesLoading, setSitesLoading] = useState(true);
 
-  const [ponds, setPonds] = useState([]);
-  const [pondSearch, setPondSearch] = useState("");
-  const [selectedPond, setSelectedPond] = useState(null);
-  const [showPondSuggestions, setShowPondSuggestions] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const toggleSidebar = () => setShowSidebar((prev) => !prev);
+  const handleCloseSidebar = () => setShowSidebar(false);
 
-  const [siteSearch, setSiteSearch] = useState("");
-  const [selectedSite, setSelectedSite] = useState(null);
-  const [showSiteSuggestions, setShowSiteSuggestions] = useState(false);
+  const [pondOptions, setPondOptions] = useState([]);
+  const [siteOptions, setSiteOptions] = useState([]);
+  const [selectedPondId, setSelectedPondId] = useState("");
+  const [selectedSiteId, setSelectedSiteId] = useState("");
 
   const [quantity, setQuantity] = useState("");
   const [description, setDescription] = useState("");
 
+  const selectedPond = pondOptions.find((p) => p.id === selectedPondId) || null;
+  const selectedSite = siteOptions.find((s) => s.id === selectedSiteId) || null;
+
+  /* ── Fetch ponds from backend by siteId ── */
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const siteId = activeSite?.id || "s1";
-      const filtered = MOCK_PONDS.filter((p) => p.siteId === siteId || siteId === "all");
-      setPonds(filtered.length > 0 ? filtered : MOCK_PONDS);
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    const fetchPonds = async () => {
+      setPondsLoading(true);
+      try {
+        const siteId = activeSite?.id || 'all';
+        const res = await Api.get(`/fish-stages?siteId=${siteId}`);
+        let list = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (list.length === 0 && siteId !== 'all') {
+          const fallback = await Api.get('/fish-stages?siteId=all');
+          list = Array.isArray(fallback.data?.data) ? fallback.data.data : [];
+        }
+        if (!cancelled) setPondOptions(list);
+      } catch {
+        if (!cancelled) setPondOptions([]);
+      } finally {
+        if (!cancelled) { setPondsLoading(false); setLoading(false); }
+      }
+    };
+    fetchPonds();
+    return () => { cancelled = true; };
   }, [activeSite?.id]);
 
-  const filteredPonds = ponds.filter((p) =>
-    p.title.toLowerCase().includes(pondSearch.toLowerCase())
-  );
-
-  const filteredSites = MOCK_SITES.filter(
-    (s) =>
-      s.name.toLowerCase().includes(siteSearch.toLowerCase()) &&
-      s.id !== (activeSite?.id || "s1")
-  );
-
-  const handleSelectPond = (pond) => {
-    setSelectedPond(pond);
-    setPondSearch(pond.title);
-    setShowPondSuggestions(false);
-  };
-
-  const handleSelectSite = (site) => {
-    setSelectedSite(site);
-    setSiteSearch(site.name);
-    setShowSiteSuggestions(false);
-  };
+  /* ── Fetch all sites from backend ── */
+  useEffect(() => {
+    let cancelled = false;
+    const fetchSites = async () => {
+      setSitesLoading(true);
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (!cancelled) setSiteOptions(data);
+      } catch {
+        if (!cancelled) setSiteOptions([]);
+      } finally {
+        if (!cancelled) setSitesLoading(false);
+      }
+    };
+    fetchSites();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,10 +112,8 @@ export default function TransferFish() {
         autoClose: 3000,
         className: 'dark-toast',
       });
-      setSelectedPond(null);
-      setSelectedSite(null);
-      setPondSearch("");
-      setSiteSearch("");
+      setSelectedPondId("");
+      setSelectedSiteId("");
       setQuantity("");
       setDescription("");
     } catch {
@@ -141,22 +134,25 @@ export default function TransferFish() {
       <ConfirmDialog />
       <ToastContainer />
       <div className="sticky-top">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        <div className={styles.sidebar}>
-          <SideBar />
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={styles.content}>
           <main className={styles.create_form}>
-            <div className="d-flex justify-content-between align-items-start mb-4 mt-3 flex-wrap gap-2">
-              <div>
-                <h4 className="mb-1 fw-bold" style={{ color: '#2E3135' }}>Transfer Fish to Another Site</h4>
-                <p className="mb-0" style={{ fontSize: '0.875rem', color: '#8C949B' }}>
-                  Move fish from a pond in your site to another location.
-                </p>
-              </div>
+            {/* ── Breadcrumb ── */}
+            <div className={styles.breadcrumb}>
+              <span>Fish Operations</span>
+              <span className={styles.separator}>&gt;</span>
+              <span>Site Transfers</span>
+              <span className={styles.separator}>&gt;</span>
+              <span className={styles.breadcrumbActive}>Transfer Fish</span>
             </div>
+
+            {/* ── Header ── */}
+            <h4 className="mt-3 mb-5">Transfer Fish to Another Site</h4>
 
             {loading ? (
               <div className="d-flex justify-content-center py-5">
@@ -164,114 +160,76 @@ export default function TransferFish() {
               </div>
             ) : (
               <Form onSubmit={handleSubmit}>
-                <Row>
-                  <Col md={12} lg={6} className="mb-3">
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Pond From</Form.Label>
-                    <div style={{ position: 'relative' }}>
-                      <Form.Control
-                        type="text"
-                        placeholder="Search for a pond..."
-                        value={pondSearch}
-                        onChange={(e) => { setPondSearch(e.target.value); setSelectedPond(null); setShowPondSuggestions(true); }}
-                        onFocus={() => setShowPondSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowPondSuggestions(false), 200)}
-                        className={styles.inputs}
-                        style={{ fontSize: '0.875rem' }}
-                      />
-                      {showPondSuggestions && pondSearch && (
-                        <div className={styles.suggestions_box} style={{ width: '100%', maxHeight: '200px', overflowY: 'auto', position: 'absolute', zIndex: 9999, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                          <ul style={{ listStyle: 'none', padding: '4px', margin: 0 }}>
-                            {filteredPonds.length > 0 ? (
-                              filteredPonds.map((pond) => (
-                                <li key={pond.id} onClick={() => handleSelectPond(pond)}
-                                  style={{ padding: '10px 12px', cursor: 'pointer', borderRadius: '6px', fontSize: '0.875rem', transition: 'background 0.15s' }}
-                                  onMouseEnter={(e) => e.target.style.background = '#F3F4F6'}
-                                  onMouseLeave={(e) => e.target.style.background = 'transparent'}>
-                                  <div style={{ fontWeight: 600, color: '#2E3135' }}>{pond.title}</div>
-                                  <small style={{ color: '#8C949B' }}>Available: {pond.quantity?.toLocaleString() || 0} pcs</small>
-                                </li>
-                              ))
-                            ) : (
-                              <li style={{ padding: '12px', color: '#8C949B', fontSize: '0.85rem' }}>No ponds found.</li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                    {selectedPond && (
-                      <small style={{ color: '#16A34A', fontWeight: 500 }}>Selected: {selectedPond.title} ({selectedPond.quantity?.toLocaleString()} pcs available)</small>
-                    )}
-                  </Col>
+                {/* ── Pond From ── */}
+                <Form.Label className="fw-semibold mt-4">Pond From</Form.Label>
+                <Form.Select
+                  value={selectedPondId}
+                  onChange={(e) => setSelectedPondId(e.target.value)}
+                  disabled={pondsLoading}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                >
+                  <option value="">
+                    {pondsLoading ? 'Loading ponds...' : (pondOptions.length === 0 ? 'No ponds available' : 'Select a pond')}
+                  </option>
+                  {pondOptions.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title} {p.quantity != null ? `(${p.quantity.toLocaleString()} pcs)` : ''}
+                    </option>
+                  ))}
+                </Form.Select>
+                {selectedPond && (
+                  <small style={{ color: '#16A34A', fontWeight: 500 }}>
+                    Available: {selectedPond.quantity?.toLocaleString() || 0} pcs
+                  </small>
+                )}
 
-                  <Col md={12} lg={6} className="mb-3">
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Site To</Form.Label>
-                    <div style={{ position: 'relative' }}>
-                      <Form.Control
-                        type="text"
-                        placeholder="Search for a destination site..."
-                        value={siteSearch}
-                        onChange={(e) => { setSiteSearch(e.target.value); setSelectedSite(null); setShowSiteSuggestions(true); }}
-                        onFocus={() => setShowSiteSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowSiteSuggestions(false), 200)}
-                        className={styles.inputs}
-                        style={{ fontSize: '0.875rem' }}
-                      />
-                      {showSiteSuggestions && siteSearch && (
-                        <div className={styles.suggestions_box} style={{ width: '100%', maxHeight: '200px', overflowY: 'auto', position: 'absolute', zIndex: 9999, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                          <ul style={{ listStyle: 'none', padding: '4px', margin: 0 }}>
-                            {filteredSites.length > 0 ? (
-                              filteredSites.map((site) => (
-                                <li key={site.id} onClick={() => handleSelectSite(site)}
-                                  style={{ padding: '10px 12px', cursor: 'pointer', borderRadius: '6px', fontSize: '0.875rem', transition: 'background 0.15s' }}
-                                  onMouseEnter={(e) => e.target.style.background = '#F3F4F6'}
-                                  onMouseLeave={(e) => e.target.style.background = 'transparent'}>
-                                  <div style={{ fontWeight: 600, color: '#2E3135' }}>{site.name}</div>
-                                </li>
-                              ))
-                            ) : (
-                              <li style={{ padding: '12px', color: '#8C949B', fontSize: '0.85rem' }}>No sites found.</li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                    {selectedSite && (
-                      <small style={{ color: '#16A34A', fontWeight: 500 }}>Selected: {selectedSite.name}</small>
-                    )}
-                  </Col>
-                </Row>
+                {/* ── Site To ── */}
+                <Form.Label className="fw-semibold mt-4">Site To</Form.Label>
+                <Form.Select
+                  value={selectedSiteId}
+                  onChange={(e) => setSelectedSiteId(e.target.value)}
+                  disabled={sitesLoading}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                >
+                  <option value="">
+                    {sitesLoading ? 'Loading sites...' : (siteOptions.length === 0 ? 'No sites available' : 'Select a destination site')}
+                  </option>
+                  {siteOptions.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </Form.Select>
 
-                <Row>
-                  <Col md={6} lg={6} className="mb-3">
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Quantity</Form.Label>
-                    <Form.Control
-                      type="number"
-                      min="1"
-                      placeholder="Enter quantity"
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      required
-                      className={styles.inputs}
-                      style={{ fontSize: '0.875rem' }}
-                    />
-                  </Col>
-                  <Col md={6} lg={6} className="mb-3">
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Description</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      placeholder="Optional description or remarks"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className={styles.inputs}
-                      style={{ fontSize: '0.875rem', resize: 'vertical' }}
-                    />
-                  </Col>
-                </Row>
+                {/* ── Quantity ── */}
+                <Form.Label className="fw-semibold mt-4">Quantity</Form.Label>
+                <Form.Control
+                  type="number"
+                  min="1"
+                  placeholder="Enter quantity"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  required
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                />
 
-                <div className="mt-4">
-                  <Button type="submit" className={styles.submit} disabled={submitting}
-                    style={{ padding: '10px 32px', fontWeight: 600, fontSize: '0.9rem', border: 'none' }}>
+                {/* ── Description ── */}
+                <Form.Label className="fw-semibold fs-6 mt-4">Description</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  placeholder="Optional description or remarks"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                  style={{ height: '200px' }}
+                />
+
+                {/* ── Submit ── */}
+                <div className="d-flex justify-content-end my-4">
+                  <Button
+                    type="submit"
+                    className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}
+                    disabled={submitting}
+                  >
                     {submitting ? 'Transferring...' : 'Transfer Fish'}
                   </Button>
                 </div>
