@@ -4,11 +4,12 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../admin-styles.module.scss';
-import { BsExclamationTriangleFill, BsThreeDotsVertical } from "react-icons/bs";
+import { BsExclamationTriangleFill } from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Dropdown } from 'react-bootstrap';
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import { Alert } from 'react-bootstrap';
 import { SkeletonTable, SkeletonFilterBar } from '../../shared/skeleton/Skeleton';
 import { FaUserPlus, FaFilter } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
@@ -42,7 +43,7 @@ export default function ViewAll() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-  const [adminsPerPage] = useState(10);
+  const [adminsPerPage] = useState(45);
   const [showSidebar, setShowSidebar] = useState(false);
   const [filterSite, setFilterSite] = useState('');
   const [ConfirmDialog, confirm] = useConfirm();
@@ -188,31 +189,27 @@ export default function ViewAll() {
                           <td>{admin.UserSites?.length ? admin.UserSites.map(us => us.Site?.name).filter(Boolean).join(', ') : '-'}</td>
                           <td>{formatDate(admin.createdAt)}</td>
                           <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                            <Dropdown align="end">
-                              <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                <BsThreeDotsVertical size={16} />
-                              </Dropdown.Toggle>
-                              <Dropdown.Menu style={{ minWidth: 180 }}>
-                                <Dropdown.Item onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate('/admin/add-new-admin', {
-                                    state: {
-                                      isEdit: true,
-                                      adminData: {
-                                        id: admin.id,
-                                        fullName: admin.fullName,
-                                        email: admin.email,
-                                        role: admin.role,
-                                        roleId: admin.roleRef?.id || admin.roleId || '',
-                                        UserSites: admin.UserSites || [],
-                                      }
+                            <PortalDropdown
+                              btnClass={styles.threeDotBtn}
+                              stopPropagation
+                              items={[
+                                { label: 'Edit', onClick: () => navigate('/admin/add-new-admin', {
+                                  state: {
+                                    isEdit: true,
+                                    adminData: {
+                                      id: admin.id,
+                                      fullName: admin.fullName,
+                                      email: admin.email,
+                                      role: admin.role,
+                                      roleId: admin.roleRef?.id || admin.roleId || '',
+                                      UserSites: admin.UserSites || [],
                                     }
-                                  });
-                                }}>Edit</Dropdown.Item>
-                                <Dropdown.Divider />
-                                <Dropdown.Item onClick={(e) => { e.stopPropagation(); handleDelete(admin.id); }} style={{ color: '#dc3545', fontWeight: 600 }}>Delete</Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
+                                  }
+                                })},
+                                { divider: true },
+                                { label: 'Delete', onClick: () => handleDelete(admin.id), style: { color: '#dc3545', fontWeight: 600 } },
+                              ]}
+                            />
                           </td>
                         </tr>
                       ))}

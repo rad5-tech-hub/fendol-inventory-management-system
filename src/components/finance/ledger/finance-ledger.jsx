@@ -15,7 +15,7 @@ const FinanceLedger = () => {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
   const [balance, setBalance] = useState(0);
   const [selectedDate, setSelectedDate] = useState("");
 

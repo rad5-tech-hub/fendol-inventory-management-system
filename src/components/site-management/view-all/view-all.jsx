@@ -3,8 +3,9 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../site-management.module.scss';
-import { BsExclamationTriangleFill, BsThreeDotsVertical } from "react-icons/bs";
-import { Alert, Modal, Dropdown } from 'react-bootstrap';
+import { BsExclamationTriangleFill } from "react-icons/bs";
+import { Alert, Modal } from 'react-bootstrap';
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import { ApiV2 } from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
 import { ToastContainer } from 'react-toastify';
@@ -29,7 +30,7 @@ const ViewAllSites = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [selectedSite, setSelectedSite] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
   const navigate = useNavigate();
 
   const fetchSites = async () => {
@@ -188,16 +189,13 @@ const ViewAllSites = () => {
                             )}
                           </td>
                           <td style={{ textAlign: 'center', verticalAlign: 'middle', overflow: 'visible' }}>
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <Dropdown align="end">
-                                <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                  <BsThreeDotsVertical size={16} />
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu style={{ minWidth: 180 }}>
-                                  <Dropdown.Item onClick={(e) => { e.stopPropagation(); handleEdit(site); }}>Edit</Dropdown.Item>
-                                </Dropdown.Menu>
-                              </Dropdown>
-                            </div>
+                            <PortalDropdown
+                              btnClass={styles.threeDotBtn}
+                              stopPropagation
+                              items={[
+                                { label: 'Edit', onClick: () => handleEdit(site) },
+                              ]}
+                            />
                           </td>
                         </tr>
                       ))}

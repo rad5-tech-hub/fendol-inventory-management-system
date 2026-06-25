@@ -3,17 +3,15 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../store.module.scss';
-import { BsThreeDotsVertical } from "react-icons/bs";
-import { useNavigate } from "react-router-dom";
-import Api from "../../shared/api/apiLink";
-import { Alert, Modal, Form, Button, Dropdown } from 'react-bootstrap';
+import Api, { ApiV2 } from "../../shared/api/apiLink";
+import { Alert, Modal, Form, Button, Spinner } from 'react-bootstrap';
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 export default function UpdateStoreInventory() {
-  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,7 +19,7 @@ export default function UpdateStoreInventory() {
   const [modalType, setModalType] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5;
+  const itemsPerPage = 45;
   const [stages, setStages] = useState([]);
   const [quantity, setQuantity] = useState(null);
   const [quantityUsed, setQuantityUsed] = useState(null);
@@ -30,9 +28,14 @@ export default function UpdateStoreInventory() {
   const [threshold, setThreshold] = useState(null);
   const [unit, setUnit] = useState('');
   const [disabled, setDisabled] = useState(false);
+  const [addLoader, setAddLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [pondSearch, setPondSearch] = useState('');
   const [showPondDropdown, setShowPondDropdown] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newStock, setNewStock] = useState({ name: '', unit: '', threshold: '', siteId: '' });
+  const [sites, setSites] = useState([]);
+  const [sitesLoading, setSitesLoading] = useState(false);
 
   const formatWithCommas = (value) => {
     if (value === null || value === '') return '';
@@ -47,6 +50,36 @@ export default function UpdateStoreInventory() {
       setError('Failed to fetch data. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSites = async () => {
+    setSitesLoading(true);
+    try {
+      const res = await ApiV2.get('/v2/all-site');
+      const data = Array.isArray(res.data?.data) ? res.data.data : [];
+      setSites(data);
+    } catch {
+      setSites([]);
+    } finally {
+      setSitesLoading(false);
+    }
+  };
+
+  const handleAddNewStock = async (e) => {
+    e.preventDefault();
+    setAddLoader(true);
+    const loadingToast = toast.loading("Adding stock...", { className: 'dark-toast' });
+    try {
+      await Api.post('/create-store', newStock);
+      toast.update(loadingToast, { render: "Stock added successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
+      setNewStock({ name: '', unit: '', threshold: '', siteId: '' });
+      setShowAddModal(false);
+      fetchData();
+    } catch (error) {
+      toast.update(loadingToast, { render: error.response?.data?.message || "Error adding stock. Please try again.", type: "error", isLoading: false, autoClose: 3000, className: 'dark-toast' });
+    } finally {
+      setAddLoader(false);
     }
   };
 
@@ -103,6 +136,7 @@ export default function UpdateStoreInventory() {
     };
 
     fetchStages();
+    fetchSites();
     fetchData();
   }, []);
 
@@ -167,7 +201,7 @@ export default function UpdateStoreInventory() {
           <main className={styles.create_form}>
             <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
               <h4 className="m-0">View All</h4>
-              <button className={`fw-semibold ${styles.addStoreBtn}`} onClick={() => navigate('/store/add-new')}>Add store</button>
+              <button className={`fw-semibold ${styles.addStoreBtn}`} onClick={() => setShowAddModal(true)}>Add store</button>
             </div>
             <ToastContainer />
 
@@ -215,17 +249,12 @@ export default function UpdateStoreInventory() {
                             }>
                               {product.status}
                             </span>
-                            <Dropdown align="end" className="position-relative">
-                              <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                <BsThreeDotsVertical size={16} />
-                              </Dropdown.Toggle>
-                              <Dropdown.Menu style={{ minWidth: 180 }}>
-                                <Dropdown.Item onClick={() => handleAddClick(product)}>Restock Store</Dropdown.Item>
-                                <Dropdown.Item onClick={() => handleRemoveClick(product)}>Use</Dropdown.Item>
-                                <Dropdown.Divider />
-                                <Dropdown.Item onClick={() => handleEditClick(product)}>Edit</Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
+                            <PortalDropdown btnClass={styles.threeDotBtn} items={[
+                              { label: 'Restock Store', onClick: () => handleAddClick(product) },
+                              { label: 'Use', onClick: () => handleRemoveClick(product) },
+                              { divider: true },
+                              { label: 'Edit', onClick: () => handleEditClick(product) },
+                            ]} />
                           </td>
                         </tr>
                       ))}
@@ -258,6 +287,74 @@ export default function UpdateStoreInventory() {
             )}
           </main>
         </section>
+
+        <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title className="fw-semibold fs-5">Add New Stock</Modal.Title>
+          </Modal.Header>
+          <Form onSubmit={handleAddNewStock}>
+            <Modal.Body className="pt-0">
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Name</Form.Label>
+                <Form.Control
+                  placeholder="Enter stock name"
+                  type="text"
+                  required
+                  value={newStock.name}
+                  onChange={(e) => setNewStock({ ...newStock, name: e.target.value })}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Unit</Form.Label>
+                <Form.Select
+                  required
+                  value={newStock.unit}
+                  onChange={(e) => setNewStock({ ...newStock, unit: e.target.value })}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                >
+                  <option value="" disabled>Select Unit</option>
+                  <option value="kg">Kg</option>
+                  <option value="liters">Liters</option>
+                  <option value="pieces">Pieces</option>
+                </Form.Select>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Threshold Value</Form.Label>
+                <Form.Control
+                  placeholder="Enter threshold value"
+                  type="number"
+                  required
+                  min="0"
+                  value={newStock.threshold}
+                  onChange={(e) => setNewStock({ ...newStock, threshold: e.target.value === '' ? '' : Number(e.target.value) })}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Site</Form.Label>
+                <Form.Select
+                  required
+                  value={newStock.siteId}
+                  onChange={(e) => setNewStock({ ...newStock, siteId: e.target.value })}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                  disabled={sitesLoading}
+                >
+                  <option value="" disabled>{sitesLoading ? 'Loading sites...' : 'Select Site'}</option>
+                  {sites.map((site) => (
+                    <option key={site.id} value={site.id}>{site.name}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Modal.Body>
+            <Modal.Footer className="border-0 pt-0">
+              <button type="button" className="btn btn-secondary shadow-none fw-semibold" onClick={() => setShowAddModal(false)} disabled={addLoader}>Cancel</button>
+              <button type="submit" className="btn fw-semibold text-white border-0 shadow-none" style={{ backgroundColor: '#512728' }} disabled={addLoader}>
+                {addLoader ? <><Spinner size="sm" animation="border" className="me-2" />Adding...</> : 'Add'}
+              </button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
 
         <Modal show={showModal} onHide={() => setShowModal(false)} className="rounded-0">
           <Modal.Header closeButton className="border-0">
@@ -404,3 +501,4 @@ export default function UpdateStoreInventory() {
     </section>
   );
 }
+

@@ -3,11 +3,12 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../customer.module.scss';
-import { BsSearch, BsThreeDotsVertical, BsPlusLg, BsChevronDown, BsX } from "react-icons/bs";
+import { BsSearch, BsPlusLg, BsChevronDown, BsX } from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Modal, Button, Form, Dropdown } from 'react-bootstrap';
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import { Alert, Modal, Button, Form } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
@@ -45,7 +46,7 @@ export default function ViewAllCustomers() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [balanceFilter, setBalanceFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
   const [ConfirmDialog, confirm] = useConfirm();
 
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -455,17 +456,15 @@ export default function ViewAllCustomers() {
                               <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
                             </td>
                             <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                              <Dropdown align="end">
-                                <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                  <BsThreeDotsVertical size={16} />
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu style={{ minWidth: 180 }}>
-                                  <Dropdown.Item onClick={() => handleEdit(customer)}>Edit</Dropdown.Item>
-                                  <Dropdown.Item onClick={() => handleDelete(customer)}>Delete</Dropdown.Item>
-                                  <Dropdown.Divider />
-                                  <Dropdown.Item onClick={() => navigate(`/customer/personal-ledger?id=${customer.id}`)}>View Ledger</Dropdown.Item>
-                                </Dropdown.Menu>
-                              </Dropdown>
+                              <PortalDropdown
+                                btnClass={styles.threeDotBtn}
+                                items={[
+                                  { label: 'Edit', onClick: () => handleEdit(customer) },
+                                  { label: 'Delete', onClick: () => handleDelete(customer) },
+                                  { divider: true },
+                                  { label: 'View Ledger', onClick: () => navigate(`/customer/personal-ledger?id=${customer.id}`) },
+                                ]}
+                              />
                             </td>
                           </tr>
                         );

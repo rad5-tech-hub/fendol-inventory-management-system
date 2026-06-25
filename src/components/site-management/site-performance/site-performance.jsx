@@ -167,7 +167,7 @@ const SitePerformance = () => {
   const [trendPeriod]                 = useState('This Month');
   const [currentPage, setCurrentPage] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
 
   const filteredSites = siteFilter
     ? ALL_SITES.filter((s) => s.type.toLowerCase() === siteFilter.toLowerCase())

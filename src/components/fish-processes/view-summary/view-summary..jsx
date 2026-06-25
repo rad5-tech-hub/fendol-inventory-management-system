@@ -422,7 +422,7 @@ export default function ViewSummary() {
   const [sites, setSites] = useState([]);
   const [ponds, setPonds] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(45);
   const [selectedDate, setSelectedDate] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

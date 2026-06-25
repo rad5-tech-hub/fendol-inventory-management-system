@@ -4,13 +4,14 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from './ViewFish.module.scss';
 import {
-  BsSearch, BsThreeDotsVertical, BsChevronDown, BsPlusCircle, BsX
+  BsSearch, BsChevronDown, BsPlusCircle, BsX
 } from "react-icons/bs";
 import {
   FaExchangeAlt, FaMapMarkerAlt, FaBoxOpen, FaWarehouse, FaFish
 } from "react-icons/fa";
 import { GiFishingNet, GiWaterTank } from "react-icons/gi";
-import { Dropdown, Modal, Button, Form } from 'react-bootstrap';
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import { Modal, Button, Form } from 'react-bootstrap';
 import { SkeletonTable, SkeletonStatGrid, SkeletonFilterBar } from "../../shared/skeleton/Skeleton";
 import ReactPaginate from 'react-paginate';
 import { ToastContainer, toast } from 'react-toastify';
@@ -789,16 +790,13 @@ export default function ViewFish() {
                                   </div>
                                 </td>
                                 <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                  <div onClick={(e) => e.stopPropagation()}>
-                                    <Dropdown align="end">
-                                      <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                        <BsThreeDotsVertical size={16} />
-                                      </Dropdown.Toggle>
-                                      <Dropdown.Menu style={{ minWidth: 160 }}>
-                                        <Dropdown.Item onClick={() => handleViewDetails(t)}>View Details</Dropdown.Item>
-                                      </Dropdown.Menu>
-                                    </Dropdown>
-                                  </div>
+                                  <PortalDropdown
+                                    btnClass={styles.threeDotBtn}
+                                    stopPropagation
+                                    items={[
+                                      { label: 'View Details', onClick: () => handleViewDetails(t) },
+                                    ]}
+                                  />
                                 </td>
                               </tr>
                             );

@@ -3,16 +3,17 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../finance.module.scss';
-import { BsSearch, BsThreeDotsVertical, BsPlusLg, BsChevronDown, BsX } from "react-icons/bs";
+import { BsSearch, BsPlusLg, BsChevronDown, BsX } from "react-icons/bs";
 import { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Dropdown } from 'react-bootstrap';
+import { Alert } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import { useConfirm } from '../../shared/confirm-modal';
+import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
 
@@ -50,7 +51,7 @@ export default function ViewAllSupplier() {
   const [currentPage, setCurrentPage] = useState(0);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const typeFilterRef = useRef(null);
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
   const [ConfirmDialog, confirm] = useConfirm();
 
   const fetchSuppliers = async () => {
@@ -520,23 +521,18 @@ export default function ViewAllSupplier() {
                               <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
                             </td>
                             <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                              <Dropdown align="end">
-                                <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                  <BsThreeDotsVertical size={16} />
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu style={{ minWidth: 180 }}>
-                                  <Dropdown.Item onClick={() => navigate('/finance/supplier/new', { state: { supplier } })}>
-                                    Edit
-                                  </Dropdown.Item>
-                                  {isSuperAdminOrMD && (
-                                    <Dropdown.Item onClick={() => handleDelete(supplier)}>Delete</Dropdown.Item>
-                                  )}
-                                  <Dropdown.Divider />
-                                  <Dropdown.Item onClick={() => navigate(`/finance/supplier/ledger?id=${supplier.id}`)}>
-                                    View Ledger
-                                  </Dropdown.Item>
-                                </Dropdown.Menu>
-                              </Dropdown>
+                              <PortalDropdown
+                                btnClass={styles.threeDotBtn}
+                                menuStyle={{ minWidth: 180 }}
+                                items={[
+                                  { label: 'Edit', onClick: () => navigate('/finance/supplier/new', { state: { supplier } }) },
+                                  ...(isSuperAdminOrMD
+                                    ? [{ label: 'Delete', onClick: () => handleDelete(supplier) }]
+                                    : []),
+                                  { divider: true },
+                                  { label: 'View Ledger', onClick: () => navigate(`/finance/supplier/ledger?id=${supplier.id}`) },
+                                ]}
+                              />
                             </td>
                           </tr>
                         );

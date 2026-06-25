@@ -37,7 +37,7 @@
 
   h4 {
     font-size: 20px;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 30px;
     color: #2E3135;
   }
@@ -111,13 +111,16 @@
   th {
     color: #8C949B;
     padding: 20px 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.75rem;
   }
 
   td {
     padding: 19px 8px;
     border-bottom: 0.2px solid #d0d6db;
     font-family: 'Roboto Flex', sans-serif;
-    font-size: 16px;
+    font-size: 0.875rem;
     font-weight: 500;
     line-height: 18.75px;
     letter-spacing: 0.04em;

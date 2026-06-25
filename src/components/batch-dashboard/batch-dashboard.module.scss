@@ -300,6 +300,7 @@
 
 .tableWrapper {
   overflow-x: auto;
+  overflow-y: visible;
   border: 1px solid #E5E7EB;
   border-radius: 8px;
   @include hide-scrollbar;

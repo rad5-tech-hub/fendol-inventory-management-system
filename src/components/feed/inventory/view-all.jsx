@@ -3,10 +3,10 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../feed.module.scss';
-import { BsThreeDotsVertical } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
 import Api from "../../shared/api/apiLink";
-import { Spinner, Alert, Modal, Form, Button, Dropdown } from 'react-bootstrap';
+import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap';
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -21,7 +21,7 @@ export default function FeedInventoryViewAll() {
   const [modalType, setModalType] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
   const [stages, setStages] = useState([]);
   const [quantityUsed, setQuantityUsed] = useState(null);
   const [noOfBag, setNoOfBag] = useState(null);
@@ -214,7 +214,7 @@ export default function FeedInventoryViewAll() {
           <main className={styles.create_form}>
             <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
               <h4 className="m-0">View All</h4>
-              <button className={`fw-semibold ${styles.addFeedBtn}`} onClick={() => navigate('/feed/add-new')}>Add feed</button>
+              <button className={`fw-semibold ${styles.addFeedBtn}`} onClick={() => navigate('/feed/view-all')}>Add feed</button>
             </div>
             <ToastContainer />
 
@@ -274,16 +274,14 @@ export default function FeedInventoryViewAll() {
                             }>
                               {product.status}
                             </span>
-                            <Dropdown align="end">
-                              <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                <BsThreeDotsVertical size={16} />
-                              </Dropdown.Toggle>
-                              <Dropdown.Menu style={{ minWidth: 180 }}>
-                                <Dropdown.Item onClick={() => handleEditClick(product)}>Edit</Dropdown.Item>
-                                <Dropdown.Divider />
-                                <Dropdown.Item onClick={() => handleDeleteClick(product.id)} style={{ color: '#dc3545', fontWeight: 600 }}>Delete</Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
+                            <PortalDropdown
+                              btnClass={styles.threeDotBtn}
+                              items={[
+                                { label: 'Edit', onClick: () => handleEditClick(product) },
+                                { divider: true },
+                                { label: 'Delete', onClick: () => handleDeleteClick(product.id), style: { color: '#dc3545', fontWeight: 600 } },
+                              ]}
+                            />
                           </td>
                         </tr>
                       ))}

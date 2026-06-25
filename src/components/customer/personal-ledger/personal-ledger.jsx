@@ -4,11 +4,12 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../customer.module.scss';
-import { BsThreeDotsVertical, BsCalendar3, BsPrinter } from "react-icons/bs";
+import { BsCalendar3, BsPrinter } from "react-icons/bs";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Button, Dropdown, Form, Modal, Spinner } from 'react-bootstrap';
+import { Alert, Button, Form, Modal, Spinner } from 'react-bootstrap';
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import ReactPaginate from 'react-paginate';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import ReceiptModal from "../../finance/add-sales/receipt";
@@ -46,7 +47,7 @@ export default function PersonalLedger() {
   const [category, setCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
-  const itemsPerPage = 7;
+  const itemsPerPage = 45;
 
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -544,22 +545,18 @@ export default function PersonalLedger() {
                                     {record.balance != null ? formatCurrency(record.balance) : '-'}
                                   </td>
                                   <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                    <Dropdown align="end">
-                                      <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                        <BsThreeDotsVertical size={16} />
-                                      </Dropdown.Toggle>
-                                      <Dropdown.Menu style={{ minWidth: 180 }}>
-                                        {record.productName && (
-                                          <>
-                                            <Dropdown.Item onClick={() => handleReceipt(record)}>
-                                              <BsPrinter size={14} style={{ marginRight: '8px' }} /> Print Receipt
-                                            </Dropdown.Item>
-                                            <Dropdown.Divider />
-                                          </>
-                                        )}
-                                        <Dropdown.Item onClick={() => {}}>View Details</Dropdown.Item>
-                                      </Dropdown.Menu>
-                                    </Dropdown>
+                                    <PortalDropdown
+                                      btnClass={styles.threeDotBtn}
+                                      items={[
+                                        ...(record.productName
+                                          ? [
+                                              { label: <><BsPrinter size={14} style={{ marginRight: 8 }} /> Print Receipt</>, onClick: () => handleReceipt(record) },
+                                              { divider: true },
+                                            ]
+                                          : []),
+                                        { label: 'View Details', onClick: () => {} },
+                                      ]}
+                                    />
                                   </td>
                                 </tr>
                               );

@@ -16,7 +16,7 @@ export default function DamageLoss() {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0); // Current page
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
-  const itemsPerPage = 10; // Number of items per page
+  const itemsPerPage = 45; // Number of items per page
 
   useEffect(() => {
     const fetchMoveFishHistory = async () => {

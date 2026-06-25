@@ -3,16 +3,17 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product.module.scss';
-import { BsThreeDotsVertical, BsPlusLg, BsBarChartFill, BsChevronDown } from "react-icons/bs";
+import { BsPlusLg, BsBarChartFill, BsChevronDown } from "react-icons/bs";
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Modal, Form, Button, Dropdown } from 'react-bootstrap';
+import { Alert, Modal, Form, Button } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { hasPermission } from '../../shared/permissions/permissions';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 
 const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick }) => (
   <table className={styles.productTable}>
@@ -55,16 +56,15 @@ const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick }) => (
             })()}
           </td>
           <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-            <Dropdown align="end">
-              <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                <BsThreeDotsVertical size={16} />
-              </Dropdown.Toggle>
-              <Dropdown.Menu style={{ minWidth: 160 }}>
-                <Dropdown.Item onClick={() => onEditClick(product)}>Edit</Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Item onClick={() => onDeleteClick(product.id)} style={{ color: '#dc3545', fontWeight: 600 }}>Delete</Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            <PortalDropdown
+              btnClass={styles.threeDotBtn}
+              menuStyle={{ minWidth: 160 }}
+              items={[
+                { label: 'Edit', onClick: () => onEditClick(product) },
+                { divider: true },
+                { label: 'Delete', onClick: () => onDeleteClick(product.id), style: { color: '#dc3545', fontWeight: 600 } },
+              ]}
+            />
           </td>
         </tr>
       ))}
@@ -80,7 +80,7 @@ export default function ViewAllProducts() {
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
   const [showSidebar, setShowSidebar] = useState(false);
   const [viewMode, setViewMode] = useState('all');
   const [collapsedSites, setCollapsedSites] = useState(new Set());

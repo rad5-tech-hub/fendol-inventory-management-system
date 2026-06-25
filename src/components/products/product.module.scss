@@ -25,7 +25,7 @@
 
   h4 {
     font-size: 20px;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 30px;
     color: #2E3135;
   }
@@ -68,13 +68,16 @@
   color: #8C949B;
   padding-bottom: 20px;
   text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
 }
 
 .styled_table td {
   padding: 18px 0px;
   border-bottom: 0.2px solid #d0d6db;
   font-family: 'Roboto Flex', sans-serif;
-  font-size: 16px;
+  font-size: 0.875rem;
   font-weight: 500;
   line-height: 18.75px;
   letter-spacing: 0.04em;
@@ -129,7 +132,11 @@
     }
   }
 
-  .content {
+.body {
+  background-color: #f8f9fa;
+}
+
+.content {
     width: 100%; // Full width on tablets
     padding: 15px; // Consistent padding
   }

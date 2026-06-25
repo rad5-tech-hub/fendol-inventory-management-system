@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Pagination, Dropdown } from 'react-bootstrap';
+import { Form, Pagination } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { IoSearchOutline, IoFilterOutline, IoRefreshOutline, IoEyeOutline, IoPencilOutline, IoSendOutline, IoTrashOutline } from 'react-icons/io5';
 import { GiCirclingFish } from 'react-icons/gi';
 import { FaChartLine, FaCheckCircle, FaPlus, FaExchangeAlt } from 'react-icons/fa';
-import { BsThreeDotsVertical } from 'react-icons/bs';
 import SideBar from '../../../shared/sidebar/sidebar';
+import PortalDropdown from '../../../shared/portal-dropdown/PortalDropdown';
 import Header from '../../../shared/header/header';
 import Api, { ApiV2 } from '../../../shared/api/apiLink';
 import styles from '../../hatchery.module.scss';
@@ -190,26 +190,19 @@ export default function ViewAllBatches() {
   const ActionDropdown = ({ row }) => {
     const [open, setOpen] = useState(false);
     return (
-      <Dropdown show={open} onToggle={setOpen} align="end">
-        <Dropdown.Toggle as="button" className={styles.threeDotBtn} onClick={() => setOpen(!open)}>
-          <BsThreeDotsVertical size={16} />
-        </Dropdown.Toggle>
-        <Dropdown.Menu style={{ minWidth: 210 }}>
-          <Dropdown.Item onClick={() => navigate(`/hatchery/hatch-batches/summary/${row.id}`)}>
-            <IoEyeOutline size={16} style={{ marginRight: 10 }} /> View Summary
-          </Dropdown.Item>
-          <Dropdown.Item onClick={() => navigate('/hatchery/hatch-batches/create', { state: { batch: row } })}>
-            <IoPencilOutline size={16} style={{ marginRight: 10 }} /> Edit Batch
-          </Dropdown.Item>
-          <Dropdown.Item onClick={() => { setOpen(false); openTransferModal(row); }}>
-            <IoSendOutline size={16} style={{ marginRight: 10 }} /> Transfer to Nursery
-          </Dropdown.Item>
-          <Dropdown.Divider />
-          <Dropdown.Item onClick={() => {}} style={{ color: '#dc3545', fontWeight: 600 }}>
-            <IoTrashOutline size={16} style={{ marginRight: 10 }} /> Delete Batch
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown>
+      <PortalDropdown
+        show={open}
+        onToggle={setOpen}
+        btnClass={styles.threeDotBtn}
+        menuStyle={{ minWidth: 210 }}
+        items={[
+          { label: <><IoEyeOutline size={16} style={{ marginRight: 10 }} /> View Summary</>, onClick: () => navigate(`/hatchery/hatch-batches/summary/${row.id}`) },
+          { label: <><IoPencilOutline size={16} style={{ marginRight: 10 }} /> Edit Batch</>, onClick: () => navigate('/hatchery/hatch-batches/create', { state: { batch: row } }) },
+          { label: <><IoSendOutline size={16} style={{ marginRight: 10 }} /> Transfer to Nursery</>, onClick: () => openTransferModal(row) },
+          { divider: true },
+          { label: <><IoTrashOutline size={16} style={{ marginRight: 10 }} /> Delete Batch</>, onClick: () => {}, style: { color: '#dc3545', fontWeight: 600 } },
+        ]}
+      />
     );
   };
 
@@ -354,9 +347,9 @@ export default function ViewAllBatches() {
                   <Pagination.Last />
                 </Pagination>
                 <Form.Select style={{ width: 120, fontSize: '0.85rem' }}>
-                  <option>10 / page</option>
-                  <option>25 / page</option>
-                  <option>50 / page</option>
+                  <option>45 / page</option>
+                  <option>100 / page</option>
+                  <option>200 / page</option>
                 </Form.Select>
               </div>
             </div>

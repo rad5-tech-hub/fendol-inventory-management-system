@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
 @import '../shared/style.scss';
 
+.body {
+  background-color: #f8f9fa;
+}
+
 .content {
   width: $content-width;
   flex-grow: 1;
@@ -19,7 +23,7 @@
 
   h4 {
     font-size: 20px;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 30px;
     color: #2E3135;
   }
@@ -61,13 +65,16 @@
   padding-bottom: 20px;
   text-align: left;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
 }
 
 .styled_table td {
   padding: 18px 0px;
   border-bottom: 0.2px solid #d0d6db;
   font-family: 'Roboto Flex', sans-serif;
-  font-size: 16px;
+  font-size: 0.875rem;
   font-weight: 500;
   line-height: 18.75px;
   letter-spacing: 0.04em;
@@ -77,6 +84,7 @@
 
 .tableWrapper {
   overflow-x: auto;
+  overflow-y: visible;
 }
 
 .dropdownMenu {

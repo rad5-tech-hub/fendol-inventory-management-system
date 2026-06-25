@@ -3,10 +3,10 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../showcase.module.scss";
-import { Alert, Button, Modal, Form, Dropdown } from "react-bootstrap";
+import { Alert, Button, Modal, Form } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
-import { BsThreeDotsVertical } from "react-icons/bs";
 import ReactPaginate from "react-paginate";
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -29,7 +29,7 @@ export default function ViewWholeHistory() {
   const [remarks, setRemarks] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
 
   // Fetch all data and handle pagination based on it
   const fetchTableData = async () => {
@@ -188,28 +188,12 @@ export default function ViewWholeHistory() {
                       >
                         In Stock
                       </p>
-                      <Dropdown>
-                        <Dropdown.Toggle as="span" id="dropdown-custom-components">
-                          <BsThreeDotsVertical
-                            className="m-1 cursor-pointer"
-                            style={{ cursor: "pointer" }}
-                          />
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                          <Dropdown.Item
-                            variant="light"
-                            onClick={() => handleShowModal("damage")}
-                          >
-                            Move to Damage
-                          </Dropdown.Item>
-                          <Dropdown.Item
-                            variant="light"
-                            onClick={() => handleShowModal("broken")}
-                          >
-                            Move to Broken
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
+                      <PortalDropdown
+                        items={[
+                          { label: 'Move to Damage', onClick: () => handleShowModal("damage") },
+                          { label: 'Move to Broken', onClick: () => handleShowModal("broken") },
+                        ]}
+                      />
                     </div>
                     <p
                       className="text-start text-muted fw-semibold"

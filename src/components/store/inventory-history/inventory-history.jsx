@@ -15,7 +15,7 @@ export default function InventoryHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
   const [selectedDate, setSelectedDate] = useState("");
   const [showSidebar, setShowSidebar] = useState(false); // Added for sidebar toggle
 

@@ -127,13 +127,16 @@ export default function SideBar({ show, handleClose }) {
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const isActiveRoute = (route) =>
+    location.pathname === route || location.pathname.startsWith(route + "/") || location.pathname.startsWith(route + "?");
+
   const renderNavItem = (label, route, icon) => (
     <Nav.Item className="mb-3">
       <OverlayTrigger placement="bottom" overlay={<Tooltip id={`tooltip-${label}`}>{label}</Tooltip>}>
         <div
           onClick={() => navigate(route)}
-          className={`${location.pathname === route ? styles.activeLink : styles.nonactiveLink}`}
-          data-active={location.pathname === route ? "true" : undefined}
+          className={`${isActiveRoute(route) ? styles.activeLink : styles.nonactiveLink}`}
+          data-active={isActiveRoute(route) ? "true" : undefined}
           style={{ cursor: "pointer" }}
         >
           {icon || <FaCircle size={10} className="me-2" />} {label}
@@ -147,8 +150,8 @@ export default function SideBar({ show, handleClose }) {
       <OverlayTrigger placement="bottom" overlay={<Tooltip id={`tooltip-${label}`}>{label}</Tooltip>}>
         <div
           onClick={() => navigate(route)}
-          className={`${location.pathname.startsWith(route) ? styles.activeLink : styles.nonactiveLink}`}
-          data-active={location.pathname.startsWith(route) ? "true" : undefined}
+          className={`${isActiveRoute(route) ? styles.activeLink : styles.nonactiveLink}`}
+          data-active={isActiveRoute(route) ? "true" : undefined}
           style={{ cursor: "pointer" }}
         >
           {icon || <FaCircle size={10} className="me-2" />} {label}
@@ -185,8 +188,8 @@ export default function SideBar({ show, handleClose }) {
     <Card className={styles.card}>
       <Card.Header
         onClick={() => navigate(route)}
-        className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader} ${location.pathname === route ? styles.dashboardLinkActive : ""} ${extraClass}`}
-        data-active={location.pathname === route ? "true" : undefined}
+        className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader} ${isActiveRoute(route) ? styles.dashboardLinkActive : ""} ${extraClass}`}
+        data-active={isActiveRoute(route) ? "true" : undefined}
         style={{ cursor: "pointer" }}
       >
         <span className={`${styles.title}`}>
@@ -203,8 +206,8 @@ export default function SideBar({ show, handleClose }) {
         <Card className={styles.card}>
           <Card.Header
             onClick={() => navigate("/dashboard")}
-            className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader} ${location.pathname === "/dashboard" ? styles.dashboardLinkActive : ""}`}
-            data-active={location.pathname === "/dashboard" ? "true" : undefined}
+            className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader} ${isActiveRoute("/dashboard") ? styles.dashboardLinkActive : ""}`}
+            data-active={isActiveRoute("/dashboard") ? "true" : undefined}
             style={{ cursor: "pointer" }}
           >
             <span className={`${styles.title}`}>
@@ -267,12 +270,7 @@ export default function SideBar({ show, handleClose }) {
               )}
               {hasPermission(userTypes, 'hatchery') && renderDirectLink("Broodstock Management", "/hatchery/broodstock", <GiCirclingFish size={25} className="me-1" />)}
               {hasPermission(userTypes, 'hatchery') && renderDirectLink("Fry Production Records", "/hatchery/fry-production/daily-records", <GiCirclingFish size={25} className="me-1" />)}
-              {hasPermission(userTypes, 'hatchery') && renderCard("cost_analysis", "Cost Analysis", <MdOutlinePointOfSale size={25} className="me-1" />,
-                <>
-                  {renderNavItem("Expenses", "/hatchery/cost-analysis/expenses")}
-                  {renderNavItem("Cost Reports", "/hatchery/cost-analysis/cost-reports")}
-                </>
-              )}
+              {hasPermission(userTypes, 'hatchery') && renderDirectLink("Cost Analysis", "/hatchery/cost-analysis/expenses", <MdOutlinePointOfSale size={25} className="me-1" />)}
             </>
           )}
 
@@ -325,7 +323,7 @@ export default function SideBar({ show, handleClose }) {
               <span className={styles.sectionLabel}>FEED MANAGEMENT</span>
               {renderCard("raw_materials", "Raw Materials", <GiChipsBag size={25} className="me-1" />,
                 <>
-                  {renderNavItem("Add Materials", "/feed/add-new")}
+                  {renderNavItem("Add Materials", "/feed/view-all")}
                   {renderNavItem("View all", "/feed/view-all")}
                 </>
               )}
@@ -445,11 +443,11 @@ export default function SideBar({ show, handleClose }) {
           {hasPermission(userTypes, 'damage-loss') && (
             <>
               <span className={styles.sectionLabel}>RECORDS</span>
-              <Nav.Item className={`mt-3 ${location.pathname === "/damage-loss" ? "mx-2" : ""}`}>
+              <Nav.Item className={`mt-3 ${isActiveRoute("/damage-loss") ? "mx-2" : ""}`}>
                 <Nav.Link
                   onClick={() => navigate("/damage-loss")}
-                  className={`${location.pathname === "/damage-loss" ? styles.activeLink : styles.nonactiveLink}`}
-                  data-active={location.pathname === "/damage-loss" ? "true" : undefined}
+                  className={`${isActiveRoute("/damage-loss") ? styles.activeLink : styles.nonactiveLink}`}
+                  data-active={isActiveRoute("/damage-loss") ? "true" : undefined}
                 >
                   <GiDamagedHouse size={25} className="me-1 text-light" /> <span className={styles.title}>Damage/Loss</span>
                 </Nav.Link>

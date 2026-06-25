@@ -310,9 +310,9 @@ export default function Expenses() {
                   <Pagination.Last />
                 </Pagination>
                 <Form.Select style={{ width: 120, fontSize: '0.85rem' }}>
-                  <option>10 / page</option>
-                  <option>25 / page</option>
-                  <option>50 / page</option>
+                  <option>45 / page</option>
+                  <option>100 / page</option>
+                  <option>200 / page</option>
                 </Form.Select>
               </div>
             </div>

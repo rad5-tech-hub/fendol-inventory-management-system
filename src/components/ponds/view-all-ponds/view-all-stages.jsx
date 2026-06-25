@@ -3,8 +3,9 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product-stages.module.scss';
-import { BsExclamationTriangleFill, BsPencilFill, BsSearch, BsThreeDotsVertical } from "react-icons/bs";
-import { Dropdown, Form, Button, Spinner, Alert, Modal } from 'react-bootstrap';
+import { BsExclamationTriangleFill, BsPencilFill, BsSearch } from "react-icons/bs";
+import { Form, Button, Spinner, Alert, Modal } from 'react-bootstrap';
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
@@ -35,7 +36,7 @@ const ViewAllStages = () => {
   const [siteFilter, setSiteFilter] = useState('');
   const [siteIdFilter, setSiteIdFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
   const [selectedStage, setSelectedStage] = useState(null);
   const [showPondSummaryPanel, setShowPondSummaryPanel] = useState(false);
   const [showEditPondModal, setShowEditPondModal] = useState(false);
@@ -440,19 +441,17 @@ const ViewAllStages = () => {
                               {new Intl.NumberFormat().format(stage.quantity)} pcs
                             </td>
                             <td className="py-3 px-3 align-middle text-center">
-                              <Dropdown align="end">
-                                <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                  <BsThreeDotsVertical size={16} />
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu style={{ minWidth: 180 }}>
-                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); setShowPondSummaryPanel(true); fetchPondDetail(stage.id); }}>Pond Summary</Dropdown.Item>
-                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); setShowEditPondModal(true); }}>Edit Pond</Dropdown.Item>
-                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); setShowAddSamplingModal(true); }}>Add Sampling Record</Dropdown.Item>
-                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); setShowAddNoteModal(true); }}>Add Notes</Dropdown.Item>
-                                  <Dropdown.Divider />
-                                  <Dropdown.Item onClick={() => { setSelectedStage(stage); DeletePond(); }} style={{ color: '#dc3545', fontWeight: 600 }}>Delete</Dropdown.Item>
-                                </Dropdown.Menu>
-                              </Dropdown>
+                              <PortalDropdown
+                                btnClass={styles.threeDotBtn}
+                                items={[
+                                  { label: 'Pond Summary', onClick: () => { setSelectedStage(stage); setShowPondSummaryPanel(true); fetchPondDetail(stage.id); } },
+                                  { label: 'Edit Pond', onClick: () => { setSelectedStage(stage); setShowEditPondModal(true); } },
+                                  { label: 'Add Sampling Record', onClick: () => { setSelectedStage(stage); setShowAddSamplingModal(true); } },
+                                  { label: 'Add Notes', onClick: () => { setSelectedStage(stage); setShowAddNoteModal(true); } },
+                                  { divider: true },
+                                  { label: 'Delete', onClick: () => { setSelectedStage(stage); DeletePond(); }, style: { color: '#dc3545', fontWeight: 600 } },
+                                ]}
+                              />
                             </td>
                           </tr>
                         );

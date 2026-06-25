@@ -180,11 +180,11 @@ $text-color: #ffffff;
 }
 
 .dashboardLinkActive {
-    background: #CC6E1A;
+    background: #CC6E1A !important;
     color: #fff;
 
     &:hover {
-        background: #CC6E1A;
+        background: #CC6E1A !important;
     }
 }
 

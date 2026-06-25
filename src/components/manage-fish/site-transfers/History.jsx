@@ -3,11 +3,12 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product-stages.module.scss';
-import { BsSearch, BsThreeDotsVertical, BsX } from "react-icons/bs";
+import { BsSearch, BsX } from "react-icons/bs";
 import { FaExchangeAlt, FaBoxOpen } from "react-icons/fa";
 import { GiFishingNet } from "react-icons/gi";
 import { IoEyeOutline } from "react-icons/io5";
-import { Dropdown, Modal, Button } from 'react-bootstrap';
+import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import { Modal, Button } from 'react-bootstrap';
 import { SkeletonTable, SkeletonStatGrid, SkeletonFilterBar } from "../../shared/skeleton/Skeleton";
 import ReactPaginate from 'react-paginate';
 import { ToastContainer, toast } from 'react-toastify';
@@ -346,20 +347,14 @@ export default function History() {
                               <td className={styles.qtyCell}>{formatNumber(r.quantity)}</td>
                               <td className={styles.descCell}>{r.description}</td>
                               <td className={styles.actionCell}>
-                                <Dropdown
+                                <PortalDropdown
                                   show={openDropdownId === r.id}
                                   onToggle={(isOpen) => setOpenDropdownId(isOpen ? r.id : null)}
-                                  align="end"
-                                >
-                                  <Dropdown.Toggle as="button" className={styles.threeDotBtn}>
-                                    <BsThreeDotsVertical size={16} />
-                                  </Dropdown.Toggle>
-                                  <Dropdown.Menu style={{ minWidth: 180 }}>
-                                    <Dropdown.Item onClick={() => handleViewDetails(r)}>
-                                      <IoEyeOutline size={16} style={{ marginRight: 10 }} /> View Details
-                                    </Dropdown.Item>
-                                  </Dropdown.Menu>
-                                </Dropdown>
+                                  btnClass={styles.threeDotBtn}
+                                  items={[
+                                    { label: <><IoEyeOutline size={16} style={{ marginRight: 10 }} /> View Details</>, onClick: () => handleViewDetails(r) },
+                                  ]}
+                                />
                               </td>
                             </tr>
                           ))}

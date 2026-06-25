@@ -2,7 +2,8 @@
 @import '../shared/style.scss';
 
 .body {
-  display: block; // Default visibility
+  display: block;
+  background-color: #f8f9fa;
 }
 
 .content {
@@ -17,14 +18,14 @@
 }
 
 .create_form {
-  height: 89vh; //xFull viewport height
+  height: 89vh;
   padding: 40px;
   overflow: auto;
   background-color: #FAFCFF;
 
   h4 {
     font-size: 20px;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 30px;
     color: #2E3135;
   }
@@ -48,6 +49,9 @@
   th {
     color: #8C949B;
     padding-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.75rem;
   }
 
   tbody tr {
@@ -60,7 +64,7 @@
     td {
       padding: 18px 0px;
       font-family: 'Roboto Flex', sans-serif;
-      font-size: 16px;
+      font-size: 0.875rem;
       font-weight: 500;
       text-align: left;
       line-height: 18.75px;

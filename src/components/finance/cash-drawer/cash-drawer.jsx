@@ -28,7 +28,7 @@ const CashDrawer = () => {
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
   const [modalLoading, setModalLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const itemsPerPage = 10;
+  const itemsPerPage = 45;
   const [selectedDate, setSelectedDate] = useState("");
 
   // Fetch Cash Drawer Data
