@@ -104,7 +104,13 @@ export default function TransferFish() {
     setSubmitting(true);
     const loadingToast = toast.loading("Processing transfer...", { className: 'dark-toast' });
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      const payload = {
+        pondFrom: selectedPondId,
+        siteTo: selectedSiteId,
+        quantity: Number(quantity),
+        comments: description || undefined,
+      };
+      await ApiV2.post('/v2/fish-transfer', payload);
       toast.update(loadingToast, {
         render: "Fish transferred successfully!",
         type: "success",
@@ -116,12 +122,40 @@ export default function TransferFish() {
       setSelectedSiteId("");
       setQuantity("");
       setDescription("");
-    } catch {
+    } catch (err) {
+      const serverMsg = err?.response?.data?.response_message;
+      const fallbackMsg = err?.response?.data?.message;
+      const networkMsg = err?.message;
+      const finalMsg = serverMsg || fallbackMsg || networkMsg || 'Transfer failed. Please try again.';
+
+      let displayMsg = 'Transfer failed. Please try again.';
+      if (err?.response?.status === 400) {
+        displayMsg = finalMsg || 'Invalid request. Please check your input.';
+      } else if (err?.response?.status === 401) {
+        displayMsg = 'Session expired. Please log in again.';
+      } else if (err?.response?.status === 403) {
+        displayMsg = 'You do not have permission to transfer fish.';
+      } else if (err?.response?.status === 404) {
+        displayMsg = 'Pond or destination site not found.';
+      } else if (err?.response?.status === 409) {
+        displayMsg = finalMsg || 'The requested quantity exceeds available stock.';
+      } else if (err?.response?.status === 422) {
+        displayMsg = finalMsg || 'Validation failed. Please check your input.';
+      } else if (err?.code === 'ECONNABORTED') {
+        displayMsg = 'Request timed out. Please try again.';
+      } else if (!err?.response) {
+        displayMsg = 'Network error. Please check your connection and try again.';
+      } else if (err?.response?.status >= 500) {
+        displayMsg = 'Server error. Please try again later.';
+      } else if (typeof finalMsg === 'string') {
+        displayMsg = finalMsg;
+      }
+
       toast.update(loadingToast, {
-        render: "Transfer failed. Please try again.",
+        render: displayMsg,
         type: "error",
         isLoading: false,
-        autoClose: 3000,
+        autoClose: 5000,
         className: 'dark-toast',
       });
     } finally {

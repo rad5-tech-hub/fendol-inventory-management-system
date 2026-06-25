@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -10,32 +10,19 @@ import { IoEyeOutline } from "react-icons/io5";
 import { Dropdown, Modal, Button } from 'react-bootstrap';
 import { SkeletonTable, SkeletonStatGrid, SkeletonFilterBar } from "../../shared/skeleton/Skeleton";
 import ReactPaginate from 'react-paginate';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
+import Api, { ApiV2 } from "../../shared/api/apiLink";
 
-const generateMockHistory = () => {
-  const ponds = ["Nursery Pond A", "Grow-out Pond B", "Hatchery Tank 1", "Nursery Pond B", "Grow-out Pond C", "Broodstock Pond", "Fry Tank 2", "Nursery Pond C"];
-  const sites = ["Riverside Hatchery", "Mountain View Farm", "Green Valley Aquaculture", "Coastal Fish Farm", "Sunrise Tilapia Ltd"];
-  const descriptions = ["Juvenile tilapia for nursery pond", "Fingerlings for grow-out phase", "Mixed species transfer", "Catfish fingerlings", "Broodstock transfer", "Advanced fry for nursery"];
-  const statuses = ["completed", "completed", "completed", "completed", "pending"];
-  const data = [];
-  for (let i = 1; i <= 30; i++) {
-    const d = new Date(2026, Math.floor(Math.random() * 6), Math.floor(Math.random() * 28) + 1);
-    data.push({
-      id: i,
-      date: d.toISOString().split('T')[0],
-      pondFrom: ponds[i % ponds.length],
-      siteTo: sites[i % sites.length],
-      quantity: Math.floor(Math.random() * 4000) + 500,
-      description: descriptions[i % descriptions.length],
-      status: statuses[i % statuses.length],
-    });
-  }
-  return data.sort((a, b) => b.date.localeCompare(a.date));
-};
-
-const MOCK_HISTORY = generateMockHistory();
 const ITEMS_PER_PAGE = 10;
+
+const pad = (n) => String(n).padStart(2, '0');
+const fmtISODate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
 
 export default function History() {
   const [records, setRecords] = useState([]);
@@ -49,32 +36,92 @@ export default function History() {
   const [showModal, setShowModal] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
-  /* ── Sidebar state (matches Dashboard / HatchBatchSummary pattern) ── */
+  /* ── Sidebar state ── */
   const [showSidebar, setShowSidebar] = useState(false);
   const toggleSidebar = () => setShowSidebar((prev) => !prev);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const user = useSelector((store) => store.user);
+  const activeSite = useSelector((store) => store.activeSite);
+
+  const loadHistory = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const siteId = activeSite?.id || user?.siteId;
+      if (!siteId) {
+        setError('No site selected. Please select a site from the header or contact an administrator.');
+        setRecords([]);
+        setLoading(false);
+        return;
+      }
+      const res = await ApiV2.get('/v2/fish-transfer/outgoing', {
+        params: { siteId },
+      });
+      const body = res.data;
+      if (!body || body.success !== true) {
+        throw new Error(body?.response_message || 'Failed to load transfer history.');
+      }
+      const list = body?.data;
+      if (!Array.isArray(list)) {
+        setRecords([]);
+        setLoading(false);
+        return;
+      }
+      const mapped = list.map((t) => ({
+        id: t.id,
+        date: fmtISODate(t.createdAt),
+        pondFrom: t.pondFrom || '—',
+        siteTo: t.siteTo || '—',
+        quantity: t.quantity ?? 0,
+        description: t.comments || null,
+      }));
+      setRecords(mapped);
+    } catch (err) {
+      const serverMsg = err?.response?.data?.response_message;
+      const fallbackMsg = err?.response?.data?.message;
+      const networkMsg = err?.message;
+      const finalMsg = serverMsg || fallbackMsg || networkMsg || 'An unexpected error occurred. Please try again.';
+
+      if (err?.response?.status === 400) {
+        setError(finalMsg || 'Invalid request. Please check your input.');
+      } else if (err?.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+      } else if (err?.response?.status === 403) {
+        setError('You do not have permission to view transfer history.');
+      } else if (err?.response?.status === 404) {
+        setError('Transfer history endpoint not found. Please contact support.');
+      } else if (err?.response?.status === 409) {
+        setError(finalMsg || 'Conflict retrieving transfer history.');
+      } else if (err?.response?.status === 422) {
+        setError(finalMsg || 'Validation failed. Please check your site selection.');
+      } else if (err?.code === 'ECONNABORTED') {
+        setError('Request timed out. Please try again.');
+      } else if (!err?.response) {
+        setError('Network error. Please check your connection and try again.');
+      } else if (err?.response?.status >= 500) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError(typeof finalMsg === 'string' ? finalMsg : 'An unexpected error occurred. Please try again.');
+      }
+      setRecords([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeSite?.id, user?.siteId]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        setRecords(MOCK_HISTORY);
-      } catch {
-        setError("Failed to load transfer history.");
-      } finally {
-        setLoading(false);
-      }
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
+    loadHistory();
+  }, [loadHistory]);
 
   const filtered = records.filter((r) => {
     if (dateFrom && r.date < dateFrom) return false;
     if (dateTo && r.date > dateTo) return false;
     if (search) {
       const q = search.toLowerCase();
-      return r.pondFrom.toLowerCase().includes(q) || r.siteTo.toLowerCase().includes(q) || r.description.toLowerCase().includes(q);
+      return (r.pondFrom?.toLowerCase().includes(q) || false)
+        || (r.siteTo?.toLowerCase().includes(q) || false)
+        || (r.description?.toLowerCase().includes(q) || false);
     }
     return true;
   });
@@ -100,7 +147,7 @@ export default function History() {
   const formatNumber = (n) => new Intl.NumberFormat().format(n);
 
   /* ── Derived stats (from filtered data) ── */
-  const totalTransferred = filtered.reduce((sum, r) => sum + r.quantity, 0);
+  const totalTransferred = filtered.reduce((sum, r) => sum + (r.quantity || 0), 0);
 
   const statCards = [
     {
@@ -147,15 +194,7 @@ export default function History() {
               </div>
               <div className={styles.modalDetailRow}>
                 <span className={styles.modalLabel}>Description</span>
-                <span className={styles.modalValue}>{selectedRecord.description}</span>
-              </div>
-              <div className={styles.modalDetailRow}>
-                <span className={styles.modalLabel}>Status</span>
-                <span className={styles.modalValue}>
-                  <span className={`${styles.statusBadge} ${selectedRecord.status === 'completed' ? styles.statusCompleted : styles.statusPending}`}>
-                    {selectedRecord.status.charAt(0).toUpperCase() + selectedRecord.status.slice(1)}
-                  </span>
-                </span>
+                <span className={styles.modalValue}>{selectedRecord.description || '—'}</span>
               </div>
             </>
           )}
@@ -204,7 +243,8 @@ export default function History() {
 
             {error && (
               <div className="alert alert-danger d-flex align-items-center gap-2" role="alert">
-                <span>Failed to load transfer history. Please try again.</span>
+                <span className="flex-grow-1">{error}</span>
+                <button className="btn btn-sm btn-outline-danger" onClick={loadHistory}>Retry</button>
               </div>
             )}
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -13,27 +13,9 @@ import { GiFishingNet, GiWaterTank } from "react-icons/gi";
 import { Dropdown, Modal, Button, Form } from 'react-bootstrap';
 import { SkeletonTable, SkeletonStatGrid, SkeletonFilterBar } from "../../shared/skeleton/Skeleton";
 import ReactPaginate from 'react-paginate';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
-
-const generateMockTransfers = () => {
-  const sites = ["Riverside Hatchery", "Mountain View Farm", "Green Valley Aquaculture", "Coastal Fish Farm", "Sunrise Tilapia Ltd", "Riverbend Aqua", "Highland Fisheries", "Delta Fish Co"];
-  const descriptions = ["Juvenile tilapia for nursery pond", "Fingerlings for grow-out phase", "Mixed species for polyculture pond", "Catfish fingerlings for stocking", "Sex-reversed tilapia for grow-out", "Broodstock for hatchery", "Advanced fry for nursery", "Table-size fish for harvesting"];
-  const data = [];
-  for (let i = 1; i <= 24; i++) {
-    data.push({
-      id: i,
-      date: new Date(2026, Math.floor(Math.random() * 6), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
-      siteFrom: sites[i % sites.length],
-      quantity: Math.floor(Math.random() * 4500) + 500,
-      description: descriptions[i % descriptions.length],
-    });
-  }
-  return data;
-};
-
-const MOCK_TRANSFERS = generateMockTransfers();
 
 const ITEMS_PER_PAGE = 10;
 
@@ -57,8 +39,18 @@ const siteColor = (name) => {
   return SITE_COLORS[Math.abs(hash) % SITE_COLORS.length];
 };
 
+const pad = (n) => String(n).padStart(2, '0');
+
+const fmtISODate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
 export default function ViewFish() {
   const [transfers, setTransfers] = useState([]);
+  const [summary, setSummary] = useState({ totalReceived: 0, totalMovedToPond: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
@@ -66,12 +58,12 @@ export default function ViewFish() {
   const [selectedTransfer, setSelectedTransfer] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  /* ── Sidebar state (matches HatchBatchSummary / Dashboard pattern) ── */
+  /* ── Sidebar state ── */
   const [showSidebar, setShowSidebar] = useState(false);
   const toggleSidebar = () => setShowSidebar((prev) => !prev);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  /* ── Stat card tooltip state (matches Dashboard pattern) ── */
+  /* ── Stat card tooltip state ── */
   const [activeTooltip, setActiveTooltip] = useState(null);
   const tooltipRef = useRef(null);
 
@@ -83,8 +75,10 @@ export default function ViewFish() {
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [siteOptions, setSiteOptions] = useState([]);
+  const [transferSites, setTransferSites] = useState([]);
 
   const user = useSelector((store) => store.user);
+  const activeSite = useSelector((store) => store.activeSite);
   const userTypes = user?.userTypes || [];
 
   /* ── Move to Pond modal ── */
@@ -92,12 +86,13 @@ export default function ViewFish() {
   const [pondOptions, setPondOptions] = useState([]);
   const [pondsLoading, setPondsLoading] = useState(false);
   const [moveForm, setMoveForm] = useState({ pondId: '', quantity: '' });
-  const [moveSiteId, setMoveSiteId] = useState(user?.siteId || '');
+  const [moveSiteId, setMoveSiteId] = useState(activeSite?.id || user?.siteId || '');
   const [submittingMove, setSubmittingMove] = useState(false);
+  const [moveError, setMoveError] = useState('');
   const isSuperAdmin = userTypes.includes('super_admin');
 
   const fetchPonds = async (siteId) => {
-    if (!siteId) return;
+    if (!siteId) { setPondOptions([]); return; }
     setPondsLoading(true);
     try {
       const res = await Api.get(`/fish-stages?siteId=${siteId}`);
@@ -112,22 +107,77 @@ export default function ViewFish() {
   };
 
   const openMoveModal = () => {
-    const id = moveSiteId || user?.siteId || '';
+    const id = activeSite?.id || user?.siteId || '';
     setMoveSiteId(id);
     setMoveForm({ pondId: '', quantity: '' });
+    setMoveError('');
     setShowMoveModal(true);
     if (id) fetchPonds(id);
   };
 
   const handleMoveSubmit = async (e) => {
     e.preventDefault();
-    if (!moveForm.pondId || !moveForm.quantity) return;
+    setMoveError('');
+
+    const siteId = moveSiteId || activeSite?.id || user?.siteId;
+    if (!siteId) {
+      setMoveError('No site selected. Please select a site first.');
+      return;
+    }
+    if (!moveForm.pondId) {
+      setMoveError('Please select a destination pond.');
+      return;
+    }
+    const qty = Number(moveForm.quantity);
+    if (!qty || qty <= 0) {
+      setMoveError('Please enter a valid quantity greater than 0.');
+      return;
+    }
+
     setSubmittingMove(true);
-    // TODO: wire actual API when available
-    setTimeout(() => {
-      setSubmittingMove(false);
+    try {
+      const res = await ApiV2.post(`/v2/fish-transfer/remove?siteId=${siteId}`, {
+        pondId: moveForm.pondId,
+        quantity: qty,
+      });
+      const body = res.data;
+      if (!body || body.success !== true) {
+        throw new Error(body?.response_message || 'Failed to move fish to pond.');
+      }
+      toast.success(body.response_message || 'Fish moved to pond successfully!');
       setShowMoveModal(false);
-    }, 500);
+      setMoveForm({ pondId: '', quantity: '' });
+      loadTransfers();
+    } catch (err) {
+      const serverMsg = err?.response?.data?.response_message;
+      const fallbackMsg = err?.response?.data?.message;
+      const networkMsg = err?.message;
+      const finalMsg = serverMsg || fallbackMsg || networkMsg || 'An unexpected error occurred. Please try again.';
+
+      if (err?.response?.status === 400) {
+        setMoveError(finalMsg || 'Invalid request. Please check your input.');
+      } else if (err?.response?.status === 401) {
+        setMoveError('Session expired. Please log in again.');
+      } else if (err?.response?.status === 403) {
+        setMoveError('You do not have permission to move fish to a pond.');
+      } else if (err?.response?.status === 404) {
+        setMoveError('The transfer record or pond was not found.');
+      } else if (err?.response?.status === 409) {
+        setMoveError(finalMsg || 'The requested quantity exceeds available stock.');
+      } else if (err?.response?.status === 422) {
+        setMoveError(finalMsg || 'Validation failed. Please check the pond and quantity.');
+      } else if (err?.code === 'ECONNABORTED') {
+        setMoveError('Request timed out. Please try again.');
+      } else if (!err?.response) {
+        setMoveError('Network error. Please check your connection and try again.');
+      } else if (err?.response?.status >= 500) {
+        setMoveError('Server error. Please try again later.');
+      } else {
+        setMoveError(typeof finalMsg === 'string' ? finalMsg : 'An unexpected error occurred.');
+      }
+    } finally {
+      setSubmittingMove(false);
+    }
   };
 
   /* ── Click-outside for tooltips ── */
@@ -147,38 +197,78 @@ export default function ViewFish() {
     };
   }, [activeTooltip]);
 
-  /* ── Simulated fetch ── */
-  const loadTransfers = () => {
+  /* ── Real API fetch ── */
+  const loadTransfers = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const timer = setTimeout(() => {
-      try {
-        setTransfers(MOCK_TRANSFERS);
-      } catch {
-        setError("Failed to load transfers.");
-      } finally {
+    try {
+      const siteId = activeSite?.id || user?.siteId;
+      if (!siteId) {
+        setError('No site selected. Please select a site from the header or contact an administrator.');
+        setTransfers([]);
+        setSummary({ totalReceived: 0, totalMovedToPond: 0 });
         setLoading(false);
+        return;
       }
-    }, 600);
-    return timer;
-  };
+      const res = await ApiV2.get('/v2/fish-transfer-incoming', {
+        params: { siteId },
+      });
+      const body = res.data;
+      if (!body || body.success !== true) {
+        throw new Error(body?.response_message || 'Failed to load incoming transfers.');
+      }
+      const list = body?.data?.transfers;
+      if (!Array.isArray(list)) {
+        setTransfers([]);
+        setSummary({ totalReceived: 0, totalMovedToPond: 0 });
+        setLoading(false);
+        return;
+      }
+      const paginationSummary = body?.pagination?.summary || {};
+      const mapped = list.map((t) => ({
+        id: t.id,
+        date: fmtISODate(t.createdAt),
+        siteFrom: t.site?.name || t.siteFrom || 'Unknown',
+        siteFromId: t.siteFrom,
+        quantity: t.total ?? t.quantity ?? 0,
+        total: t.total ?? 0,
+        description: null,
+        raw: t,
+      }));
+      setTransfers(mapped);
+      setSummary({
+        totalReceived: paginationSummary.totalReceived ?? 0,
+        totalMovedToPond: paginationSummary.totalMovedToPond ?? 0,
+      });
+    } catch (err) {
+      const msg = err?.response?.data?.response_message
+        || err?.response?.data?.message
+        || err?.message
+        || 'Failed to load incoming transfers. Please try again.';
+      setError(typeof msg === 'string' ? msg : 'An unexpected error occurred.');
+      setTransfers([]);
+      setSummary({ totalReceived: 0, totalMovedToPond: 0 });
+    } finally {
+      setLoading(false);
+    }
+  }, [activeSite?.id, user?.siteId]);
 
   useEffect(() => {
-    const timer = loadTransfers();
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    loadTransfers();
+  }, [loadTransfers]);
 
-  /* ── Fetch sites from backend for filter dropdown ── */
+  /* ── Fetch transfer-specific sites for filter dropdown & modal ── */
   useEffect(() => {
     const fetchSites = async () => {
       try {
-        const res = await ApiV2.get('/v2/all-site');
-        if (Array.isArray(res.data?.data)) {
-          setSiteOptions(res.data.data.map((s) => s.name).sort());
+        const res = await ApiV2.get('/v2/fish-transfer/all-site');
+        const list = res.data?.data;
+        if (Array.isArray(list)) {
+          setTransferSites(list);
+          setSiteOptions(list.map((s) => s.name).sort());
         }
       } catch {
-        // silently fail — site filter falls back to empty
+        // silently fail
       }
     };
     fetchSites();
@@ -189,12 +279,10 @@ export default function ViewFish() {
     if (selectedSite && t.siteFrom !== selectedSite) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    return t.siteFrom.toLowerCase().includes(q) || t.description.toLowerCase().includes(q);
+    return t.siteFrom.toLowerCase().includes(q);
   });
 
-  const totalFish = filtered.reduce((sum, t) => sum + t.quantity, 0);
-  const movedToPonds = Math.floor(totalFish * 0.72);
-  const remainingStock = totalFish - movedToPonds;
+  const totalFish = summary.totalReceived;
   const pageCount = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const offset = page * ITEMS_PER_PAGE;
   const pageItems = filtered.slice(offset, offset + ITEMS_PER_PAGE);
@@ -211,6 +299,11 @@ export default function ViewFish() {
   /* ── Unique site names from backend fetch — falls back to transfer data ── */
   const allSites = siteOptions.length > 0 ? siteOptions : [...new Set(transfers.map((t) => t.siteFrom))].sort();
 
+  const totalMoved = summary.totalMovedToPond ?? 0;
+  const totalRemaining = totalFish - totalMoved;
+  const movedPct = totalFish > 0 ? Math.round((totalMoved / totalFish) * 100) : 0;
+  const remainPct = totalFish > 0 ? Math.round((totalRemaining / totalFish) * 100) : 0;
+
   /* ── Stat card definitions ── */
   const statCards = [
     {
@@ -223,19 +316,19 @@ export default function ViewFish() {
     },
     {
       label: 'MOVED TO PONDS',
-      value: `${formatNumber(movedToPonds)} pcs`,
-      sub: `${Math.round((movedToPonds / totalFish) * 100)}% of received stock moved`,
+      value: `${formatNumber(totalMoved)} pcs`,
+      sub: totalFish > 0 ? `${movedPct}% of received stock moved` : 'No data',
       icon: <FaWarehouse size={16} />,
       iconClass: styles.statIconGreen,
-      tooltipText: `${formatNumber(movedToPonds)} fish (${Math.round((movedToPonds / totalFish) * 100)}%) have been moved into ponds.`,
+      tooltipText: `${formatNumber(totalMoved)} fish (${movedPct}%) have been moved into ponds.`,
     },
     {
       label: 'STOCK REMAINING',
-      value: `${formatNumber(remainingStock)} pcs`,
-      sub: `${Math.round((remainingStock / totalFish) * 100)}% yet to be ponded`,
+      value: `${formatNumber(totalRemaining)} pcs`,
+      sub: totalFish > 0 ? `${remainPct}% yet to be ponded` : 'No data',
       icon: <FaExchangeAlt size={16} />,
       iconClass: styles.statIconBlue,
-      tooltipText: `${formatNumber(remainingStock)} fish (${Math.round((remainingStock / totalFish) * 100)}%) are still awaiting pond assignment.`,
+      tooltipText: `${formatNumber(totalRemaining)} fish (${remainPct}%) are still awaiting pond assignment.`,
     },
   ];
 
@@ -264,10 +357,6 @@ export default function ViewFish() {
                 <div className={styles.modalDetailRow}>
                   <span className={styles.modalLabel}>Quantity</span>
                   <span className={styles.modalValue}>{formatNumber(selectedTransfer.quantity)} pcs</span>
-                </div>
-                <div className={styles.modalDetailRow}>
-                  <span className={styles.modalLabel}>Description</span>
-                  <span className={styles.modalValue}>{selectedTransfer.description}</span>
                 </div>
               </>
             );
@@ -319,31 +408,38 @@ export default function ViewFish() {
 
           {/* Form */}
           <form onSubmit={handleMoveSubmit} style={{ padding: '28px' }}>
-            {isSuperAdmin && (
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{
-                  fontSize: '12px', fontWeight: 600, color: '#8C949B',
-                  textTransform: 'uppercase', letterSpacing: '0.3px',
-                  marginBottom: '6px', display: 'block',
-                }}>
-                  Site
-                </label>
-                <Form.Select
-                  value={moveSiteId}
-                  onChange={(e) => { setMoveSiteId(e.target.value); fetchPonds(e.target.value); }}
-                  style={{
-                    fontSize: '14px', padding: '10px 12px',
-                    border: '1px solid #e5e7eb', borderRadius: '10px',
-                    color: '#2E3135', background: '#FAFCFF',
-                  }}
-                >
-                  <option value="">Select a site...</option>
-                  {(user?.userSites || []).map(s => (
-                    <option key={s.id || s} value={s.id || s}>{s.name || s}</option>
-                  ))}
-                </Form.Select>
+            {moveError && (
+              <div style={{
+                background: '#FEF2F2', border: '1px solid #FECACA',
+                borderRadius: '8px', padding: '10px 14px', marginBottom: '16px',
+                fontSize: '0.82rem', color: '#B91C1C', lineHeight: 1.4,
+              }}>
+                {moveError}
               </div>
             )}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                textTransform: 'uppercase', letterSpacing: '0.3px',
+                marginBottom: '6px', display: 'block',
+              }}>
+                Site
+              </label>
+              <Form.Select
+                value={moveSiteId}
+                onChange={(e) => { setMoveSiteId(e.target.value); fetchPonds(e.target.value); }}
+                style={{
+                  fontSize: '14px', padding: '10px 12px',
+                  border: '1px solid #e5e7eb', borderRadius: '10px',
+                  color: '#2E3135', background: '#FAFCFF',
+                }}
+              >
+                <option value="">Select a site...</option>
+                {transferSites.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </Form.Select>
+            </div>
 
             {/* Pond dropdown */}
             <div style={{ marginBottom: '20px' }}>
@@ -470,8 +566,18 @@ export default function ViewFish() {
 
             {/* ── Error state ── */}
             {error && (
-              <div className="alert alert-danger d-flex align-items-center gap-2" role="alert">
-                <span>Failed to load transfer records. Please try again.</span>
+              <div className="alert alert-danger d-flex align-items-center justify-content-between gap-2" role="alert" style={{ borderRadius: '10px' }}>
+                <span>{error}</span>
+                <button
+                  onClick={loadTransfers}
+                  style={{
+                    background: '#DC2626', color: '#fff', border: 'none',
+                    borderRadius: '6px', padding: '6px 16px', fontSize: '13px',
+                    fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                  }}
+                >
+                  Retry
+                </button>
               </div>
             )}
 
@@ -526,7 +632,7 @@ export default function ViewFish() {
                     <BsSearch className={styles.searchIcon} />
                     <input
                       type="text"
-                      placeholder="Search by site or description..."
+                      placeholder="Search by site..."
                       value={search}
                       onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                       className={styles.searchInput}
@@ -659,7 +765,6 @@ export default function ViewFish() {
                             <th>DATE</th>
                             <th>SITE FROM</th>
                             <th className={styles.qtyCell}>QUANTITY</th>
-                            <th>DESCRIPTION</th>
                             <th style={{ textAlign: 'center', width: '80px' }}></th>
                           </tr>
                         </thead>
@@ -683,7 +788,6 @@ export default function ViewFish() {
                                     <div className={styles.qtyBarFill} style={{ width: `${(t.quantity / pageMaxQty) * 100}%` }} />
                                   </div>
                                 </td>
-                                <td style={{ color: '#2E3135', fontWeight: 400 }}>{t.description}</td>
                                 <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                                   <div onClick={(e) => e.stopPropagation()}>
                                     <Dropdown align="end">
