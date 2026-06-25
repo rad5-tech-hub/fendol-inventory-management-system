@@ -36,6 +36,7 @@ export default function TransferToNursery() {
   const [avgSize, setAvgSize] = useState('');
   const [recordedBy, setRecordedBy] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [shooterCount, setShooterCount] = useState('');
 
   const [transferStep, setTransferStep] = useState('form');
   const [transferSubmitting, setTransferSubmitting] = useState(false);
@@ -96,6 +97,7 @@ export default function TransferToNursery() {
       const res = await ApiV2.post(`/v2/hatch-to-pond/${batchId}`, {
         pondId: selectedPondId,
         quantity: Number(transferQty),
+        shooterCount: shooterCount ? Number(shooterCount) : undefined,
       });
       setTransferResult(res.data?.data || res.data);
       if (isDraft) {
@@ -353,6 +355,18 @@ export default function TransferToNursery() {
                       />
                       <div className={styles.charCounter}>{remarks.length} / 300</div>
                     </div>
+                    <div className="col-md-6">
+                      <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
+                        Number of Shooter
+                      </Form.Label>
+                      <Form.Control
+                        type="number"
+                        placeholder="Enter count (optional)"
+                        value={shooterCount}
+                        onChange={(e) => setShooterCount(e.target.value)}
+                        min="0"
+                      />
+                    </div>
                   </div>
 
                   <div className={styles.createActions}>
@@ -382,6 +396,10 @@ export default function TransferToNursery() {
                     <div className={styles.detailRow}>
                       <span className={styles.detailLabel}>Total Fry Count (Current)</span>
                       <span className={styles.detailValue}>{batchData ? f(Number(batchData.fryProduced) || 0) : '—'} pcs</span>
+                    </div>
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Number of Shooter</span>
+                      <span className={styles.detailValue}>{shooterCount ? f(Number(shooterCount)) : '—'}</span>
                     </div>
                     <div className={styles.detailRow}>
                       <span className={styles.detailLabel}>Available for Transfer</span>
