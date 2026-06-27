@@ -34,7 +34,7 @@
 .splitLayout {
   display: flex;
   flex-direction: row;
-  gap: 0;
+  gap: 20px;
   position: relative;
   align-items: flex-start;
 }
@@ -46,8 +46,8 @@
 }
 
 .leftPanelCompressed {
-  flex: 0 0 58%;
-  max-width: 58%;
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── Filter Bar (no card wrapper) ── */
@@ -983,8 +983,8 @@
 /* ── Responsive ── */
 @media (max-width: 1200px) {
   .leftPanelCompressed {
-    flex: 0 0 55%;
-    max-width: 55%;
+    flex: 1;
+    min-width: 0;
   }
 
   .rightPanel {
