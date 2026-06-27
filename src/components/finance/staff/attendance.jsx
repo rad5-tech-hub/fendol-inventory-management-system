@@ -123,21 +123,29 @@ export default function StaffAttendance() {
     if (!staff || loading) return;
     setAttendanceModal(prev => ({ ...prev, loading: true }));
     try {
-      const isCheckin = mode === 'checkin';
-      const payload = {
-        staffId: staff.id,
-        date: attendanceForm.date,
-        [isCheckin ? 'checkIn' : 'checkOut']: attendanceForm.time,
-        comment: attendanceForm.comment.trim() || undefined,
-      };
-      const endpoint = isCheckin ? '/v2/attendance/check-in' : '/v2/attendance/check-out';
+      let payload, endpoint, successMsg, errorMsg;
+      if (mode === 'checkin') {
+        payload = { staffId: staff.id, date: attendanceForm.date, checkIn: attendanceForm.time, comment: attendanceForm.comment.trim() || undefined };
+        endpoint = '/v2/attendance/check-in';
+        successMsg = 'Check-in recorded successfully!';
+        errorMsg = 'Failed to check in.';
+      } else if (mode === 'checkout') {
+        payload = { staffId: staff.id, date: attendanceForm.date, checkOut: attendanceForm.time, comment: attendanceForm.comment.trim() || undefined };
+        endpoint = '/v2/attendance/check-out';
+        successMsg = 'Check-out recorded successfully!';
+        errorMsg = 'Failed to check out.';
+      } else {
+        payload = { staffId: staff.id, date: attendanceForm.date, comment: attendanceForm.comment.trim() || undefined };
+        endpoint = '/v2/attendance/mark-absent';
+        successMsg = 'Staff marked as absent.';
+        errorMsg = 'Failed to mark absent.';
+      }
       const siteId = userSiteId || 'all';
       await ApiV2.post(endpoint, payload, { params: { siteId } });
-      toast.success(isCheckin ? 'Check-in recorded successfully!' : 'Check-out recorded successfully!', { className: 'dark-toast' });
+      toast.success(successMsg, { className: 'dark-toast' });
       closeModal();
     } catch (err) {
-      const isCheckin = mode === 'checkin';
-      const msg = err.response?.data?.response_message || `Failed to ${isCheckin ? 'check in' : 'check out'}. Please try again.`;
+      const msg = err.response?.data?.response_message || errorMsg;
       toast.error(msg, { className: 'dark-toast' });
     } finally {
       setAttendanceModal(prev => ({ ...prev, loading: false }));
@@ -157,7 +165,7 @@ export default function StaffAttendance() {
     },
     {
       label: <><FiFileText size={14} style={{ marginRight: 10, color: '#2563EB' }} /> Permission Log</>,
-      onClick: () => {},
+      onClick: () => openModal('absent', staff),
       style: { color: '#2563EB' },
     },
     {
@@ -449,15 +457,37 @@ export default function StaffAttendance() {
         <div className={styles.checkinOverlay} onClick={closeModal}>
           <div className={styles.checkinModal} onClick={(e) => e.stopPropagation()}>
             {(() => {
-              const isCheckin = attendanceModal.mode === 'checkin';
-              const modalIcon = isCheckin ? <FaUserCheck /> : <FiLogOut size={20} />;
-              const modalTitle = isCheckin ? 'Staff Check-In' : 'Staff Check-Out';
-              const timeLabel = isCheckin ? 'Check-In Time' : 'Check-Out Time';
-              const placeholder = isCheckin ? 'Add a note about this check-in...' : 'Add a note about this check-out...';
-              const confirmLabel = isCheckin ? 'Confirm Check-In' : 'Confirm Check-Out';
-              const loadingLabel = isCheckin ? 'Checking in...' : 'Checking out...';
-              const submitClass = isCheckin ? styles.checkinSubmitBtn : styles.checkoutSubmitBtn;
-              const iconClass = isCheckin ? styles.checkinModalIcon : styles.checkoutModalIcon;
+              const mode = attendanceModal.mode;
+              const isCheckin = mode === 'checkin';
+              const isCheckout = mode === 'checkout';
+              const isAbsent = mode === 'absent';
+
+              let modalIcon, modalTitle, confirmLabel, loadingLabel, submitClass, iconClass, placeholder;
+              if (isCheckin) {
+                modalIcon = <FaUserCheck />;
+                modalTitle = 'Staff Check-In';
+                confirmLabel = 'Confirm Check-In';
+                loadingLabel = 'Checking in...';
+                submitClass = styles.checkinSubmitBtn;
+                iconClass = styles.checkinModalIcon;
+                placeholder = 'Add a note about this check-in...';
+              } else if (isCheckout) {
+                modalIcon = <FiLogOut size={20} />;
+                modalTitle = 'Staff Check-Out';
+                confirmLabel = 'Confirm Check-Out';
+                loadingLabel = 'Checking out...';
+                submitClass = styles.checkoutSubmitBtn;
+                iconClass = styles.checkoutModalIcon;
+                placeholder = 'Add a note about this check-out...';
+              } else {
+                modalIcon = <FiFileText size={20} />;
+                modalTitle = 'Permission Log';
+                confirmLabel = 'Mark as Absent';
+                loadingLabel = 'Marking absent...';
+                submitClass = styles.absentSubmitBtn;
+                iconClass = styles.absentModalIcon;
+                placeholder = 'e.g. sick leave, personal day, emergency...';
+              }
 
               return (
                 <>
@@ -476,7 +506,7 @@ export default function StaffAttendance() {
 
                   <form onSubmit={handleAttendanceSubmit}>
                     <div className={styles.checkinModalBody}>
-                      <div className={styles.checkinDatetimeGrid}>
+                      <div className={isAbsent ? styles.checkinField : styles.checkinDatetimeGrid}>
                         <div className={styles.checkinField}>
                           <label className={styles.checkinLabel}>
                             <IoCalendarOutline size={14} /> Date
@@ -489,24 +519,26 @@ export default function StaffAttendance() {
                             disabled={attendanceModal.loading}
                           />
                         </div>
-                        <div className={styles.checkinField}>
-                          <label className={styles.checkinLabel}>
-                            <IoTimeOutline size={14} /> {timeLabel}
-                          </label>
-                          <input
-                            type="time"
-                            className={styles.checkinInput}
-                            value={attendanceForm.time}
-                            onChange={(e) => setAttendanceForm({ ...attendanceForm, time: e.target.value })}
-                            disabled={attendanceModal.loading}
-                            step="1"
-                          />
-                        </div>
+                        {!isAbsent && (
+                          <div className={styles.checkinField}>
+                            <label className={styles.checkinLabel}>
+                              <IoTimeOutline size={14} /> {isCheckin ? 'Check-In Time' : 'Check-Out Time'}
+                            </label>
+                            <input
+                              type="time"
+                              className={styles.checkinInput}
+                              value={attendanceForm.time}
+                              onChange={(e) => setAttendanceForm({ ...attendanceForm, time: e.target.value })}
+                              disabled={attendanceModal.loading}
+                              step="1"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div className={styles.checkinField}>
                         <label className={styles.checkinLabel}>
-                          <FaRegCommentDots size={14} /> Comment <span className={styles.checkinOptional}>(optional)</span>
+                          <FaRegCommentDots size={14} /> {isAbsent ? 'Reason' : 'Comment'} <span className={styles.checkinOptional}>(optional)</span>
                         </label>
                         <textarea
                           className={styles.checkinTextarea}
