@@ -1,0 +1,850 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Nanum+Myeongjo:wght@400;700;800&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sevillana&display=swap');
+@import '../../shared/style.scss';
+
+.pageWrapper {
+  padding: 24px 32px;
+  background: #F8F9FA;
+  min-height: 89vh;
+  overflow: auto;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageTitle {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 4px 0 0 0;
+  font-weight: 400;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.dateRangeBtn,
+.filterBtn {
+  height: 40px;
+  padding: 0 14px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.dateRangeBtn:hover,
+.filterBtn:hover {
+  background: #F9FAFB;
+}
+
+.exportBtn {
+  height: 40px;
+  padding: 0 18px;
+  background: #111827;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #FFFFFF;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.exportBtn:hover {
+  background: #374151;
+}
+
+.statCardsRow {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  flex: 1;
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 140px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.statCardTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.statIconCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIcon {
+  font-size: 18px;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: #6B7280;
+  font-weight: 500;
+  margin: 0;
+}
+
+.statNumber {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.statUnit {
+  font-size: 13px;
+  color: #6B7280;
+  font-weight: 400;
+}
+
+.statSecondary {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+.statSecondaryValue {
+  font-weight: 700;
+  color: #111827;
+}
+
+.statTrend {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.trendUp {
+  color: #16A34A;
+}
+
+.trendDown {
+  color: #DC2626;
+}
+
+.alertLink {
+  color: #DC2626;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.alertLink:hover {
+  text-decoration: underline;
+}
+
+.middleRow {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.flowCard {
+  flex: 0 0 calc(60% - 8px);
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.inventoryCard {
+  flex: 0 0 calc(40% - 8px);
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px 0;
+}
+
+.cardTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.cardTitleNoMargin {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.cardDropdown {
+  height: 32px;
+  padding: 0 12px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #374151;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sankeyWrapper {
+  width: 100%;
+  overflow: visible;
+  padding: 8px 0;
+}
+
+.sankeySvg {
+  width: 100%;
+  height: 260px;
+}
+
+.flowNode {
+  fill: #FFFFFF;
+  stroke: none;
+}
+
+.flowNodeLabel {
+  font-size: 11px;
+  fill: #6B7280;
+  text-anchor: middle;
+  font-weight: 500;
+}
+
+.flowNodeValue {
+  font-size: 14px;
+  fill: #111827;
+  text-anchor: middle;
+  font-weight: 700;
+}
+
+.flowNodeSub {
+  font-size: 10px;
+  fill: #9CA3AF;
+  text-anchor: middle;
+}
+
+.ribbon {
+  fill-opacity: 0.25;
+  stroke: none;
+}
+
+.donutWrapper {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.donutChartArea {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.donutCenterLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.donutCenterNumber {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.1;
+}
+
+.donutCenterText {
+  font-size: 11px;
+  color: #6B7280;
+  margin-top: 2px;
+}
+
+.donutLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.donutLegendRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.donutDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.donutLegendLabel {
+  font-size: 12px;
+  color: #374151;
+  flex: 1;
+  white-space: nowrap;
+}
+
+.donutLegendValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.donutLegendPct {
+  font-size: 11px;
+  color: #9CA3AF;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 48px;
+}
+
+.thirdRow {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.trendCard {
+  flex: 0 0 calc(60% - 8px);
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.alertsCard {
+  flex: 0 0 calc(40% - 8px);
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.legendRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.legendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legendLine {
+  width: 24px;
+  height: 0;
+  border-top: 2px dashed #DC2626;
+  flex-shrink: 0;
+}
+
+.chartContainer {
+  width: 100%;
+  height: 280px;
+}
+
+.viewAllLink {
+  font-size: 13px;
+  color: #DC2626;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.viewAllLink:hover {
+  text-decoration: underline;
+}
+
+.alertsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.alertsTable th {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 6px 10px 6px;
+  text-align: left;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.alertsTable td {
+  font-size: 12px;
+  color: #374151;
+  padding: 10px 6px;
+  border-bottom: 1px solid #F3F4F6;
+  font-weight: 500;
+}
+
+.lowStockBadge {
+  display: inline-block;
+  background: #FEE2E2;
+  color: #DC2626;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.fourthRow {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.costCard {
+  flex: 1;
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.activityCard {
+  flex: 1;
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.costMetricsRow {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+}
+
+.costMetric {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.costMetricIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.costMetricInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.costMetricLabel {
+  font-size: 11px;
+  color: #6B7280;
+  font-weight: 500;
+  margin: 0;
+}
+
+.costMetricValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.costMetricSub {
+  font-size: 10px;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.activityItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activityBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activityTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.activityDetail {
+  font-size: 12px;
+  color: #6B7280;
+  margin: 0;
+}
+
+.activityMeta {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.activityTime {
+  font-size: 11px;
+  color: #9CA3AF;
+  white-space: nowrap;
+}
+
+.activityActor {
+  font-size: 11px;
+  color: #9CA3AF;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.trendHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.timeSelector {
+  display: inline-flex;
+  background: #F3F4F6;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.timeBtn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6B7280;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.timeBtn:hover {
+  color: #374151;
+}
+
+.timeBtnActive {
+  background: #FFFFFF;
+  color: #111827;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.customDateRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.dateField {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  color: #374151;
+  font-size: 12px;
+}
+
+.dateInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 12px;
+  color: #374151;
+  font-family: inherit;
+  min-width: 130px;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.dateSep {
+  color: #9CA3AF;
+  font-size: 13px;
+}
+
+.dataPointsBadge {
+  margin-left: auto;
+  font-size: 10px;
+  color: #9CA3AF;
+  background: #F3F4F6;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+@media (max-width: 1200px) {
+  .statCardsRow {
+    flex-wrap: wrap;
+  }
+
+  .statCard {
+    flex: 1 1 calc(33.33% - 12px);
+    min-width: 200px;
+  }
+
+  .middleRow {
+    flex-direction: column;
+  }
+
+  .flowCard,
+  .inventoryCard {
+    flex: 1 1 auto;
+  }
+
+  .thirdRow {
+    flex-direction: column;
+  }
+
+  .trendCard,
+  .alertsCard {
+    flex: 1 1 auto;
+  }
+
+  .fourthRow {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 991px) {
+  .pageWrapper {
+    padding: 16px 20px;
+  }
+
+  .headerRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .headerRight {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .dateRangeBtn,
+  .filterBtn,
+  .exportBtn {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .statCard {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+  }
+
+  .costMetricsRow {
+    flex-wrap: wrap;
+  }
+
+  .costMetric {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 140px;
+  }
+
+  .donutWrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .donutChartArea {
+    align-self: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .pageWrapper {
+    padding: 12px 14px;
+  }
+
+  .headerRight {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .dateRangeBtn,
+  .filterBtn,
+  .exportBtn {
+    width: 100%;
+    flex: none;
+  }
+
+  .statCardsRow {
+    gap: 10px;
+  }
+
+  .statCard {
+    flex: 1 1 100%;
+    min-height: 120px;
+    padding: 16px;
+  }
+
+  .pageTitle {
+    font-size: 20px;
+  }
+
+  .pageSubtitle {
+    font-size: 13px;
+  }
+
+  .donutLegendRow {
+    flex-wrap: wrap;
+  }
+
+  .costMetric {
+    flex: 1 1 100%;
+  }
+
+  .alertsTable {
+    font-size: 11px;
+  }
+
+  .alertsTable th,
+  .alertsTable td {
+    padding: 8px 4px;
+  }
+}

@@ -321,6 +321,7 @@ export default function SideBar({ show, handleClose }) {
           {hasPermission(userTypes, 'feed') && (
             <>
               <span className={styles.sectionLabel}>FEED MANAGEMENT</span>
+              {renderDirectLink("Dashboard", "/feed/dashboard", <IoGridOutline size={25} className="me-1" />)}
               {renderCard("raw_materials", "Raw Materials", <GiChipsBag size={25} className="me-1" />,
                 <>
                   {renderNavItem("Add Materials", "/feed/view-all")}
