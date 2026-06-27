@@ -8,6 +8,7 @@ import FeedInventoryViewAll from './inventory/view-all';
 import FeedInventoryAdd from './inventory/add';
 import FeedInventoryUse from './inventory/use';
 import FeedInventoryTopUp from './inventory/top-up';
+import FeedInventory from './inventory/feed-inventory';
 import FeedDashboard from './feed-dashboard/feed-dashboard';
 import RawMaterialInventory from './raw-material-inventory/raw-material-inventory';
 
@@ -20,6 +21,8 @@ const FeedNavigations = () => {
       <Route path='inventory-history' element={<InventoryHistory/>}/>
       <Route path='production/create' element={<CreateFeedBatch/>}/>
       <Route path='production/history' element={<FeedProductionHistory/>}/>
+      <Route path='inventory' element={<FeedInventory/>}/>
+      <Route path='inventory/overview' element={<FeedInventory/>}/>
       <Route path='inventory/view-all' element={<FeedInventoryViewAll/>}/>
       <Route path='inventory/add' element={<FeedInventoryAdd/>}/>
       <Route path='inventory/use' element={<FeedInventoryUse/>}/>

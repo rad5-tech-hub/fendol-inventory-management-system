@@ -78,23 +78,11 @@ export default function FeedProductionHistory() {
       },
     ];
     if (row.status === 'In Progress') {
-      items.push(
-        {
-          label: <><FiEdit2 size={14} style={{ marginRight: 10 }} /> Edit Batch</>,
-          onClick: () => handleEditBatch(row),
-        },
-        {
-          label: <><FiCheckCircle size={14} style={{ marginRight: 10 }} /> Complete Batch</>,
-          onClick: () => handleCompleteBatch(row),
-          style: { color: '#15803D', fontWeight: 600 },
-        },
-        { divider: true },
-        {
-          label: <><FiXCircle size={14} style={{ marginRight: 10 }} /> Cancel Batch</>,
-          onClick: () => handleCancelBatch(row),
-          style: { color: '#DC2626', fontWeight: 600 },
-        },
-      );
+      items.push({
+        label: <><FiCheckCircle size={14} style={{ marginRight: 10 }} /> Complete Batch</>,
+        onClick: () => handleCompleteBatch(row),
+        style: { color: '#15803D', fontWeight: 600 },
+      });
     }
     return items;
   };
