@@ -76,7 +76,7 @@ const STATUS_API_MAP = {
 const getInitials = (name) =>
   name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
-const AVATAR_COLORS = ['#2563EB', '#F97316', '#16A34A', '#7C3AED', '#DC2626', '#0D9488', '#EAB308', '#0891B2'];
+const AVATAR_COLORS = ['#512728', '#6B3A3B', '#854D4E', '#9E6162', '#3D1E1F', '#7A4445', '#4F2A2B', '#8C5556'];
 
 export default function StaffAttendance() {
   const user = useSelector((state) => state.user);
