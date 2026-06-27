@@ -294,15 +294,9 @@ export default function BroodstockManagement() {
 
     const sex = logData.sex || undefined;
     const activities = [];
-    if (sex) {
-      if (sick) activities.push({ action: 'sick', quantity: sick, sex });
-      if (mortality) activities.push({ action: 'mortality', quantity: mortality, sex });
-      if (retired) activities.push({ action: 'retired', quantity: retired, sex });
-    } else {
-      if (sick) activities.push({ action: 'sick', quantity: sick });
-      if (mortality) activities.push({ action: 'mortality', quantity: mortality });
-      if (retired) activities.push({ action: 'retired', quantity: retired });
-    }
+    if (sick) activities.push({ action: 'sick', quantity: sick });
+    if (mortality) activities.push({ action: 'mortality', quantity: mortality, ...(sex && { sex }) });
+    if (retired) activities.push({ action: 'retired', quantity: retired });
 
     setLogSubmitting(true);
     const loadingToast = toast.loading('Logging activity...');
@@ -871,16 +865,18 @@ export default function BroodstockManagement() {
                   </button>
                 </div>
 
-                <div className={styles.modalBody}>
+                <div className={styles.modalBodyLog}>
+
+                  {/* Sick */}
                   <div className={styles.logCard}>
                     <div className={styles.logCardIcon} style={{ background: '#FEE2E2' }}>
                       <BsPlusCircleFill size={18} color="#DC2626" />
                     </div>
                     <div className={styles.logCardContent}>
-                      <label className={styles.formLabel}>Number of Sick</label>
+                      <label className={styles.logCardLabel}>Number of Sick</label>
                       <input
                         type="number"
-                        className={styles.formInput}
+                        className={styles.logInput}
                         placeholder="0"
                         value={logData.sick}
                         onChange={(e) => setLogData((p) => ({ ...p, sick: e.target.value }))}
@@ -889,32 +885,48 @@ export default function BroodstockManagement() {
                     </div>
                   </div>
 
-                  <div className={styles.logCard}>
-                    <div className={styles.logCardIcon} style={{ background: '#FEF2F2' }}>
-                      <FaSkull size={18} color="#991B1B" />
+                  {/* Mortality (with sex selector) */}
+                  <div className={styles.logCardMortality}>
+                    <div className={styles.logCardMortalityHead}>
+                      <div className={styles.logCardIcon} style={{ background: '#FEF2F2' }}>
+                        <FaSkull size={18} color="#991B1B" />
+                      </div>
+                      <div className={styles.logCardContent}>
+                        <label className={styles.logCardLabel}>Number of Mortality</label>
+                        <input
+                          type="number"
+                          className={styles.logInput}
+                          placeholder="0"
+                          value={logData.mortality}
+                          onChange={(e) => setLogData((p) => ({ ...p, mortality: e.target.value }))}
+                          min="0"
+                        />
+                      </div>
                     </div>
-                    <div className={styles.logCardContent}>
-                      <label className={styles.formLabel}>Number of Mortality</label>
-                      <input
-                        type="number"
-                        className={styles.formInput}
-                        placeholder="0"
-                        value={logData.mortality}
-                        onChange={(e) => setLogData((p) => ({ ...p, mortality: e.target.value }))}
-                        min="0"
-                      />
+                    <div className={styles.logCardSexRow}>
+                      <div className={styles.sexBadge}>Sex (applies to mortality only)</div>
+                      <select
+                        className={styles.logSexSelect}
+                        value={logData.sex}
+                        onChange={(e) => setLogData((p) => ({ ...p, sex: e.target.value }))}
+                      >
+                        <option value="">All / Not specified</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                      </select>
                     </div>
                   </div>
 
+                  {/* Retired */}
                   <div className={styles.logCard}>
                     <div className={styles.logCardIcon} style={{ background: '#FEF3C7' }}>
                       <BsHeartFill size={18} color="#D97706" />
                     </div>
                     <div className={styles.logCardContent}>
-                      <label className={styles.formLabel}>Number of Retired</label>
+                      <label className={styles.logCardLabel}>Number of Retired</label>
                       <input
                         type="number"
-                        className={styles.formInput}
+                        className={styles.logInput}
                         placeholder="0"
                         value={logData.retired}
                         onChange={(e) => setLogData((p) => ({ ...p, retired: e.target.value }))}
@@ -923,18 +935,6 @@ export default function BroodstockManagement() {
                     </div>
                   </div>
 
-                  <div className={styles.formGroupFull}>
-                    <label className={styles.formLabel}>Sex / Gender</label>
-                    <select
-                      className={styles.formSelect}
-                      value={logData.sex}
-                      onChange={(e) => setLogData((p) => ({ ...p, sex: e.target.value }))}
-                    >
-                      <option value="">All / Not specified</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div className={styles.modalFooter}>
