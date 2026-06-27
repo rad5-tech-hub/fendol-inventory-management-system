@@ -48,30 +48,6 @@ export default function StaffDirectory() {
   const [form, setForm] = useState({ name: '', role: '', siteId: '' });
   const [formErrors, setFormErrors] = useState({});
 
-  const mockStaff = [
-    { id: 'mock-1', name: 'Okeke John', role: 'Doxology', createdAt: '2026-06-27T15:08:24.000Z', _siteName: 'Lagos Farm' },
-    { id: 'mock-2', name: 'Amina Bello', role: 'Vet Technician', createdAt: '2026-06-26T10:15:00.000Z', _siteName: 'Ibadan Farm' },
-    { id: 'mock-3', name: 'Chidi Okafor', role: 'Feed Manager', createdAt: '2026-06-25T14:00:00.000Z', _siteName: 'Lagos Farm' },
-    { id: 'mock-4', name: 'Funke Adeyemi', role: 'Hatchery Tech', createdAt: '2026-06-24T09:45:00.000Z', _siteName: 'Port Harcourt Farm' },
-    { id: 'mock-5', name: 'Ibrahim Musa', role: 'Accountant', createdAt: '2026-06-23T11:20:00.000Z', _siteName: 'Ibadan Farm' },
-    { id: 'mock-6', name: 'Ngozi Eze', role: 'Quality Control', createdAt: '2026-06-22T07:00:00.000Z', _siteName: 'Lagos Farm' },
-    { id: 'mock-7', name: 'Tunde Balogun', role: 'Maintenance', createdAt: '2026-06-21T16:30:00.000Z', _siteName: 'Port Harcourt Farm' },
-    { id: 'mock-8', name: 'Sade Ogun', role: 'Sales Rep', createdAt: '2026-06-20T13:10:00.000Z', _siteName: 'Ibadan Farm' },
-    { id: 'mock-9', name: 'Emeka Nwosu', role: 'Security Lead', createdAt: '2026-06-19T08:00:00.000Z', _siteName: 'Lagos Farm' },
-    { id: 'mock-10', name: 'Hauwa Mohammed', role: 'Admin Officer', createdAt: '2026-06-18T10:00:00.000Z', _siteName: 'Port Harcourt Farm' },
-    { id: 'mock-11', name: 'Kelechi Okoro', role: 'Driver', createdAt: '2026-06-17T12:00:00.000Z', _siteName: 'Ibadan Farm' },
-    { id: 'mock-12', name: 'Bisi Adegoke', role: 'Store Keeper', createdAt: '2026-06-16T09:30:00.000Z', _siteName: 'Lagos Farm' },
-    { id: 'mock-13', name: 'Yakubu Garba', role: 'Hatchery Assistant', createdAt: '2026-06-15T15:00:00.000Z', _siteName: 'Port Harcourt Farm' },
-    { id: 'mock-14', name: 'Chioma Obi', role: 'Lab Technician', createdAt: '2026-06-14T11:00:00.000Z', _siteName: 'Ibadan Farm' },
-    { id: 'mock-15', name: 'Rashid Idris', role: 'Pond Manager', createdAt: '2026-06-13T08:00:00.000Z', _siteName: 'Lagos Farm' },
-  ];
-
-  const mockSites = [
-    { id: 'site-1', name: 'Lagos Farm' },
-    { id: 'site-2', name: 'Ibadan Farm' },
-    { id: 'site-3', name: 'Port Harcourt Farm' },
-  ];
-
   const [staffBySite, setStaffBySite] = useState({});
   const [siteLoading, setSiteLoading] = useState(false);
 
@@ -88,7 +64,13 @@ export default function StaffDirectory() {
       const res = await ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } });
       const data = Array.isArray(res.data?.data) ? res.data.data : [];
       return data.map(mapStaffSite);
-    } catch {
+    } catch (err) {
+      console.error('[StaffDirectory] fetchAllStaff failed:', {
+        siteParam,
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+      });
       return [];
     }
   };
@@ -96,22 +78,27 @@ export default function StaffDirectory() {
   const fetchSites = async () => {
     try {
       const res = await ApiV2.get('/v2/all-site');
-      const data = Array.isArray(res.data?.data) ? res.data.data : [];
-      return data.length ? data : mockSites;
-    } catch {
-      return mockSites;
+      return Array.isArray(res.data?.data) ? res.data.data : [];
+    } catch (err) {
+      console.error('[StaffDirectory] fetchSites failed:', err.response?.data || err.message || err);
+      return [];
     }
   };
 
   useEffect(() => {
     (async () => {
-      const [staffData, siteData] = await Promise.all([
-        fetchAllStaff(),
-        isSuperAdmin ? fetchSites() : Promise.resolve([]),
-      ]);
-      setStaff(staffData.length ? staffData : mockStaff);
-      setSites(siteData);
-      setLoading(false);
+      try {
+        const [staffData, siteData] = await Promise.all([
+          fetchAllStaff(),
+          isSuperAdmin ? fetchSites() : Promise.resolve([]),
+        ]);
+        setStaff(staffData);
+        setSites(siteData);
+      } catch (err) {
+        console.error('[StaffDirectory] initial load failed:', err.response?.data || err.message || err);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -125,12 +112,9 @@ export default function StaffDirectory() {
           const res = await ApiV2.get('/api/v1/staff', { params: { siteId: site.id } });
           const data = Array.isArray(res.data?.data) ? res.data.data : [];
           if (data.length) grouped[site.name] = data.map(mapStaffSite);
-        } catch {
-          // skip site on error
+        } catch (err) {
+          console.error(`[StaffDirectory] fetch staff for site ${site.name} (${site.id}) failed:`, err.response?.data || err.message || err);
         }
-      }
-      if (!Object.keys(grouped).length) {
-        grouped['All Staff'] = staff;
       }
       setStaffBySite(grouped);
       setCollapsedSites(new Set(Object.keys(grouped)));
@@ -199,9 +183,15 @@ export default function StaffDirectory() {
       toast.success('Staff created successfully!', { className: 'dark-toast' });
       closeModal();
       const fresh = await fetchAllStaff();
-      setStaff(fresh.length ? fresh : mockStaff);
+      setStaff(fresh);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to create staff. Please try again.';
+      const msg = err.response?.data?.response_message || err.response?.data?.message || 'Failed to create staff. Please try again.';
+      console.error('[StaffDirectory] create staff failed:', {
+        payload,
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+      });
       toast.error(msg, { className: 'dark-toast' });
     } finally {
       setModalLoading(false);
@@ -254,10 +244,27 @@ export default function StaffDirectory() {
     </div>
   );
 
-  const renderLoading = () => (
-    <div className={styles.emptyState}>
-      <div className={styles.loadingSpinner} style={{ borderTopColor: '#512728', borderColor: '#E5E7EB', width: 32, height: 32, margin: '0 auto 12px' }} />
-      <p style={{ color: '#8C949B' }}>Loading staff...</p>
+  const renderSkeletonRows = (count = 8) => (
+    <div className={styles.skeletonTable}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className={styles.skeletonRow}>
+          <div className={styles.skeletonCell} style={{ width: '16%' }}>
+            <div className={styles.skeletonBar} style={{ width: '70%', height: 12 }} />
+          </div>
+          <div className={styles.skeletonCell} style={{ width: '34%' }}>
+            <div className={styles.skeletonAvatarBar}>
+              <div className={styles.skeletonAvatar} />
+              <div className={styles.skeletonBar} style={{ width: '55%', height: 12 }} />
+            </div>
+          </div>
+          <div className={styles.skeletonCell} style={{ width: '25%' }}>
+            <div className={styles.skeletonBar} style={{ width: '50%', height: 12 }} />
+          </div>
+          <div className={styles.skeletonCell} style={{ width: '25%' }}>
+            <div className={styles.skeletonBar} style={{ width: '40%', height: 12 }} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 
@@ -329,7 +336,7 @@ export default function StaffDirectory() {
 
             {/* Content */}
             {loading ? (
-              renderLoading()
+              renderSkeletonRows()
             ) : staff.length === 0 ? (
               renderEmpty()
             ) : searched.length === 0 ? (
@@ -337,8 +344,16 @@ export default function StaffDirectory() {
             ) : isSuperAdmin && viewMode === 'by-site' ? (
               <>
                 {siteLoading && (
-                  <div className={styles.staffCountChip} style={{ color: '#8C949B' }}>
-                    Loading staff by site...
+                  <div className={styles.skeletonSiteCards}>
+                    {[1, 2, 3].map(si => (
+                      <div key={si} className={styles.skeletonSiteCard}>
+                        <div className={styles.skeletonSiteCardHeader}>
+                          <div className={styles.skeletonSiteIcon} />
+                          <div className={styles.skeletonBar} style={{ width: '120px', height: 16 }} />
+                          <div className={styles.skeletonBar} style={{ width: '60px', height: 14, marginLeft: 'auto' }} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {!siteLoading && Object.keys(staffBySite).length === 0 && (

@@ -25,31 +25,7 @@ const STATUS_STYLES = {
   'Off Day': { bg: '#F3F4F6', color: '#6B7280' },
 };
 
-const mockStaff = [
-  { id: 'EMP-0012', name: 'John Okafor', position: 'Pond Manager', avatar: null },
-  { id: 'EMP-0013', name: 'Mary Uche', position: 'Hatchery Technician', avatar: null },
-  { id: 'EMP-0014', name: 'Emeka Obi', position: 'Store Keeper', avatar: null },
-  { id: 'EMP-0015', name: 'Grace Nwosu', position: 'Accountant', avatar: null },
-  { id: 'EMP-0016', name: 'Tunde Musa', position: 'Feeding Officer', avatar: null },
-  { id: 'EMP-0017', name: 'Chinedu Agwu', position: 'Maintenance Officer', avatar: null },
-  { id: 'EMP-0018', name: 'Blessing Essien', position: 'Quality Controller', avatar: null },
-  { id: 'EMP-0019', name: 'Ibrahim Yusuf', position: 'Pond Assistant', avatar: null },
-  { id: 'EMP-0020', name: 'Ifeyinwa David', position: 'Admin Officer', avatar: null },
-  { id: 'EMP-0021', name: 'Samuel Eze', position: 'Security Guard', avatar: null },
-];
 
-const mockAttendance = [
-  { staffId: 'EMP-0012', date: '2026-06-28', checkIn: '08:30:00', checkOut: '17:00:00', status: 'present', comment: 'Worked on pond 3', staff: { name: 'John Okafor', role: 'Pond Manager' } },
-  { staffId: 'EMP-0013', date: '2026-06-28', checkIn: '08:15:00', checkOut: null, status: 'late', comment: 'Reached late', staff: { name: 'Mary Uche', role: 'Hatchery Technician' } },
-  { staffId: 'EMP-0014', date: '2026-06-28', checkIn: '07:50:00', checkOut: '17:10:00', status: 'present', comment: null, staff: { name: 'Emeka Obi', role: 'Store Keeper' } },
-  { staffId: 'EMP-0015', date: '2026-06-28', checkIn: null, checkOut: null, status: 'absent', comment: 'No show', staff: { name: 'Grace Nwosu', role: 'Accountant' } },
-  { staffId: 'EMP-0016', date: '2026-06-28', checkIn: '07:45:00', checkOut: '17:02:00', status: 'present', comment: null, staff: { name: 'Tunde Musa', role: 'Feeding Officer' } },
-  { staffId: 'EMP-0017', date: '2026-06-28', checkIn: '08:20:00', checkOut: null, status: 'late', comment: 'Traffic', staff: { name: 'Chinedu Agwu', role: 'Maintenance Officer' } },
-  { staffId: 'EMP-0018', date: '2026-06-28', checkIn: '07:30:00', checkOut: '17:30:00', status: 'present', comment: null, staff: { name: 'Blessing Essien', role: 'Quality Controller' } },
-  { staffId: 'EMP-0019', date: '2026-06-28', checkIn: '07:55:00', checkOut: '16:45:00', status: 'present', comment: 'Left early', staff: { name: 'Ibrahim Yusuf', role: 'Pond Assistant' } },
-  { staffId: 'EMP-0020', date: '2026-06-28', checkIn: '08:10:00', checkOut: null, status: 'late', comment: null, staff: { name: 'Ifeyinwa David', role: 'Admin Officer' } },
-  { staffId: 'EMP-0021', date: '2026-06-28', checkIn: '07:00:00', checkOut: '19:00:00', status: 'present', comment: 'Double shift', staff: { name: 'Samuel Eze', role: 'Security Guard' } },
-];
 
 const formatTime = (iso) => {
   if (!iso) return null;
@@ -105,11 +81,23 @@ export default function StaffAttendance() {
         const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
         const [staffRes, attRes] = await Promise.all([
           ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } }),
-          ApiV2.get('/v2/attendances', { params: { siteId: siteParam } }).catch(() => null),
+          ApiV2.get('/v2/attendances', { params: { siteId: siteParam } }).catch((err) => {
+            console.error('[Attendance] fetch attendances failed:', {
+              siteParam,
+              status: err.response?.status,
+              data: err.response?.data,
+              message: err.message,
+            });
+            return null;
+          }),
         ]);
 
         const staffData = Array.isArray(staffRes.data?.data) ? staffRes.data.data : [];
         const attData = Array.isArray(attRes?.data?.data) ? attRes.data.data : [];
+
+        if (!staffData.length) {
+          console.warn('[Attendance] no staff data returned for siteParam:', siteParam);
+        }
 
         // Merge latest attendance status into staff list
         const latestByStaff = {};
@@ -120,26 +108,23 @@ export default function StaffAttendance() {
           }
         }
 
-        if (staffData.length) {
-          setStaffList(staffData.map(s => ({
-            id: s.id,
-            name: s.name,
-            position: s.role,
-            status: STATUS_API_MAP[latestByStaff[s.id]?.status] || '\u2014',
-            siteId: s.UserSites?.[0]?.Site?.id || null,
-            avatar: null,
-          })));
-        } else {
-          setStaffList(mockStaff.map(s => ({
-            ...s,
-            status: STATUS_API_MAP[latestByStaff[s.id]?.status] || '\u2014',
-          })));
-        }
+        setStaffList(staffData.map(s => ({
+          id: s.id,
+          name: s.name,
+          position: s.role,
+          status: STATUS_API_MAP[latestByStaff[s.id]?.status] || '\u2014',
+          siteId: s.UserSites?.[0]?.Site?.id || null,
+          avatar: null,
+        })));
 
-        setAttendanceRecords(attData.length ? attData : mockAttendance);
-      } catch {
-        setStaffList(mockStaff.map(s => ({ ...s, status: '\u2014' })));
-        setAttendanceRecords(mockAttendance);
+        setAttendanceRecords(attData);
+      } catch (err) {
+        console.error('[Attendance] initial load failed:', {
+          status: err.response?.status,
+          data: err.response?.data,
+          message: err.message,
+          stack: err.stack,
+        });
       } finally {
         setLoadingStaff(false);
       }
@@ -199,6 +184,13 @@ export default function StaffAttendance() {
       closeModal();
     } catch (err) {
       const msg = err.response?.data?.response_message || errorMsg;
+      console.error(`[Attendance] ${endpoint} failed:`, {
+        payload,
+        siteId,
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+      });
       toast.error(msg, { className: 'dark-toast' });
     } finally {
       setAttendanceModal(prev => ({ ...prev, loading: false }));
@@ -235,6 +227,36 @@ export default function StaffAttendance() {
   const avatarColorIndex = detailStaff
     ? detailStaff.name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % AVATAR_COLORS.length
     : 0;
+
+  const renderSkeletonRows = (count = 8) => (
+    <div className={styles.skeletonTable}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className={styles.skeletonRow}>
+          <div className={styles.skeletonCell} style={{ width: '6%' }}>
+            <div className={styles.skeletonBar} style={{ width: '50%', height: 12 }} />
+          </div>
+          <div className={styles.skeletonCell} style={{ width: '30%' }}>
+            <div className={styles.skeletonAvatarBar}>
+              <div className={styles.skeletonAvatar} />
+              <div className={styles.skeletonBar} style={{ width: '55%', height: 12 }} />
+            </div>
+          </div>
+          <div className={styles.skeletonCell} style={{ width: '20%' }}>
+            <div className={styles.skeletonBar} style={{ width: '45%', height: 12 }} />
+          </div>
+          <div className={styles.skeletonCell} style={{ width: '24%' }}>
+            <div className={styles.skeletonBar} style={{ width: '50%', height: 12 }} />
+          </div>
+          <div className={styles.skeletonCell} style={{ width: '12%' }}>
+            <div className={styles.skeletonBar} style={{ width: '60%', height: 12 }} />
+          </div>
+          <div className={styles.skeletonCell} style={{ width: '8%' }}>
+            <div className={styles.skeletonBar} style={{ width: '50%', height: 12 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   // Derive detail panel data from attendance records
   const detailAttendance = detailStaff
@@ -331,26 +353,37 @@ export default function StaffAttendance() {
                         </tr>
                       </thead>
                       <tbody>
-                        {staffList.filter(s => !search.trim() || s.name.toLowerCase().includes(search.toLowerCase()) || s.id.toLowerCase().includes(search.toLowerCase())).map((staff, i) => {
-                          const statusStyle = STATUS_STYLES[staff.status] || {};
-                          const avatarBg = AVATAR_COLORS[i % AVATAR_COLORS.length];
-                          return (
-                            <tr key={staff.id}
-                              className={selectedStaff?.id === staff.id ? styles.activeRow : ''}
-                              onClick={() => handleViewProfile(staff)}
-                            >
-                              <td className={styles.rowNum}>{i + 1}</td>
-                              <td>
-                                <div className={styles.staffNameCell}>
-                                  <span className={styles.avatarSmall} style={{ background: avatarBg }}>
-                                    {getInitials(staff.name)}
-                                  </span>
-                                  {staff.name}
-                                </div>
-                              </td>
-                              <td className={styles.staffIdCell}>{staff.id}</td>
-                              <td>{staff.position}</td>
-                              <td>
+                        {loadingStaff ? (
+                          <tr><td colSpan={6} style={{ padding: 0, border: 'none' }}>{renderSkeletonRows()}</td></tr>
+                        ) : (() => {
+                          const filtered = !search.trim()
+                            ? staffList
+                            : staffList.filter(s =>
+                                s.name.toLowerCase().includes(search.toLowerCase()) ||
+                                s.id.toLowerCase().includes(search.toLowerCase())
+                              );
+                          return filtered.length === 0
+                            ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>No staff found.</td></tr>
+                            : filtered.map((staff, i) => {
+                              const statusStyle = STATUS_STYLES[staff.status] || {};
+                              const avatarBg = AVATAR_COLORS[i % AVATAR_COLORS.length];
+                              return (
+                                <tr key={staff.id}
+                                  className={selectedStaff?.id === staff.id ? styles.activeRow : ''}
+                                  onClick={() => handleViewProfile(staff)}
+                                >
+                                  <td className={styles.rowNum}>{i + 1}</td>
+                                  <td>
+                                    <div className={styles.staffNameCell}>
+                                      <span className={styles.avatarSmall} style={{ background: avatarBg }}>
+                                        {getInitials(staff.name)}
+                                      </span>
+                                      {staff.name}
+                                    </div>
+                                  </td>
+                                  <td className={styles.staffIdCell}>{staff.id}</td>
+                                  <td>{staff.position}</td>
+                                  <td>
                                 <span className={styles.statusPill} style={{ background: statusStyle.bg, color: statusStyle.color }}>
                                   {staff.status}
                                 </span>
@@ -371,7 +404,8 @@ export default function StaffAttendance() {
                               </td>
                             </tr>
                           );
-                        })}
+                        });
+                      })()}
                       </tbody>
                     </table>
                   </div>

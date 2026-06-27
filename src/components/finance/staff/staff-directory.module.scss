@@ -569,6 +569,86 @@
   }
 }
 
+/* ── Skeleton Loader ── */
+.skeletonSiteCards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeletonSiteCard {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+.skeletonSiteCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skeletonSiteIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.skeletonTable {
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  padding: 14px 14px;
+  border-bottom: 1px solid #F3F4F6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.skeletonCell {
+  padding: 0 4px;
+}
+
+.skeletonBar {
+  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeletonAvatarBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skeletonAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .searchWrapper {
   position: relative;
 

@@ -980,6 +980,54 @@
   to { transform: rotate(360deg); }
 }
 
+/* ── Skeleton Loader ── */
+.skeletonTable {
+  padding: 8px 0;
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  padding: 14px 12px;
+  border-bottom: 1px solid #F3F4F6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.skeletonCell {
+  padding: 0 4px;
+}
+
+.skeletonBar {
+  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeletonAvatarBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skeletonAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ── Responsive ── */
 @media (max-width: 1200px) {
   .leftPanelCompressed {
