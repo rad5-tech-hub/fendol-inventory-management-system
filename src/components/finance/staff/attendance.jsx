@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { IoCalendarOutline, IoChevronDown, IoClose, IoTimeOutline } from 'react-icons/io5';
 import {
   FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight,
@@ -75,61 +75,64 @@ export default function StaffAttendance() {
   const timeStr = now.toTimeString().split(' ')[0];
   const [attendanceForm, setAttendanceForm] = useState({ date: todayStr, time: timeStr, comment: '' });
 
+  const fetchAttendanceData = useCallback(async () => {
+    try {
+      const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
+      const [staffRes, attRes] = await Promise.all([
+        ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } }),
+        ApiV2.get('/v2/attendances', { params: { siteId: siteParam } }).catch((err) => {
+          console.error('[Attendance] fetch attendances failed:', {
+            siteParam,
+            status: err.response?.status,
+            data: err.response?.data,
+            message: err.message,
+          });
+          return null;
+        }),
+      ]);
+
+      const staffData = Array.isArray(staffRes.data?.data) ? staffRes.data.data : [];
+      const attData = Array.isArray(attRes?.data?.data) ? attRes.data.data : [];
+
+      if (!staffData.length) {
+        console.warn('[Attendance] no staff data returned for siteParam:', siteParam);
+      }
+
+      // Merge latest attendance status into staff list
+      const latestByStaff = {};
+      for (const a of attData) {
+        const prev = latestByStaff[a.staffId];
+        if (!prev || new Date(a.date) > new Date(prev.date)) {
+          latestByStaff[a.staffId] = a;
+        }
+      }
+
+      setStaffList(staffData.map(s => ({
+        id: s.id,
+        name: s.name,
+        position: s.role,
+        status: STATUS_API_MAP[latestByStaff[s.id]?.status] || '\u2014',
+        siteId: s.UserSites?.[0]?.Site?.id || null,
+        avatar: null,
+      })));
+
+      setAttendanceRecords(attData);
+    } catch (err) {
+      console.error('[Attendance] fetch failed:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+        stack: err.stack,
+      });
+    }
+  }, [isSuperAdmin, userSiteId]);
+
   useEffect(() => {
     (async () => {
-      try {
-        const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
-        const [staffRes, attRes] = await Promise.all([
-          ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } }),
-          ApiV2.get('/v2/attendances', { params: { siteId: siteParam } }).catch((err) => {
-            console.error('[Attendance] fetch attendances failed:', {
-              siteParam,
-              status: err.response?.status,
-              data: err.response?.data,
-              message: err.message,
-            });
-            return null;
-          }),
-        ]);
-
-        const staffData = Array.isArray(staffRes.data?.data) ? staffRes.data.data : [];
-        const attData = Array.isArray(attRes?.data?.data) ? attRes.data.data : [];
-
-        if (!staffData.length) {
-          console.warn('[Attendance] no staff data returned for siteParam:', siteParam);
-        }
-
-        // Merge latest attendance status into staff list
-        const latestByStaff = {};
-        for (const a of attData) {
-          const prev = latestByStaff[a.staffId];
-          if (!prev || new Date(a.date) > new Date(prev.date)) {
-            latestByStaff[a.staffId] = a;
-          }
-        }
-
-        setStaffList(staffData.map(s => ({
-          id: s.id,
-          name: s.name,
-          position: s.role,
-          status: STATUS_API_MAP[latestByStaff[s.id]?.status] || '\u2014',
-          siteId: s.UserSites?.[0]?.Site?.id || null,
-          avatar: null,
-        })));
-
-        setAttendanceRecords(attData);
-      } catch (err) {
-        console.error('[Attendance] initial load failed:', {
-          status: err.response?.status,
-          data: err.response?.data,
-          message: err.message,
-          stack: err.stack,
-        });
-      } finally {
-        setLoadingStaff(false);
-      }
+      await fetchAttendanceData();
+      setLoadingStaff(false);
     })();
-  }, []);
+  }, [fetchAttendanceData]);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -182,6 +185,7 @@ export default function StaffAttendance() {
       await ApiV2.post(endpoint, payload, { params: { siteId } });
       toast.success(successMsg, { className: 'dark-toast' });
       closeModal();
+      await fetchAttendanceData();
     } catch (err) {
       const msg = err.response?.data?.response_message || errorMsg;
       console.error(`[Attendance] ${endpoint} failed:`, {
