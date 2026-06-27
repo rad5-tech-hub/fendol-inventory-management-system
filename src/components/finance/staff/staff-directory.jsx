@@ -49,21 +49,21 @@ export default function StaffDirectory() {
   const [formErrors, setFormErrors] = useState({});
 
   const mockStaff = [
-    { id: 'mock-1', name: 'Okeke John', role: 'Doxology', createdAt: '2026-06-27T15:08:24.000Z' },
-    { id: 'mock-2', name: 'Amina Bello', role: 'Vet Technician', createdAt: '2026-06-26T10:15:00.000Z' },
-    { id: 'mock-3', name: 'Chidi Okafor', role: 'Feed Manager', createdAt: '2026-06-25T14:00:00.000Z' },
-    { id: 'mock-4', name: 'Funke Adeyemi', role: 'Hatchery Tech', createdAt: '2026-06-24T09:45:00.000Z' },
-    { id: 'mock-5', name: 'Ibrahim Musa', role: 'Accountant', createdAt: '2026-06-23T11:20:00.000Z' },
-    { id: 'mock-6', name: 'Ngozi Eze', role: 'Quality Control', createdAt: '2026-06-22T07:00:00.000Z' },
-    { id: 'mock-7', name: 'Tunde Balogun', role: 'Maintenance', createdAt: '2026-06-21T16:30:00.000Z' },
-    { id: 'mock-8', name: 'Sade Ogun', role: 'Sales Rep', createdAt: '2026-06-20T13:10:00.000Z' },
-    { id: 'mock-9', name: 'Emeka Nwosu', role: 'Security Lead', createdAt: '2026-06-19T08:00:00.000Z' },
-    { id: 'mock-10', name: 'Hauwa Mohammed', role: 'Admin Officer', createdAt: '2026-06-18T10:00:00.000Z' },
-    { id: 'mock-11', name: 'Kelechi Okoro', role: 'Driver', createdAt: '2026-06-17T12:00:00.000Z' },
-    { id: 'mock-12', name: 'Bisi Adegoke', role: 'Store Keeper', createdAt: '2026-06-16T09:30:00.000Z' },
-    { id: 'mock-13', name: 'Yakubu Garba', role: 'Hatchery Assistant', createdAt: '2026-06-15T15:00:00.000Z' },
-    { id: 'mock-14', name: 'Chioma Obi', role: 'Lab Technician', createdAt: '2026-06-14T11:00:00.000Z' },
-    { id: 'mock-15', name: 'Rashid Idris', role: 'Pond Manager', createdAt: '2026-06-13T08:00:00.000Z' },
+    { id: 'mock-1', name: 'Okeke John', role: 'Doxology', createdAt: '2026-06-27T15:08:24.000Z', _siteName: 'Lagos Farm' },
+    { id: 'mock-2', name: 'Amina Bello', role: 'Vet Technician', createdAt: '2026-06-26T10:15:00.000Z', _siteName: 'Ibadan Farm' },
+    { id: 'mock-3', name: 'Chidi Okafor', role: 'Feed Manager', createdAt: '2026-06-25T14:00:00.000Z', _siteName: 'Lagos Farm' },
+    { id: 'mock-4', name: 'Funke Adeyemi', role: 'Hatchery Tech', createdAt: '2026-06-24T09:45:00.000Z', _siteName: 'Port Harcourt Farm' },
+    { id: 'mock-5', name: 'Ibrahim Musa', role: 'Accountant', createdAt: '2026-06-23T11:20:00.000Z', _siteName: 'Ibadan Farm' },
+    { id: 'mock-6', name: 'Ngozi Eze', role: 'Quality Control', createdAt: '2026-06-22T07:00:00.000Z', _siteName: 'Lagos Farm' },
+    { id: 'mock-7', name: 'Tunde Balogun', role: 'Maintenance', createdAt: '2026-06-21T16:30:00.000Z', _siteName: 'Port Harcourt Farm' },
+    { id: 'mock-8', name: 'Sade Ogun', role: 'Sales Rep', createdAt: '2026-06-20T13:10:00.000Z', _siteName: 'Ibadan Farm' },
+    { id: 'mock-9', name: 'Emeka Nwosu', role: 'Security Lead', createdAt: '2026-06-19T08:00:00.000Z', _siteName: 'Lagos Farm' },
+    { id: 'mock-10', name: 'Hauwa Mohammed', role: 'Admin Officer', createdAt: '2026-06-18T10:00:00.000Z', _siteName: 'Port Harcourt Farm' },
+    { id: 'mock-11', name: 'Kelechi Okoro', role: 'Driver', createdAt: '2026-06-17T12:00:00.000Z', _siteName: 'Ibadan Farm' },
+    { id: 'mock-12', name: 'Bisi Adegoke', role: 'Store Keeper', createdAt: '2026-06-16T09:30:00.000Z', _siteName: 'Lagos Farm' },
+    { id: 'mock-13', name: 'Yakubu Garba', role: 'Hatchery Assistant', createdAt: '2026-06-15T15:00:00.000Z', _siteName: 'Port Harcourt Farm' },
+    { id: 'mock-14', name: 'Chioma Obi', role: 'Lab Technician', createdAt: '2026-06-14T11:00:00.000Z', _siteName: 'Ibadan Farm' },
+    { id: 'mock-15', name: 'Rashid Idris', role: 'Pond Manager', createdAt: '2026-06-13T08:00:00.000Z', _siteName: 'Lagos Farm' },
   ];
 
   const mockSites = [
@@ -75,12 +75,19 @@ export default function StaffDirectory() {
   const [staffBySite, setStaffBySite] = useState({});
   const [siteLoading, setSiteLoading] = useState(false);
 
+  const mapStaffSite = (s) => ({
+    ...s,
+    _siteName: s.UserSites?.[0]?.Site?.name || null,
+    _siteId: s.UserSites?.[0]?.Site?.id || null,
+  });
+
   const fetchAllStaff = async () => {
     try {
       setLoading(true);
       const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
       const res = await ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } });
-      return Array.isArray(res.data?.data) ? res.data.data : [];
+      const data = Array.isArray(res.data?.data) ? res.data.data : [];
+      return data.map(mapStaffSite);
     } catch {
       return [];
     }
@@ -117,7 +124,7 @@ export default function StaffDirectory() {
         try {
           const res = await ApiV2.get('/api/v1/staff', { params: { siteId: site.id } });
           const data = Array.isArray(res.data?.data) ? res.data.data : [];
-          if (data.length) grouped[site.name] = data;
+          if (data.length) grouped[site.name] = data.map(mapStaffSite);
         } catch {
           // skip site on error
         }

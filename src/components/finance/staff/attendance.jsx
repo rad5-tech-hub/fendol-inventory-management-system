@@ -126,6 +126,7 @@ export default function StaffAttendance() {
             name: s.name,
             position: s.role,
             status: STATUS_API_MAP[latestByStaff[s.id]?.status] || '\u2014',
+            siteId: s.UserSites?.[0]?.Site?.id || null,
             avatar: null,
           })));
         } else {
@@ -192,7 +193,7 @@ export default function StaffAttendance() {
         successMsg = 'Staff marked as absent.';
         errorMsg = 'Failed to mark absent.';
       }
-      const siteId = userSiteId || 'all';
+      const siteId = staff.siteId || userSiteId || 'all';
       await ApiV2.post(endpoint, payload, { params: { siteId } });
       toast.success(successMsg, { className: 'dark-toast' });
       closeModal();
