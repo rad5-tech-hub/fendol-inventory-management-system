@@ -104,7 +104,7 @@ export default function StaffDirectory() {
   useEffect(() => {
     if (viewMode === 'by-site') {
       const siteNames = new Set(staff.map(s => s.Site?.name || 'Unassigned'));
-      setCollapsedSites(new Set());
+      setCollapsedSites(new Set(siteNames));
     }
   }, [viewMode, staff]);
 
