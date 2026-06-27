@@ -96,7 +96,7 @@ export default function FeedInventory() {
   const getActionItems = (row) => [
     {
       label: <><BsEye size={14} style={{ marginRight: 10 }} /> View Details</>,
-      onClick: () => {},
+      onClick: () => navigate(`/feed/inventory/ledger/${encodeURIComponent(row.name)}`),
     },
   ];
 
