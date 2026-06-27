@@ -180,7 +180,7 @@ export default function StaffDirectory() {
         role: form.role.trim(),
         siteId: form.siteId || undefined,
       };
-      await Api.post('/staff', payload);
+      await ApiV2.post('/api/v1/create-staff', payload);
       toast.success('Staff created successfully!', { className: 'dark-toast' });
       closeModal();
       fetchStaff();
