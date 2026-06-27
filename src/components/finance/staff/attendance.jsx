@@ -84,6 +84,7 @@ export default function StaffAttendance() {
   const fetchAttendanceData = useCallback(async () => {
     try {
       const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
+      const settingsSiteId = userSiteId;
       const [staffRes, attRes, settingsRes] = await Promise.all([
         ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } }),
         ApiV2.get('/v2/attendances', { params: { siteId: siteParam } }).catch((err) => {
@@ -95,7 +96,9 @@ export default function StaffAttendance() {
           });
           return null;
         }),
-        ApiV2.get('/v2/attendance/setting', { params: { siteId: siteParam } }).catch(() => null),
+        settingsSiteId
+          ? ApiV2.get('/v2/attendance/setting', { params: { siteId: settingsSiteId } }).catch(() => null)
+          : Promise.resolve(null),
       ]);
 
       const staffData = Array.isArray(staffRes.data?.data) ? staffRes.data.data : [];
@@ -171,7 +174,12 @@ export default function StaffAttendance() {
     }
     setSettingsSaving(true);
     try {
-      const siteId = userSiteId || 'all';
+      const siteId = userSiteId;
+      if (!siteId) {
+        toast.error('No site selected. Please select a site first.', { className: 'dark-toast' });
+        setSettingsSaving(false);
+        return;
+      }
       const payload = {
         lateTime: settingsForm.lateTime + ':00',
         lateFine: Math.round(parseFloat(settingsForm.lateFine)),
