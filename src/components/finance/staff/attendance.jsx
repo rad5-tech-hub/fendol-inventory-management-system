@@ -4,7 +4,8 @@ import {
   FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight,
   FiEye, FiClock, FiLogIn, FiLogOut, FiFileText, FiCheckCircle, FiX,
 } from 'react-icons/fi';
-import { BsCheckCircleFill, BsInfoCircle, BsChevronLeft, BsChevronRight } from 'react-icons/bs';
+import { BsCheckCircleFill, BsInfoCircle, BsChevronLeft, BsChevronRight, BsGear } from 'react-icons/bs';
+import { MdAccessTime, MdMonetizationOn } from 'react-icons/md';
 import { FaUserCheck, FaRegCommentDots } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import SideBar from '../../shared/sidebar/sidebar';
@@ -70,6 +71,11 @@ export default function StaffAttendance() {
   const [search, setSearch] = useState('');
 
   const [attendanceModal, setAttendanceModal] = useState({ show: false, mode: 'checkin', staff: null, loading: false });
+  const [settingsModal, setSettingsModal] = useState(false);
+  const [settings, setSettings] = useState(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({ lateTime: '09:00:00', lateFine: '' });
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
   const timeStr = now.toTimeString().split(' ')[0];
@@ -133,6 +139,62 @@ export default function StaffAttendance() {
       setLoadingStaff(false);
     })();
   }, [fetchAttendanceData]);
+
+  const openSettings = useCallback(async () => {
+    setSettingsModal(true);
+    setSettingsLoading(true);
+    try {
+      const siteId = userSiteId || 'all';
+      const res = await ApiV2.get('/v2/attendance/setting', { params: { siteId } });
+      const data = res.data?.data || null;
+      setSettings(data);
+      if (data) {
+        setSettingsForm({
+          lateTime: data.lateTime ? data.lateTime.slice(0, 5) : '09:00',
+          lateFine: data.lateFine ? String(parseFloat(data.lateFine)) : '',
+        });
+      } else {
+        setSettingsForm({ lateTime: '09:00', lateFine: '' });
+      }
+    } catch (err) {
+      console.error('[Attendance] fetch settings failed:', err.response?.data || err.message);
+      setSettings(null);
+    } finally {
+      setSettingsLoading(false);
+    }
+  }, [userSiteId]);
+
+  const closeSettings = () => {
+    if (settingsSaving) return;
+    setSettingsModal(false);
+    setSettings(null);
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    if (!settingsForm.lateTime || !settingsForm.lateFine) {
+      toast.warn('Both late time and late fine are required.', { className: 'dark-toast' });
+      return;
+    }
+    setSettingsSaving(true);
+    try {
+      const siteId = userSiteId || 'all';
+      const payload = {
+        lateTime: settingsForm.lateTime + ':00',
+        lateFine: Math.round(parseFloat(settingsForm.lateFine)),
+      };
+      await ApiV2.post('/v2/attendance/setting', payload, { params: { siteId } });
+      toast.success('Attendance settings saved!', { className: 'dark-toast' });
+      closeSettings();
+      await fetchAttendanceData();
+    } catch (err) {
+      const msg = err.response?.data?.response_message || 'Failed to save settings.';
+      console.error('[Attendance] save settings failed:', err.response?.data || err.message);
+      toast.error(msg, { className: 'dark-toast' });
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -336,6 +398,9 @@ export default function StaffAttendance() {
                   <button className={styles.resetBtn}>
                     <FiRefreshCw size={13} />
                     Reset
+                  </button>
+                  <button className={styles.settingsBtn} onClick={openSettings} title="Attendance Settings">
+                    <BsGear size={15} />
                   </button>
                 </div>
 
@@ -679,6 +744,104 @@ export default function StaffAttendance() {
                 </>
               );
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* ── Attendance Settings Modal ── */}
+      {settingsModal && (
+        <div className={styles.settingsOverlay} onClick={closeSettings}>
+          <div className={styles.settingsModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.settingsModalHeader}>
+              <div className={styles.settingsModalTitleGroup}>
+                <span className={styles.settingsModalIcon}>
+                  <BsGear size={20} />
+                </span>
+                <div>
+                  <h4 className={styles.settingsModalTitle}>Attendance Settings</h4>
+                  <p className={styles.settingsModalSubtitle}>Configure late time threshold and fines</p>
+                </div>
+              </div>
+              <button className={styles.settingsCloseBtn} onClick={closeSettings} disabled={settingsSaving}>
+                <FiX size={20} />
+              </button>
+            </div>
+
+            {settingsLoading ? (
+              <div className={styles.settingsLoadingBody}>
+                <div className={styles.settingsSpinner} />
+                <p>Loading settings...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveSettings}>
+                <div className={styles.settingsModalBody}>
+                  {settings && (
+                    <div className={styles.settingsCurrentCard}>
+                      <div className={styles.settingsCurrentLabel}>Current Configuration</div>
+                      <div className={styles.settingsCurrentGrid}>
+                        <div className={styles.settingsCurrentItem}>
+                          <MdAccessTime size={14} />
+                          <span>Late after: <strong>{settings.lateTime?.slice(0, 5)}</strong></span>
+                        </div>
+                        <div className={styles.settingsCurrentItem}>
+                          <MdMonetizationOn size={14} />
+                          <span>Fine: <strong>&#8358;{parseFloat(settings.lateFine).toLocaleString()}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className={styles.settingsFormIntro}>
+                    {settings ? 'Update the values below:' : 'Set your attendance rules:'}
+                  </p>
+
+                  <div className={styles.settingsFormGrid}>
+                    <div className={styles.settingsField}>
+                      <label className={styles.settingsLabel}>
+                        <MdAccessTime size={14} /> Late Time Threshold
+                      </label>
+                      <input
+                        type="time"
+                        className={styles.settingsInput}
+                        value={settingsForm.lateTime}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, lateTime: e.target.value })}
+                        disabled={settingsSaving}
+                      />
+                      <span className={styles.settingsHint}>Staff checking in after this time are marked late</span>
+                    </div>
+                    <div className={styles.settingsField}>
+                      <label className={styles.settingsLabel}>
+                        <MdMonetizationOn size={14} /> Late Fine (&#8358;)
+                      </label>
+                      <input
+                        type="number"
+                        className={styles.settingsInput}
+                        placeholder="e.g. 500"
+                        value={settingsForm.lateFine}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, lateFine: e.target.value })}
+                        disabled={settingsSaving}
+                        min="0"
+                        step="1"
+                      />
+                      <span className={styles.settingsHint}>Amount deducted for each late arrival</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.settingsModalFooter}>
+                  <button type="button" className={styles.settingsCancelBtn} onClick={closeSettings} disabled={settingsSaving}>
+                    Cancel
+                  </button>
+                  <button type="submit" className={styles.settingsSaveBtn} disabled={settingsSaving}>
+                    {settingsSaving ? (
+                      <><span className={styles.settingsBtnSpinner} /> Saving...</>
+                    ) : (
+                      <><FiCheckCircle size={16} /> {settings ? 'Update Settings' : 'Save Settings'}</>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
