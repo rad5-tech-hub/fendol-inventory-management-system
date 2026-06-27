@@ -173,7 +173,6 @@ export default function StaffAttendance() {
     try {
       const siteId = userSiteId || 'all';
       const payload = {
-        siteId,
         lateTime: settingsForm.lateTime + ':00',
         lateFine: Math.round(parseFloat(settingsForm.lateFine)),
       };
