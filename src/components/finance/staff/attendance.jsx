@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { IoCalendarOutline, IoChevronDown, IoClose } from 'react-icons/io5';
+import { IoCalendarOutline, IoChevronDown, IoClose, IoTimeOutline } from 'react-icons/io5';
 import {
   FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight,
-  FiEye, FiClock, FiLogIn, FiLogOut, FiFileText,
+  FiEye, FiClock, FiLogIn, FiLogOut, FiFileText, FiCheckCircle, FiX,
 } from 'react-icons/fi';
 import { BsCheckCircleFill, BsInfoCircle, BsChevronLeft, BsChevronRight } from 'react-icons/bs';
+import { FaUserCheck, FaRegCommentDots } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import { ApiV2 } from '../../shared/api/apiLink';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import financeStyles from '../finance.module.scss';
 import styles from './attendance.module.scss';
 
@@ -53,8 +56,9 @@ const AVATAR_COLORS = ['#2563EB', '#F97316', '#16A34A', '#7C3AED', '#DC2626', '#
 
 export default function StaffAttendance() {
   const user = useSelector((state) => state.user);
+  const activeSite = useSelector((state) => state.activeSite);
   const userTypes = user?.userTypes || [];
-  const userSiteId = user?.siteId || null;
+  const userSiteId = user?.siteId || activeSite?.id || null;
   const isSuperAdmin = userTypes.includes('super_admin');
 
   const [showSidebar, setShowSidebar] = useState(false);
@@ -63,6 +67,12 @@ export default function StaffAttendance() {
   const [staffList, setStaffList] = useState([]);
   const [loadingStaff, setLoadingStaff] = useState(true);
   const [search, setSearch] = useState('');
+
+  const [checkinModal, setCheckinModal] = useState({ show: false, staff: null, loading: false });
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const timeStr = now.toTimeString().split(' ')[0];
+  const [checkinForm, setCheckinForm] = useState({ date: todayStr, time: timeStr, comment: '' });
 
   useEffect(() => {
     (async () => {
@@ -99,7 +109,7 @@ export default function StaffAttendance() {
   const getActionItems = (staff) => [
     {
       label: <><BsCheckCircleFill size={14} style={{ marginRight: 10, color: '#15803D' }} /> Check In</>,
-      onClick: () => {},
+      onClick: () => openCheckinModal(staff),
       style: { color: '#15803D' },
     },
     {
@@ -118,6 +128,40 @@ export default function StaffAttendance() {
       style: { color: '#374151' },
     },
   ];
+
+  const openCheckinModal = (staff) => {
+    const n = new Date();
+    setCheckinForm({ date: n.toISOString().split('T')[0], time: n.toTimeString().split(' ')[0], comment: '' });
+    setCheckinModal({ show: true, staff, loading: false });
+  };
+
+  const closeCheckinModal = () => {
+    if (checkinModal.loading) return;
+    setCheckinModal({ show: false, staff: null, loading: false });
+  };
+
+  const handleCheckin = async (e) => {
+    e.preventDefault();
+    if (!checkinModal.staff) return;
+    setCheckinModal(prev => ({ ...prev, loading: true }));
+    try {
+      const payload = {
+        staffId: checkinModal.staff.id,
+        date: checkinForm.date,
+        checkIn: checkinForm.time,
+        comment: checkinForm.comment.trim() || undefined,
+      };
+      const siteId = userSiteId || 'all';
+      await ApiV2.post('/v2/attendance/check-in', payload, { params: { siteId } });
+      toast.success('Check-in recorded successfully!', { className: 'dark-toast' });
+      closeCheckinModal();
+    } catch (err) {
+      const msg = err.response?.data?.response_message || 'Failed to check in. Please try again.';
+      toast.error(msg, { className: 'dark-toast' });
+    } finally {
+      setCheckinModal(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   const detailStaff = selectedStaff;
   const detailStatusStyle = detailStaff ? STATUS_STYLES[detailStaff.status] || {} : {};
@@ -395,6 +439,85 @@ export default function StaffAttendance() {
           </main>
         </section>
       </div>
+
+      {/* ── Check-In Modal ── */}
+      {checkinModal.show && checkinModal.staff && (
+        <div className={styles.checkinOverlay} onClick={closeCheckinModal}>
+          <div className={styles.checkinModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.checkinModalHeader}>
+              <div className={styles.checkinModalTitleGroup}>
+                <span className={styles.checkinModalIcon}><FaUserCheck /></span>
+                <div>
+                  <h4 className={styles.checkinModalTitle}>Staff Check-In</h4>
+                  <p className={styles.checkinModalSubtitle}>{checkinModal.staff.name} &middot; {checkinModal.staff.position}</p>
+                </div>
+              </div>
+              <button className={styles.checkinCloseBtn} onClick={closeCheckinModal} disabled={checkinModal.loading}>
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCheckin}>
+              <div className={styles.checkinModalBody}>
+                <div className={styles.checkinDatetimeGrid}>
+                  <div className={styles.checkinField}>
+                    <label className={styles.checkinLabel}>
+                      <IoCalendarOutline size={14} /> Date
+                    </label>
+                    <input
+                      type="date"
+                      className={styles.checkinInput}
+                      value={checkinForm.date}
+                      onChange={(e) => setCheckinForm({ ...checkinForm, date: e.target.value })}
+                      disabled={checkinModal.loading}
+                    />
+                  </div>
+                  <div className={styles.checkinField}>
+                    <label className={styles.checkinLabel}>
+                      <IoTimeOutline size={14} /> Check-In Time
+                    </label>
+                    <input
+                      type="time"
+                      className={styles.checkinInput}
+                      value={checkinForm.time}
+                      onChange={(e) => setCheckinForm({ ...checkinForm, time: e.target.value })}
+                      disabled={checkinModal.loading}
+                      step="1"
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.checkinField}>
+                  <label className={styles.checkinLabel}>
+                    <FaRegCommentDots size={14} /> Comment <span className={styles.checkinOptional}>(optional)</span>
+                  </label>
+                  <textarea
+                    className={styles.checkinTextarea}
+                    placeholder="Add a note about this check-in..."
+                    value={checkinForm.comment}
+                    onChange={(e) => setCheckinForm({ ...checkinForm, comment: e.target.value })}
+                    disabled={checkinModal.loading}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.checkinModalFooter}>
+                <button type="button" className={styles.checkinCancelBtn} onClick={closeCheckinModal} disabled={checkinModal.loading}>
+                  Cancel
+                </button>
+                <button type="submit" className={styles.checkinSubmitBtn} disabled={checkinModal.loading}>
+                  {checkinModal.loading ? (
+                    <><span className={styles.checkinSpinner} /> Recording...</>
+                  ) : (
+                    <><FiCheckCircle size={16} /> Confirm Check-In</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
