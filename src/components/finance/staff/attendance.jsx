@@ -26,28 +26,52 @@ const STATUS_STYLES = {
 };
 
 const mockStaff = [
-  { id: 'EMP-0012', name: 'John Okafor', position: 'Pond Manager', status: 'Present', avatar: null },
-  { id: 'EMP-0013', name: 'Mary Uche', position: 'Hatchery Technician', status: 'Late', avatar: null },
-  { id: 'EMP-0014', name: 'Emeka Obi', position: 'Store Keeper', status: 'Present', avatar: null },
-  { id: 'EMP-0015', name: 'Grace Nwosu', position: 'Accountant', status: 'Absent', avatar: null },
-  { id: 'EMP-0016', name: 'Tunde Musa', position: 'Feeding Officer', status: 'Present', avatar: null },
-  { id: 'EMP-0017', name: 'Chinedu Agwu', position: 'Maintenance Officer', status: 'Late', avatar: null },
-  { id: 'EMP-0018', name: 'Blessing Essien', position: 'Quality Controller', status: 'Present', avatar: null },
-  { id: 'EMP-0019', name: 'Ibrahim Yusuf', position: 'Pond Assistant', status: 'Present', avatar: null },
-  { id: 'EMP-0020', name: 'Ifeyinwa David', position: 'Admin Officer', status: 'Late', avatar: null },
-  { id: 'EMP-0021', name: 'Samuel Eze', position: 'Security Guard', status: 'Present', avatar: null },
+  { id: 'EMP-0012', name: 'John Okafor', position: 'Pond Manager', avatar: null },
+  { id: 'EMP-0013', name: 'Mary Uche', position: 'Hatchery Technician', avatar: null },
+  { id: 'EMP-0014', name: 'Emeka Obi', position: 'Store Keeper', avatar: null },
+  { id: 'EMP-0015', name: 'Grace Nwosu', position: 'Accountant', avatar: null },
+  { id: 'EMP-0016', name: 'Tunde Musa', position: 'Feeding Officer', avatar: null },
+  { id: 'EMP-0017', name: 'Chinedu Agwu', position: 'Maintenance Officer', avatar: null },
+  { id: 'EMP-0018', name: 'Blessing Essien', position: 'Quality Controller', avatar: null },
+  { id: 'EMP-0019', name: 'Ibrahim Yusuf', position: 'Pond Assistant', avatar: null },
+  { id: 'EMP-0020', name: 'Ifeyinwa David', position: 'Admin Officer', avatar: null },
+  { id: 'EMP-0021', name: 'Samuel Eze', position: 'Security Guard', avatar: null },
 ];
 
-// TODO: replace with real API call
-const attendanceHistory = [
-  { date: 'Sat, May 24', checkIn: '07:46 AM', checkOut: '05:12 PM', status: 'Present', fine: 0, notes: 'Worked on pond 3' },
-  { date: 'Fri, May 23', checkIn: '08:15 AM', checkOut: '05:05 PM', status: 'Late', fine: 100, notes: 'Reached late due to transport' },
-  { date: 'Thu, May 22', checkIn: '07:50 AM', checkOut: '05:00 PM', status: 'Present', fine: 0, notes: '\u2013' },
-  { date: 'Wed, May 21', checkIn: '08:30 AM', checkOut: '05:10 PM', status: 'Late', fine: 100, notes: 'Traffic was heavy' },
-  { date: 'Tue, May 20', checkIn: null, checkOut: null, status: 'Absent', fine: 200, notes: 'No show' },
-  { date: 'Mon, May 19', checkIn: '07:45 AM', checkOut: '05:02 PM', status: 'Present', fine: 0, notes: '\u2013' },
-  { date: 'Sun, May 18', checkIn: null, checkOut: null, status: 'Off Day', fine: 0, notes: 'Sunday' },
+const mockAttendance = [
+  { staffId: 'EMP-0012', date: '2026-06-28', checkIn: '08:30:00', checkOut: '17:00:00', status: 'present', comment: 'Worked on pond 3', staff: { name: 'John Okafor', role: 'Pond Manager' } },
+  { staffId: 'EMP-0013', date: '2026-06-28', checkIn: '08:15:00', checkOut: null, status: 'late', comment: 'Reached late', staff: { name: 'Mary Uche', role: 'Hatchery Technician' } },
+  { staffId: 'EMP-0014', date: '2026-06-28', checkIn: '07:50:00', checkOut: '17:10:00', status: 'present', comment: null, staff: { name: 'Emeka Obi', role: 'Store Keeper' } },
+  { staffId: 'EMP-0015', date: '2026-06-28', checkIn: null, checkOut: null, status: 'absent', comment: 'No show', staff: { name: 'Grace Nwosu', role: 'Accountant' } },
+  { staffId: 'EMP-0016', date: '2026-06-28', checkIn: '07:45:00', checkOut: '17:02:00', status: 'present', comment: null, staff: { name: 'Tunde Musa', role: 'Feeding Officer' } },
+  { staffId: 'EMP-0017', date: '2026-06-28', checkIn: '08:20:00', checkOut: null, status: 'late', comment: 'Traffic', staff: { name: 'Chinedu Agwu', role: 'Maintenance Officer' } },
+  { staffId: 'EMP-0018', date: '2026-06-28', checkIn: '07:30:00', checkOut: '17:30:00', status: 'present', comment: null, staff: { name: 'Blessing Essien', role: 'Quality Controller' } },
+  { staffId: 'EMP-0019', date: '2026-06-28', checkIn: '07:55:00', checkOut: '16:45:00', status: 'present', comment: 'Left early', staff: { name: 'Ibrahim Yusuf', role: 'Pond Assistant' } },
+  { staffId: 'EMP-0020', date: '2026-06-28', checkIn: '08:10:00', checkOut: null, status: 'late', comment: null, staff: { name: 'Ifeyinwa David', role: 'Admin Officer' } },
+  { staffId: 'EMP-0021', date: '2026-06-28', checkIn: '07:00:00', checkOut: '19:00:00', status: 'present', comment: 'Double shift', staff: { name: 'Samuel Eze', role: 'Security Guard' } },
 ];
+
+const formatTime = (iso) => {
+  if (!iso) return null;
+  const [h, m] = iso.split(':');
+  const hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const h12 = hour % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
+};
+
+const formatDateLabel = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+};
+
+const STATUS_API_MAP = {
+  present: 'Present',
+  late: 'Late',
+  absent: 'Absent',
+  'off-day': 'Off Day',
+};
 
 const getInitials = (name) =>
   name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -65,6 +89,7 @@ export default function StaffAttendance() {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [staffList, setStaffList] = useState([]);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [loadingStaff, setLoadingStaff] = useState(true);
   const [search, setSearch] = useState('');
 
@@ -78,15 +103,42 @@ export default function StaffAttendance() {
     (async () => {
       try {
         const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
-        const res = await ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } });
-        const data = Array.isArray(res.data?.data) ? res.data.data : [];
-        if (data.length) {
-          setStaffList(data.map(s => ({ id: s.id, name: s.name, position: s.role, status: 'Present', avatar: null })));
-        } else {
-          setStaffList(mockStaff);
+        const [staffRes, attRes] = await Promise.all([
+          ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } }),
+          ApiV2.get('/v2/attendances', { params: { siteId: siteParam } }).catch(() => null),
+        ]);
+
+        const staffData = Array.isArray(staffRes.data?.data) ? staffRes.data.data : [];
+        const attData = Array.isArray(attRes?.data?.data) ? attRes.data.data : [];
+
+        // Merge latest attendance status into staff list
+        const latestByStaff = {};
+        for (const a of attData) {
+          const prev = latestByStaff[a.staffId];
+          if (!prev || new Date(a.date) > new Date(prev.date)) {
+            latestByStaff[a.staffId] = a;
+          }
         }
+
+        if (staffData.length) {
+          setStaffList(staffData.map(s => ({
+            id: s.id,
+            name: s.name,
+            position: s.role,
+            status: STATUS_API_MAP[latestByStaff[s.id]?.status] || '\u2014',
+            avatar: null,
+          })));
+        } else {
+          setStaffList(mockStaff.map(s => ({
+            ...s,
+            status: STATUS_API_MAP[latestByStaff[s.id]?.status] || '\u2014',
+          })));
+        }
+
+        setAttendanceRecords(attData.length ? attData : mockAttendance);
       } catch {
-        setStaffList(mockStaff);
+        setStaffList(mockStaff.map(s => ({ ...s, status: '\u2014' })));
+        setAttendanceRecords(mockAttendance);
       } finally {
         setLoadingStaff(false);
       }
@@ -183,6 +235,32 @@ export default function StaffAttendance() {
     ? detailStaff.name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % AVATAR_COLORS.length
     : 0;
 
+  // Derive detail panel data from attendance records
+  const detailAttendance = detailStaff
+    ? attendanceRecords.filter(a => a.staffId === detailStaff.id)
+    : [];
+
+  const detailLatest = detailAttendance.length
+    ? detailAttendance.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b)
+    : null;
+
+  const detailToday = detailLatest;
+  const detailTodayStatus = detailToday ? STATUS_API_MAP[detailToday.status] || '\u2014' : '\u2014';
+  const detailTodayCheckIn = detailToday ? formatTime(detailToday.checkIn) : '\u2014';
+  const detailTodayCheckOut = detailToday ? formatTime(detailToday.checkOut) : '\u2014';
+
+  const workTime = detailToday?.checkIn && detailToday?.checkOut
+    ? (() => {
+        const [ih, im] = detailToday.checkIn.split(':').map(Number);
+        const [oh, om] = detailToday.checkOut.split(':').map(Number);
+        const diff = (oh * 60 + om) - (ih * 60 + im);
+        if (diff <= 0) return '\u2014';
+        const h = Math.floor(diff / 60);
+        const m = diff % 60;
+        return `${h}h ${m}m`;
+      })()
+    : '\u2014';
+
   return (
     <section className={`${financeStyles.body}`}>
       <div className="sticky-top">
@@ -195,6 +273,7 @@ export default function StaffAttendance() {
         <section className={`${financeStyles.content} flex-grow-1`}>
           <main className={styles.pageWrapper}>
 
+            <ToastContainer />
             {/* ── BREADCRUMB ── */}
             <div className={styles.breadcrumb}>
               <span className={styles.breadcrumbItem}>Finance</span>
@@ -214,7 +293,7 @@ export default function StaffAttendance() {
                 <div className={styles.filterBar}>
                   <div className={styles.searchWrapper}>
                     <FiSearch size={15} className={styles.searchIcon} />
-                    <input type="text" className={styles.searchInput} placeholder="Search staff by name or ID..." />
+                    <input type="text" className={styles.searchInput} placeholder="Search staff by name or ID..." value={search} onChange={(e) => setSearch(e.target.value)} />
                   </div>
                   <button className={styles.filterDropdown}>
                     All Status <IoChevronDown size={11} />
@@ -234,7 +313,7 @@ export default function StaffAttendance() {
                 </div>
 
                 {/* ── Section Heading ── */}
-                <div className={styles.sectionHeading}>All Staff Members (18)</div>
+                <div className={styles.sectionHeading}>All Staff Members ({staffList.length})</div>
 
                 {/* ── Staff Table ── */}
                 <div className={styles.tableCard}>
@@ -251,7 +330,7 @@ export default function StaffAttendance() {
                         </tr>
                       </thead>
                       <tbody>
-                        {staffList.map((staff, i) => {
+                        {staffList.filter(s => !search.trim() || s.name.toLowerCase().includes(search.toLowerCase()) || s.id.toLowerCase().includes(search.toLowerCase())).map((staff, i) => {
                           const statusStyle = STATUS_STYLES[staff.status] || {};
                           const avatarBg = AVATAR_COLORS[i % AVATAR_COLORS.length];
                           return (
@@ -298,7 +377,7 @@ export default function StaffAttendance() {
 
                   {/* ── Table Footer ── */}
                   <div className={styles.tableFooter}>
-                    <span className={styles.footerInfo}>Showing 1 to 10 of 18 staff</span>
+                    <span className={styles.footerInfo}>{staffList.length} staff members</span>
                     <div className={styles.pagination}>
                       <button className={styles.pageArrow}>
                         <FiChevronLeft size={15} />
@@ -347,53 +426,52 @@ export default function StaffAttendance() {
                         <span className={styles.infoValue}>{detailStaff.id}</span>
                       </div>
                       <div className={styles.infoCell}>
-                        <span className={styles.infoLabel}>Date Joined</span>
-                        <span className={styles.infoValue}>Jan 15, 2024</span>
+                        <span className={styles.infoLabel}>Position</span>
+                        <span className={styles.infoValue}>{detailStaff.position}</span>
                       </div>
                       <div className={styles.infoCell}>
-                        <span className={styles.infoLabel}>Email</span>
-                        <span className={styles.infoValue}>john.okafor@fendol.com</span>
+                        <span className={styles.infoLabel}>Total Records</span>
+                        <span className={styles.infoValue}>{detailAttendance.length}</span>
                       </div>
                       <div className={styles.infoCell}>
-                        <span className={styles.infoLabel}>Site</span>
-                        <span className={styles.infoValue}>The Hatchery Site</span>
+                        <span className={styles.infoLabel}>Latest Status</span>
+                        <span className={styles.infoValue} style={{ color: detailLatest ? (STATUS_STYLES[detailTodayStatus]?.color || '#111827') : '#9CA3AF' }}>
+                          {detailTodayStatus}
+                        </span>
                       </div>
                     </div>
 
                     {/* ── Today's Summary ── */}
-                    <div className={styles.sectionLabel}>Today's Summary (May 24, 2025)</div>
+                    <div className={styles.sectionLabel}>Latest Attendance {detailToday ? `(${formatDateLabel(detailToday.date)})` : ''}</div>
                     <div className={styles.summaryRow}>
                       <div className={styles.summaryBox}>
                         <FiClock size={14} className={styles.summaryIcon} />
                         <span className={styles.summaryLabel}>Status</span>
-                        <span className={styles.summaryValue} style={{ color: '#15803D' }}>Present</span>
+                        <span className={styles.summaryValue} style={{ color: (STATUS_STYLES[detailTodayStatus]?.color || '#9CA3AF') }}>
+                          {detailTodayStatus}
+                        </span>
                       </div>
                       <div className={styles.summaryBox}>
                         <FiLogIn size={14} className={styles.summaryIcon} />
                         <span className={styles.summaryLabel}>Check In</span>
-                        <span className={styles.summaryValue} style={{ color: '#111827' }}>07:46 AM</span>
+                        <span className={styles.summaryValue} style={{ color: '#111827' }}>{detailTodayCheckIn}</span>
                       </div>
                       <div className={styles.summaryBox}>
                         <FiLogOut size={14} className={styles.summaryIcon} />
                         <span className={styles.summaryLabel}>Check Out</span>
-                        <span className={styles.summaryValue} style={{ color: '#B45309' }}>05:12 PM</span>
+                        <span className={styles.summaryValue} style={{ color: '#B45309' }}>{detailTodayCheckOut}</span>
                       </div>
                       <div className={styles.summaryBox}>
                         <BsInfoCircle size={14} className={styles.summaryIcon} />
                         <span className={styles.summaryLabel}>Work Time</span>
-                        <span className={styles.summaryValue} style={{ color: '#2563EB' }}>9h 26m</span>
+                        <span className={styles.summaryValue} style={{ color: '#2563EB' }}>{workTime}</span>
                       </div>
                     </div>
 
                     {/* ── Attendance History ── */}
                     <div className={styles.historyHeader}>
                       <span className={styles.sectionLabel}>Attendance History</span>
-                      <div className={styles.weekNav}>
-                        <IoCalendarOutline size={13} />
-                        <span className={styles.weekRange}>May 18 - May 24, 2025</span>
-                        <button className={styles.weekArrow}><BsChevronLeft size={12} /></button>
-                        <button className={styles.weekArrow}><BsChevronRight size={12} /></button>
-                      </div>
+                      <span style={{ fontSize: 12, color: '#6B7280' }}>{detailAttendance.length} records</span>
                     </div>
 
                     <div className={styles.historyTableWrapper}>
@@ -404,44 +482,39 @@ export default function StaffAttendance() {
                             <th>Check In</th>
                             <th>Check Out</th>
                             <th>Status</th>
-                            <th style={{ textAlign: 'right' }}>Fine (&#8358;)</th>
                             <th>Notes</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {attendanceHistory.map((row, i) => {
-                            const hs = STATUS_STYLES[row.status] || {};
-                            const isLate = row.status === 'Late';
-                            const totalFines = attendanceHistory.reduce((sum, r) => sum + r.fine, 0);
+                          {detailAttendance.length === 0 && (
+                            <tr>
+                              <td colSpan={5} style={{ textAlign: 'center', color: '#9CA3AF', padding: 24 }}>No attendance records found.</td>
+                            </tr>
+                          )}
+                          {detailAttendance.slice().reverse().map((row, i) => {
+                            const s = STATUS_API_MAP[row.status] || '\u2014';
+                            const hs = STATUS_STYLES[s] || {};
+                            const isLate = row.status === 'late';
                             return (
-                              <tr key={i}>
-                                <td className={styles.dateCell}>{row.date}</td>
+                              <tr key={row.id || i}>
+                                <td className={styles.dateCell}>{formatDateLabel(row.date)}</td>
                                 <td className={isLate ? styles.lateTimeCell : styles.timeCell}>
-                                  {row.checkIn || '\u2013'}
+                                  {formatTime(row.checkIn) || '\u2014'}
                                 </td>
                                 <td className={isLate ? styles.lateTimeCell : styles.timeCell}>
-                                  {row.checkOut || '\u2013'}
+                                  {formatTime(row.checkOut) || '\u2014'}
                                 </td>
                                 <td>
                                   <span className={styles.statusPillSmall} style={{ background: hs.bg, color: hs.color }}>
-                                    {row.status}
+                                    {s}
                                   </span>
                                 </td>
-                                <td className={styles.fineCell}>{f(row.fine)}</td>
-                                <td className={styles.notesCell}>{row.notes}</td>
+                                <td className={styles.notesCell}>{row.comment || '\u2014'}</td>
                               </tr>
                             );
                           })}
                         </tbody>
                       </table>
-                    </div>
-
-                    {/* ── Total Fines ── */}
-                    <div className={styles.totalFinesRow}>
-                      <span className={styles.totalFinesLabel}>Total Fines (This Week)</span>
-                      <span className={styles.totalFinesValue}>
-                        {'\u20A6'}{f(attendanceHistory.reduce((sum, r) => sum + r.fine, 0))}
-                      </span>
                     </div>
                   </div>
                 </>
