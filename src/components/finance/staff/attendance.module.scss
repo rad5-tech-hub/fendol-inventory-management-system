@@ -160,6 +160,30 @@
   font-weight: 700;
   color: #111827;
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rulesBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #512728;
+  background: #5127280F;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.01em;
+
+  &:hover {
+    background: #5127281A;
+    color: #3D1E1F;
+  }
 }
 
 /* ── Table Card ── */

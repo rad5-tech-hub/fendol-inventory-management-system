@@ -84,7 +84,7 @@ export default function StaffAttendance() {
   const fetchAttendanceData = useCallback(async () => {
     try {
       const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
-      const [staffRes, attRes] = await Promise.all([
+      const [staffRes, attRes, settingsRes] = await Promise.all([
         ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } }),
         ApiV2.get('/v2/attendances', { params: { siteId: siteParam } }).catch((err) => {
           console.error('[Attendance] fetch attendances failed:', {
@@ -95,14 +95,18 @@ export default function StaffAttendance() {
           });
           return null;
         }),
+        ApiV2.get('/v2/attendance/setting', { params: { siteId: siteParam } }).catch(() => null),
       ]);
 
       const staffData = Array.isArray(staffRes.data?.data) ? staffRes.data.data : [];
       const attData = Array.isArray(attRes?.data?.data) ? attRes.data.data : [];
+      const settingsData = settingsRes?.data?.data || null;
 
       if (!staffData.length) {
         console.warn('[Attendance] no staff data returned for siteParam:', siteParam);
       }
+
+      setSettings(settingsData);
 
       // Merge latest attendance status into staff list
       const latestByStaff = {};
@@ -140,29 +144,18 @@ export default function StaffAttendance() {
     })();
   }, [fetchAttendanceData]);
 
-  const openSettings = useCallback(async () => {
+  const openSettings = useCallback(() => {
     setSettingsModal(true);
-    setSettingsLoading(true);
-    try {
-      const siteId = userSiteId || 'all';
-      const res = await ApiV2.get('/v2/attendance/setting', { params: { siteId } });
-      const data = res.data?.data || null;
-      setSettings(data);
-      if (data) {
-        setSettingsForm({
-          lateTime: data.lateTime ? data.lateTime.slice(0, 5) : '09:00',
-          lateFine: data.lateFine ? String(parseFloat(data.lateFine)) : '',
-        });
-      } else {
-        setSettingsForm({ lateTime: '09:00', lateFine: '' });
-      }
-    } catch (err) {
-      console.error('[Attendance] fetch settings failed:', err.response?.data || err.message);
-      setSettings(null);
-    } finally {
-      setSettingsLoading(false);
+    setSettingsLoading(false);
+    if (settings) {
+      setSettingsForm({
+        lateTime: settings.lateTime ? settings.lateTime.slice(0, 5) : '09:00',
+        lateFine: settings.lateFine ? String(parseFloat(settings.lateFine)) : '',
+      });
+    } else {
+      setSettingsForm({ lateTime: '09:00', lateFine: '' });
     }
-  }, [userSiteId]);
+  }, [settings]);
 
   const closeSettings = () => {
     if (settingsSaving) return;
@@ -180,6 +173,7 @@ export default function StaffAttendance() {
     try {
       const siteId = userSiteId || 'all';
       const payload = {
+        siteId,
         lateTime: settingsForm.lateTime + ':00',
         lateFine: Math.round(parseFloat(settingsForm.lateFine)),
       };
@@ -405,7 +399,15 @@ export default function StaffAttendance() {
                 </div>
 
                 {/* ── Section Heading ── */}
-                <div className={styles.sectionHeading}>All Staff Members ({staffList.length})</div>
+                <div className={styles.sectionHeading}>
+                  All Staff Members ({staffList.length})
+                  {settings && (
+                    <span className={styles.rulesBadge} onClick={openSettings}>
+                      <BsGear size={11} />
+                      Late after {settings.lateTime?.slice(0, 5)} &middot; &#8358;{parseFloat(settings.lateFine).toLocaleString()}
+                    </span>
+                  )}
+                </div>
 
                 {/* ── Staff Table ── */}
                 <div className={styles.tableCard}>
