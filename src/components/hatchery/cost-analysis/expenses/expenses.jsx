@@ -76,7 +76,7 @@ const PieTooltipContent = ({ active, payload }) => {
   return (
     <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
       <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#2E3135', marginBottom: 2 }}>{d.name}</p>
-      <p style={{ margin: 0, fontSize: '0.82rem', color: '#2E3135' }}>\u20A6{f(d.value)}</p>
+      <p style={{ margin: 0, fontSize: '0.82rem', color: '#2E3135' }}>{'\u20A6'}{f(d.value)}</p>
       <p style={{ margin: 0, fontSize: '0.75rem', color: '#8C949B' }}>{pct}%</p>
     </div>
   );
@@ -87,7 +87,7 @@ const AreaTooltip = ({ active, payload, label }) => {
   return (
     <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
       <p style={{ margin: 0, fontSize: '0.72rem', color: '#8C949B', fontWeight: 600, marginBottom: 2 }}>{label}</p>
-      <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#2E3135' }}>\u20A6{f(payload[0].value)}</p>
+      <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#2E3135' }}>{'\u20A6'}{f(payload[0].value)}</p>
     </div>
   );
 };
@@ -125,7 +125,7 @@ export default function Expenses() {
               <h4>Expenses</h4>
               <div className={styles.headerActions}>
                 <div className={styles.dateRange}>
-                  <IoCalendarOutline size={14} /> May 1, 2025 \u2013 May 31, 2025 <FaChevronDown size={10} style={{ marginLeft: 4 }} />
+                  <IoCalendarOutline size={14} /> May 1, 2025 {'\u2013'} May 31, 2025 <FaChevronDown size={10} style={{ marginLeft: 4 }} />
                 </div>
                 <button className={styles.exportBtn} onClick={() => {}}>
                   <IoDownloadOutline size={16} /> Export Report
@@ -177,7 +177,7 @@ export default function Expenses() {
                     </PieResponsive>
                     <div className={styles.costDonutCenter}>
                       <span style={{ fontSize: '0.72rem', color: '#8C949B', fontWeight: 600 }}>Total Cost</span>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#2E3135' }}>\u20A6{f(totalCost)}</span>
+                       <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#2E3135' }}>{'\u20A6'}{f(totalCost)}</span>
                     </div>
                   </div>
                   <div className={styles.costLegend}>
@@ -190,7 +190,7 @@ export default function Expenses() {
                             <span>{d.name}</span>
                           </div>
                           <div className="d-flex align-items-center gap-2">
-                            <span style={{ fontWeight: 600, color: '#2E3135' }}>\u20A6{f(d.value)}</span>
+                            <span style={{ fontWeight: 600, color: '#2E3135' }}>{'\u20A6'}{f(d.value)}</span>
                             <span style={{ color: '#8C949B', fontSize: '0.78rem' }}>{pct}%</span>
                           </div>
                         </div>
@@ -204,7 +204,7 @@ export default function Expenses() {
               <div className={styles.sectionCard}>
                 <div className={styles.chartHeader}>
                   <h5>Monthly Cost Trend</h5>
-                  <span className={styles.chartDropdown}>This Period \u25be</span>
+                  <span className={styles.chartDropdown}>This Period {'\u25BE'}</span>
                 </div>
                 <ResponsiveContainer width="100%" height={280}>
                   <AreaChart data={monthlyTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -262,7 +262,7 @@ export default function Expenses() {
                     <th className="text-start">Category <span style={{ cursor: 'pointer' }}>↕</span></th>
                     <th className="text-start">Description</th>
                     <th className="text-start">Reference</th>
-                    <th className="text-end">Amount (\u20A6) <span style={{ cursor: 'pointer' }}>↕</span></th>
+                    <th className="text-end">Amount ({'\u20A6'}) <span style={{ cursor: 'pointer' }}>↕</span></th>
                     <th className="text-start">Recorded By</th>
                     <th className="text-start">Actions</th>
                   </tr>
