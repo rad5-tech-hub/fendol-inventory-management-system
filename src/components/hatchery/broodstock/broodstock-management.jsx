@@ -16,121 +16,28 @@ import sharedStyles from '../hatchery.module.scss';
 import styles from './broodstock-management.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
-
-const statCards = [
-  {
-    label: 'Total Females',
-    value: f(186),
-    sub: 'Active females',
-    icon: BsGenderFemale,
-    bg: '#F3E8FF',
-    color: '#9333EA',
-  },
-  {
-    label: 'Active (In Use)',
-    value: f(112),
-    sub: '60.2% of total',
-    icon: BsCheckCircleFill,
-    bg: '#DCFCE7',
-    color: '#16A34A',
-  },
-  {
-    label: 'Retired',
-    value: f(48),
-    sub: '25.8% of total',
-    icon: BsHeartFill,
-    bg: '#FEF3C7',
-    color: '#D97706',
-  },
-  {
-    label: 'Sick / Under Treatment',
-    value: f(14),
-    sub: '7.5% of total',
-    icon: BsPlusCircleFill,
-    bg: '#FEE2E2',
-    color: '#DC2626',
-  },
-  {
-    label: 'Total Inactive',
-    value: f(12),
-    sub: 'Currently inactive',
-    icon: BsPauseFill,
-    bg: '#F3F4F6',
-    color: '#6B7280',
-  },
-];
-
-const genderData = [
-  { name: 'Female', value: 186 },
-  { name: 'Male', value: 24 },
-];
 const GENDER_COLORS = ['#3B82F6', '#F97316'];
 
-const siteData = [
-  { site: 'Main Hatchery', females: 98, males: 10, pct: 52.7 },
-  { site: 'West Nursery', females: 54, males: 6, pct: 29.0 },
-  { site: 'South Grow-out', females: 20, males: 5, pct: 10.8 },
-  { site: 'East Extension', females: 14, males: 3, pct: 7.5 },
-];
+const activityConfig = {
+  added: { label: 'added' },
+  mortality: { label: 'died' },
+  sick: { label: 'sick' },
+  retired: { label: 'retired' },
+};
 
-const maxFemales = Math.max(...siteData.map((d) => d.females));
-
-const activities = [
-  {
-    main: '2 Broodstock moved',
-    detail: 'From Main Hatchery to West Nursery',
-    actor: 'by John Smith',
-    time: '10 mins ago',
-    icon: FaArrowRight,
-    bg: '#DCFCE7',
-    color: '#16A34A',
-  },
-  {
-    main: '1 Female marked as Sick',
-    detail: 'Female ID: FB-00231',
-    actor: 'by Sarah Mike',
-    time: '45 mins ago',
-    icon: BsDropletFill,
-    bg: '#FEE2E2',
-    color: '#DC2626',
-  },
-  {
-    main: '3 Broodstock set to In Use',
-    detail: 'Female IDs: FB-00215, FB-00216, FB-00217',
-    actor: 'by Sarah Mike',
-    time: '2 hours ago',
-    icon: BsCheckCircleFill,
-    bg: '#DCFCE7',
-    color: '#16A34A',
-  },
-  {
-    main: '2 Broodstock retired',
-    detail: 'Female IDs: FB-00102, FB-00108',
-    actor: 'by John Smith',
-    time: '5 hours ago',
-    icon: BsHeartFill,
-    bg: '#FEF3C7',
-    color: '#D97706',
-  },
-  {
-    main: '1 Female died',
-    detail: 'Female ID: FB-00155',
-    actor: 'by Admin User',
-    time: 'Yesterday',
-    icon: FaPlus,
-    bg: '#FEE2E2',
-    color: '#DC2626',
-  },
-  {
-    main: '4 New Broodstock added',
-    detail: 'Female IDs: FB-00240 – FB-00243',
-    actor: 'by Sarah Mike',
-    time: 'Yesterday',
-    icon: FaPlus,
-    bg: '#DBEAFE',
-    color: '#2563EB',
-  },
-];
+const timeAgo = (dateStr) => {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = now - then;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min${mins !== 1 ? 's' : ''} ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs !== 1 ? 's' : ''} ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days} day${days !== 1 ? 's' : ''} ago`;
+  return new Date(dateStr).toLocaleDateString();
+};
 
 export default function BroodstockManagement() {
   const navigate = useNavigate();
@@ -145,7 +52,14 @@ export default function BroodstockManagement() {
     sick: '',
     mortality: '',
     retired: '',
+    sex: '',
   });
+  const [overview, setOverview] = useState(null);
+  const [loadingOverview, setLoadingOverview] = useState(false);
+  const [overviewError, setOverviewError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [allSiteOverviews, setAllSiteOverviews] = useState([]);
+  const [loadingAllSites, setLoadingAllSites] = useState(false);
   const [formData, setFormData] = useState({
     quantity: '',
     gender: 'Female',
@@ -190,29 +104,266 @@ export default function BroodstockManagement() {
     return () => { cancelled = true; };
   }, [showModal]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const fetchSites = async () => {
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (!cancelled) setSites((prev) => (prev.length ? prev : data));
+      } catch {
+        /* silent — sites only needed for modals, already handled */
+      }
+    };
+    fetchSites();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSite) {
+      setOverview(null);
+      setOverviewError(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchOverview = async () => {
+      setLoadingOverview(true);
+      setOverviewError(null);
+      try {
+        const res = await ApiV2.get(`/v2/broodstock/overview?siteId=${selectedSite}`);
+        if (!cancelled) setOverview(res.data?.data || null);
+      } catch (err) {
+        if (!cancelled) {
+          const data = err.response?.data || {};
+          const msg =
+            data.response_message ||
+            data.message ||
+            (typeof data.error === 'string' ? data.error : data.error?.message) ||
+            'Failed to load broodstock overview';
+          setOverviewError(msg);
+          setOverview(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingOverview(false);
+      }
+    };
+    fetchOverview();
+    return () => { cancelled = true; };
+  }, [selectedSite, refreshKey]);
+
+  useEffect(() => {
+    if (selectedSite || sites.length === 0) return;
+    let cancelled = false;
+    const fetchAll = async () => {
+      setLoadingAllSites(true);
+      try {
+        const results = await Promise.allSettled(
+          sites.map((s) =>
+            ApiV2.get(`/v2/broodstock/overview?siteId=${s.id}`).then((r) => r.data?.data),
+          ),
+        );
+        if (!cancelled) {
+          const overviews = results
+            .filter((r) => r.status === 'fulfilled' && r.value)
+            .map((r) => r.value);
+          setAllSiteOverviews(overviews);
+        }
+      } catch {
+        if (!cancelled) setAllSiteOverviews([]);
+      } finally {
+        if (!cancelled) setLoadingAllSites(false);
+      }
+    };
+    fetchAll();
+    return () => { cancelled = true; };
+  }, [selectedSite, sites, refreshKey]);
+
+  useEffect(() => {
+    if (!overviewError) return;
+    toast.error(overviewError, { autoClose: 5000 });
+  }, [overviewError]);
+
+  const validateForm = () => {
+    if (!formData.quantity || Number(formData.quantity) <= 0) {
+      toast.error('Please enter a valid quantity.');
+      return false;
+    }
+    if (!formData.age || Number(formData.age) <= 0) {
+      toast.error('Please enter a valid age.');
+      return false;
+    }
+    if (!formData.site) {
+      toast.error('Please select a site/location.');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) return;
+
     setSubmitting(true);
+    const loadingToast = toast.loading('Adding broodstock...');
+
     try {
-      await new Promise((r) => setTimeout(r, 800));
-      toast.success('Broodstock added successfully!');
+      const originSite = sites.find((s) => s.id === formData.origin);
+      const sourceName = originSite?.name || formData.origin || '';
+
+      const payload = {
+        quantity: Number(formData.quantity),
+        sex: formData.gender.toLowerCase(),
+        age: `${formData.age} ${formData.ageUnit}`,
+        averageWeight: formData.weight ? Number(formData.weight) : 0,
+        source: sourceName,
+        siteId: formData.site,
+        comment: formData.description || '',
+      };
+
+      await ApiV2.post('/v2/broodstock', payload);
+
+      toast.update(loadingToast, {
+        render: 'Broodstock added successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
       setShowModal(false);
       resetForm();
-    } catch {
-      toast.error('Failed to add broodstock');
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      let message = 'An unexpected error occurred.';
+      if (!err.response) {
+        if (err.code === 'ECONNABORTED') {
+          message = 'Request timed out. Please check your connection and try again.';
+        } else if (err.message === 'Token expired') {
+          message = 'Your session has expired. Please log in again.';
+        } else {
+          message = 'Network error. Please check your internet connection and try again.';
+        }
+      } else {
+        const status = err.response.status;
+        const data = err.response.data || {};
+        const serverMsg =
+          data.response_message ||
+          data.message ||
+          (typeof data.error === 'string' ? data.error : data.error?.message) ||
+          '';
+        if (status >= 400 && status < 500) {
+          if (status === 400) {
+            message = serverMsg || 'Invalid input. Please check your form fields and try again.';
+          } else if (status === 401) {
+            message = serverMsg || 'Session expired. Please log in again.';
+          } else if (status === 403) {
+            message = serverMsg || 'Access denied. You do not have permission to perform this action.';
+          } else if (status === 409) {
+            message = serverMsg || 'A broodstock entry with these details already exists.';
+          } else {
+            message = serverMsg || 'Validation error. Please check your input and try again.';
+          }
+        } else if (status >= 500) {
+          message = serverMsg || 'Server error. Please try again later or contact support.';
+        } else {
+          message = serverMsg || 'An unexpected error occurred. Please try again.';
+        }
+      }
+      toast.update(loadingToast, {
+        render: message,
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleLogSubmit = async () => {
+    if (!selectedSite) {
+      toast.error('Please select a site before logging activity.');
+      return;
+    }
+
+    const sick = Number(logData.sick) || 0;
+    const mortality = Number(logData.mortality) || 0;
+    const retired = Number(logData.retired) || 0;
+
+    if (!sick && !mortality && !retired) {
+      toast.error('Please enter at least one activity (sick, mortality, or retired) with a quantity greater than 0.');
+      return;
+    }
+
+    const sex = logData.sex || undefined;
+    const activities = [];
+    if (sex) {
+      if (sick) activities.push({ action: 'sick', quantity: sick, sex });
+      if (mortality) activities.push({ action: 'mortality', quantity: mortality, sex });
+      if (retired) activities.push({ action: 'retired', quantity: retired, sex });
+    } else {
+      if (sick) activities.push({ action: 'sick', quantity: sick });
+      if (mortality) activities.push({ action: 'mortality', quantity: mortality });
+      if (retired) activities.push({ action: 'retired', quantity: retired });
+    }
+
     setLogSubmitting(true);
+    const loadingToast = toast.loading('Logging activity...');
+
     try {
-      await new Promise((r) => setTimeout(r, 800));
-      toast.success('Activity logged successfully!');
+      await ApiV2.post('/v2/broodstock/activity', {
+        siteId: selectedSite,
+        activities,
+      });
+
+      toast.update(loadingToast, {
+        render: 'Activity logged successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
       setShowLogModal(false);
-      setLogData({ sick: '', mortality: '', retired: '' });
-    } catch {
-      toast.error('Failed to log activity');
+      setLogData({ sick: '', mortality: '', retired: '', sex: '' });
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      let message = 'An unexpected error occurred.';
+      if (!err.response) {
+        if (err.code === 'ECONNABORTED') {
+          message = 'Request timed out. Please check your connection and try again.';
+        } else if (err.message === 'Token expired') {
+          message = 'Your session has expired. Please log in again.';
+        } else {
+          message = 'Network error. Please check your internet connection and try again.';
+        }
+      } else {
+        const status = err.response.status;
+        const data = err.response.data || {};
+        const serverMsg =
+          data.response_message ||
+          data.message ||
+          (typeof data.error === 'string' ? data.error : data.error?.message) ||
+          '';
+        if (status >= 400 && status < 500) {
+          if (status === 400) {
+            message = serverMsg || 'Invalid input. Please check the activity fields and try again.';
+          } else if (status === 401) {
+            message = serverMsg || 'Session expired. Please log in again.';
+          } else if (status === 403) {
+            message = serverMsg || 'Access denied. You do not have permission to perform this action.';
+          } else if (status === 409) {
+            message = serverMsg || 'This activity has already been recorded.';
+          } else {
+            message = serverMsg || 'Validation error. Please check your input.';
+          }
+        } else if (status >= 500) {
+          message = serverMsg || 'Server error. Please try again later or contact support.';
+        } else {
+          message = serverMsg || 'An unexpected error occurred. Please try again.';
+        }
+      }
+      toast.update(loadingToast, {
+        render: message,
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+      });
     } finally {
       setLogSubmitting(false);
     }
@@ -221,6 +372,125 @@ export default function BroodstockManagement() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
   const handleSiteChange = (id, name) => setSelectedSite(id);
+
+  const totalFemales = overview?.totalFemales ?? 186;
+  const totalMale = overview?.totalMale ?? 24;
+  const totalAll = totalFemales + totalMale;
+  const activeFemales = overview?.activeFemales ?? 0;
+  const activeMales = overview?.activeMales ?? 0;
+  const totalActive = activeFemales + activeMales;
+  const totalSick = overview?.sick ?? 14;
+  const totalRetired = overview?.retired ?? 48;
+  const totalInactive = overview?.totalInactive ?? 12;
+
+  const statCards = [
+    {
+      label: 'Total Females',
+      value: f(totalFemales),
+      sub: `${f(activeFemales)} Active females`,
+      icon: BsGenderFemale,
+      bg: '#F3E8FF',
+      color: '#9333EA',
+    },
+    {
+      label: 'Active (In Use)',
+      value: f(totalActive),
+      sub: totalAll > 0 ? `${((totalActive / totalAll) * 100).toFixed(1)}% of total` : '0% of total',
+      icon: BsCheckCircleFill,
+      bg: '#DCFCE7',
+      color: '#16A34A',
+    },
+    {
+      label: 'Retired',
+      value: f(totalRetired),
+      sub: totalAll > 0 ? `${((totalRetired / totalAll) * 100).toFixed(1)}% of total` : '-',
+      icon: BsHeartFill,
+      bg: '#FEF3C7',
+      color: '#D97706',
+    },
+    {
+      label: 'Sick / Under Treatment',
+      value: f(totalSick),
+      sub: totalAll > 0 ? `${((totalSick / totalAll) * 100).toFixed(1)}% of total` : '-',
+      icon: BsPlusCircleFill,
+      bg: '#FEE2E2',
+      color: '#DC2626',
+    },
+    {
+      label: 'Total Inactive',
+      value: f(totalInactive),
+      sub: totalAll > 0 ? `${((totalInactive / totalAll) * 100).toFixed(1)}% of total` : 'Currently inactive',
+      icon: BsPauseFill,
+      bg: '#F3F4F6',
+      color: '#6B7280',
+    },
+  ];
+
+  const genderData = [
+    { name: 'Female', value: totalFemales },
+    { name: 'Male', value: totalMale },
+  ];
+
+  const femalePct = totalAll > 0 ? ((totalFemales / totalAll) * 100).toFixed(1) : '0';
+  const malePct = totalAll > 0 ? ((totalMale / totalAll) * 100).toFixed(1) : '0';
+
+  const mapActivity = (act) => {
+    const cfg = activityConfig[act.action] || { label: act.action };
+    let icon;
+    let bg;
+    let color;
+    switch (act.action) {
+      case 'added':
+        icon = FaPlus;
+        bg = '#DBEAFE';
+        color = '#2563EB';
+        break;
+      case 'mortality':
+        icon = FaSkull;
+        bg = '#FEE2E2';
+        color = '#DC2626';
+        break;
+      case 'sick':
+        icon = BsPlusCircleFill;
+        bg = '#FEE2E2';
+        color = '#DC2626';
+        break;
+      case 'retired':
+        icon = BsHeartFill;
+        bg = '#FEF3C7';
+        color = '#D97706';
+        break;
+      default:
+        icon = FaPlus;
+        bg = '#F3F4F6';
+        color = '#6B7280';
+    }
+    return {
+      main: `${act.quantity} Broodstock ${cfg.label}`,
+      detail: act.comment || `${act.quantity} ${act.action} recorded`,
+      actor: `by ${act.performer?.fullName || 'Unknown'}`,
+      time: timeAgo(act.createdAt),
+      icon,
+      bg,
+      color,
+    };
+  };
+
+  const latestActivities = (overview?.latestActivities || []).map(mapActivity);
+
+  const siteTableData = selectedSite
+    ? (overview
+        ? [{ site: overview.siteName || 'Selected Site', females: overview.totalFemales || 0, males: overview.totalMale || 0 }]
+        : [])
+    : allSiteOverviews.map((o) => ({
+        site: o.siteName || 'Unknown',
+        females: o.totalFemales || 0,
+        males: o.totalMale || 0,
+      }));
+
+  const siteMaxFemales = Math.max(1, ...siteTableData.map((d) => d.females));
+
+  const isLoadingOverview = loadingOverview && !overview;
 
   return (
     <section className={`${sharedStyles.body}`}>
@@ -308,7 +578,7 @@ export default function BroodstockManagement() {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className={styles.donutCenterLabel}>
-                    <span className={styles.donutCenterNumber}>210</span>
+                    <span className={styles.donutCenterNumber}>{totalAll}</span>
                     <span className={styles.donutCenterText}>Total</span>
                   </div>
                 </div>
@@ -321,7 +591,7 @@ export default function BroodstockManagement() {
                       />
                       Female
                     </div>
-                    <span className={styles.donutLegendValue}>186 (88.6%)</span>
+                    <span className={styles.donutLegendValue}>{totalFemales} ({femalePct}%)</span>
                   </div>
                   <div className={styles.donutLegendRow}>
                     <div className={styles.donutLegendLabel}>
@@ -331,37 +601,47 @@ export default function BroodstockManagement() {
                       />
                       Male
                     </div>
-                    <span className={styles.donutLegendValue}>24 (11.4%)</span>
+                    <span className={styles.donutLegendValue}>{totalMale} ({malePct}%)</span>
                   </div>
                 </div>
               </div>
 
               <div className={styles.siteCard}>
                 <div className={styles.siteCardTitle}>
-                  Broodstock by Site (Females)
+                  {selectedSite ? 'Site Overview' : 'Broodstock by Site (Females)'}
                 </div>
-                <div className={styles.siteTableHeader}>
-                  <span className={styles.siteTableHeaderSite}>Site</span>
-                  <span className={styles.siteTableHeaderFemales}>Females</span>
-                </div>
-                {siteData.map((row, i) => (
-                  <div key={i} className={styles.siteTableRow}>
-                    <div className={styles.siteLeft}>
-                      <span className={styles.siteName}>{row.site}</span>
-                      <div className={styles.siteBarTrack}>
-                        <div
-                          className={styles.siteBarFill}
-                          style={{
-                            width: `${(row.females / maxFemales) * 100}%`,
-                          }}
-                        />
-                      </div>
+                {siteTableData.length > 0 ? (
+                  <>
+                    <div className={styles.siteTableHeader}>
+                      <span className={styles.siteTableHeaderSite}>Site</span>
+                      <span className={styles.siteTableHeaderFemales}>Females</span>
                     </div>
-                    <span className={styles.siteFemaleCount}>
-                      {row.females} ({row.pct.toFixed(1)}%)
+                    {siteTableData.map((row, i) => (
+                      <div key={i} className={styles.siteTableRow}>
+                        <div className={styles.siteLeft}>
+                          <span className={styles.siteName}>{row.site}</span>
+                          <div className={styles.siteBarTrack}>
+                            <div
+                              className={styles.siteBarFill}
+                              style={{
+                                width: `${(row.females / siteMaxFemales) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <span className={styles.siteFemaleCount}>
+                          {row.females} ({((row.females / siteMaxFemales) * 100).toFixed(1)}%)
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className={styles.siteTableRow}>
+                    <span className={styles.siteName} style={{ color: '#9CA3AF' }}>
+                      {selectedSite ? 'No overview data' : 'Select a site to view data'}
                     </span>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -373,10 +653,10 @@ export default function BroodstockManagement() {
                 <span className={styles.viewAllLink}>View All</span>
               </div>
               <div className={styles.activityList}>
-                {activities.map((item, i) => {
+                {latestActivities.length > 0 ? latestActivities.map((item, i) => {
                   const Icon = item.icon;
                   return (
-                    <div key={i} className={styles.activityItem}>
+                    <div key={item.id || i} className={styles.activityItem}>
                       <div
                         className={styles.activityIconCircle}
                         style={{ background: item.bg }}
@@ -395,7 +675,18 @@ export default function BroodstockManagement() {
                       <div className={styles.activityTime}>{item.time}</div>
                     </div>
                   );
-                })}
+                }) : (
+                  <div className={styles.activityItem}>
+                    <div className={styles.activityBody}>
+                      <div className={styles.activityMain}>
+                        {selectedSite ? 'No recent activities' : 'Select a site to view activities'}
+                      </div>
+                      <div className={styles.activityDetail}>
+                        {selectedSite ? 'Activities will appear here once recorded' : 'Choose a site from the dropdown above'}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -554,7 +845,7 @@ export default function BroodstockManagement() {
 
             <Modal
               show={showLogModal}
-              onHide={() => { if (!logSubmitting) { setShowLogModal(false); setLogData({ sick: '', mortality: '', retired: '' }); } }}
+              onHide={() => { if (!logSubmitting) { setShowLogModal(false); setLogData({ sick: '', mortality: '', retired: '', sex: '' }); } }}
               centered
               size="md"
               backdrop="static"
@@ -573,7 +864,7 @@ export default function BroodstockManagement() {
                   </div>
                   <button
                     className={styles.modalCloseBtn}
-                    onClick={() => { if (!logSubmitting) { setShowLogModal(false); setLogData({ sick: '', mortality: '', retired: '' }); } }}
+                    onClick={() => { if (!logSubmitting) { setShowLogModal(false); setLogData({ sick: '', mortality: '', retired: '', sex: '' }); } }}
                     disabled={logSubmitting}
                   >
                     <BsXLg size={14} />
@@ -631,12 +922,25 @@ export default function BroodstockManagement() {
                       />
                     </div>
                   </div>
+
+                  <div className={styles.formGroupFull}>
+                    <label className={styles.formLabel}>Sex / Gender</label>
+                    <select
+                      className={styles.formSelect}
+                      value={logData.sex}
+                      onChange={(e) => setLogData((p) => ({ ...p, sex: e.target.value }))}
+                    >
+                      <option value="">All / Not specified</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className={styles.modalFooter}>
                   <button
                     className={styles.btnCancel}
-                    onClick={() => { setShowLogModal(false); setLogData({ sick: '', mortality: '', retired: '' }); }}
+                    onClick={() => { setShowLogModal(false); setLogData({ sick: '', mortality: '', retired: '', sex: '' }); }}
                     disabled={logSubmitting}
                   >
                     Cancel

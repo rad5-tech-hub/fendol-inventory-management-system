@@ -712,3 +712,441 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+@media (max-width: 1024px) {
+  .pageWrapper {
+    padding: 20px;
+  }
+
+  .headerRight {
+    gap: 8px;
+  }
+
+  .statCardsRow {
+    flex-wrap: wrap;
+    > * {
+      flex: 1 1 calc(50% - 8px);
+      min-width: 0;
+    }
+  }
+
+  .middleRow {
+    flex-direction: column;
+  }
+
+  .donutCard {
+    flex: 1 1 auto;
+  }
+
+  .siteName {
+    width: 120px;
+  }
+
+  .activitiesFullCard {
+    padding: 16px 20px;
+  }
+
+  .modalHeader,
+  .modalBody {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .modalFooter {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .pageWrapper {
+    padding: 12px 14px;
+    min-height: auto;
+  }
+
+  .headerRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .headerLeft {
+    width: 100%;
+  }
+
+  .headerRight {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btnLogActivity,
+  .btnAddBroodstock {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .pageTitle {
+    font-size: 22px;
+  }
+
+  .pageSubtitle {
+    font-size: 12px;
+  }
+
+  .statCardsRow {
+    gap: 10px;
+    margin-top: 16px;
+    > * {
+      flex: 1 1 calc(50% - 5px);
+    }
+  }
+
+  .statCard {
+    padding: 12px 14px;
+    min-height: 80px;
+    gap: 12px;
+  }
+
+  .statIconCircle {
+    width: 38px;
+    height: 38px;
+  }
+
+  .statIcon {
+    font-size: 17px;
+  }
+
+  .statNumber {
+    font-size: 20px;
+  }
+
+  .middleRow {
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  .donutCard {
+    padding: 14px;
+  }
+
+  .donutCardTitle {
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+
+  .siteCard {
+    padding: 14px;
+  }
+
+  .siteCardTitle {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .siteName {
+    width: 100px;
+    font-size: 12px;
+  }
+
+  .siteFemaleCount {
+    width: auto;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .siteBarTrack {
+    max-width: none;
+  }
+
+  .activitiesFullCard {
+    padding: 14px 16px;
+    margin-top: 14px;
+  }
+
+  .activitiesTitle {
+    font-size: 14px;
+  }
+
+  .activityItem {
+    padding: 12px 0;
+    gap: 10px;
+  }
+
+  .activityMain {
+    font-size: 12px;
+  }
+
+  .activityDetail,
+  .activityActor {
+    font-size: 11px;
+  }
+
+  .activityTime {
+    font-size: 10px;
+  }
+
+  .modalCard {
+    margin: 0 8px;
+    border-radius: 12px;
+  }
+
+  .modalHeader {
+    padding: 16px 18px 0 18px;
+  }
+
+  .modalHeaderTitle {
+    font-size: 16px;
+  }
+
+  .modalHeaderSub {
+    font-size: 12px;
+  }
+
+  .modalHeaderIcon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .modalBody {
+    padding: 16px 18px 8px 18px;
+  }
+
+  .modalFooter {
+    padding: 8px 18px 18px 18px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btnCancel,
+  .btnSubmit {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .formGroupFull {
+    margin-bottom: 12px;
+  }
+
+  .ageSelect {
+    width: 90px;
+  }
+
+  .logCard {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .logCardIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .logCardContent label {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageWrapper {
+    padding: 8px 10px;
+  }
+
+  .breadcrumb {
+    font-size: 11px;
+  }
+
+  .pageTitle {
+    font-size: 18px;
+  }
+
+  .pageSubtitle {
+    font-size: 11px;
+  }
+
+  .headerRight {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .btnLogActivity,
+  .btnAddBroodstock {
+    width: 100%;
+    flex: none;
+  }
+
+  .statCardsRow {
+    gap: 8px;
+    > * {
+      flex: 1 1 100%;
+    }
+  }
+
+  .statCard {
+    padding: 10px 12px;
+    min-height: 68px;
+    gap: 10px;
+  }
+
+  .statIconCircle {
+    width: 34px;
+    height: 34px;
+  }
+
+  .statNumber {
+    font-size: 18px;
+  }
+
+  .donutCard {
+    padding: 12px;
+  }
+
+  .donutCardTitle {
+    font-size: 13px;
+  }
+
+  .donutLegend {
+    gap: 8px;
+  }
+
+  .donutLegendLabel,
+  .donutLegendValue {
+    font-size: 12px;
+  }
+
+  .siteCard {
+    padding: 12px;
+  }
+
+  .siteCardTitle {
+    font-size: 13px;
+  }
+
+  .siteTableHeaderSite,
+  .siteTableHeaderFemales {
+    font-size: 11px;
+  }
+
+  .siteTableRow {
+    padding: 8px 0;
+  }
+
+  .siteName {
+    width: auto;
+    flex: 1;
+    font-size: 11px;
+  }
+
+  .siteLeft {
+    gap: 8px;
+  }
+
+  .siteFemaleCount {
+    font-size: 11px;
+  }
+
+  .activitiesFullCard {
+    padding: 12px 14px;
+  }
+
+  .activitiesTitle {
+    font-size: 13px;
+  }
+
+  .viewAllLink {
+    font-size: 12px;
+  }
+
+  .activityItem {
+    padding: 10px 0;
+    gap: 8px;
+  }
+
+  .activityIconCircle {
+    width: 28px;
+    height: 28px;
+  }
+
+  .modalCard {
+    margin: 0 4px;
+    border-radius: 10px;
+  }
+
+  .modalHeader {
+    padding: 14px 14px 0 14px;
+  }
+
+  .modalHeaderTitle {
+    font-size: 15px;
+  }
+
+  .modalHeaderLeft {
+    gap: 10px;
+  }
+
+  .modalHeaderIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .modalCloseBtn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .modalBody {
+    padding: 12px 14px 4px 14px;
+  }
+
+  .modalFooter {
+    padding: 6px 14px 14px 14px;
+    gap: 6px;
+  }
+
+  .formLabel {
+    font-size: 11px;
+  }
+
+  .formInput,
+  .formSelect {
+    height: 36px;
+    font-size: 12px;
+  }
+
+  .formTextarea {
+    font-size: 12px;
+    min-height: 64px;
+  }
+
+  .ageRow input {
+    min-width: 0;
+  }
+
+  .ageSelect {
+    width: 80px;
+    height: 36px;
+    font-size: 12px;
+  }
+
+  .logCard {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .logCardIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .logCardContent input {
+    height: 36px;
+    font-size: 12px;
+  }
+}
