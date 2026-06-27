@@ -48,15 +48,39 @@ export default function StaffDirectory() {
   const [form, setForm] = useState({ name: '', role: '', siteId: '' });
   const [formErrors, setFormErrors] = useState({});
 
+  const mockStaff = [
+    { id: 1, name: 'Okeke John', role: 'Doxology', createdAt: '2025-05-12T08:30:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
+    { id: 2, name: 'Amina Bello', role: 'Vet Technician', createdAt: '2025-05-10T10:15:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
+    { id: 3, name: 'Chidi Okafor', role: 'Feed Manager', createdAt: '2025-05-08T14:00:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
+    { id: 4, name: 'Funke Adeyemi', role: 'Hatchery Tech', createdAt: '2025-05-06T09:45:00Z', siteId: 'site-3', Site: { id: 'site-3', name: 'Port Harcourt Farm' } },
+    { id: 5, name: 'Ibrahim Musa', role: 'Accountant', createdAt: '2025-05-04T11:20:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
+    { id: 6, name: 'Ngozi Eze', role: 'Quality Control', createdAt: '2025-04-28T07:00:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
+    { id: 7, name: 'Tunde Balogun', role: 'Maintenance', createdAt: '2025-04-25T16:30:00Z', siteId: 'site-3', Site: { id: 'site-3', name: 'Port Harcourt Farm' } },
+    { id: 8, name: 'Sade Ogun', role: 'Sales Rep', createdAt: '2025-04-22T13:10:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
+    { id: 9, name: 'Emeka Nwosu', role: 'Security Lead', createdAt: '2025-04-18T08:00:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
+    { id: 10, name: 'Hauwa Mohammed', role: 'Admin Officer', createdAt: '2025-04-15T10:00:00Z', siteId: 'site-3', Site: { id: 'site-3', name: 'Port Harcourt Farm' } },
+    { id: 11, name: 'Kelechi Okoro', role: 'Driver', createdAt: '2025-04-12T12:00:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
+    { id: 12, name: 'Bisi Adegoke', role: 'Store Keeper', createdAt: '2025-04-08T09:30:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
+    { id: 13, name: 'Yakubu Garba', role: 'Hatchery Assistant', createdAt: '2025-04-05T15:00:00Z', siteId: 'site-3', Site: { id: 'site-3', name: 'Port Harcourt Farm' } },
+    { id: 14, name: 'Chioma Obi', role: 'Lab Technician', createdAt: '2025-04-01T11:00:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
+    { id: 15, name: 'Rashid Idris', role: 'Pond Manager', createdAt: '2025-03-28T08:00:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
+  ];
+
+  const mockSites = [
+    { id: 'site-1', name: 'Lagos Farm' },
+    { id: 'site-2', name: 'Ibadan Farm' },
+    { id: 'site-3', name: 'Port Harcourt Farm' },
+  ];
+
   const fetchStaff = async () => {
     try {
       setLoading(true);
       const res = await Api.get('/staff');
       const data = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
-      setStaff(data);
+      setStaff(data.length ? data : mockStaff);
     } catch (err) {
-      console.error('Failed to fetch staff:', err);
-      setStaff([]);
+      console.error('Failed to fetch staff, using demo data:', err);
+      setStaff(mockStaff);
     } finally {
       setLoading(false);
     }
@@ -65,9 +89,10 @@ export default function StaffDirectory() {
   const fetchSites = async () => {
     try {
       const res = await ApiV2.get('/v2/all-site');
-      setSites(Array.isArray(res.data?.data) ? res.data.data : []);
+      const data = Array.isArray(res.data?.data) ? res.data.data : [];
+      setSites(data.length ? data : mockSites);
     } catch {
-      setSites([]);
+      setSites(mockSites);
     }
   };
 
