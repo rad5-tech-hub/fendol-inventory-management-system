@@ -9,11 +9,13 @@ import FeedInventoryAdd from './inventory/add';
 import FeedInventoryUse from './inventory/use';
 import FeedInventoryTopUp from './inventory/top-up';
 import FeedDashboard from './feed-dashboard/feed-dashboard';
+import RawMaterialInventory from './raw-material-inventory/raw-material-inventory';
 
 const FeedNavigations = () => {
   return (
     <Routes>
       <Route path='dashboard' element={<FeedDashboard />} />
+      <Route path='raw-materials' element={<RawMaterialInventory/>}/>
       <Route path='view-all' element={<UpdateFeedInventory/>}/>
       <Route path='inventory-history' element={<InventoryHistory/>}/>
       <Route path='production/create' element={<CreateFeedBatch/>}/>
