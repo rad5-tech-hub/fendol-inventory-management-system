@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IoCalendarOutline, IoChevronDown, IoClose } from 'react-icons/io5';
 import {
   FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight,
   FiEye, FiClock, FiLogIn, FiLogOut, FiFileText,
 } from 'react-icons/fi';
 import { BsCheckCircleFill, BsInfoCircle, BsChevronLeft, BsChevronRight } from 'react-icons/bs';
+import { useSelector } from 'react-redux';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
+import { ApiV2 } from '../../shared/api/apiLink';
 import financeStyles from '../finance.module.scss';
 import styles from './attendance.module.scss';
 
@@ -20,8 +22,7 @@ const STATUS_STYLES = {
   'Off Day': { bg: '#F3F4F6', color: '#6B7280' },
 };
 
-// TODO: replace with real API call
-const staffList = [
+const mockStaff = [
   { id: 'EMP-0012', name: 'John Okafor', position: 'Pond Manager', status: 'Present', avatar: null },
   { id: 'EMP-0013', name: 'Mary Uche', position: 'Hatchery Technician', status: 'Late', avatar: null },
   { id: 'EMP-0014', name: 'Emeka Obi', position: 'Store Keeper', status: 'Present', avatar: null },
@@ -51,9 +52,36 @@ const getInitials = (name) =>
 const AVATAR_COLORS = ['#2563EB', '#F97316', '#16A34A', '#7C3AED', '#DC2626', '#0D9488', '#EAB308', '#0891B2'];
 
 export default function StaffAttendance() {
+  const user = useSelector((state) => state.user);
+  const userTypes = user?.userTypes || [];
+  const userSiteId = user?.siteId || null;
+  const isSuperAdmin = userTypes.includes('super_admin');
+
   const [showSidebar, setShowSidebar] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [staffList, setStaffList] = useState([]);
+  const [loadingStaff, setLoadingStaff] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
+        const res = await ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } });
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (data.length) {
+          setStaffList(data.map(s => ({ id: s.id, name: s.name, position: s.role, status: 'Present', avatar: null })));
+        } else {
+          setStaffList(mockStaff);
+        }
+      } catch {
+        setStaffList(mockStaff);
+      } finally {
+        setLoadingStaff(false);
+      }
+    })();
+  }, []);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);

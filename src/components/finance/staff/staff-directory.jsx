@@ -49,21 +49,21 @@ export default function StaffDirectory() {
   const [formErrors, setFormErrors] = useState({});
 
   const mockStaff = [
-    { id: 1, name: 'Okeke John', role: 'Doxology', createdAt: '2025-05-12T08:30:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
-    { id: 2, name: 'Amina Bello', role: 'Vet Technician', createdAt: '2025-05-10T10:15:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
-    { id: 3, name: 'Chidi Okafor', role: 'Feed Manager', createdAt: '2025-05-08T14:00:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
-    { id: 4, name: 'Funke Adeyemi', role: 'Hatchery Tech', createdAt: '2025-05-06T09:45:00Z', siteId: 'site-3', Site: { id: 'site-3', name: 'Port Harcourt Farm' } },
-    { id: 5, name: 'Ibrahim Musa', role: 'Accountant', createdAt: '2025-05-04T11:20:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
-    { id: 6, name: 'Ngozi Eze', role: 'Quality Control', createdAt: '2025-04-28T07:00:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
-    { id: 7, name: 'Tunde Balogun', role: 'Maintenance', createdAt: '2025-04-25T16:30:00Z', siteId: 'site-3', Site: { id: 'site-3', name: 'Port Harcourt Farm' } },
-    { id: 8, name: 'Sade Ogun', role: 'Sales Rep', createdAt: '2025-04-22T13:10:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
-    { id: 9, name: 'Emeka Nwosu', role: 'Security Lead', createdAt: '2025-04-18T08:00:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
-    { id: 10, name: 'Hauwa Mohammed', role: 'Admin Officer', createdAt: '2025-04-15T10:00:00Z', siteId: 'site-3', Site: { id: 'site-3', name: 'Port Harcourt Farm' } },
-    { id: 11, name: 'Kelechi Okoro', role: 'Driver', createdAt: '2025-04-12T12:00:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
-    { id: 12, name: 'Bisi Adegoke', role: 'Store Keeper', createdAt: '2025-04-08T09:30:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
-    { id: 13, name: 'Yakubu Garba', role: 'Hatchery Assistant', createdAt: '2025-04-05T15:00:00Z', siteId: 'site-3', Site: { id: 'site-3', name: 'Port Harcourt Farm' } },
-    { id: 14, name: 'Chioma Obi', role: 'Lab Technician', createdAt: '2025-04-01T11:00:00Z', siteId: 'site-2', Site: { id: 'site-2', name: 'Ibadan Farm' } },
-    { id: 15, name: 'Rashid Idris', role: 'Pond Manager', createdAt: '2025-03-28T08:00:00Z', siteId: 'site-1', Site: { id: 'site-1', name: 'Lagos Farm' } },
+    { id: 'mock-1', name: 'Okeke John', role: 'Doxology', createdAt: '2026-06-27T15:08:24.000Z' },
+    { id: 'mock-2', name: 'Amina Bello', role: 'Vet Technician', createdAt: '2026-06-26T10:15:00.000Z' },
+    { id: 'mock-3', name: 'Chidi Okafor', role: 'Feed Manager', createdAt: '2026-06-25T14:00:00.000Z' },
+    { id: 'mock-4', name: 'Funke Adeyemi', role: 'Hatchery Tech', createdAt: '2026-06-24T09:45:00.000Z' },
+    { id: 'mock-5', name: 'Ibrahim Musa', role: 'Accountant', createdAt: '2026-06-23T11:20:00.000Z' },
+    { id: 'mock-6', name: 'Ngozi Eze', role: 'Quality Control', createdAt: '2026-06-22T07:00:00.000Z' },
+    { id: 'mock-7', name: 'Tunde Balogun', role: 'Maintenance', createdAt: '2026-06-21T16:30:00.000Z' },
+    { id: 'mock-8', name: 'Sade Ogun', role: 'Sales Rep', createdAt: '2026-06-20T13:10:00.000Z' },
+    { id: 'mock-9', name: 'Emeka Nwosu', role: 'Security Lead', createdAt: '2026-06-19T08:00:00.000Z' },
+    { id: 'mock-10', name: 'Hauwa Mohammed', role: 'Admin Officer', createdAt: '2026-06-18T10:00:00.000Z' },
+    { id: 'mock-11', name: 'Kelechi Okoro', role: 'Driver', createdAt: '2026-06-17T12:00:00.000Z' },
+    { id: 'mock-12', name: 'Bisi Adegoke', role: 'Store Keeper', createdAt: '2026-06-16T09:30:00.000Z' },
+    { id: 'mock-13', name: 'Yakubu Garba', role: 'Hatchery Assistant', createdAt: '2026-06-15T15:00:00.000Z' },
+    { id: 'mock-14', name: 'Chioma Obi', role: 'Lab Technician', createdAt: '2026-06-14T11:00:00.000Z' },
+    { id: 'mock-15', name: 'Rashid Idris', role: 'Pond Manager', createdAt: '2026-06-13T08:00:00.000Z' },
   ];
 
   const mockSites = [
@@ -72,17 +72,17 @@ export default function StaffDirectory() {
     { id: 'site-3', name: 'Port Harcourt Farm' },
   ];
 
-  const fetchStaff = async () => {
+  const [staffBySite, setStaffBySite] = useState({});
+  const [siteLoading, setSiteLoading] = useState(false);
+
+  const fetchAllStaff = async () => {
     try {
       setLoading(true);
-      const res = await Api.get('/staff');
-      const data = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
-      setStaff(data.length ? data : mockStaff);
-    } catch (err) {
-      console.error('Failed to fetch staff, using demo data:', err);
-      setStaff(mockStaff);
-    } finally {
-      setLoading(false);
+      const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
+      const res = await ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } });
+      return Array.isArray(res.data?.data) ? res.data.data : [];
+    } catch {
+      return [];
     }
   };
 
@@ -90,48 +90,56 @@ export default function StaffDirectory() {
     try {
       const res = await ApiV2.get('/v2/all-site');
       const data = Array.isArray(res.data?.data) ? res.data.data : [];
-      setSites(data.length ? data : mockSites);
+      return data.length ? data : mockSites;
     } catch {
-      setSites(mockSites);
+      return mockSites;
     }
   };
 
   useEffect(() => {
-    fetchStaff();
-    if (isSuperAdmin) fetchSites();
+    (async () => {
+      const [staffData, siteData] = await Promise.all([
+        fetchAllStaff(),
+        isSuperAdmin ? fetchSites() : Promise.resolve([]),
+      ]);
+      setStaff(staffData.length ? staffData : mockStaff);
+      setSites(siteData);
+      setLoading(false);
+    })();
   }, []);
 
   useEffect(() => {
-    if (viewMode === 'by-site') {
-      const siteNames = new Set(staff.map(s => s.Site?.name || 'Unassigned'));
-      setCollapsedSites(new Set(siteNames));
-    }
-  }, [viewMode, staff]);
+    if (viewMode !== 'by-site' || !isSuperAdmin || !sites.length) return;
+    (async () => {
+      setSiteLoading(true);
+      const grouped = {};
+      for (const site of sites) {
+        try {
+          const res = await ApiV2.get('/api/v1/staff', { params: { siteId: site.id } });
+          const data = Array.isArray(res.data?.data) ? res.data.data : [];
+          if (data.length) grouped[site.name] = data;
+        } catch {
+          // skip site on error
+        }
+      }
+      if (!Object.keys(grouped).length) {
+        grouped['All Staff'] = staff;
+      }
+      setStaffBySite(grouped);
+      setCollapsedSites(new Set(Object.keys(grouped)));
+      setSiteLoading(false);
+    })();
+  }, [viewMode, sites]);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  const filteredBySite = isSuperAdmin
-    ? staff
-    : staff.filter(s => (s.siteId === userSiteId) || (s.Site?.id === userSiteId));
-
   const searched = search.trim()
-    ? filteredBySite.filter(s =>
+    ? staff.filter(s =>
         (s.name || '').toLowerCase().includes(search.toLowerCase()) ||
         (s.role || '').toLowerCase().includes(search.toLowerCase())
       )
-    : filteredBySite;
-
-  const groupedBySite = isSuperAdmin && viewMode === 'by-site'
-    ? searched.reduce((acc, s) => {
-        const siteName = s.Site?.name || 'Unassigned';
-        if (!acc[siteName]) acc[siteName] = [];
-        acc[siteName].push(s);
-        return acc;
-      }, {})
-    : {};
-
-  const siteNames = Object.keys(groupedBySite).sort();
+    : staff;
 
   const flatList = viewMode === 'all' || !isSuperAdmin ? searched : [];
   const pageCount = Math.ceil(flatList.length / itemsPerPage);
@@ -183,7 +191,8 @@ export default function StaffDirectory() {
       await ApiV2.post('/api/v1/create-staff', payload);
       toast.success('Staff created successfully!', { className: 'dark-toast' });
       closeModal();
-      fetchStaff();
+      const fresh = await fetchAllStaff();
+      setStaff(fresh.length ? fresh : mockStaff);
     } catch (err) {
       const msg = err.response?.data?.message || 'Failed to create staff. Please try again.';
       toast.error(msg, { className: 'dark-toast' });
@@ -221,7 +230,7 @@ export default function StaffDirectory() {
             <td>
               <span className={styles.sitePill}>
                 <FaMapMarkerAlt size={10} />
-                {s.Site?.name || s.site?.name || '\u2014'}
+                {s._siteName || '\u2014'}
               </span>
             </td>
           </tr>
@@ -320,10 +329,15 @@ export default function StaffDirectory() {
               renderEmpty('No staff match your search.')
             ) : isSuperAdmin && viewMode === 'by-site' ? (
               <>
-                {siteNames.length === 0 && (
+                {siteLoading && (
+                  <div className={styles.staffCountChip} style={{ color: '#8C949B' }}>
+                    Loading staff by site...
+                  </div>
+                )}
+                {!siteLoading && Object.keys(staffBySite).length === 0 && (
                   <Alert variant="info" className="text-center py-3">No staff found for the selected view.</Alert>
                 )}
-                {siteNames.map((siteName, si) => (
+                {!siteLoading && Object.keys(staffBySite).map((siteName, si) => (
                   <div key={siteName} className={styles.siteCard}>
                     <div className={styles.siteCardHeader} onClick={() => toggleSiteCollapse(siteName)}>
                       <div className={styles.siteCardHeaderLeft}>
@@ -337,7 +351,7 @@ export default function StaffDirectory() {
                       </div>
                       <div className={styles.siteCardHeaderRight}>
                         <span className={styles.staffCount}>
-                          {groupedBySite[siteName].length} {groupedBySite[siteName].length === 1 ? 'staff' : 'staff'}
+                          {staffBySite[siteName].length} {staffBySite[siteName].length === 1 ? 'staff' : 'staff'}
                         </span>
                         <span
                           className={`${styles.collapseChevron} ${collapsedSites.has(siteName) ? styles.collapseChevronClosed : ''}`}
@@ -350,7 +364,7 @@ export default function StaffDirectory() {
                       <>
                         <hr className={styles.siteCardDivider} />
                         <div className={styles.siteCardBody}>
-                          {renderTable(groupedBySite[siteName])}
+                          {renderTable(staffBySite[siteName])}
                         </div>
                       </>
                     )}
