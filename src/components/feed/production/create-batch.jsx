@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiPlus, FiUploadCloud, FiInfo, FiTrash2 } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus, FiUploadCloud, FiInfo, FiTrash2, FiX } from 'react-icons/fi';
 import { IoCalendarOutline, IoChevronDown } from 'react-icons/io5';
 import { BsBoxSeam } from 'react-icons/bs';
+import { createPortal } from 'react-dom';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
+import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import feedStyles from '../feed.module.scss';
 import styles from './create-batch.module.scss';
 
@@ -25,6 +27,35 @@ const COST_TYPE_OPTIONS = [
 ];
 
 const PACKAGE_UNIT_OPTIONS = ['kg', 'g', 'bags', 'units', 'L'];
+
+const MATERIAL_CATALOG = {
+  'Maize': { unit: 'kg', unitCost: 220, swatch: '#F59E0B' },
+  'Soybean Meal': { unit: 'kg', unitCost: 480, swatch: '#D4A373' },
+  'Fishmeal (60%)': { unit: 'kg', unitCost: 780, swatch: '#FEF3C7' },
+  'Wheat Bran': { unit: 'kg', unitCost: 160, swatch: '#92400E' },
+  'Fish Oil': { unit: 'L', unitCost: 1350, swatch: '#F59E0B' },
+  'Cassava': { unit: 'kg', unitCost: 140, swatch: '#E8D5B7' },
+  'Rice Bran': { unit: 'kg', unitCost: 120, swatch: '#D4A373' },
+  'Vitamin Premix': { unit: 'kg', unitCost: 2500, swatch: '#A7D8DE' },
+};
+
+const ModalShell = ({ title, show, onClose, children }) => {
+  if (!show) return null;
+  return createPortal(
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h3 className={styles.modalTitle}>{title}</h3>
+          <button className={styles.modalCloseBtn} onClick={onClose} type="button">
+            <FiX size={18} />
+          </button>
+        </div>
+        <div className={styles.modalBody}>{children}</div>
+      </div>
+    </div>,
+    document.body,
+  );
+};
 
 export default function CreateFeedBatch() {
   const navigate = useNavigate();
@@ -75,6 +106,17 @@ export default function CreateFeedBatch() {
   const [shelfLife, setShelfLife] = useState('90');
   const [expiryDate, setExpiryDate] = useState('Aug 22, 2025');
 
+  // Modal state
+  const [showFeedProducedModal, setShowFeedProducedModal] = useState(false);
+  const [showBagsProducedModal, setShowBagsProducedModal] = useState(false);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
+  const [modalInputValue, setModalInputValue] = useState('');
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [newMaterialName, setNewMaterialName] = useState('');
+  const [newMaterialQty, setNewMaterialQty] = useState('');
+  const [totalBagsProduced, setTotalBagsProduced] = useState(0);
+
   const handleAddPackaging = () => {
     const newId = Math.max(...packagingRows.map(r => r.id)) + 1;
     setPackagingRows([...packagingRows, { id: newId, unit: 'kg', qty: '' }]);
@@ -86,6 +128,51 @@ export default function CreateFeedBatch() {
 
   const handleRemovePackaging = (id) => {
     setPackagingRows(packagingRows.filter(r => r.id !== id));
+  };
+
+  const handleAddFeedProduced = () => {
+    const val = parseFloat(modalInputValue);
+    if (!isNaN(val) && val > 0) setTotalFeedProduced(prev => prev + val);
+    setModalInputValue('');
+    setShowFeedProducedModal(false);
+  };
+
+  const handleAddBagsProduced = () => {
+    const val = parseFloat(modalInputValue);
+    if (!isNaN(val) && val > 0) setTotalBagsProduced(prev => prev + val);
+    setModalInputValue('');
+    setShowBagsProducedModal(false);
+  };
+
+  const handleTopUpMaterial = () => {
+    const val = parseFloat(modalInputValue);
+    if (!isNaN(val) && val > 0 && selectedMaterial) {
+      setRawMaterials(prev => prev.map(m =>
+        m.id === selectedMaterial.id
+          ? { ...m, qty: (parseFloat(m.qty) || 0) + val }
+          : m
+      ));
+    }
+    setModalInputValue('');
+    setSelectedMaterial(null);
+    setShowTopUpModal(false);
+  };
+
+  const handleAddNewMaterial = () => {
+    if (!newMaterialName.trim()) return;
+    const info = MATERIAL_CATALOG[newMaterialName];
+    const newId = Math.max(...rawMaterials.map(m => m.id), 0) + 1;
+    setRawMaterials([...rawMaterials, {
+      id: newId,
+      name: newMaterialName,
+      unit: info?.unit || 'kg',
+      qty: parseFloat(newMaterialQty) || 0,
+      unitCost: info?.unitCost || 0,
+      swatch: info?.swatch || '#D1D5DB',
+    }]);
+    setNewMaterialName('');
+    setNewMaterialQty('');
+    setShowAddMaterialModal(false);
   };
 
   const totalProductionCost = totalRawMaterialCost + (parseFloat(otherCostInput) || 0);
@@ -248,7 +335,7 @@ export default function CreateFeedBatch() {
                       <h2 className={styles.cardTitle}>Raw Materials Used</h2>
                       <p className={styles.cardSubtitle}>Add the raw materials and quantities used for this batch.</p>
                     </div>
-                    <button className={styles.addBtnOutline} onClick={handleAddMaterial}>
+                    <button className={styles.addBtnOutline} onClick={() => { setNewMaterialName(''); setNewMaterialQty(''); setShowAddMaterialModal(true); }}>
                       <FiPlus size={14} />
                       Add Material
                     </button>
@@ -297,9 +384,28 @@ export default function CreateFeedBatch() {
                             </td>
                             <td className={styles.totalCostCell}>{formatCurrency((parseFloat(m.qty) || 0) * (parseFloat(m.unitCost) || 0))}</td>
                             <td>
-                              <button className={styles.deleteBtn} onClick={() => handleRemoveMaterial(m.id)}>
-                                <FiTrash2 size={15} />
-                              </button>
+                              <PortalDropdown
+                                btnClass={feedStyles.threeDotBtn}
+                                menuStyle={{
+                                  background: '#fff',
+                                  color: '#374151',
+                                  border: '1px solid #E5E7EB',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                  borderRadius: 8,
+                                  padding: '4px 0',
+                                }}
+                                items={[
+                                  {
+                                    label: 'Top Up Raw Material',
+                                    onClick: () => { setSelectedMaterial(m); setModalInputValue(''); setShowTopUpModal(true); },
+                                  },
+                                  {
+                                    label: 'Delete',
+                                    onClick: () => handleRemoveMaterial(m.id),
+                                    style: { color: '#DC2626' },
+                                  },
+                                ]}
+                              />
                             </td>
                           </tr>
                         ))}
@@ -332,18 +438,21 @@ export default function CreateFeedBatch() {
                     <div className={styles.totalBoxContent}>
                       <div>
                         <span className={styles.totalBoxLabel}>Total Feed Produced</span>
-                        <div className={styles.totalBoxInputRow}>
-                          <input
-                            type="number"
-                            className={styles.totalBoxInput}
-                            value={totalFeedProduced}
-                            onChange={e => setTotalFeedProduced(parseFloat(e.target.value) || 0)}
-                            step="0.01"
-                          />
+                        <div className={styles.totalBoxValueRow}>
+                          <span className={styles.totalBoxValue}>{f(totalFeedProduced)}</span>
                           <span className={styles.totalBoxUnit}>kg</span>
                         </div>
                       </div>
-                      <BsBoxSeam size={24} color="#16A34A" />
+                      <div className={styles.totalBoxActions}>
+                        <button
+                          className={styles.smallPlusBtn}
+                          onClick={() => { setModalInputValue(''); setShowFeedProducedModal(true); }}
+                          type="button"
+                        >
+                          <FiPlus size={13} />
+                        </button>
+                        <BsBoxSeam size={48} color="#16A34A" />
+                      </div>
                     </div>
                   </div>
 
@@ -367,14 +476,27 @@ export default function CreateFeedBatch() {
                       </div>
                       <div className={styles.packagingField}>
                         <label className={styles.fieldLabel}>Bags / Units Produced</label>
-                        <input
-                          type="number"
-                          className={styles.textInput}
-                          value={row.qty}
-                          onChange={e => handlePackagingChange(row.id, 'qty', e.target.value)}
-                          placeholder="—"
-                          min="0"
-                        />
+                        {idx === 0 ? (
+                          <div className={styles.bagsDisplayRow}>
+                            <span className={styles.bagsDisplayValue}>{f(totalBagsProduced)}</span>
+                            <button
+                              className={styles.tinyPlusBtn}
+                              onClick={() => { setModalInputValue(''); setShowBagsProducedModal(true); }}
+                              type="button"
+                            >
+                              <FiPlus size={11} />
+                            </button>
+                          </div>
+                        ) : (
+                          <input
+                            type="number"
+                            className={styles.textInput}
+                            value={row.qty}
+                            onChange={e => handlePackagingChange(row.id, 'qty', e.target.value)}
+                            placeholder="—"
+                            min="0"
+                          />
+                        )}
                       </div>
                       {idx > 0 && (
                         <button className={styles.deleteBtn} onClick={() => handleRemovePackaging(row.id)}>
@@ -549,6 +671,63 @@ export default function CreateFeedBatch() {
                 Save &amp; Create Batch
               </button>
             </div>
+
+            {/* ── Modals ── */}
+            <ModalShell title="Add Feed Produced" show={showFeedProducedModal} onClose={() => { setModalInputValue(''); setShowFeedProducedModal(false); }}>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Quantity (kg)</label>
+                <input type="number" className={styles.modalInput} value={modalInputValue} onChange={e => setModalInputValue(e.target.value)} step="0.01" placeholder="Enter quantity" autoFocus />
+              </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.modalCancelBtn} onClick={() => { setModalInputValue(''); setShowFeedProducedModal(false); }} type="button">Cancel</button>
+                <button className={styles.modalSaveBtn} onClick={handleAddFeedProduced} type="button">Add</button>
+              </div>
+            </ModalShell>
+
+            <ModalShell title="Add Bags Produced" show={showBagsProducedModal} onClose={() => { setModalInputValue(''); setShowBagsProducedModal(false); }}>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Number of Bags</label>
+                <input type="number" className={styles.modalInput} value={modalInputValue} onChange={e => setModalInputValue(e.target.value)} step="1" placeholder="Enter number" autoFocus />
+              </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.modalCancelBtn} onClick={() => { setModalInputValue(''); setShowBagsProducedModal(false); }} type="button">Cancel</button>
+                <button className={styles.modalSaveBtn} onClick={handleAddBagsProduced} type="button">Add</button>
+              </div>
+            </ModalShell>
+
+            <ModalShell title={selectedMaterial ? `Top Up \u2014 ${selectedMaterial.name}` : ''} show={showTopUpModal} onClose={() => { setModalInputValue(''); setSelectedMaterial(null); setShowTopUpModal(false); }}>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Additional Quantity {selectedMaterial ? `(${selectedMaterial.unit})` : ''}</label>
+                <input type="number" className={styles.modalInput} value={modalInputValue} onChange={e => setModalInputValue(e.target.value)} step="0.01" placeholder="Enter quantity" autoFocus />
+              </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.modalCancelBtn} onClick={() => { setModalInputValue(''); setSelectedMaterial(null); setShowTopUpModal(false); }} type="button">Cancel</button>
+                <button className={styles.modalSaveBtn} onClick={handleTopUpMaterial} type="button">Add</button>
+              </div>
+            </ModalShell>
+
+            <ModalShell title="Add Raw Material" show={showAddMaterialModal} onClose={() => { setNewMaterialName(''); setNewMaterialQty(''); setShowAddMaterialModal(false); }}>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Raw Material Name</label>
+                <div className={styles.selectWrapper}>
+                  <select className={styles.selectInput} value={newMaterialName} onChange={e => setNewMaterialName(e.target.value)}>
+                    <option value="">— Select Material —</option>
+                    {Object.keys(MATERIAL_CATALOG).map(name => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                  <IoChevronDown size={13} className={styles.selectChevron} />
+                </div>
+              </div>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Quantity Used</label>
+                <input type="number" className={styles.modalInput} value={newMaterialQty} onChange={e => setNewMaterialQty(e.target.value)} step="0.01" placeholder="Enter quantity" />
+              </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.modalCancelBtn} onClick={() => { setNewMaterialName(''); setNewMaterialQty(''); setShowAddMaterialModal(false); }} type="button">Cancel</button>
+                <button className={styles.modalSaveBtn} onClick={handleAddNewMaterial} type="button">Add Material</button>
+              </div>
+            </ModalShell>
 
           </main>
         </section>

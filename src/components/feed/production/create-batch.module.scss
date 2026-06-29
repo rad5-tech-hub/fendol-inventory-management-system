@@ -500,6 +500,105 @@
   color: #15803D;
 }
 
+.totalBoxValueRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.totalBoxValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.totalBoxActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+// ── Plus Circle Button ──
+.plusCircleBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #512728;
+  border: none;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.plusCircleBtn:hover {
+  background: #3D1E1F;
+  transform: scale(1.05);
+}
+
+// ── Small Plus Button (for Total Feed Produced) ──
+.smallPlusBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #512728;
+  border: none;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.smallPlusBtn:hover {
+  background: #3D1E1F;
+  transform: scale(1.05);
+}
+
+// ── Tiny Plus Button (for Bags / Units Produced) ──
+.tinyPlusBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #512728;
+  border: none;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.tinyPlusBtn:hover {
+  background: #3D1E1F;
+  transform: scale(1.05);
+}
+
+// ── Bags Display (first packaging row) ──
+.bagsDisplayRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.bagsDisplayValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  flex: 1;
+}
+
 .packagingRow {
   display: flex;
   gap: 12px;
@@ -747,6 +846,164 @@
 }
 
 .saveBtn:hover {
+  background: #3D1E1F;
+}
+
+// ── Modal styles ──
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalCard {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  animation: modalSlideIn 0.25s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px 0;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.modalCloseBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  color: #6B7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.modalCloseBtn:hover {
+  background: #F3F4F6;
+}
+
+.modalBody {
+  padding: 20px 28px 24px;
+}
+
+.modalField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.modalField:last-child {
+  margin-bottom: 0;
+}
+
+.modalLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.modalInput {
+  height: 40px;
+  padding: 0 12px;
+  background: #fff;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #111827;
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.modalInput:focus {
+  border-color: #512728;
+  box-shadow: 0 0 0 3px rgba(81, 39, 40, 0.1);
+}
+
+.modalInput[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.modalInput[type="number"]::-webkit-outer-spin-button,
+.modalInput[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+}
+
+.modalCancelBtn {
+  height: 40px;
+  padding: 0 20px;
+  background: #fff;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+}
+
+.modalCancelBtn:hover {
+  background: #F9FAFB;
+}
+
+.modalSaveBtn {
+  height: 40px;
+  padding: 0 24px;
+  background: #512728;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+}
+
+.modalSaveBtn:hover {
   background: #3D1E1F;
 }
 
