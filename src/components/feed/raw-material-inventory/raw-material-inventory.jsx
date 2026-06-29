@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiDownload, FiPlus, FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight, FiMoreHorizontal } from 'react-icons/fi';
+import { FiDownload, FiPlus, FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight, FiEdit2 } from 'react-icons/fi';
+import { BsEye } from 'react-icons/bs';
 import { IoChevronDown } from 'react-icons/io5';
 import { GiGreenPower, GiMoneyStack } from 'react-icons/gi';
 import { BsBoxSeam } from 'react-icons/bs';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
+import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import feedStyles from '../feed.module.scss';
 import styles from './raw-material-inventory.module.scss';
 
@@ -34,6 +36,17 @@ export default function RawMaterialInventory() {
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
+
+  const getActionItems = (material) => [
+    {
+      label: <><BsEye size={14} style={{ marginRight: 10 }} /> View Details</>,
+      onClick: () => navigate(`/feed/raw-materials/${encodeURIComponent(material.name)}`),
+    },
+    {
+      label: <><FiEdit2 size={14} style={{ marginRight: 10 }} /> Edit</>,
+      onClick: () => {},
+    },
+  ];
 
   return (
     <section className={`${feedStyles.body}`}>
@@ -188,9 +201,18 @@ export default function RawMaterialInventory() {
                         </td>
                         <td className={styles.bodySecondary}>{m.lastUpdated}</td>
                         <td>
-                          <button className={styles.kebabBtn}>
-                            <FiMoreHorizontal size={16} />
-                          </button>
+                          <PortalDropdown
+                            btnClass={feedStyles.threeDotBtn}
+                            menuStyle={{
+                              background: '#fff',
+                              color: '#374151',
+                              border: '1px solid #E5E7EB',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                              borderRadius: 8,
+                              padding: '4px 0',
+                            }}
+                            items={getActionItems(m)}
+                          />
                         </td>
                       </tr>
                     ))}

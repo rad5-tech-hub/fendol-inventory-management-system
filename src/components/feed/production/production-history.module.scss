@@ -88,7 +88,7 @@
 .statCardsRow {
   display: flex;
   flex-direction: row;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 24px;
 }
 
@@ -97,23 +97,23 @@
   background: #FFFFFF;
   border-radius: 12px;
   border: 1px solid #E5E7EB;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-height: 120px;
+  gap: 6px;
+  min-width: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .statCardTop {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
+  gap: 10px;
 }
 
 .statIconCircle {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -124,19 +124,23 @@
 .statInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   flex: 1;
+  min-width: 0;
 }
 
 .statLabel {
-  font-size: 13px;
+  font-size: 12px;
   color: #6B7280;
   font-weight: 500;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .statNumber {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
   color: #111827;
   line-height: 1.1;
@@ -150,18 +154,24 @@
 }
 
 .statSecondary {
-  font-size: 12px;
+  font-size: 11px;
   color: #9CA3AF;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .statTrend {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .trendUp {
@@ -455,8 +465,8 @@
   }
 
   .statCard {
-    flex: 1 1 calc(33.33% - 12px);
-    min-width: 180px;
+    flex: 1 1 calc(33.33% - 8px);
+    min-width: 160px;
   }
 
   .headerRight {
@@ -486,12 +496,26 @@
   }
 
   .statCardsRow {
-    gap: 12px;
+    gap: 10px;
   }
 
   .statCard {
-    flex: 1 1 calc(50% - 6px);
+    flex: 1 1 calc(50% - 5px);
     min-width: 0;
+    padding: 14px;
+  }
+
+  .statNumber {
+    font-size: 20px;
+  }
+
+  .statIconCircle {
+    width: 32px;
+    height: 32px;
+  }
+
+  .statIconCircle > svg {
+    transform: scale(0.85);
   }
 
   .filterBar {
@@ -551,17 +575,35 @@
   }
 
   .statCardsRow {
-    gap: 10px;
+    gap: 8px;
   }
 
   .statCard {
     flex: 1 1 100%;
-    min-height: 100px;
-    padding: 16px;
+    min-height: 80px;
+    padding: 12px;
   }
 
   .statNumber {
-    font-size: 22px;
+    font-size: 20px;
+  }
+
+  .statIconCircle {
+    width: 28px;
+    height: 28px;
+  }
+
+  .statIconCircle > svg {
+    transform: scale(0.75);
+  }
+
+  .statLabel {
+    font-size: 11px;
+  }
+
+  .statTrend,
+  .statSecondary {
+    font-size: 10px;
   }
 
   .filterBar {

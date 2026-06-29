@@ -10,7 +10,6 @@ import {
 } from 'react-icons/fi';
 import { GiChipsBag, GiMoneyStack, GiChart } from 'react-icons/gi';
 import { BsBoxSeam } from 'react-icons/bs';
-import { FaExclamationTriangle } from 'react-icons/fa';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
@@ -157,7 +156,7 @@ export default function FeedProductionHistory() {
                   </div>
                 </div>
                 <p className={`${styles.statTrend} ${styles.trendUp}`}>
-                  &uarr; 12.6% vs Apr 1 - Apr 30
+                  &uarr; 12.6% vs last month
                 </p>
               </div>
 
@@ -172,7 +171,7 @@ export default function FeedProductionHistory() {
                   </div>
                 </div>
                 <p className={`${styles.statTrend} ${styles.trendUp}`}>
-                  &uarr; 9.3% vs Apr 1 - Apr 30
+                  &uarr; 9.3% vs last month
                 </p>
               </div>
 
@@ -187,34 +186,23 @@ export default function FeedProductionHistory() {
                   </div>
                 </div>
                 <p className={`${styles.statTrend} ${styles.trendDown}`}>
-                  &darr; 2.5% vs Apr 1 - Apr 30
+                  &darr; 2.5% vs last month
                 </p>
               </div>
 
               <div className={styles.statCard}>
                 <div className={styles.statCardTop}>
-                  <div className={styles.statIconCircle} style={{ background: '#CCFBF1' }}>
-                    <GiMoneyStack size={20} color="#0D9488" />
+                  <div className={styles.statIconCircle} style={{ background: '#FEF3C7' }}>
+                    <GiMoneyStack size={20} color="#D97706" />
                   </div>
                   <div className={styles.statInfo}>
-                    <p className={styles.statLabel}>Lowest Cost / kg</p>
-                    <div className={styles.statNumber}>{formatCurrency(238.50)}</div>
+                    <p className={styles.statLabel}>Cost per Kg Range</p>
+                    <div className={styles.statNumber}>
+                      &#8358;238 <span className={styles.statUnit}>&ndash;</span> &#8358;285
+                    </div>
                   </div>
                 </div>
-                <p className={styles.statSecondary}>Grower (1-3mm)</p>
-              </div>
-
-              <div className={styles.statCard}>
-                <div className={styles.statCardTop}>
-                  <div className={styles.statIconCircle} style={{ background: '#FEE2E2' }}>
-                    <FaExclamationTriangle size={20} color="#DC2626" />
-                  </div>
-                  <div className={styles.statInfo}>
-                    <p className={styles.statLabel}>Highest Cost / kg</p>
-                    <div className={styles.statNumber}>{formatCurrency(285.40)}</div>
-                  </div>
-                </div>
-                <p className={styles.statSecondary}>Starter (0-1mm)</p>
+                <p className={styles.statSecondary}>From Grower to Starter feed</p>
               </div>
             </div>
 

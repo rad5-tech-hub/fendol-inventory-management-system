@@ -354,25 +354,6 @@
   color: #B45309;
 }
 
-.kebabBtn {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: #6B7280;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.kebabBtn:hover {
-  background: #F3F4F6;
-  color: #374151;
-}
-
 .tableFooter {
   display: flex;
   justify-content: space-between;
