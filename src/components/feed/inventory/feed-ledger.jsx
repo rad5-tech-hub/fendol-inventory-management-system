@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   IoCalendarOutline, IoChevronDown, IoClose,
@@ -10,6 +10,7 @@ import { GiCube } from 'react-icons/gi';
 import { BsInfoCircle } from 'react-icons/bs';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import feedStyles from '../feed.module.scss';
 import styles from './feed-ledger.module.scss';
 
@@ -18,66 +19,61 @@ const formatCurrency = (n) =>
 
 const f = (n) => new Intl.NumberFormat().format(n);
 
-// TODO: replace with real API call
-const rawTransactions = [
-  { date: 'May 1, 2025', time: '08:00 AM', type: 'Opening Balance', qtyIn: null, qtyOut: null, unitCost: 480.00, totalAmount: null, notes: ['Opening balance'], notesTwoLine: false },
-  { date: 'May 3, 2025', time: '10:15 AM', type: 'Production', qtyIn: 2000.00, qtyOut: null, unitCost: 480.00, totalAmount: 960000.00, notes: ['Batch:', 'PRD-2025-05-03-001'], notesTwoLine: true },
-  { date: 'May 5, 2025', time: '11:20 AM', type: 'Purchase', qtyIn: 1500.00, qtyOut: null, unitCost: 500.00, totalAmount: 750000.00, notes: ['Supplier: Agro Feed', 'INV-2025-05-0007'], notesTwoLine: true },
-  { date: 'May 6, 2025', time: '09:30 AM', type: 'Usage', qtyIn: null, qtyOut: 1200.00, unitCost: 480.00, totalAmount: 576000.00, notes: ['Daily feeding', '(Pond 1)'], notesTwoLine: true },
-  { date: 'May 7, 2025', time: '02:40 PM', type: 'Sales', qtyIn: null, qtyOut: 500.00, unitCost: 520.00, totalAmount: 260000.00, notes: ['Sale Invoice', 'SINV-2025-05-015'], notesTwoLine: true },
-  { date: 'May 10, 2025', time: '08:45 AM', type: 'Production', qtyIn: 2500.00, qtyOut: null, unitCost: 481.00, totalAmount: 1202500.00, notes: ['Batch:', 'PRD-2025-05-10-002'], notesTwoLine: true },
-  { date: 'May 12, 2025', time: '09:10 AM', type: 'Usage', qtyIn: null, qtyOut: 1800.00, unitCost: 480.00, totalAmount: 864000.00, notes: ['Daily feeding', '(Pond 2)'], notesTwoLine: true },
-  { date: 'May 14, 2025', time: '03:00 PM', type: 'Purchase', qtyIn: 3000.00, qtyOut: null, unitCost: 495.00, totalAmount: 1485000.00, notes: ['Supplier: GreenFeed Ltd.', 'INV-2025-05-0012'], notesTwoLine: true },
-  { date: 'May 16, 2025', time: '10:00 AM', type: 'Sales', qtyIn: null, qtyOut: 2000.00, unitCost: 525.00, totalAmount: 1050000.00, notes: ['Sale Invoice', 'SINV-2025-05-022'], notesTwoLine: true },
-  { date: 'May 18, 2025', time: '11:45 AM', type: 'Usage', qtyIn: null, qtyOut: 1100.00, unitCost: 480.00, totalAmount: 528000.00, notes: ['For hatchery use'], notesTwoLine: false },
-  { date: 'May 20, 2025', time: '10:30 AM', type: 'Production', qtyIn: 850.00, qtyOut: null, unitCost: 482.00, totalAmount: 409700.00, notes: ['Batch:', 'PRD-2025-05-20-003'], notesTwoLine: true },
-];
-
-const TRANSACTION_PILL_COLORS = {
-  'Opening Balance': { bg: '#EDE9FE', color: '#6D28D9' },
-  'Production': { bg: '#DCFCE7', color: '#15803D' },
-  'Purchase': { bg: '#DBEAFE', color: '#1D4ED8' },
-  'Usage': { bg: '#FEF3C7', color: '#B45309' },
-  'Sales': { bg: '#FEE2E2', color: '#DC2626' },
+const STATUS_PILL_COLORS = {
+  'in stock': { bg: '#DCFCE7', color: '#15803D' },
+  'out of stock': { bg: '#FEE2E2', color: '#DC2626' },
+  'low stock': { bg: '#FEF3C7', color: '#B45309' },
 };
 
 export default function FeedLedger() {
   const { feedName } = useParams();
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
-  const displayName = feedName ? decodeURIComponent(feedName) : 'Feed';
+  const [historyData, setHistoryData] = useState([]);
+  const [feedDetails, setFeedDetails] = useState(null);
+  const [siteTypes, setSiteTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const displayName = feedDetails?.feedName || (feedName ? decodeURIComponent(feedName) : 'Feed');
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  const transactions = useMemo(() => {
-    let balance = 0;
-    let balanceValue = 0;
-    return rawTransactions.map((tx) => {
-      if (tx.qtyIn) balance += tx.qtyIn;
-      if (tx.qtyOut) balance -= tx.qtyOut;
-      if (tx.type === 'Opening Balance') {
-        balance = tx.qtyIn || 2000;
-        balanceValue = tx.qtyIn ? tx.qtyIn * tx.unitCost : 2000 * tx.unitCost;
-      } else {
-        if (tx.totalAmount) balanceValue += tx.qtyIn ? tx.totalAmount : -tx.totalAmount;
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        setLoading(true);
+        const [histRes, siteRes] = await Promise.all([
+          Api.get(`/feed-history/${feedName}`),
+          ApiV2.get('/v2/site-types'),
+        ]);
+        if (histRes.data?.success) {
+          setHistoryData(histRes.data.data || []);
+          if (histRes.data.feedDEtails?.length > 0) {
+            setFeedDetails(histRes.data.feedDEtails[0]);
+          }
+        }
+        if (siteRes.data?.data) {
+          setSiteTypes(siteRes.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch feed history:', err);
+      } finally {
+        setLoading(false);
       }
-      return { ...tx, balance, balanceValue };
-    });
-  }, []);
+    };
+    fetchHistory();
+  }, [feedName]);
 
-  // TODO: replace with real API call
-  const stats = useMemo(() => ({
-    openingBalance: 2000,
-    openingBalanceValue: 960000,
-    totalIn: 6850,
-    totalInValue: 3292000,
-    totalOut: 6450,
-    totalOutValue: 3100000,
-    currentBalance: 2400,
-    currentBalanceValue: 1152000,
-    avgCost: 480,
-  }), []);
+  const stats = useMemo(() => {
+    if (!historyData.length) return null;
+    const totalOriginal = historyData.reduce((sum, h) => sum + Number(h.originalQuantity), 0);
+    const totalUsed = historyData.reduce((sum, h) => sum + Number(h.quantityUsed), 0);
+    const totalRemaining = historyData.reduce((sum, h) => sum + Number(h.remainingFeed), 0);
+    const totalBags = historyData.reduce((sum, h) => sum + Number(h.noOfBagAdded), 0);
+    const avgPrice = historyData.reduce((sum, h) => sum + Number(h.feedPrice), 0) / historyData.length;
+    return { totalOriginal, totalUsed, totalRemaining, totalBags, avgPrice };
+  }, [historyData]);
 
   return (
     <section className={`${feedStyles.body}`}>
@@ -91,7 +87,6 @@ export default function FeedLedger() {
         <section className={`${feedStyles.content} flex-grow-1`}>
           <main className={styles.pageWrapper}>
 
-            {/* ── Breadcrumb ── */}
             <div className={styles.breadcrumb}>
               <span className={styles.breadcrumbItem}>Inventory</span>
               <span className={styles.breadcrumbSep}>&gt;</span>
@@ -100,7 +95,6 @@ export default function FeedLedger() {
               <span className={styles.breadcrumbActive}>Transaction History</span>
             </div>
 
-            {/* ── Page Header ── */}
             <div className={styles.headerRow}>
               <div className={styles.headerLeft}>
                 <h1 className={styles.pageTitle}>{displayName}</h1>
@@ -114,48 +108,14 @@ export default function FeedLedger() {
               </div>
             </div>
 
-            {/* ── Filter Row (loose, not inside a card) ── */}
-            <div className={styles.filterRow}>
-              <div className={styles.filterLeft}>
-                <div className={styles.filterField}>
-                  <span className={styles.filterCaption}>Date Range</span>
-                  <div className={styles.filterControl}>
-                    <IoCalendarOutline size={14} className={styles.ctrlIcon} />
-                    <span className={styles.ctrlText}>May 1, 2025 - May 31, 2025</span>
-                    <IoClose size={14} className={styles.ctrlClear} />
-                    <IoChevronDown size={11} className={styles.ctrlChevron} />
-                  </div>
-                </div>
-                <div className={styles.filterField}>
-                  <span className={styles.filterCaption}>Transaction Type</span>
-                  <div className={styles.filterControl}>
-                    <span className={styles.ctrlText}>All Transaction Types</span>
-                    <IoChevronDown size={11} className={styles.ctrlChevron} />
-                  </div>
-                </div>
-              </div>
-              <div className={styles.filterRight}>
-                <button className={styles.secBtn}>
-                  <FiDownload size={14} />
-                  Export
-                </button>
-                <button className={styles.secBtn}>
-                  <FiPrinter size={14} />
-                  Print
-                </button>
-              </div>
-            </div>
-
-            {/* ── Stat Row (loose, not inside cards) ── */}
             <div className={styles.statRow}>
               <div className={styles.statItem}>
                 <div className={styles.statIconCircle} style={{ background: '#EDE9FE' }}>
                   <GiCube size={18} color="#7C3AED" />
                 </div>
                 <div className={styles.statBody}>
-                  <span className={styles.statLabel}>Opening Balance (May 1)</span>
-                  <span className={styles.statNumber}>{f(stats.openingBalance)}.00 kg</span>
-                  <span className={styles.statSecondaryVal}>{formatCurrency(stats.openingBalanceValue)}</span>
+                  <span className={styles.statLabel}>Total Original Qty</span>
+                  <span className={styles.statNumber}>{stats ? f(stats.totalOriginal) : '--'}</span>
                 </div>
               </div>
               <div className={styles.statItem}>
@@ -163,19 +123,8 @@ export default function FeedLedger() {
                   <FiArrowDown size={18} color="#16A34A" />
                 </div>
                 <div className={styles.statBody}>
-                  <span className={styles.statLabel}>Total In</span>
-                  <span className={styles.statNumber}>{f(stats.totalIn)}.00 kg</span>
-                  <span className={styles.statGreenVal}>{formatCurrency(stats.totalInValue)}</span>
-                </div>
-              </div>
-              <div className={styles.statItem}>
-                <div className={styles.statIconCircle} style={{ background: '#FEE2E2' }}>
-                  <FiArrowUp size={18} color="#DC2626" />
-                </div>
-                <div className={styles.statBody}>
-                  <span className={styles.statLabel}>Total Out</span>
-                  <span className={styles.statNumber}>{f(stats.totalOut)}.00 kg</span>
-                  <span className={styles.statRedVal}>{formatCurrency(stats.totalOutValue)}</span>
+                  <span className={styles.statLabel}>Total Qty Used</span>
+                  <span className={styles.statNumber}>{stats ? f(stats.totalUsed) : '--'}</span>
                 </div>
               </div>
               <div className={styles.statItem}>
@@ -184,11 +133,19 @@ export default function FeedLedger() {
                 </div>
                 <div className={styles.statBody}>
                   <span className={styles.statLabel}>
-                    Current Balance
+                    Total Qty Remaining
                     <BsInfoCircle size={12} className={styles.infoIcon} />
                   </span>
-                  <span className={styles.statNumber}>{f(stats.currentBalance)}.00 kg</span>
-                  <span className={styles.statSecondaryVal}>{formatCurrency(stats.currentBalanceValue)}</span>
+                  <span className={styles.statNumber}>{stats ? f(stats.totalRemaining) : '--'}</span>
+                </div>
+              </div>
+              <div className={styles.statItem}>
+                <div className={styles.statIconCircle} style={{ background: '#FEF3C7' }}>
+                  <GiCube size={18} color="#B45309" />
+                </div>
+                <div className={styles.statBody}>
+                  <span className={styles.statLabel}>Total Bags Added</span>
+                  <span className={styles.statNumber}>{stats ? f(stats.totalBags) : '--'}</span>
                 </div>
               </div>
               <div className={styles.statItem}>
@@ -196,79 +153,84 @@ export default function FeedLedger() {
                   <GiCube size={18} color="#F97316" />
                 </div>
                 <div className={styles.statBody}>
-                  <span className={styles.statLabel}>Average Cost / kg</span>
-                  <span className={styles.statNumber}>{formatCurrency(stats.avgCost)}</span>
+                  <span className={styles.statLabel}>Avg. Price / Bag</span>
+                  <span className={styles.statNumber}>{stats ? formatCurrency(stats.avgPrice) : '--'}</span>
                 </div>
               </div>
             </div>
 
-            {/* ── Data Table ── */}
             <div className={styles.tableCard}>
               <div className={styles.tableWrapper}>
                 <table className={styles.table}>
                   <thead>
                     <tr>
                       <th>Date</th>
-                      <th>Transaction Type</th>
                       <th>Feed Name</th>
-                      <th style={{ textAlign: 'right' }}>Quantity In (Kg)</th>
-                      <th style={{ textAlign: 'right' }}>Quantity Out (Kg)</th>
-                      <th style={{ textAlign: 'right' }}>Unit Cost (&#8358;)</th>
-                      <th style={{ textAlign: 'right' }}>Total Amount (&#8358;)</th>
-                      <th style={{ textAlign: 'right' }}>Balance (Kg)</th>
-                      <th style={{ textAlign: 'right' }}>Balance Value (&#8358;)</th>
-                      <th>Notes</th>
+                      <th>Feed Type</th>
+                      <th>Site</th>
+                      <th style={{ textAlign: 'right' }}>Original Qty</th>
+                      <th style={{ textAlign: 'right' }}>Qty Used</th>
+                      <th style={{ textAlign: 'right' }}>Bags Added</th>
+                      <th style={{ textAlign: 'right' }}>Price (&#8358;)</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Qty Remaining</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {transactions.map((tx, i) => {
-                      const pillStyle = TRANSACTION_PILL_COLORS[tx.type] || { bg: '#F3F4F6', color: '#374151' };
-                      return (
-                        <tr key={i}>
-                          <td>
-                            <div className={styles.dateCell}>
-                              <span className={styles.dateTop}>{tx.date}</span>
-                              <span className={styles.dateBottom}>{tx.time}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className={styles.txPill} style={{ background: pillStyle.bg, color: pillStyle.color }}>
-                              {tx.type}
-                            </span>
-                          </td>
-                          <td className={styles.feedNameCell}>{displayName}</td>
-                          <td className={styles.numCell}>{tx.qtyIn ? f(tx.qtyIn) : '\u2013'}</td>
-                          <td className={styles.numCell}>{tx.qtyOut ? f(tx.qtyOut) : '\u2013'}</td>
-                          <td className={styles.numCell}>{formatCurrency(tx.unitCost)}</td>
-                          <td className={styles.boldNumCell}>{tx.totalAmount ? formatCurrency(tx.totalAmount) : '\u2013'}</td>
-                          <td className={styles.numCell}>{f(tx.balance)}</td>
-                          <td className={styles.numCell}>{formatCurrency(tx.balanceValue)}</td>
-                          <td className={styles.notesCell}>
-                            {tx.notesTwoLine ? (
-                              <>
-                                <span className={styles.notesLine}>{tx.notes[0]}</span>
-                                <span className={styles.notesLineRef}>{tx.notes[1]}</span>
-                              </>
-                            ) : (
-                              <span className={styles.notesLine}>{tx.notes[0]}</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {loading ? (
+                      <tr>
+                        <td colSpan={10} style={{ textAlign: 'center', padding: '40px 12px', color: '#9CA3AF' }}>
+                          Loading...
+                        </td>
+                      </tr>
+                    ) : historyData.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} style={{ textAlign: 'center', padding: '40px 12px', color: '#9CA3AF' }}>
+                          No records found.
+                        </td>
+                      </tr>
+                    ) : (
+                      historyData.map((row, i) => {
+                        const pillStyle = STATUS_PILL_COLORS[row.status] || { bg: '#F3F4F6', color: '#374151' };
+                        const date = new Date(row.createdAt);
+                        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                        return (
+                          <tr key={row.id}>
+                            <td>
+                              <div className={styles.dateCell}>
+                                <span className={styles.dateTop}>{dateStr}</span>
+                                <span className={styles.dateBottom}>{timeStr}</span>
+                              </div>
+                            </td>
+                            <td className={styles.feedNameCell}>{feedDetails?.feedName || '--'}</td>
+                            <td>{feedDetails?.feedType || '--'}</td>
+                            <td>{siteTypes.find(s => s.id === row.siteId)?.name || row.stage || '--'}</td>
+                            <td className={styles.numCell}>{f(row.originalQuantity)}</td>
+                            <td className={styles.numCell}>{f(row.quantityUsed)}</td>
+                            <td className={styles.numCell}>{f(row.noOfBagAdded)}</td>
+                            <td className={styles.numCell}>{formatCurrency(row.feedPrice)}</td>
+                            <td>
+                              <span className={styles.txPill} style={{ background: pillStyle.bg, color: pillStyle.color }}>
+                                {row.status}
+                              </span>
+                            </td>
+                            <td className={styles.boldNumCell}>{f(row.remainingFeed)}</td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
 
-              {/* ── Table Footer ── */}
               <div className={styles.tableFooter}>
-                <span className={styles.footerInfo}>Showing 1 to 10 of {transactions.length} transactions</span>
+                <span className={styles.footerInfo}>Showing 1 to {historyData.length} of {historyData.length} transactions</span>
                 <div className={styles.pagination}>
                   <button className={styles.pageArrow}>
                     <FiChevronLeft size={15} />
                   </button>
                   <button className={`${styles.pageBtn} ${styles.pageBtnActive}`}>1</button>
-                  <button className={styles.pageBtn}>2</button>
                   <button className={styles.pageArrow}>
                     <FiChevronRight size={15} />
                   </button>

@@ -16,7 +16,7 @@ import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import feedStyles from '../feed.module.scss';
 import styles from './feed-inventory.module.scss';
 import AddFeedModal from '../view-all/AddFeedModal';
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -113,7 +113,7 @@ export default function FeedInventory() {
   useEffect(() => {
     const fetchSiteTypes = async () => {
       try {
-        const res = await Api.get('/v2/site-types');
+        const res = await ApiV2.get('/v2/site-types');
         if (res.data?.data) {
           setSiteTypes(res.data.data);
         }
