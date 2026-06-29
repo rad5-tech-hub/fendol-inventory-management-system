@@ -111,10 +111,6 @@ export default function FeedInventory() {
                   <FiDownload size={14} />
                   Stock In (Purchase)
                 </button>
-                <button className={styles.secBtn}>
-                  <BsEye size={14} />
-                  View Ledger
-                </button>
               </div>
             </div>
 
