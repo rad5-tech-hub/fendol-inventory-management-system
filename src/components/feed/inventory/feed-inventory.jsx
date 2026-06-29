@@ -5,7 +5,7 @@ import {
 } from 'react-icons/io5';
 import {
   FiDownload, FiFilter, FiSearch, FiRefreshCw, FiPlus,
-  FiChevronLeft, FiChevronRight,
+  FiChevronLeft, FiChevronRight, FiEdit2,
 } from 'react-icons/fi';
 import { GiChipsBag, GiCycle } from 'react-icons/gi';
 import { BsEye, BsArrowUpCircle, BsArrowDownCircle } from 'react-icons/bs';
@@ -56,6 +56,7 @@ export default function FeedInventory() {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAddFeedModal, setShowAddFeedModal] = useState(false);
+  const [editFeed, setEditFeed] = useState(null);
   const [feedRows, setFeedRows] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -142,6 +143,10 @@ export default function FeedInventory() {
       label: <><BsEye size={14} style={{ marginRight: 10 }} /> View Details</>,
       onClick: () => navigate(`/feed/inventory/ledger/${encodeURIComponent(row.id)}`),
     },
+    {
+      label: <><FiEdit2 size={14} style={{ marginRight: 10 }} /> Edit</>,
+      onClick: () => { setEditFeed(row); setShowAddFeedModal(true); },
+    },
     { divider: true },
     {
       label: <><BsArrowUpCircle size={14} style={{ marginRight: 10, color: '#16A34A' }} /> Restock Feed</>,
@@ -217,7 +222,7 @@ export default function FeedInventory() {
                 <p className={styles.pageSubtitle}>View and manage finished feed stock from both production and purchases.</p>
               </div>
               <div className={styles.headerRight}>
-                <button className={styles.exportBtn} onClick={() => setShowAddFeedModal(true)}>
+                <button className={styles.exportBtn} onClick={() => { setEditFeed(null); setShowAddFeedModal(true); }}>
                   <FiPlus size={14} />
                   Add Feed
                 </button>
@@ -585,7 +590,8 @@ export default function FeedInventory() {
       </div>
       <AddFeedModal
         show={showAddFeedModal}
-        onClose={() => setShowAddFeedModal(false)}
+        editData={editFeed}
+        onClose={() => { setShowAddFeedModal(false); setEditFeed(null); }}
         onSuccess={fetchFeeds}
       />
     </section>

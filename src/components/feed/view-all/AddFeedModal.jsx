@@ -11,7 +11,7 @@ const formatWithCommas = (n) => {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-export default function AddFeedModal({ show, onClose, onSuccess }) {
+export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
   const [feedName, setFeedName] = useState('');
   const [unit, setUnit] = useState('kg');
   const [feedType, setFeedType] = useState('');
@@ -30,21 +30,37 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
   const [submitting, setSubmitting] = useState(false);
   const feedTypeRef = useRef(null);
 
+  const isEditing = !!editData;
+
   useEffect(() => {
     if (show) {
-      setFeedName('');
-      setUnit('kg');
-      setFeedType('');
-      setFeedTypeId('');
-      setSiteId('');
-      setThreshold('');
-      setWeightPerBag('');
-      setPricePerBag('');
-      setFeedTypeSearch('');
-      setFeedTypeMode('select');
-      setNewFeedTypeName('');
+      if (editData) {
+        setFeedName(editData.feedName || '');
+        setUnit(editData.unit || 'kg');
+        setFeedType(editData.feedType || '');
+        setFeedTypeId(editData.feedTypeId || '');
+        setSiteId(editData.siteTypeId || '');
+        setThreshold(editData.threshold !== undefined ? String(Number(editData.threshold)) : '');
+        setWeightPerBag(editData.weightPerBag !== undefined ? String(Number(editData.weightPerBag)) : '');
+        setPricePerBag(editData.pricePerBag !== undefined ? String(Math.round(Number(editData.pricePerBag))) : '');
+        setFeedTypeSearch('');
+        setFeedTypeMode('select');
+        setNewFeedTypeName('');
+      } else {
+        setFeedName('');
+        setUnit('kg');
+        setFeedType('');
+        setFeedTypeId('');
+        setSiteId('');
+        setThreshold('');
+        setWeightPerBag('');
+        setPricePerBag('');
+        setFeedTypeSearch('');
+        setFeedTypeMode('select');
+        setNewFeedTypeName('');
+      }
     }
-  }, [show]);
+  }, [show, editData]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -127,9 +143,9 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
     const missing = [];
     if (!feedName.trim()) missing.push('Feed Name');
     if (!feedTypeId) missing.push('Feed Type');
-    if (!siteId) missing.push('Site Type');
     if (!threshold) missing.push('Threshold Value');
-    if (!weightPerBag) missing.push('Weight Per Bag');
+    if (!isEditing && !siteId) missing.push('Site Type');
+    if (!isEditing && !weightPerBag) missing.push('Weight Per Bag');
 
     if (missing.length > 0) {
       toast.error(
@@ -146,35 +162,38 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
       return;
     }
 
-    if (Number(threshold) < 1) {
-      toast.error('Threshold value must be at least 1.', { className: 'dark-toast' });
-      return;
-    }
-
-    if (Number(weightPerBag) < 1) {
-      toast.error('Weight per bag must be at least 1.', { className: 'dark-toast' });
-      return;
-    }
-
     if (feedName.trim().length < 2) {
       toast.error('Feed name must be at least 2 characters.', { className: 'dark-toast' });
       return;
     }
 
+    if (Number(threshold) < 1) {
+      toast.error('Threshold value must be at least 1.', { className: 'dark-toast' });
+      return;
+    }
+
+    if (!isEditing && Number(weightPerBag) < 1) {
+      toast.error('Weight per bag must be at least 1.', { className: 'dark-toast' });
+      return;
+    }
+
     setSubmitting(true);
-    const loadingToast = toast.loading('Adding feed...', { className: 'dark-toast' });
+    const loadingToast = toast.loading(isEditing ? 'Updating feed...' : 'Adding feed...', { className: 'dark-toast' });
 
     try {
       const payload = {
         feedName: feedName.trim(),
-        unit,
         feedTypeId,
         threshold: Number(threshold),
-        weightPerBag: Number(weightPerBag),
-        siteTypeId: siteId,
       };
 
-      const priceRaw = pricePerBag ? pricePerBag.replace(/,/g, '') : '';
+      if (!isEditing) {
+        payload.unit = unit;
+        payload.weightPerBag = Number(weightPerBag);
+        payload.siteTypeId = siteId;
+      }
+
+      const priceRaw = pricePerBag ? String(pricePerBag).replace(/,/g, '') : '';
       if (priceRaw) {
         const priceNum = Number(priceRaw);
         if (priceNum < 0) {
@@ -186,12 +205,14 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
         payload.pricePerBag = priceNum;
       }
 
-      const res = await Api.post('/create-feed', payload);
+      const res = isEditing
+        ? await Api.patch(`/api/v1/update-feed/${editData.id}`, payload)
+        : await Api.post('/create-feed', payload);
 
       const msg =
         res.data?.response_message ||
         res.data?.message ||
-        `${payload.feedName} Feed Created successfully`;
+        (isEditing ? `${payload.feedName} updated successfully` : `${payload.feedName} created successfully`);
 
       toast.dismiss(loadingToast);
       toast.success(msg, { className: 'dark-toast', autoClose: 3000 });
@@ -233,14 +254,20 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
             { className: 'dark-toast', autoClose: 5000 }
           );
         }
+      } else if (status === 404) {
+        toast.error('Feed not found. It may have been deleted.', { className: 'dark-toast', autoClose: 5000 });
       } else if (status === 409) {
         toast.error(
           data?.response_message || data?.message || 'A feed with this name already exists.',
           { className: 'dark-toast', autoClose: 5000 }
         );
-      } else if (status === 500) {
+      } else if (status === 413) {
+        toast.error('Submitted data too large. Please reduce input sizes.', { className: 'dark-toast', autoClose: 5000 });
+      } else if (status === 429) {
+        toast.error('Too many requests. Please wait before trying again.', { className: 'dark-toast', autoClose: 5000 });
+      } else if (status >= 500) {
         toast.error(
-          'Server error. Please try again later or contact support.',
+          data?.response_message || data?.message || 'Server error. Please try again later.',
           { className: 'dark-toast', autoClose: 5000 }
         );
       } else {
@@ -262,7 +289,7 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
     <Modal show={show} onHide={onClose} centered size="lg">
       <Modal.Header closeButton className="border-0 pb-0">
         <Modal.Title className="fw-semibold" style={{ fontSize: '20px', color: '#2E3135' }}>
-          Add New Feed
+          {isEditing ? 'Edit Feed' : 'Add New Feed'}
         </Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
@@ -553,7 +580,7 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
             disabled={submitting}
             className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${feedStyles.submit}`}
           >
-            {submitting ? 'Adding...' : 'Add'}
+            {submitting ? (isEditing ? 'Updating...' : 'Adding...') : (isEditing ? 'Update Feed' : 'Add')}
           </Button>
         </Modal.Footer>
       </Form>
