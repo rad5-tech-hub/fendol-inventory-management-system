@@ -31,10 +31,11 @@ export default function FeedLedger() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [feedDetails, setFeedDetails] = useState(null);
+  const [feedMeta, setFeedMeta] = useState(null);
   const [siteTypes, setSiteTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const displayName = feedDetails?.feedName || (feedName ? decodeURIComponent(feedName) : 'Feed');
+  const displayName = feedDetails?.feedName || feedMeta?.feedName || 'Feed';
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -43,18 +44,29 @@ export default function FeedLedger() {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        const [histRes, siteRes] = await Promise.all([
+        const [histRes, siteRes, feedsRes] = await Promise.all([
           Api.get(`/feed-history/${feedName}`),
           ApiV2.get('/v2/site-types'),
+          Api.get('/feeds?siteId=all').catch(() => null),
         ]);
+
         if (histRes.data?.success) {
           setHistoryData(histRes.data.data || []);
           if (histRes.data.feedDEtails?.length > 0) {
             setFeedDetails(histRes.data.feedDEtails[0]);
+          } else if (histRes.data.data?.length > 0 && histRes.data.data[0].feed) {
+            setFeedDetails(histRes.data.data[0].feed);
           }
         }
+
         if (siteRes.data?.data) {
           setSiteTypes(siteRes.data.data);
+        }
+
+        if (feedsRes?.data?.data) {
+          const feeds = Array.isArray(feedsRes.data.data) ? feedsRes.data.data : [];
+          const match = feeds.find((f) => f.id === feedName);
+          if (match) setFeedMeta(match);
         }
       } catch (err) {
         console.error('Failed to fetch feed history:', err);
