@@ -4,13 +4,11 @@ import {
   IoChevronDown,
 } from 'react-icons/io5';
 import {
-  FiDownload, FiFilter, FiSearch, FiRefreshCw,
+  FiDownload, FiFilter, FiSearch, FiRefreshCw, FiPlus,
   FiChevronLeft, FiChevronRight,
 } from 'react-icons/fi';
 import { GiChipsBag, GiCycle, GiCube, GiShoppingCart } from 'react-icons/gi';
-import { BsBoxSeam, BsEye } from 'react-icons/bs';
-import { FaExclamationTriangle } from 'react-icons/fa';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { BsEye } from 'react-icons/bs';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
@@ -63,29 +61,6 @@ const feedRows = [
   { name: 'Medicine Mix Feed', type: 'Special / Others', unit: 'kg', stock: 400.00, avgCost: 550.00, totalValue: 220000.00, status: 'Out of Stock' },
 ];
 
-const stockBySourceData = [
-  { name: 'Produced Stock', value: 18450, color: '#16A34A' },
-  { name: 'Purchased Stock', value: 10000, color: '#2563EB' },
-];
-
-const stockByTypeData = [
-  { name: 'Starter (0-1mm)', value: 8100, color: '#8B1A1A' },
-  { name: 'Grower (1-3mm)', value: 5850, color: '#F97316' },
-  { name: 'Finisher (3-5mm)', value: 7700, color: '#16A34A' },
-  { name: 'Broodstock Feed', value: 3750, color: '#2563EB' },
-  { name: 'Special / Others', value: 3050, color: '#7C3AED' },
-];
-
-const totalStock = stockBySourceData.reduce((sum, d) => sum + d.value, 0);
-const totalByType = stockByTypeData.reduce((sum, d) => sum + d.value, 0);
-
-const lowStockItems = [
-  { name: 'Pre-Starter Feed', stock: 1500.00, reorder: 2000.00, color: '#0D9488' },
-  { name: 'Maintenance Feed', stock: 950.00, reorder: 1500.00, color: '#F97316' },
-  { name: 'Breeder Feed', stock: 550.00, reorder: 1000.00, color: '#EAB308' },
-  { name: 'Medicine Mix Feed', stock: 400.00, reorder: 500.00, color: '#7C3AED' },
-];
-
 export default function FeedInventory() {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
@@ -126,6 +101,10 @@ export default function FeedInventory() {
                 <p className={styles.pageSubtitle}>View and manage finished feed stock from both production and purchases.</p>
               </div>
               <div className={styles.headerRight}>
+                <button className={styles.exportBtn} onClick={() => navigate('/feed/inventory/add')}>
+                  <FiPlus size={14} />
+                  Add Feed
+                </button>
                 <button className={styles.secBtn}>
                   <FiDownload size={14} />
                   Stock In (Purchase)
@@ -133,10 +112,6 @@ export default function FeedInventory() {
                 <button className={styles.secBtn}>
                   <BsEye size={14} />
                   View Ledger
-                </button>
-                <button className={styles.exportBtn}>
-                  <FiDownload size={14} />
-                  Export Report
                 </button>
               </div>
             </div>
@@ -195,18 +170,6 @@ export default function FeedInventory() {
                 <p className={styles.statSecondary}>35.2% of total</p>
               </div>
 
-              <div className={styles.statCard}>
-                <div className={styles.statCardTop}>
-                  <div className={styles.statIconCircle} style={{ background: '#FEE2E2' }}>
-                    <FaExclamationTriangle size={20} color="#DC2626" />
-                  </div>
-                  <div className={styles.statInfo}>
-                    <p className={styles.statLabel}>Low Stock Alerts</p>
-                    <div className={styles.statNumber}>4</div>
-                  </div>
-                </div>
-                <p className={styles.statSecondary}>Feed types</p>
-              </div>
             </div>
 
             {/* ── Filter Bar ── */}
@@ -223,9 +186,6 @@ export default function FeedInventory() {
                 All Feed Types <IoChevronDown size={11} />
               </button>
               <button className={styles.filterDropdown}>
-                All Sources <IoChevronDown size={11} />
-              </button>
-              <button className={styles.filterDropdown}>
                 All Sites <IoChevronDown size={11} />
               </button>
               <button className={styles.filterBtn}>
@@ -238,11 +198,8 @@ export default function FeedInventory() {
               </button>
             </div>
 
-            {/* ── Main Two‑Column Layout ── */}
-            <div className={styles.mainContentRow}>
-
-              {/* ──── LEFT: Table ──── */}
-              <div className={styles.tableCard}>
+            {/* ── Feed Stock Overview Table ── */}
+            <div className={styles.tableCard}>
                 <div className={styles.tableHeader}>
                   <h3 className={styles.cardTitle}>Feed Stock Overview</h3>
                   <span className={styles.tableBadge}>10 Feed Types</span>
@@ -328,122 +285,6 @@ export default function FeedInventory() {
                     </button>
                   </div>
                 </div>
-              </div>
-
-              {/* ──── RIGHT: Sidebar Stacked Cards ──── */}
-              <div className={styles.sidebarCol}>
-
-                {/* Card 1: Stock by Source */}
-                <div className={styles.sideCard}>
-                  <h3 className={styles.cardTitle}>Stock by Source</h3>
-                  <div className={styles.donutWrapper}>
-                    <div className={styles.donutChartArea}>
-                      <ResponsiveContainer width={160} height={160}>
-                        <PieChart>
-                          <Pie
-                            data={stockBySourceData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={44}
-                            outerRadius={72}
-                            startAngle={90}
-                            endAngle={-270}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            {stockBySourceData.map((entry, idx) => (
-                              <Cell key={idx} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className={styles.donutCenterLabel}>
-                        <span className={styles.donutCenterNumber}>{f(totalStock)}</span>
-                        <span className={styles.donutCenterText}>Total Stock</span>
-                      </div>
-                    </div>
-                    <div className={styles.donutLegend}>
-                      <div className={styles.donutLegendRow}>
-                        <span className={styles.donutDot} style={{ background: '#16A34A' }} />
-                        <span className={styles.donutLegendLabel}>Produced Stock</span>
-                        <span className={styles.donutLegendValue}>18,450 kg</span>
-                        <span className={styles.donutLegendPct}>(64.8%)</span>
-                      </div>
-                      <div className={styles.donutLegendRow}>
-                        <span className={styles.donutDot} style={{ background: '#2563EB' }} />
-                        <span className={styles.donutLegendLabel}>Purchased Stock</span>
-                        <span className={styles.donutLegendValue}>10,000 kg</span>
-                        <span className={styles.donutLegendPct}>(35.2%)</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card 2: Stock by Feed Type */}
-                <div className={styles.sideCard}>
-                  <h3 className={styles.cardTitle}>Stock by Feed Type</h3>
-                  <div className={styles.donutWrapper}>
-                    <div className={styles.donutChartArea}>
-                      <ResponsiveContainer width={160} height={160}>
-                        <PieChart>
-                          <Pie
-                            data={stockByTypeData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={44}
-                            outerRadius={72}
-                            startAngle={90}
-                            endAngle={-270}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            {stockByTypeData.map((entry, idx) => (
-                              <Cell key={idx} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className={styles.donutCenterLabel}>
-                        <span className={styles.donutCenterNumber}>{f(totalByType)}</span>
-                        <span className={styles.donutCenterText}>Total Stock</span>
-                      </div>
-                    </div>
-                    <div className={styles.donutLegend}>
-                      {stockByTypeData.map((item, i) => (
-                        <div key={i} className={styles.donutLegendRow}>
-                          <span className={styles.donutDot} style={{ background: item.color }} />
-                          <span className={styles.donutLegendLabel}>{item.name}</span>
-                          <span className={styles.donutLegendValue}>{f(item.value)} kg</span>
-                          <span className={styles.donutLegendPct}>({((item.value / totalByType) * 100).toFixed(1)}%)</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card 3: Low Stock Alerts */}
-                <div className={styles.sideCard}>
-                  <div className={styles.cardTitleRow}>
-                    <h3 className={styles.cardTitleNoMargin}>Low Stock Alerts</h3>
-                    <span className={styles.viewAllLink}>View All</span>
-                  </div>
-                  <div className={styles.alertList}>
-                    {lowStockItems.map((item, i) => (
-                      <div key={i} className={styles.alertItem}>
-                        <div className={styles.alertItemLeft}>
-                          <span className={styles.alertDot} style={{ background: item.color }} />
-                          <span className={styles.alertName}>{item.name}</span>
-                        </div>
-                        <div className={styles.alertItemRight}>
-                          <span className={styles.alertStock}>{f(item.stock)} kg</span>
-                          <span className={styles.alertReorder}>Reorder level: {f(item.reorder)} kg</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
             </div>
 
           </main>
