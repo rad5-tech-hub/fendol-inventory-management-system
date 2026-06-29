@@ -34,6 +34,7 @@ const computeOpenFromPath = (path) => {
   if (path.includes("/customer")) open.customer = true;
   if (path.includes("/referral")) open.referral = true;
   if (path.includes("/mlm")) open.mlm = true;
+  if (path.includes("/complaints")) open.complaints = true;
   return open;
 };
 
@@ -47,7 +48,7 @@ const scrollActiveIntoView = (containerEl) => {
     activeEl.scrollIntoView({ block: 'center', behavior: 'auto' });
   }
 };
-import { FaChevronRight, FaChevronDown, FaMapMarkerAlt, FaCircle, FaHouseUser, FaExchangeAlt, FaUsers, FaTrophy, FaTree, FaHandHoldingUsd, FaUserTie, FaMoneyCheckAlt, FaClock, FaClipboardList } from "react-icons/fa";
+import { FaChevronRight, FaChevronDown, FaMapMarkerAlt, FaCircle, FaHouseUser, FaExchangeAlt, FaUsers, FaTrophy, FaTree, FaHandHoldingUsd, FaUserTie, FaMoneyCheckAlt, FaClock, FaClipboardList, FaExclamationTriangle } from "react-icons/fa";
 import { IoGridOutline } from "react-icons/io5";
 import { BsShopWindow } from "react-icons/bs";
 import { LuClipboardCheck, LuClipboardPenLine } from "react-icons/lu";
@@ -102,6 +103,7 @@ export default function SideBar({ show, handleClose }) {
     if (path.includes("/customer")) updates.customer = true;
     if (path.includes("/referral")) updates.referral = true;
     if (path.includes("/mlm")) updates.mlm = true;
+    if (path.includes("/complaints")) updates.complaints = true;
 
     const expandingKey = Object.keys(updates).find(k => updates[k] && !open[k]);
 
@@ -435,6 +437,19 @@ export default function SideBar({ show, handleClose }) {
                   {renderNavItem("Leaders, Downlines and commissions", "/mlm/leaders")}
                   {renderNavItem("Payout Requests", "/mlm/payouts")}
                   {renderNavItem("Earning report", "/mlm/earnings")}
+                </>
+              )}
+            </>
+          )}
+
+          {/* --- COMPLAINTS --- */}
+          {hasPermission(userTypes, 'complaints') && (
+            <>
+              <span className={styles.sectionLabel}>COMPLAINTS</span>
+              {renderCard("complaints", "Complaints", <FaExclamationTriangle size={25} className="me-1" />,
+                <>
+                  {renderNavItem("Make a Complaint", "/complaints")}
+                  {hasPermission(userTypes, 'complaints:view-all') && renderNavItem("All Complaints", "/complaints/all")}
                 </>
               )}
             </>

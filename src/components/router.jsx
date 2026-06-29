@@ -15,6 +15,8 @@ import ProductStagesNavigations from "./ponds/productStagesRouter";
 import StoreNavigations from "./store/storeRouter";
 import FinanceNavigations from "./finance/financeRouter";
 import DamageLoss from "./damage-loss/damges";
+import Complaints from "./complaints/complaints";
+import AllComplaints from "./complaints/all-complaints";
 import ShowcaseNavigations from "./showcase/showcaseRoute";
 import SiteManagementNavigations from "./site-management/siteManagementRouter";
 import ManageNavigations from "./manage-fish/manageRoute";
@@ -155,6 +157,26 @@ export default function RouterSwitch() {
               <ProtectedRoute>
                 <RoleRoute resource="damage-loss">
                   <DamageLoss />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="complaints"
+            element={
+              <ProtectedRoute>
+                <RoleRoute resource="complaints">
+                  <Complaints />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="complaints/all"
+            element={
+              <ProtectedRoute>
+                <RoleRoute resource="complaints:view-all">
+                  <AllComplaints />
                 </RoleRoute>
               </ProtectedRoute>
             }

@@ -86,6 +86,10 @@ const ACCESS = {
 
 	// ── MLM ──
 	mlm: ['super_admin', 'farm_manager', 'sales_manager'],
+
+	// ── Complaints ──
+	complaints: ['super_admin', 'farm_manager', 'store_keeper', 'sales_manager', 'finance'],
+	'complaints:view-all': ['super_admin'],
 };
 
 export const ROLE_TYPES = {
