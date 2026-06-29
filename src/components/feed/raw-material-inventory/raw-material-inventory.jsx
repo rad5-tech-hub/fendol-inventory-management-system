@@ -75,9 +75,14 @@ export default function RawMaterialInventory() {
     fetchMaterials();
   }, [fetchMaterials]);
 
-  const handleCreated = useCallback(() => {
-    setShowAddModal(false);
-    fetchMaterials();
+  const handleCreated = useCallback((success, message) => {
+    if (success) {
+      setShowAddModal(false);
+      toast.success(message, { autoClose: 4000 });
+      fetchMaterials();
+    } else {
+      toast.error(message, { autoClose: 6000 });
+    }
   }, [fetchMaterials]);
 
   const getActionItems = (material) => [

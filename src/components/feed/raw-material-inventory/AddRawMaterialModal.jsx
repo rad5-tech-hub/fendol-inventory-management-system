@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPackage, FiDollarSign, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
+import { FiX, FiPackage, FiDollarSign, FiAlertTriangle } from 'react-icons/fi';
 import { HiOutlineTag } from 'react-icons/hi';
 import { BsBoxSeam } from 'react-icons/bs';
-import { toast } from 'react-toastify';
 import { ApiV2 } from '../../shared/api/apiLink';
 import styles from './AddRawMaterialModal.module.scss';
 
@@ -179,23 +178,10 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess }) {
     setErrors(errs);
 
     if (Object.keys(errs).length > 0) {
-      const firstKey = Object.keys(errs)[0];
-      toast.error(
-        <div>
-          <strong style={{ fontSize: 13 }}>Please fix the following:</strong>
-          <ul style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 12 }}>
-            {Object.entries(errs).map(([k, v]) => (
-              <li key={k}>{FIELD_LABELS[k]}: {v}</li>
-            ))}
-          </ul>
-        </div>,
-        { autoClose: 6000 }
-      );
       return;
     }
 
     setSubmitting(true);
-    const loadingToast = toast.loading('Creating raw material...');
 
     try {
       const payload = {
@@ -209,109 +195,29 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess }) {
 
       const res = await ApiV2.post('/v2/raw-material', payload);
 
-      toast.dismiss(loadingToast);
-      toast.success(
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <FiCheckCircle size={18} />
-          <span>{res.data?.response_message || `${payload.name} created successfully`}</span>
-        </div>,
-        { autoClose: 4000 }
-      );
-
       handleClose();
-      if (onSuccess) onSuccess(res.data?.data);
+      if (onSuccess) onSuccess(true, res.data?.response_message || `${payload.name} created successfully`, res.data?.data);
     } catch (error) {
-      toast.dismiss(loadingToast);
+      let msg = 'Failed to create raw material. Please try again.';
+      let fieldErrors = null;
 
-      if (!error.response) {
-        toast.error(
-          <div>
-            <strong>Network Error</strong>
-            <div style={{ fontSize: 12, marginTop: 4 }}>Please check your internet connection and try again.</div>
-          </div>,
-          { autoClose: 6000 }
-        );
-        setSubmitting(false);
-        return;
-      }
+      if (error.response) {
+        const { status, data } = error.response;
+        msg = data?.response_message || data?.message || msg;
 
-      const { status, data } = error.response;
-      const serverMsg = data?.response_message || data?.message || '';
-
-      if (status === 422 || status === 400) {
-        const fieldErrs = data?.errors;
-        if (fieldErrs && typeof fieldErrs === 'object') {
-          const mapped = {};
-          let toastList = [];
-          Object.entries(fieldErrs).forEach(([key, msgs]) => {
-            const msg = Array.isArray(msgs) ? msgs[0] : msgs;
-            mapped[key] = msg;
-            toastList.push(`${FIELD_LABELS[key] || key}: ${msg}`);
+        if ((status === 422 || status === 400) && data?.errors) {
+          fieldErrors = {};
+          Object.entries(data.errors).forEach(([key, msgs]) => {
+            fieldErrors[key] = Array.isArray(msgs) ? msgs[0] : msgs;
           });
-          setErrors(mapped);
-          toast.error(
-            <div>
-              <strong>Validation Error</strong>
-              <ul style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 12 }}>
-                {toastList.map((t, i) => <li key={i}>{t}</li>)}
-              </ul>
-            </div>,
-            { autoClose: 7000 }
-          );
-          setSubmitting(false);
-          return;
+          setErrors(fieldErrors);
         }
-
-        toast.error(serverMsg || 'Invalid data. Please review your inputs.', { autoClose: 5000 });
-        setSubmitting(false);
-        return;
+      } else {
+        msg = 'Network error. Please check your internet connection and try again.';
       }
 
-      if (status === 409) {
-        toast.error(
-          <div>
-            <strong>Duplicate Entry</strong>
-            <div style={{ fontSize: 12, marginTop: 4 }}>A raw material with this name already exists.</div>
-          </div>,
-          { autoClose: 5000 }
-        );
-        setSubmitting(false);
-        return;
-      }
-
-      if (status === 413) {
-        toast.error('The submitted data is too large. Please reduce input sizes.', { autoClose: 5000 });
-        setSubmitting(false);
-        return;
-      }
-
-      if (status === 429) {
-        toast.error('Too many requests. Please wait a moment before trying again.', { autoClose: 5000 });
-        setSubmitting(false);
-        return;
-      }
-
-      if (status >= 500) {
-        toast.error(
-          <div>
-            <strong>Server Error</strong>
-            <div style={{ fontSize: 12, marginTop: 4 }}>
-              {serverMsg || 'Something went wrong on our end. Please try again later.'}
-            </div>
-          </div>,
-          { autoClose: 6000 }
-        );
-        setSubmitting(false);
-        return;
-      }
-
-      toast.error(
-        <div>
-          <strong>Error ({status})</strong>
-          <div style={{ fontSize: 12, marginTop: 4 }}>{serverMsg || 'An unexpected error occurred.'}</div>
-        </div>,
-        { autoClose: 5000 }
-      );
+      if (onSuccess) onSuccess(false, msg, fieldErrors);
+    } finally {
       setSubmitting(false);
     }
   };
