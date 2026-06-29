@@ -135,13 +135,13 @@ export default function AllComplaints() {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Search by name, ID, staff..."
+                  placeholder="Search by name, ID, or staff..."
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
                 />
               </div>
               <select
-                className={`form-control ${styles.filterSelect}`}
+                className={styles.filterSelect}
                 value={typeFilter}
                 onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(0); }}
               >
@@ -150,7 +150,7 @@ export default function AllComplaints() {
                 <option value="General">General</option>
               </select>
               <select
-                className={`form-control ${styles.filterSelect}`}
+                className={styles.filterSelect}
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(0); }}
               >
