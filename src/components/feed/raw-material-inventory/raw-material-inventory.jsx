@@ -35,6 +35,7 @@ export default function RawMaterialInventory() {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editMaterial, setEditMaterial] = useState(null);
   const [materials, setMaterials] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -92,7 +93,7 @@ export default function RawMaterialInventory() {
     },
     {
       label: <><FiEdit2 size={14} style={{ marginRight: 10 }} /> Edit</>,
-      onClick: () => {},
+      onClick: () => { setEditMaterial(material); setShowAddModal(true); },
     },
   ];
 
@@ -125,7 +126,7 @@ export default function RawMaterialInventory() {
                   <FiDownload size={14} />
                   Export
                 </button>
-                <button className={styles.addBtn} onClick={() => setShowAddModal(true)}>
+                <button className={styles.addBtn} onClick={() => { setEditMaterial(null); setShowAddModal(true); }}>
                   <FiPlus size={16} />
                   Add Raw Material
                 </button>
@@ -344,7 +345,8 @@ export default function RawMaterialInventory() {
 
       <AddRawMaterialModal
         show={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        editData={editMaterial}
+        onClose={() => { setShowAddModal(false); setEditMaterial(null); }}
         onSuccess={handleCreated}
       />
     </section>

@@ -98,7 +98,7 @@ function validateAll(form) {
   return errs;
 }
 
-export default function AddRawMaterialModal({ show, onClose, onSuccess }) {
+export default function AddRawMaterialModal({ show, onClose, onSuccess, editData }) {
   const [form, setForm] = useState(defaultForm);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -107,9 +107,22 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess }) {
   const [visible, setVisible] = useState(false);
   const inputRef = useRef(null);
 
+  const isEditing = !!editData;
+
   useEffect(() => {
     if (show) {
-      setForm(defaultForm);
+      if (editData) {
+        setForm({
+          name: editData.name || '',
+          category: editData.category || '',
+          unit: editData.unit || '',
+          quantity: editData.quantity !== undefined ? String(Number(editData.quantity)) : '',
+          unitCost: editData.unitCost !== undefined ? String(Number(editData.unitCost)) : '',
+          threshold: editData.threshold !== undefined ? String(Number(editData.threshold)) : '',
+        });
+      } else {
+        setForm(defaultForm);
+      }
       setErrors({});
       setTouched({});
       setMounted(true);
@@ -119,7 +132,7 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess }) {
       const timer = setTimeout(() => setMounted(false), 200);
       return () => clearTimeout(timer);
     }
-  }, [show]);
+  }, [show, editData]);
 
   useEffect(() => {
     if (!show) return;
@@ -193,12 +206,15 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess }) {
         threshold: Number(form.threshold),
       };
 
-      const res = await ApiV2.post('/v2/raw-material', payload);
+      const res = isEditing
+        ? await ApiV2.patch(`/v2/raw-material/${editData.id}`, payload)
+        : await ApiV2.post('/v2/raw-material', payload);
 
       handleClose();
-      if (onSuccess) onSuccess(true, res.data?.response_message || `${payload.name} created successfully`, res.data?.data);
+      const msg = res.data?.response_message || (isEditing ? `${payload.name} updated successfully` : `${payload.name} created successfully`);
+      if (onSuccess) onSuccess(true, msg, res.data?.data);
     } catch (error) {
-      let msg = 'Failed to create raw material. Please try again.';
+      let msg = isEditing ? 'Failed to update raw material. Please try again.' : 'Failed to create raw material. Please try again.';
       let fieldErrors = null;
 
       if (error.response) {
@@ -312,8 +328,8 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess }) {
               <BsBoxSeam size={20} color="#512728" />
             </div>
             <div>
-              <h2 className={styles.title}>Add Raw Material</h2>
-              <p className={styles.subtitle}>Record a new raw material in your inventory.</p>
+              <h2 className={styles.title}>{isEditing ? 'Edit Raw Material' : 'Add Raw Material'}</h2>
+              <p className={styles.subtitle}>{isEditing ? 'Update the details of this raw material.' : 'Record a new raw material in your inventory.'}</p>
             </div>
           </div>
           <button className={styles.closeBtn} onClick={handleClose} type="button" aria-label="Close">
@@ -351,12 +367,12 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess }) {
               {submitting ? (
                 <>
                   <span className={styles.spinner} />
-                  Creating...
+                  {isEditing ? 'Updating...' : 'Creating...'}
                 </>
               ) : (
                 <>
                   <FiPackage size={15} />
-                  Add Material
+                  {isEditing ? 'Update Material' : 'Add Material'}
                 </>
               )}
             </button>
