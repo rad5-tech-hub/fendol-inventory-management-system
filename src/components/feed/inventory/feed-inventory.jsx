@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   IoChevronDown,
@@ -62,6 +62,14 @@ export default function FeedInventory() {
   const [fetchError, setFetchError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 45;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFeedType, setSelectedFeedType] = useState('');
+  const [selectedSiteId, setSelectedSiteId] = useState('');
+  const [siteTypes, setSiteTypes] = useState([]);
+  const [showFeedTypeFilter, setShowFeedTypeFilter] = useState(false);
+  const [showSiteFilter, setShowSiteFilter] = useState(false);
+  const feedTypeFilterRef = useRef(null);
+  const siteFilterRef = useRef(null);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -102,6 +110,33 @@ export default function FeedInventory() {
     fetchFeeds();
   }, []);
 
+  useEffect(() => {
+    const fetchSiteTypes = async () => {
+      try {
+        const res = await Api.get('/v2/site-types');
+        if (res.data?.data) {
+          setSiteTypes(res.data.data);
+        }
+      } catch {
+        // silently fail
+      }
+    };
+    fetchSiteTypes();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (feedTypeFilterRef.current && !feedTypeFilterRef.current.contains(e.target)) {
+        setShowFeedTypeFilter(false);
+      }
+      if (siteFilterRef.current && !siteFilterRef.current.contains(e.target)) {
+        setShowSiteFilter(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const getActionItems = (row) => [
     {
       label: <><BsEye size={14} style={{ marginRight: 10 }} /> View Details</>,
@@ -122,15 +157,38 @@ export default function FeedInventory() {
     },
   ];
 
+  const feedTypeOptions = [...new Set(feedRows.map((r) => r.feedType).filter(Boolean))];
+
+  const filteredRows = feedRows.filter((r) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (query) {
+      const nameMatch = (r.feedName || '').toLowerCase().includes(query);
+      const typeMatch = (r.feedType || '').toLowerCase().includes(query);
+      if (!nameMatch && !typeMatch) return false;
+    }
+    if (selectedFeedType && r.feedType !== selectedFeedType) return false;
+    if (selectedSiteId && r.siteTypeId !== selectedSiteId) return false;
+    return true;
+  });
+
   const totalQuantity = meta?.totalQuantity ?? feedRows.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
   const feedTypeCount = meta?.feedTypeCount ?? feedRows.length;
+  const filteredQuantity = filteredRows.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
+  const filteredTypeCount = [...new Set(filteredRows.map((r) => r.feedType).filter(Boolean))].length;
 
   const handlePageChange = (data) => {
     setCurrentPage(data.selected);
   };
 
-  const currentProducts = feedRows.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-  const pageCount = Math.ceil(feedRows.length / itemsPerPage);
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedFeedType('');
+    setSelectedSiteId('');
+    setCurrentPage(0);
+  };
+
+  const currentProducts = filteredRows.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const pageCount = Math.ceil(filteredRows.length / itemsPerPage);
 
   return (
     <section className={`${feedStyles.body}`}>
@@ -178,11 +236,15 @@ export default function FeedInventory() {
                     <GiChipsBag size={20} color="#2563EB" />
                   </div>
                   <div className={styles.statInfo}>
-                    <p className={styles.statLabel}>Total Feed Types</p>
-                    <div className={styles.statNumber}>{feedTypeCount}</div>
+                    <p className={styles.statLabel}>Feed Types</p>
+                    <div className={styles.statNumber}>
+                      {searchQuery || selectedFeedType || selectedSiteId ? filteredTypeCount : feedTypeCount}
+                    </div>
                   </div>
                 </div>
-                <p className={styles.statSecondary}>All feed types</p>
+                <p className={styles.statSecondary}>
+                  {searchQuery || selectedFeedType || selectedSiteId ? 'Filtered count' : 'All feed types'}
+                </p>
               </div>
 
               <div className={styles.statCard}>
@@ -192,10 +254,15 @@ export default function FeedInventory() {
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>Total Stock Available</p>
-                    <div className={styles.statNumber}>{f(totalQuantity)} <span className={styles.statUnit}>kg</span></div>
+                    <div className={styles.statNumber}>
+                      {f(searchQuery || selectedFeedType || selectedSiteId ? filteredQuantity : totalQuantity)}
+                      <span className={styles.statUnit}> kg</span>
+                    </div>
                   </div>
                 </div>
-                <p className={styles.statSecondary}>Across all feed types</p>
+                <p className={styles.statSecondary}>
+                  {searchQuery || selectedFeedType || selectedSiteId ? 'Filtered total' : 'Across all feed types'}
+                </p>
               </div>
             </div>
 
@@ -207,21 +274,147 @@ export default function FeedInventory() {
                   type="text"
                   className={styles.searchInput}
                   placeholder="Search by feed name or type..."
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(0); }}
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    style={{ background: 'none', border: 'none', padding: 0, color: '#9CA3AF', cursor: 'pointer', lineHeight: 1 }}
+                    type="button"
+                  >
+                    <FiRefreshCw size={12} />
+                  </button>
+                )}
               </div>
-              <button className={styles.filterDropdown}>
-                All Feed Types <IoChevronDown size={11} />
-              </button>
-              <button className={styles.filterDropdown}>
-                All Sites <IoChevronDown size={11} />
-              </button>
-              <button className={styles.filterBtn}>
-                <FiFilter size={13} />
-                Filter
-              </button>
-              <button className={styles.resetBtn} onClick={fetchFeeds}>
+
+              <div ref={feedTypeFilterRef} className="position-relative">
+                <button
+                  className={styles.filterDropdown}
+                  onClick={() => { setShowFeedTypeFilter(!showFeedTypeFilter); setShowSiteFilter(false); }}
+                  type="button"
+                >
+                  {selectedFeedType || 'All Feed Types'} <IoChevronDown size={11} />
+                </button>
+                {showFeedTypeFilter && (
+                  <div
+                    className="position-absolute bg-white shadow-sm"
+                    style={{
+                      zIndex: 1050,
+                      borderRadius: '10px',
+                      marginTop: '6px',
+                      border: '1px solid #e0e0e0',
+                      overflow: 'hidden',
+                      minWidth: 200,
+                      boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+                      <div
+                        style={{
+                          padding: '10px 16px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: !selectedFeedType ? 600 : 400,
+                          color: !selectedFeedType ? '#512728' : '#2E3135',
+                          backgroundColor: !selectedFeedType ? '#fdf5f5' : 'transparent',
+                          borderBottom: feedTypeOptions.length > 0 ? '1px solid #f0f0f0' : 'none',
+                        }}
+                        onClick={() => { setSelectedFeedType(''); setShowFeedTypeFilter(false); setCurrentPage(0); }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FAFCFF'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                      >
+                        All Feed Types
+                      </div>
+                      {feedTypeOptions.map((t) => (
+                        <div
+                          key={t}
+                          style={{
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: selectedFeedType === t ? 600 : 400,
+                            color: selectedFeedType === t ? '#512728' : '#2E3135',
+                            backgroundColor: selectedFeedType === t ? '#fdf5f5' : 'transparent',
+                            borderBottom: '1px solid #f0f0f0',
+                          }}
+                          onClick={() => { setSelectedFeedType(t); setShowFeedTypeFilter(false); setCurrentPage(0); }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FAFCFF'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                        >
+                          {t}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div ref={siteFilterRef} className="position-relative">
+                <button
+                  className={styles.filterDropdown}
+                  onClick={() => { setShowSiteFilter(!showSiteFilter); setShowFeedTypeFilter(false); }}
+                  type="button"
+                >
+                  {selectedSiteId ? (siteTypes.find((s) => s.id === selectedSiteId)?.name || selectedSiteId) : 'All Sites'} <IoChevronDown size={11} />
+                </button>
+                {showSiteFilter && (
+                  <div
+                    className="position-absolute bg-white shadow-sm"
+                    style={{
+                      zIndex: 1050,
+                      borderRadius: '10px',
+                      marginTop: '6px',
+                      border: '1px solid #e0e0e0',
+                      overflow: 'hidden',
+                      minWidth: 200,
+                      boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+                      <div
+                        style={{
+                          padding: '10px 16px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: !selectedSiteId ? 600 : 400,
+                          color: !selectedSiteId ? '#512728' : '#2E3135',
+                          backgroundColor: !selectedSiteId ? '#fdf5f5' : 'transparent',
+                          borderBottom: siteTypes.length > 0 ? '1px solid #f0f0f0' : 'none',
+                        }}
+                        onClick={() => { setSelectedSiteId(''); setShowSiteFilter(false); setCurrentPage(0); }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FAFCFF'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                      >
+                        All Sites
+                      </div>
+                      {siteTypes.map((s) => (
+                        <div
+                          key={s.id}
+                          style={{
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: selectedSiteId === s.id ? 600 : 400,
+                            color: selectedSiteId === s.id ? '#512728' : '#2E3135',
+                            backgroundColor: selectedSiteId === s.id ? '#fdf5f5' : 'transparent',
+                            borderBottom: '1px solid #f0f0f0',
+                          }}
+                          onClick={() => { setSelectedSiteId(s.id); setShowSiteFilter(false); setCurrentPage(0); }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FAFCFF'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                        >
+                          {s.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button className={styles.resetBtn} onClick={resetFilters} type="button">
                 <FiRefreshCw size={13} />
-                Refresh
+                Reset
               </button>
             </div>
 
@@ -269,7 +462,10 @@ export default function FeedInventory() {
               <div className={styles.tableCard}>
                 <div className={styles.tableHeader}>
                   <h3 className={styles.cardTitle}>Feed Stock Overview</h3>
-                  <span className={styles.tableBadge}>{feedTypeCount} Feed Types</span>
+                  <span className={styles.tableBadge}>
+                    {filteredTypeCount}
+                    {searchQuery || selectedFeedType || selectedSiteId ? ` / ${feedTypeCount}` : ''} Feed Types
+                  </span>
                 </div>
                 <div className={styles.tableWrapper}>
                   <table className={styles.table}>
@@ -347,7 +543,8 @@ export default function FeedInventory() {
                 <div className={styles.tableFooter}>
                   <span className={styles.footerInfo}>
                     Showing {currentProducts.length > 0 ? currentPage * itemsPerPage + 1 : 0} to{' '}
-                    {Math.min((currentPage + 1) * itemsPerPage, feedRows.length)} of {feedRows.length} feed types
+                    {Math.min((currentPage + 1) * itemsPerPage, filteredRows.length)} of {filteredRows.length}
+                    {searchQuery || selectedFeedType || selectedSiteId ? ` (filtered from ${feedRows.length})` : ''} feed types
                   </span>
                   <div className={styles.pagination}>
                     <button
