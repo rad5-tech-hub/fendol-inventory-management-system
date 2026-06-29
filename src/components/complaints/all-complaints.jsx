@@ -275,45 +275,66 @@ export default function AllComplaints() {
                 <div className={styles.overlay} onClick={() => setSelectedComplaint(null)} />
                 <div className={styles.slidePanel}>
                   <div className={styles.panelHeader}>
-                    <h5>{selectedComplaint.id}</h5>
+                    <div className={styles.panelHeaderLeft}>
+                      <span className={styles.panelIdBadge}>{selectedComplaint.id}</span>
+                      <span className={styles.panelDate}>Filed {formatDate(selectedComplaint.date)}</span>
+                    </div>
                     <button className={styles.closeBtn} onClick={() => setSelectedComplaint(null)}>
-                      <FiX size={22} />
+                      <FiX size={20} />
                     </button>
                   </div>
+
                   <div className={styles.panelBody}>
-                    <div className={styles.detailRow}>
-                      <div className={styles.detailLabel}>Complainant</div>
-                      <div className={styles.detailValue}>{selectedComplaint.complainant}</div>
-                    </div>
-                    <div className={styles.detailRow}>
-                      <div className={styles.detailLabel}>Type</div>
-                      <div className={styles.detailValue}>
-                        <span className={typeClass(selectedComplaint.type)}>{selectedComplaint.type}</span>
+                    <div className={styles.panelAvatar}>
+                      <div className={styles.avatarCircle}>
+                        {(selectedComplaint.complainant || '?').charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className={styles.panelComplainantName}>{selectedComplaint.complainant}</div>
+                        <div className={styles.panelComplainantLabel}>Complainant</div>
                       </div>
                     </div>
-                    {selectedComplaint.staffName && (
-                      <div className={styles.detailRow}>
-                        <div className={styles.detailLabel}>Staff Member</div>
-                        <div className={styles.detailValue}>{selectedComplaint.staffName}</div>
+
+                    <div className={styles.panelDivider} />
+
+                    <div className={styles.panelGrid}>
+                      <div className={styles.panelGridItem}>
+                        <div className={styles.panelGridLabel}>Type</div>
+                        <div>
+                          <span className={typeClass(selectedComplaint.type)}>
+                            {selectedComplaint.type === 'Staff' ? <BsPeople size={12} /> : null}
+                            {selectedComplaint.type}
+                          </span>
+                        </div>
                       </div>
-                    )}
-                    <div className={styles.detailRow}>
-                      <div className={styles.detailLabel}>Date Filed</div>
-                      <div className={styles.detailValue}>{formatDate(selectedComplaint.date)}</div>
-                    </div>
-                    <div className={styles.detailRow}>
-                      <div className={styles.detailLabel}>Status</div>
-                      <div className={styles.detailValue}>
-                        <span className={statusClass(selectedComplaint.status)}>{selectedComplaint.status}</span>
+                      <div className={styles.panelGridItem}>
+                        <div className={styles.panelGridLabel}>Status</div>
+                        <div>
+                          <span className={statusClass(selectedComplaint.status)}>{selectedComplaint.status}</span>
+                        </div>
+                      </div>
+                      {selectedComplaint.staffName && (
+                        <div className={styles.panelGridItem}>
+                          <div className={styles.panelGridLabel}>Staff Member</div>
+                          <div className={styles.panelGridValue}>{selectedComplaint.staffName}</div>
+                        </div>
+                      )}
+                      <div className={styles.panelGridItem}>
+                        <div className={styles.panelGridLabel}>Date Filed</div>
+                        <div className={styles.panelGridValue}>{formatDate(selectedComplaint.date)}</div>
                       </div>
                     </div>
-                    <div className={styles.detailRow}>
-                      <div className={styles.detailLabel}>Description</div>
-                      <div className={styles.detailValue} style={{ whiteSpace: 'pre-wrap' }}>
+
+                    <div className={styles.panelDivider} />
+
+                    <div className={styles.panelSection}>
+                      <div className={styles.panelSectionTitle}>Description</div>
+                      <div className={styles.panelDescBox}>
                         {selectedComplaint.description}
                       </div>
                     </div>
                   </div>
+
                   <div className={styles.panelFooter}>
                     <button
                       className={`${styles.panelActionBtn} ${styles.btnResolve}`}
@@ -321,7 +342,7 @@ export default function AllComplaints() {
                         toast.info('Resolve action will be available once the API is ready.', { className: 'dark-toast' });
                       }}
                     >
-                      <FiCheckCircle size={16} style={{ marginRight: 8 }} />
+                      <FiCheckCircle size={16} />
                       Resolve
                     </button>
                     <button
@@ -330,7 +351,7 @@ export default function AllComplaints() {
                         toast.info('Dismiss action will be available once the API is ready.', { className: 'dark-toast' });
                       }}
                     >
-                      <FiXCircle size={16} style={{ marginRight: 8 }} />
+                      <FiXCircle size={16} />
                       Dismiss
                     </button>
                   </div>

@@ -534,12 +534,13 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
   z-index: 1040;
-  animation: fadeIn 0.2s ease;
+  animation: panelFadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
+@keyframes panelFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
@@ -548,22 +549,22 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: 480px;
+  width: 520px;
   max-width: 100vw;
   height: 100vh;
   background: #fff;
   z-index: 1050;
-  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.1);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
-  animation: slideIn 0.25s ease;
+  animation: panelSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   @media (max-width: 540px) {
     width: 100vw;
   }
 }
 
-@keyframes slideIn {
+@keyframes panelSlideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
@@ -571,31 +572,55 @@
 .panelHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
+  align-items: flex-start;
+  padding: 24px 28px 20px;
+  background: linear-gradient(135deg, #FAFBFC 0%, #F3F4F6 100%);
   border-bottom: 1px solid #E5E7EB;
 
-  h5 {
-    font-size: 18px;
+  .panelHeaderLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .panelIdBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 14px;
+    background: #512728;
+    color: #fff;
+    font-size: 13px;
     font-weight: 700;
-    color: #2E3135;
-    margin: 0;
+    letter-spacing: 0.04em;
+    border-radius: 8px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    width: fit-content;
+  }
+
+  .panelDate {
+    font-size: 13px;
+    color: #8C949B;
+    font-weight: 500;
   }
 
   .closeBtn {
-    background: none;
-    border: none;
-    font-size: 22px;
-    color: #8C949B;
+    background: #fff;
+    border: 1.5px solid #E5E7EB;
+    font-size: 18px;
+    color: #6B7280;
     cursor: pointer;
-    padding: 4px;
-    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
 
     &:hover {
       background: #F3F4F6;
+      border-color: #D1D5DB;
       color: #2E3135;
     }
   }
@@ -604,57 +629,143 @@
 .panelBody {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 24px 28px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 4px;
+  }
 }
 
-.detailRow {
-  margin-bottom: 20px;
+.panelAvatar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 4px;
 
-  .detailLabel {
-    font-size: 12px;
-    font-weight: 600;
-    color: #8C949B;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 6px;
+  .avatarCircle {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #512728 0%, #6E3738 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
   }
 
-  .detailValue {
-    font-size: 15px;
+  .panelComplainantName {
+    font-size: 18px;
+    font-weight: 700;
     color: #2E3135;
+    line-height: 1.3;
+  }
+
+  .panelComplainantLabel {
+    font-size: 13px;
+    color: #8C949B;
     font-weight: 500;
-    line-height: 1.5;
+  }
+}
+
+.panelDivider {
+  height: 1px;
+  background: #E5E7EB;
+  margin: 20px 0;
+}
+
+.panelGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+
+  .panelGridItem {
+    .panelGridLabel {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .panelGridValue {
+      font-size: 15px;
+      color: #2E3135;
+      font-weight: 600;
+    }
+  }
+}
+
+.panelSection {
+  .panelSectionTitle {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+
+  .panelDescBox {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 16px 18px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #374151;
+    white-space: pre-wrap;
   }
 }
 
 .panelFooter {
-  padding: 20px 24px;
+  padding: 20px 28px;
   border-top: 1px solid #E5E7EB;
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  background: #FAFBFC;
 }
 
 .panelActionBtn {
-  padding: 10px 24px;
+  padding: 12px 28px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 
   &:hover {
     transform: translateY(-1px);
   }
+
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 .btnResolve {
-  background: #15803D;
+  background: #059669;
   color: #fff;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3);
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+    background: #047857;
   }
 }
 
@@ -663,7 +774,8 @@
   color: #fff;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+    background: #B91C1C;
   }
 }
 
