@@ -89,7 +89,7 @@
 .statCardsRow {
   display: flex;
   flex-direction: row;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 24px;
 }
 
@@ -98,23 +98,23 @@
   background: #FFFFFF;
   border-radius: 12px;
   border: 1px solid #E5E7EB;
-  padding: 20px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: 140px;
+  gap: 6px;
+  min-width: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .statCardTop {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
+  gap: 10px;
 }
 
 .statIconCircle {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -122,42 +122,48 @@
   flex-shrink: 0;
 }
 
-.statIcon {
-  font-size: 18px;
-}
-
 .statInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   flex: 1;
+  min-width: 0;
 }
 
 .statLabel {
-  font-size: 13px;
+  font-size: 12px;
   color: #6B7280;
   font-weight: 500;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .statNumber {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   color: #111827;
   line-height: 1.1;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .statUnit {
-  font-size: 13px;
+  font-size: 12px;
   color: #6B7280;
   font-weight: 400;
 }
 
 .statSecondary {
-  font-size: 12px;
+  font-size: 11px;
   color: #9CA3AF;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .statSecondaryValue {
@@ -166,12 +172,15 @@
 }
 
 .statTrend {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .trendUp {
@@ -773,8 +782,22 @@
   }
 
   .statCard {
-    flex: 1 1 calc(50% - 8px);
+    flex: 1 1 calc(50% - 6px);
     min-width: 0;
+    padding: 12px;
+  }
+
+  .statNumber {
+    font-size: 18px;
+  }
+
+  .statIconCircle {
+    width: 30px;
+    height: 30px;
+  }
+
+  .statIconCircle > svg {
+    transform: scale(0.85);
   }
 
   .costMetricsRow {
@@ -819,8 +842,12 @@
 
   .statCard {
     flex: 1 1 100%;
-    min-height: 120px;
-    padding: 16px;
+    min-height: 100px;
+    padding: 12px;
+  }
+
+  .statNumber {
+    font-size: 18px;
   }
 
   .pageTitle {

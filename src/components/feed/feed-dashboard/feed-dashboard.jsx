@@ -15,7 +15,7 @@ import {
 } from 'react-icons/gi';
 import { MdOutlineScience } from 'react-icons/md';
 import { BsBoxSeam } from 'react-icons/bs';
-import { FaSkull, FaExclamationTriangle } from 'react-icons/fa';
+import { FaSkull } from 'react-icons/fa';
 import { HiTrendingDown } from 'react-icons/hi';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
@@ -293,7 +293,7 @@ export default function FeedDashboard() {
                   Total Value: <span className={styles.statSecondaryValue}>{formatCurrency(9240000)}</span>
                 </p>
                 <p className={`${styles.statTrend} ${styles.trendUp}`}>
-                  &uarr; 12.6% vs Apr 1 - Apr 30
+                  &uarr; 12.6% vs last month
                 </p>
               </div>
 
@@ -312,7 +312,7 @@ export default function FeedDashboard() {
                   Total Value: <span className={styles.statSecondaryValue}>{formatCurrency(2812500)}</span>
                 </p>
                 <p className={`${styles.statTrend} ${styles.trendUp}`}>
-                  &uarr; 8.4% vs Apr 1 - Apr 30
+                  &uarr; 8.4% vs last month
                 </p>
               </div>
 
@@ -331,7 +331,7 @@ export default function FeedDashboard() {
                   Total Value: <span className={styles.statSecondaryValue}>{formatCurrency(8650000)}</span>
                 </p>
                 <p className={`${styles.statTrend} ${styles.trendDown}`}>
-                  &darr; 6.2% vs Apr 1 - Apr 30
+                  &darr; 6.2% vs last month
                 </p>
               </div>
 
@@ -350,23 +350,8 @@ export default function FeedDashboard() {
                   Total Value: <span className={styles.statSecondaryValue}>{formatCurrency(1075000)}</span>
                 </p>
                 <p className={`${styles.statTrend} ${styles.trendUp}`}>
-                  &uarr; 15.9% vs Apr 1 - Apr 30
+                  &uarr; 15.9% vs last month
                 </p>
-              </div>
-
-              {/* Card 6: Low Stock Alerts */}
-              <div className={styles.statCard}>
-                <div className={styles.statCardTop}>
-                  <div className={styles.statIconCircle} style={{ background: '#FEE2E2' }}>
-                    <FaExclamationTriangle size={20} color="#DC2626" />
-                  </div>
-                  <div className={styles.statInfo}>
-                    <p className={styles.statLabel}>Low Stock Alerts</p>
-                    <div className={styles.statNumber}>6</div>
-                  </div>
-                </div>
-                <p className={styles.statSecondary}>Feed / Raw Materials</p>
-                <span className={styles.alertLink}>View all alerts</span>
               </div>
             </div>
 
