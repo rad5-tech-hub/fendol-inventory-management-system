@@ -5,7 +5,8 @@ import { BsEye, BsBoxSeam } from 'react-icons/bs';
 import { IoChevronDown } from 'react-icons/io5';
 import { GiGreenPower, GiMoneyStack } from 'react-icons/gi';
 import { FaExclamationTriangle } from 'react-icons/fa';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
@@ -342,6 +343,8 @@ export default function RawMaterialInventory() {
           </main>
         </section>
       </div>
+
+      <ToastContainer />
 
       <AddRawMaterialModal
         show={showAddModal}
