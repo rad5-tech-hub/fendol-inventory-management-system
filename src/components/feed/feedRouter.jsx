@@ -4,7 +4,6 @@ import UpdateFeedInventory from './view-all/view-all';
 import InventoryHistory from './inventory-history/inventory-history';
 import CreateFeedBatch from './production/create-batch';
 import FeedProductionHistory from './production/production-history';
-import FeedInventoryAdd from './inventory/add';
 import FeedInventoryUse from './inventory/use';
 import FeedInventoryTopUp from './inventory/top-up';
 import FeedInventory from './inventory/feed-inventory';
@@ -24,7 +23,6 @@ const FeedNavigations = () => {
       <Route path='inventory' element={<FeedInventory/>}/>
       <Route path='inventory/overview' element={<FeedInventory/>}/>
       <Route path='inventory/ledger/:feedName' element={<FeedLedger/>}/>
-      <Route path='inventory/add' element={<FeedInventoryAdd/>}/>
       <Route path='inventory/use' element={<FeedInventoryUse/>}/>
       <Route path='inventory/top-up' element={<FeedInventoryTopUp/>}/>
       <Route path='*' element={<Navigate to='dashboard' replace />} />

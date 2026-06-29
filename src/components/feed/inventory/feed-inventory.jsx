@@ -14,6 +14,7 @@ import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import feedStyles from '../feed.module.scss';
 import styles from './feed-inventory.module.scss';
+import AddFeedModal from '../view-all/AddFeedModal';
 
 const formatCurrency = (n) =>
   '\u20A6' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -64,6 +65,7 @@ const feedRows = [
 export default function FeedInventory() {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
+  const [showAddFeedModal, setShowAddFeedModal] = useState(false);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -101,7 +103,7 @@ export default function FeedInventory() {
                 <p className={styles.pageSubtitle}>View and manage finished feed stock from both production and purchases.</p>
               </div>
               <div className={styles.headerRight}>
-                <button className={styles.exportBtn} onClick={() => navigate('/feed/inventory/add')}>
+                <button className={styles.exportBtn} onClick={() => setShowAddFeedModal(true)}>
                   <FiPlus size={14} />
                   Add Feed
                 </button>
@@ -290,6 +292,10 @@ export default function FeedInventory() {
           </main>
         </section>
       </div>
+      <AddFeedModal
+        show={showAddFeedModal}
+        onClose={() => setShowAddFeedModal(false)}
+      />
     </section>
   );
 }

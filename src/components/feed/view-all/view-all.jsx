@@ -4,12 +4,13 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../feed.module.scss';
 import Api from "../../shared/api/apiLink";
-import { Spinner, Alert, Modal, Form, Button, Row, Col } from 'react-bootstrap';
+import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap';
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaExclamationTriangle } from "react-icons/fa";
+import AddFeedModal from "./AddFeedModal";
 
 export default function UpdateFeedInventory() {
   const [products, setProducts] = useState([]);
@@ -22,13 +23,6 @@ export default function UpdateFeedInventory() {
   const itemsPerPage = 45;
   const [stages, setStages] = useState([]);
   const [showAddFeedModal, setShowAddFeedModal] = useState(false);
-  const [newFeedData, setNewFeedData] = useState({
-    feedName: '',
-    feedType: '',
-    unit: '',
-    threshold: '',
-    weightPerBag: '',
-  });
   const [quantityUsed, setQuantityUsed] = useState(null);
   const [noOfBag, setNoOfBag] = useState(null);
   const [feedPrice, setFeedPrice] = useState(null);
@@ -150,34 +144,8 @@ export default function UpdateFeedInventory() {
     fetchData();
   }, []);
 
-  const handleAddFeed = async (e) => {
-    e.preventDefault();
-    const loadingToast = toast.loading('Adding feed...', { className: 'dark-toast' });
-    try {
-      await Api.post('/create-feed', {
-        ...newFeedData,
-        threshold: Number(newFeedData.threshold),
-        weightPerBag: Number(newFeedData.weightPerBag),
-      });
-      toast.update(loadingToast, {
-        render: 'Feed added successfully!',
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000,
-        className: 'dark-toast',
-      });
-      setNewFeedData({ feedName: '', feedType: '', unit: '', threshold: '', weightPerBag: '' });
-      setShowAddFeedModal(false);
-      fetchData();
-    } catch (error) {
-      toast.update(loadingToast, {
-        render: error.response?.data?.message || 'Error adding feed. Please try again.',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000,
-        className: 'dark-toast',
-      });
-    }
+  const handleAddFeedSuccess = () => {
+    fetchData();
   };
 
   const handleAddClick = (product) => {
@@ -540,85 +508,11 @@ export default function UpdateFeedInventory() {
           </Modal.Footer>
         </Modal>
 
-        <Modal show={showAddFeedModal} onHide={() => setShowAddFeedModal(false)} centered size="lg">
-          <Modal.Header closeButton className="border-0 pb-0">
-            <Modal.Title className="fw-semibold" style={{ fontSize: '20px', color: '#2E3135' }}>
-              Add New Feed
-            </Modal.Title>
-          </Modal.Header>
-          <Form onSubmit={handleAddFeed}>
-            <Modal.Body className="px-4">
-              <Row>
-                <Col md={6} className="mb-3">
-                  <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Feed Name</Form.Label>
-                  <Form.Control
-                    placeholder="Enter feed name"
-                    type="text"
-                    required
-                    value={newFeedData.feedName}
-                    onChange={(e) => setNewFeedData({ ...newFeedData, feedName: e.target.value })}
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  />
-                </Col>
-                <Col md={6} className="mb-3">
-                  <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Unit</Form.Label>
-                  <Form.Select
-                    required
-                    value={newFeedData.unit}
-                    onChange={(e) => setNewFeedData({ ...newFeedData, unit: e.target.value })}
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  >
-                    <option value="" disabled>Select Unit</option>
-                    <option value="kg">Kg</option>
-                  </Form.Select>
-                </Col>
-                <Col md={6} className="mb-3">
-                  <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Feed Type</Form.Label>
-                  <Form.Control
-                    placeholder="Enter feed type"
-                    type="text"
-                    required
-                    value={newFeedData.feedType}
-                    onChange={(e) => setNewFeedData({ ...newFeedData, feedType: e.target.value })}
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  />
-                </Col>
-                <Col md={6} className="mb-3">
-                  <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Threshold Value</Form.Label>
-                  <Form.Control
-                    placeholder="Enter threshold value"
-                    type="number"
-                    required
-                    min="1"
-                    value={newFeedData.threshold}
-                    onChange={(e) => setNewFeedData({ ...newFeedData, threshold: e.target.value === '' ? '' : Number(e.target.value) })}
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  />
-                </Col>
-                <Col md={6} className="mb-3">
-                  <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Weight Per Bag (KG)</Form.Label>
-                  <Form.Control
-                    placeholder="Enter weight per bag"
-                    type="number"
-                    required
-                    min="1"
-                    value={newFeedData.weightPerBag}
-                    onChange={(e) => setNewFeedData({ ...newFeedData, weightPerBag: e.target.value === '' ? '' : Number(e.target.value) })}
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  />
-                </Col>
-              </Row>
-            </Modal.Body>
-            <Modal.Footer className="border-0 pt-0 px-4 pb-4">
-              <Button
-                type="submit"
-                className={`border-0 btn-dark shadow py-2 px-5 fs-6 fw-semibold ${styles.submit}`}
-              >
-                Add
-              </Button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
+        <AddFeedModal
+          show={showAddFeedModal}
+          onClose={() => setShowAddFeedModal(false)}
+          onSuccess={handleAddFeedSuccess}
+        />
       </div>
     </section>
   );
