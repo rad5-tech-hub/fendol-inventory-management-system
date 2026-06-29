@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   IoChevronDown,
@@ -7,75 +7,130 @@ import {
   FiDownload, FiFilter, FiSearch, FiRefreshCw, FiPlus,
   FiChevronLeft, FiChevronRight,
 } from 'react-icons/fi';
-import { GiChipsBag, GiCycle, GiCube, GiShoppingCart } from 'react-icons/gi';
-import { BsEye } from 'react-icons/bs';
+import { GiChipsBag, GiCycle } from 'react-icons/gi';
+import { BsEye, BsArrowUpCircle, BsArrowDownCircle } from 'react-icons/bs';
+import { FaExclamationTriangle } from 'react-icons/fa';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import feedStyles from '../feed.module.scss';
 import styles from './feed-inventory.module.scss';
 import AddFeedModal from '../view-all/AddFeedModal';
+import Api from '../../shared/api/apiLink';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const formatCurrency = (n) =>
   '\u20A6' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const f = (n) => new Intl.NumberFormat().format(n);
 
-const FEED_TYPE_PILL_COLORS = {
-  'Starter (0-1mm)': { bg: '#FEE2E2', color: '#8B1A1A' },
-  'Grower (1-3mm)': { bg: '#FFEDD5', color: '#C2410C' },
-  'Finisher (3-5mm)': { bg: '#DCFCE7', color: '#15803D' },
-  'Broodstock Feed': { bg: '#DBEAFE', color: '#1D4ED8' },
-  'Special / Others': { bg: '#EDE9FE', color: '#6D28D9' },
-};
-
 const STATUS_STYLES = {
+  'in stock': { bg: '#DCFCE7', color: '#15803D' },
   'In Stock': { bg: '#DCFCE7', color: '#15803D' },
+  'low stock': { bg: '#FEF3C7', color: '#B45309' },
   'Low Stock': { bg: '#FEF3C7', color: '#B45309' },
+  'out of stock': { bg: '#FEE2E2', color: '#DC2626' },
   'Out of Stock': { bg: '#FEE2E2', color: '#DC2626' },
 };
 
-const FEED_NAME_ICON_COLORS = {
-  'Starter Feed (0-1mm)': '#16A34A',
-  'Grower Feed (1-3mm)': '#F97316',
-  'Finisher Feed (3-5mm)': '#16A34A',
-  'Broodstock Feed': '#2563EB',
-  'Special Feed': '#7C3AED',
-  'Weaner Feed (0-2mm)': '#2563EB',
-  'Pre-Starter Feed': '#0D9488',
-  'Maintenance Feed': '#F97316',
-  'Breeder Feed': '#EAB308',
-  'Medicine Mix Feed': '#7C3AED',
-};
+const pillColors = [
+  { bg: '#FEE2E2', color: '#8B1A1A' },
+  { bg: '#FFEDD5', color: '#C2410C' },
+  { bg: '#DCFCE7', color: '#15803D' },
+  { bg: '#DBEAFE', color: '#1D4ED8' },
+  { bg: '#EDE9FE', color: '#6D28D9' },
+  { bg: '#FCE7F3', color: '#9D174D' },
+  { bg: '#D1FAE5', color: '#065F46' },
+  { bg: '#FEF3C7', color: '#92400E' },
+  { bg: '#E0E7FF', color: '#3730A3' },
+  { bg: '#F5F5F5', color: '#525252' },
+];
 
-// TODO: replace with real API call
-const feedRows = [
-  { name: 'Starter Feed (0-1mm)', type: 'Starter (0-1mm)', unit: 'kg', stock: 6200.00, avgCost: 486.00, totalValue: 3013200.00, status: 'In Stock' },
-  { name: 'Grower Feed (1-3mm)', type: 'Grower (1-3mm)', unit: 'kg', stock: 5850.00, avgCost: 460.00, totalValue: 2691000.00, status: 'In Stock' },
-  { name: 'Finisher Feed (3-5mm)', type: 'Finisher (3-5mm)', unit: 'kg', stock: 4800.00, avgCost: 420.00, totalValue: 2016000.00, status: 'In Stock' },
-  { name: 'Broodstock Feed', type: 'Broodstock Feed', unit: 'kg', stock: 3200.00, avgCost: 590.00, totalValue: 1888000.00, status: 'In Stock' },
-  { name: 'Special Feed', type: 'Special / Others', unit: 'kg', stock: 2400.00, avgCost: 510.00, totalValue: 1224000.00, status: 'In Stock' },
-  { name: 'Weaner Feed (0-2mm)', type: 'Starter (0-1mm)', unit: 'kg', stock: 2000.00, avgCost: 500.00, totalValue: 1000000.00, status: 'In Stock' },
-  { name: 'Pre-Starter Feed', type: 'Starter (0-1mm)', unit: 'kg', stock: 1500.00, avgCost: 520.00, totalValue: 780000.00, status: 'Low Stock' },
-  { name: 'Maintenance Feed', type: 'Finisher (3-5mm)', unit: 'kg', stock: 950.00, avgCost: 470.00, totalValue: 446500.00, status: 'Low Stock' },
-  { name: 'Breeder Feed', type: 'Broodstock Feed', unit: 'kg', stock: 550.00, avgCost: 600.00, totalValue: 330000.00, status: 'Low Stock' },
-  { name: 'Medicine Mix Feed', type: 'Special / Others', unit: 'kg', stock: 400.00, avgCost: 550.00, totalValue: 220000.00, status: 'Out of Stock' },
+const nameIconColors = [
+  '#16A34A', '#F97316', '#2563EB', '#7C3AED', '#0D9488',
+  '#EAB308', '#DC2626', '#8B5CF6', '#EC4899', '#14B8A6',
 ];
 
 export default function FeedInventory() {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAddFeedModal, setShowAddFeedModal] = useState(false);
+  const [feedRows, setFeedRows] = useState([]);
+  const [meta, setMeta] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 45;
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const fetchFeeds = async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const res = await Api.get('/feeds?siteId=all');
+      const data = res.data?.data;
+      const responseMeta = res.data?.meta;
+      if (Array.isArray(data)) {
+        setFeedRows(data);
+        setMeta(responseMeta || null);
+      } else {
+        throw new Error('Invalid response format: expected an array of feeds.');
+      }
+    } catch (err) {
+      if (!err.response) {
+        setFetchError('Network error. Please check your internet connection and try again.');
+      } else if (err.response.status === 500) {
+        setFetchError('Server error. Please try again later or contact support.');
+      } else {
+        setFetchError(
+          err.response?.data?.response_message ||
+          err.response?.data?.message ||
+          'Failed to load feeds. Please try again.'
+        );
+      }
+      setFeedRows([]);
+      setMeta(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFeeds();
+  }, []);
+
   const getActionItems = (row) => [
     {
       label: <><BsEye size={14} style={{ marginRight: 10 }} /> View Details</>,
-      onClick: () => navigate(`/feed/inventory/ledger/${encodeURIComponent(row.name)}`),
+      onClick: () => navigate(`/feed/inventory/ledger/${encodeURIComponent(row.id)}`),
+    },
+    { divider: true },
+    {
+      label: <><BsArrowUpCircle size={14} style={{ marginRight: 10, color: '#16A34A' }} /> Restock Feed</>,
+      onClick: () => {
+        toast.info('Restock feature is not yet available.', { className: 'dark-toast' });
+      },
+    },
+    {
+      label: <><BsArrowDownCircle size={14} style={{ marginRight: 10, color: '#F97316' }} /> Use Feed</>,
+      onClick: () => {
+        toast.info('Use feed feature is not yet available.', { className: 'dark-toast' });
+      },
     },
   ];
+
+  const totalQuantity = meta?.totalQuantity ?? feedRows.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
+  const feedTypeCount = meta?.feedTypeCount ?? feedRows.length;
+
+  const handlePageChange = (data) => {
+    setCurrentPage(data.selected);
+  };
+
+  const currentProducts = feedRows.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const pageCount = Math.ceil(feedRows.length / itemsPerPage);
 
   return (
     <section className={`${feedStyles.body}`}>
@@ -88,6 +143,7 @@ export default function FeedInventory() {
         </div>
         <section className={`${feedStyles.content} flex-grow-1`}>
           <main className={styles.pageWrapper}>
+            <ToastContainer />
 
             {/* ── Breadcrumb ── */}
             <div className={styles.breadcrumb}>
@@ -123,7 +179,7 @@ export default function FeedInventory() {
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>Total Feed Types</p>
-                    <div className={styles.statNumber}>10</div>
+                    <div className={styles.statNumber}>{feedTypeCount}</div>
                   </div>
                 </div>
                 <p className={styles.statSecondary}>All feed types</p>
@@ -136,38 +192,11 @@ export default function FeedInventory() {
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>Total Stock Available</p>
-                    <div className={styles.statNumber}>28,450.00 <span className={styles.statUnit}>kg</span></div>
+                    <div className={styles.statNumber}>{f(totalQuantity)} <span className={styles.statUnit}>kg</span></div>
                   </div>
                 </div>
                 <p className={styles.statSecondary}>Across all feed types</p>
               </div>
-
-              <div className={styles.statCard}>
-                <div className={styles.statCardTop}>
-                  <div className={styles.statIconCircle} style={{ background: '#EDE9FE' }}>
-                    <GiCube size={20} color="#7C3AED" />
-                  </div>
-                  <div className={styles.statInfo}>
-                    <p className={styles.statLabel}>Stock from Production</p>
-                    <div className={styles.statNumber}>18,450.00 <span className={styles.statUnit}>kg</span></div>
-                  </div>
-                </div>
-                <p className={styles.statSecondary}>64.8% of total</p>
-              </div>
-
-              <div className={styles.statCard}>
-                <div className={styles.statCardTop}>
-                  <div className={styles.statIconCircle} style={{ background: '#FFEDD5' }}>
-                    <GiShoppingCart size={20} color="#F97316" />
-                  </div>
-                  <div className={styles.statInfo}>
-                    <p className={styles.statLabel}>Stock from Purchases</p>
-                    <div className={styles.statNumber}>10,000.00 <span className={styles.statUnit}>kg</span></div>
-                  </div>
-                </div>
-                <p className={styles.statSecondary}>35.2% of total</p>
-              </div>
-
             </div>
 
             {/* ── Filter Bar ── */}
@@ -190,17 +219,57 @@ export default function FeedInventory() {
                 <FiFilter size={13} />
                 Filter
               </button>
-              <button className={styles.resetBtn}>
+              <button className={styles.resetBtn} onClick={fetchFeeds}>
                 <FiRefreshCw size={13} />
-                Reset
+                Refresh
               </button>
             </div>
 
+            {/* ── Loading State ── */}
+            {loading && (
+              <div className={styles.tableCard}>
+                <div className="text-center py-5">
+                  <div className="spinner-border text-secondary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p className="mt-2 text-muted" style={{ fontSize: '14px' }}>Loading feed inventory...</p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Error State ── */}
+            {!loading && fetchError && (
+              <div className={styles.tableCard}>
+                <div className="text-center py-5 px-3">
+                  <FaExclamationTriangle size={32} color="#DC2626" />
+                  <p className="mt-2" style={{ fontSize: '14px', color: '#DC2626', fontWeight: 500 }}>{fetchError}</p>
+                  <button
+                    className="btn btn-outline-dark btn-sm mt-2"
+                    onClick={fetchFeeds}
+                  >
+                    <FiRefreshCw size={13} style={{ marginRight: 6 }} />
+                    Retry
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Empty State ── */}
+            {!loading && !fetchError && feedRows.length === 0 && (
+              <div className={styles.tableCard}>
+                <div className="text-center py-5">
+                  <GiChipsBag size={40} color="#9CA3AF" />
+                  <p className="mt-2 text-muted" style={{ fontSize: '14px' }}>No feeds found. Add a new feed to get started.</p>
+                </div>
+              </div>
+            )}
+
             {/* ── Feed Stock Overview Table ── */}
-            <div className={styles.tableCard}>
+            {!loading && !fetchError && feedRows.length > 0 && (
+              <div className={styles.tableCard}>
                 <div className={styles.tableHeader}>
                   <h3 className={styles.cardTitle}>Feed Stock Overview</h3>
-                  <span className={styles.tableBadge}>10 Feed Types</span>
+                  <span className={styles.tableBadge}>{feedTypeCount} Feed Types</span>
                 </div>
                 <div className={styles.tableWrapper}>
                   <table className={styles.table}>
@@ -217,27 +286,34 @@ export default function FeedInventory() {
                       </tr>
                     </thead>
                     <tbody>
-                      {feedRows.map((row, i) => {
-                        const iconColor = FEED_NAME_ICON_COLORS[row.name] || '#9CA3AF';
-                        const pillStyle = FEED_TYPE_PILL_COLORS[row.type] || { bg: '#F3F4F6', color: '#374151' };
-                        const statusStyle = STATUS_STYLES[row.status] || {};
+                      {currentProducts.map((row, i) => {
+                        const quantity = Number(row.quantity) || 0;
+                        const unitPrice = Number(row.unitPrice) || 0;
+                        const totalValue = quantity * unitPrice;
+                        const pillStyle = pillColors[i % pillColors.length];
+                        const iconColor = nameIconColors[i % nameIconColors.length];
+                        const statusKey = row.status?.toLowerCase()?.replace(/\s+/g, ' ');
+                        const matchedStatus = Object.keys(STATUS_STYLES).find(
+                          (k) => k.toLowerCase().replace(/\s+/g, ' ') === statusKey
+                        );
+                        const statusStyle = matchedStatus ? STATUS_STYLES[matchedStatus] : { bg: '#F3F4F6', color: '#374151' };
                         return (
-                          <tr key={i}>
+                          <tr key={row.id || i}>
                             <td>
                               <div className={styles.feedNameCell}>
                                 <span className={styles.feedNameIcon} style={{ background: iconColor }} />
-                                {row.name}
+                                {row.feedName}
                               </div>
                             </td>
                             <td>
                               <span className={styles.typePill} style={{ background: pillStyle.bg, color: pillStyle.color }}>
-                                {row.type}
+                                {row.feedType}
                               </span>
                             </td>
                             <td>{row.unit}</td>
-                            <td className={styles.numCell}>{f(row.stock)}</td>
-                            <td className={styles.numCell}>{formatCurrency(row.avgCost)}</td>
-                            <td className={styles.boldNumCell}>{formatCurrency(row.totalValue)}</td>
+                            <td className={styles.numCell}>{f(quantity)}</td>
+                            <td className={styles.numCell}>{formatCurrency(unitPrice)}</td>
+                            <td className={styles.boldNumCell}>{formatCurrency(totalValue)}</td>
                             <td>
                               <span
                                 className={styles.statusPill}
@@ -269,21 +345,43 @@ export default function FeedInventory() {
 
                 {/* ── Table Footer ── */}
                 <div className={styles.tableFooter}>
-                  <span className={styles.footerInfo}>Showing 1 to 10 of 10 feed types</span>
+                  <span className={styles.footerInfo}>
+                    Showing {currentProducts.length > 0 ? currentPage * itemsPerPage + 1 : 0} to{' '}
+                    {Math.min((currentPage + 1) * itemsPerPage, feedRows.length)} of {feedRows.length} feed types
+                  </span>
                   <div className={styles.pagination}>
-                    <button className={styles.pageArrow}>
+                    <button
+                      className={styles.pageArrow}
+                      onClick={() => handlePageChange({ selected: currentPage - 1 })}
+                      disabled={currentPage === 0}
+                      style={{ opacity: currentPage === 0 ? 0.4 : 1 }}
+                    >
                       <FiChevronLeft size={15} />
                     </button>
-                    <button className={`${styles.pageBtn} ${styles.pageBtnActive}`}>1</button>
-                    <button className={styles.pageArrow}>
+                    {Array.from({ length: pageCount }, (_, i) => (
+                      <button
+                        key={i}
+                        className={`${styles.pageBtn} ${currentPage === i ? styles.pageBtnActive : ''}`}
+                        onClick={() => handlePageChange({ selected: i })}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button
+                      className={styles.pageArrow}
+                      onClick={() => handlePageChange({ selected: currentPage + 1 })}
+                      disabled={currentPage >= pageCount - 1}
+                      style={{ opacity: currentPage >= pageCount - 1 ? 0.4 : 1 }}
+                    >
                       <FiChevronRight size={15} />
                     </button>
                     <button className={styles.perPageDropdown}>
-                      10 / page <IoChevronDown size={11} />
+                      {itemsPerPage} / page <IoChevronDown size={11} />
                     </button>
                   </div>
                 </div>
-            </div>
+              </div>
+            )}
 
           </main>
         </section>
@@ -291,6 +389,7 @@ export default function FeedInventory() {
       <AddFeedModal
         show={showAddFeedModal}
         onClose={() => setShowAddFeedModal(false)}
+        onSuccess={fetchFeeds}
       />
     </section>
   );

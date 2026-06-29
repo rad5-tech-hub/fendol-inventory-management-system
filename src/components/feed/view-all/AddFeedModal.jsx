@@ -4,10 +4,7 @@ import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { toast } from 'react-toastify';
 import feedStyles from '../feed.module.scss';
 
-const FEED_TYPE_OPTIONS = [
-  'Starter (0-1mm)', 'Grower (1-3mm)', 'Finisher (3-5mm)',
-  'Broodstock Feed', 'Special / Others',
-];
+
 
 const formatWithCommas = (n) => {
   if (n === '' || n === null || n === undefined) return '';
@@ -18,12 +15,13 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
   const [feedName, setFeedName] = useState('');
   const [unit, setUnit] = useState('kg');
   const [feedType, setFeedType] = useState('');
+  const [feedTypeId, setFeedTypeId] = useState('');
   const [siteId, setSiteId] = useState('');
   const [threshold, setThreshold] = useState('');
   const [weightPerBag, setWeightPerBag] = useState('');
   const [pricePerBag, setPricePerBag] = useState('');
   const [siteTypes, setSiteTypes] = useState([]);
-  const [feedTypes, setFeedTypes] = useState(FEED_TYPE_OPTIONS);
+  const [feedTypes, setFeedTypes] = useState([]);
   const [showFeedTypeDropdown, setShowFeedTypeDropdown] = useState(false);
   const [feedTypeSearch, setFeedTypeSearch] = useState('');
   const [feedTypeMode, setFeedTypeMode] = useState('select');
@@ -37,6 +35,7 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
       setFeedName('');
       setUnit('kg');
       setFeedType('');
+      setFeedTypeId('');
       setSiteId('');
       setThreshold('');
       setWeightPerBag('');
@@ -72,62 +71,191 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
     fetchSiteTypes();
   }, []);
 
-  const handleCreateFeedType = () => {
+  useEffect(() => {
+    const fetchFeedTypes = async () => {
+      try {
+        const res = await ApiV2.get('/v2/feed-type');
+        if (res.data?.data) {
+          setFeedTypes(res.data.data);
+        }
+      } catch {
+        // silently fail
+      }
+    };
+    fetchFeedTypes();
+  }, []);
+
+  const handleCreateFeedType = async () => {
     const name = newFeedTypeName.trim();
     if (!name || creatingFeedType) return;
-    if (feedTypes.includes(name)) {
+    if (feedTypes.some((t) => t.name === name)) {
       toast.error('This feed type already exists.', { className: 'dark-toast' });
       return;
     }
-    setFeedTypes((prev) => [...prev, name]);
-    setFeedType(name);
-    setNewFeedTypeName('');
-    setFeedTypeMode('select');
-    setShowFeedTypeDropdown(false);
+    setCreatingFeedType(true);
+    try {
+      const res = await ApiV2.post('/v2/feed-type', { name });
+      const created = res.data?.data;
+      if (created?.id && created?.name) {
+        setFeedTypes((prev) => [...prev, { id: created.id, name: created.name }]);
+        setFeedType(created.name);
+        setFeedTypeId(created.id);
+      }
+      setNewFeedTypeName('');
+      setFeedTypeMode('select');
+      setShowFeedTypeDropdown(false);
+    } catch {
+      toast.error('Failed to create feed type.', { className: 'dark-toast' });
+    } finally {
+      setCreatingFeedType(false);
+    }
+  };
+
+  const getFieldErrors = (data) => {
+    if (!data) return [];
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      return Object.entries(data)
+        .filter(([, v]) => typeof v === 'string')
+        .map(([k, v]) => `${k}: ${v}`);
+    }
+    return [];
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!feedName || !feedType || !siteId || !threshold || !weightPerBag || !pricePerBag) {
-      toast.error('Please fill in all required fields.', { className: 'dark-toast' });
+
+    const missing = [];
+    if (!feedName.trim()) missing.push('Feed Name');
+    if (!feedTypeId) missing.push('Feed Type');
+    if (!siteId) missing.push('Site Type');
+    if (!threshold) missing.push('Threshold Value');
+    if (!weightPerBag) missing.push('Weight Per Bag');
+
+    if (missing.length > 0) {
+      toast.error(
+        <div>
+          <strong>Please fill in all required fields:</strong>
+          <ul className="mb-0 mt-1" style={{ paddingLeft: '18px' }}>
+            {missing.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+        </div>,
+        { className: 'dark-toast', autoClose: 5000 }
+      );
       return;
     }
+
+    if (Number(threshold) < 1) {
+      toast.error('Threshold value must be at least 1.', { className: 'dark-toast' });
+      return;
+    }
+
+    if (Number(weightPerBag) < 1) {
+      toast.error('Weight per bag must be at least 1.', { className: 'dark-toast' });
+      return;
+    }
+
+    if (feedName.trim().length < 2) {
+      toast.error('Feed name must be at least 2 characters.', { className: 'dark-toast' });
+      return;
+    }
+
     setSubmitting(true);
     const loadingToast = toast.loading('Adding feed...', { className: 'dark-toast' });
+
     try {
-      await Api.post('/create-feed', {
-        feedName,
-        feedType,
+      const payload = {
+        feedName: feedName.trim(),
         unit,
+        feedTypeId,
         threshold: Number(threshold),
         weightPerBag: Number(weightPerBag),
-        siteId,
-        pricePerBag: Number(pricePerBag.replace(/,/g, '')),
-      });
-      toast.update(loadingToast, {
-        render: 'Feed added successfully!',
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000,
-        className: 'dark-toast',
-      });
+        siteTypeId: siteId,
+      };
+
+      const priceRaw = pricePerBag ? pricePerBag.replace(/,/g, '') : '';
+      if (priceRaw) {
+        const priceNum = Number(priceRaw);
+        if (priceNum < 0) {
+          toast.dismiss(loadingToast);
+          toast.error('Price per bag cannot be negative.', { className: 'dark-toast' });
+          setSubmitting(false);
+          return;
+        }
+        payload.pricePerBag = priceNum;
+      }
+
+      const res = await Api.post('/create-feed', payload);
+
+      const msg =
+        res.data?.response_message ||
+        res.data?.message ||
+        `${payload.feedName} Feed Created successfully`;
+
+      toast.dismiss(loadingToast);
+      toast.success(msg, { className: 'dark-toast', autoClose: 3000 });
+
       onClose();
       if (onSuccess) onSuccess();
     } catch (error) {
-      toast.update(loadingToast, {
-        render: error.response?.data?.message || 'Error adding feed. Please try again.',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000,
-        className: 'dark-toast',
-      });
+      toast.dismiss(loadingToast);
+
+      if (!error.response) {
+        toast.error(
+          'Network error. Please check your internet connection and try again.',
+          { className: 'dark-toast', autoClose: 5000 }
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      const status = error.response.status;
+      const data = error.response.data;
+
+      if (status === 422 || status === 400) {
+        const messages = getFieldErrors(data?.errors || data);
+        if (messages.length > 0) {
+          toast.error(
+            <div>
+              <strong>Validation failed:</strong>
+              <ul className="mb-0 mt-1" style={{ paddingLeft: '18px' }}>
+                {messages.map((m, i) => (
+                  <li key={i}>{m}</li>
+                ))}
+              </ul>
+            </div>,
+            { className: 'dark-toast', autoClose: 6000 }
+          );
+        } else {
+          toast.error(
+            data?.response_message || data?.message || 'Invalid data. Please check your inputs.',
+            { className: 'dark-toast', autoClose: 5000 }
+          );
+        }
+      } else if (status === 409) {
+        toast.error(
+          data?.response_message || data?.message || 'A feed with this name already exists.',
+          { className: 'dark-toast', autoClose: 5000 }
+        );
+      } else if (status === 500) {
+        toast.error(
+          'Server error. Please try again later or contact support.',
+          { className: 'dark-toast', autoClose: 5000 }
+        );
+      } else {
+        toast.error(
+          data?.response_message || data?.message || 'An unexpected error occurred. Please try again.',
+          { className: 'dark-toast', autoClose: 5000 }
+        );
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   const filteredFeedTypes = feedTypes.filter((t) =>
-    t.toLowerCase().includes(feedTypeSearch.toLowerCase())
+    t.name.toLowerCase().includes(feedTypeSearch.toLowerCase())
   );
 
   return (
@@ -226,29 +354,30 @@ export default function AddFeedModal({ show, onClose, onSuccess }) {
                           {filteredFeedTypes.length > 0 ? (
                             filteredFeedTypes.map((t, i) => (
                               <div
-                                key={i}
+                                key={t.id}
                                 style={{
                                   padding: '12px 16px',
                                   cursor: 'pointer',
                                   fontSize: '14px',
-                                  fontWeight: feedType === t ? 600 : 400,
-                                  color: feedType === t ? '#512728' : '#2E3135',
-                                  backgroundColor: feedType === t ? '#fdf5f5' : 'transparent',
+                                  fontWeight: feedType === t.name ? 600 : 400,
+                                  color: feedType === t.name ? '#512728' : '#2E3135',
+                                  backgroundColor: feedType === t.name ? '#fdf5f5' : 'transparent',
                                   borderBottom: i < filteredFeedTypes.length - 1 ? '1px solid #f0f0f0' : 'none',
                                   transition: 'background-color 0.12s',
                                 }}
                                 onClick={() => {
-                                  setFeedType(t);
+                                  setFeedType(t.name);
+                                  setFeedTypeId(t.id);
                                   setShowFeedTypeDropdown(false);
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = feedType === t ? '#fdf5f5' : '#FAFCFF';
+                                  e.currentTarget.style.backgroundColor = feedType === t.name ? '#fdf5f5' : '#FAFCFF';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = feedType === t ? '#fdf5f5' : 'transparent';
+                                  e.currentTarget.style.backgroundColor = feedType === t.name ? '#fdf5f5' : 'transparent';
                                 }}
                               >
-                                {t}
+                                {t.name}
                               </div>
                             ))
                           ) : (
