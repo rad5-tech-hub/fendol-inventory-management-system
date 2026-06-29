@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiDownload, FiPlus, FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight, FiEdit2 } from 'react-icons/fi';
-import { BsEye } from 'react-icons/bs';
+import { FiDownload, FiPlus, FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight, FiEdit2, FiAlertTriangle } from 'react-icons/fi';
+import { BsEye, BsBoxSeam } from 'react-icons/bs';
 import { IoChevronDown } from 'react-icons/io5';
 import { GiGreenPower, GiMoneyStack } from 'react-icons/gi';
-import { BsBoxSeam } from 'react-icons/bs';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
+import { ApiV2 } from '../../shared/api/apiLink';
 import feedStyles from '../feed.module.scss';
 import styles from './raw-material-inventory.module.scss';
 import AddRawMaterialModal from './AddRawMaterialModal';
@@ -19,26 +19,66 @@ const formatCurrency = (n) =>
 
 const f = (n) => new Intl.NumberFormat().format(n);
 
-const materials = [
-  { name: 'Maize', category: 'Cereals', supplier: 'Agro Allied Resources', unit: 'kg', qty: 5200, unitCost: 220, stockValue: 1144000, status: 'In Stock', lastUpdated: 'May 31, 2025', swatch: '#F59E0B' },
-  { name: 'Soybean Meal', category: 'Protein Meals', supplier: 'GreenLife Ingredients', unit: 'kg', qty: 3150, unitCost: 480, stockValue: 1512000, status: 'In Stock', lastUpdated: 'May 31, 2025', swatch: '#D4A373' },
-  { name: 'Fishmeal (60%)', category: 'Protein Meals', supplier: 'Blue Ocean Logistics', unit: 'kg', qty: 1250, unitCost: 780, stockValue: 975000, status: 'In Stock', lastUpdated: 'May 31, 2025', swatch: '#FEF3C7' },
-  { name: 'Wheat Bran', category: 'By-products', supplier: 'Sunrise Packaging', unit: 'kg', qty: 2800, unitCost: 160, stockValue: 448000, status: 'In Stock', lastUpdated: 'May 31, 2025', swatch: '#92400E' },
-  { name: 'Rice Bran', category: 'By-products', supplier: 'Agro Allied Resources', unit: 'kg', qty: 1600, unitCost: 180, stockValue: 288000, status: 'Low Stock', lastUpdated: 'May 31, 2025', swatch: '#A16207' },
-  { name: 'Limestone', category: 'Minerals', supplier: 'Natura Additives Ltd.', unit: 'kg', qty: 950, unitCost: 120, stockValue: 114000, status: 'Low Stock', lastUpdated: 'May 31, 2025', swatch: '#D1D5DB' },
-  { name: 'DCP (Dicalcium Phosphate)', category: 'Minerals', supplier: 'Natura Additives Ltd.', unit: 'kg', qty: 750, unitCost: 250, stockValue: 187500, status: 'Low Stock', lastUpdated: 'May 31, 2025', swatch: '#F8FAFC' },
-  { name: 'Fish Oil', category: 'Oils & Fats', supplier: 'Oceanic Aquatech', unit: 'L', qty: 600, unitCost: 1350, stockValue: 810000, status: 'In Stock', lastUpdated: 'May 31, 2025', swatch: '#F59E0B' },
-  { name: 'Salt', category: 'Minerals', supplier: 'Local Supplier', unit: 'kg', qty: 1200, unitCost: 90, stockValue: 108000, status: 'In Stock', lastUpdated: 'May 31, 2025', swatch: '#D4A373' },
-  { name: 'Vitamin Premix', category: 'Additives', supplier: 'Natura Additives Ltd.', unit: 'kg', qty: 120, unitCost: 2800, stockValue: 336000, status: 'Low Stock', lastUpdated: 'May 31, 2025', swatch: '#F59E0B' },
-];
+const STATUS_CONFIG = {
+  'in stock': { label: 'In Stock', className: 'statusInStock' },
+  'low stock': { label: 'Low Stock', className: 'statusLowStock' },
+  'out of stock': { label: 'Out of Stock', className: 'statusOutOfStock' },
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '--';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 export default function RawMaterialInventory() {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [materials, setMaterials] = useState([]);
+  const [meta, setMeta] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
+
+  const fetchMaterials = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+
+    try {
+      const res = await ApiV2.get('/v2/raw-material');
+      if (res.data?.success && res.data?.data) {
+        setMaterials(res.data.data);
+        setMeta(res.data.meta || null);
+      } else {
+        throw new Error(res.data?.response_message || 'Unexpected response format');
+      }
+    } catch (error) {
+      const errMsg = !error.response
+        ? 'Network error. Please check your internet connection and try again.'
+        : error.response?.status >= 500
+          ? 'Server error. Please try again later.'
+          : error.response?.data?.response_message
+            || error.response?.data?.message
+            || 'Failed to load raw materials.';
+
+      setFetchError(errMsg);
+      toast.error(errMsg, { autoClose: 6000 });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMaterials();
+  }, [fetchMaterials]);
+
+  const handleCreated = useCallback(() => {
+    setShowAddModal(false);
+    fetchMaterials();
+  }, [fetchMaterials]);
 
   const getActionItems = (material) => [
     {
@@ -50,6 +90,13 @@ export default function RawMaterialInventory() {
       onClick: () => {},
     },
   ];
+
+  const stockValue = materials.reduce((sum, m) => sum + (Number(m.quantity) * Number(m.unitCost)), 0);
+  const lowStockCount = materials.filter((m) => {
+    if (m.status === 'out of stock') return true;
+    if (m.status === 'low stock') return true;
+    return Number(m.quantity) <= Number(m.threshold);
+  }).length;
 
   return (
     <section className={`${feedStyles.body}`}>
@@ -63,14 +110,13 @@ export default function RawMaterialInventory() {
         <section className={`${feedStyles.content} flex-grow-1`}>
           <main className={styles.pageWrapper}>
 
-            {/* ── Page Header ── */}
             <div className={styles.headerRow}>
               <div className={styles.headerLeft}>
                 <h1 className={styles.pageTitle}>Raw Material Inventory</h1>
                 <p className={styles.pageSubtitle}>Track and manage raw materials used for feed production.</p>
               </div>
               <div className={styles.headerRight}>
-                <button className={styles.exportBtn}>
+                <button className={styles.exportBtn} disabled>
                   <FiDownload size={14} />
                   Export
                 </button>
@@ -81,7 +127,6 @@ export default function RawMaterialInventory() {
               </div>
             </div>
 
-            {/* ── Stat Cards Row ── */}
             <div className={styles.statCardsRow}>
               <div className={styles.statCard}>
                 <div className={styles.statCardTop}>
@@ -90,7 +135,10 @@ export default function RawMaterialInventory() {
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>Total Raw Materials</p>
-                    <div className={styles.statNumber}>24 <span className={styles.statUnit}>Items</span></div>
+                    <div className={styles.statNumber}>
+                      {loading ? '--' : f(meta?.totalRawMaterial ?? materials.length)}
+                      <span className={styles.statUnit}> Items</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -102,7 +150,9 @@ export default function RawMaterialInventory() {
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>Total Quantity in Stock</p>
-                    <div className={styles.statNumber}>28,450 <span className={styles.statUnit}>kg</span></div>
+                    <div className={styles.statNumber}>
+                      {loading ? '--' : f(meta?.totalQuantity ?? materials.reduce((s, m) => s + Number(m.quantity), 0))}
+                    </div>
                   </div>
                 </div>
                 <p className={styles.statSecondary}>Across all materials</p>
@@ -115,7 +165,9 @@ export default function RawMaterialInventory() {
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>Total Stock Value</p>
-                    <div className={styles.statNumber}>{formatCurrency(12450000)}</div>
+                    <div className={styles.statNumber}>
+                      {loading ? '--' : formatCurrency(stockValue)}
+                    </div>
                   </div>
                 </div>
                 <p className={styles.statSecondary}>Based on average cost</p>
@@ -128,28 +180,22 @@ export default function RawMaterialInventory() {
                   </div>
                   <div className={styles.statInfo}>
                     <p className={styles.statLabel}>Low Stock Alerts</p>
-                    <div className={styles.statNumber}>6</div>
+                    <div className={styles.statNumber}>
+                      {loading ? '--' : lowStockCount}
+                    </div>
                   </div>
                 </div>
                 <p className={styles.statSecondary}>Materials</p>
               </div>
             </div>
 
-            {/* ── Filter Bar ── */}
             <div className={styles.filterBar}>
               <div className={styles.searchWrapper}>
                 <FiSearch size={15} className={styles.searchIcon} />
-                <input
-                  type="text"
-                  className={styles.searchInput}
-                  placeholder="Search by material name..."
-                />
+                <input type="text" className={styles.searchInput} placeholder="Search by material name..." />
               </div>
               <button className={styles.filterDropdown}>
                 All Categories <IoChevronDown size={11} />
-              </button>
-              <button className={styles.filterDropdown}>
-                All Suppliers <IoChevronDown size={11} />
               </button>
               <button className={styles.filterDropdown}>
                 All Status <IoChevronDown size={11} />
@@ -158,13 +204,12 @@ export default function RawMaterialInventory() {
                 <FiFilter size={13} />
                 Filter
               </button>
-              <button className={styles.resetBtn}>
+              <button className={styles.resetBtn} onClick={() => fetchMaterials()}>
                 <FiRefreshCw size={13} />
-                Reset
+                Refresh
               </button>
             </div>
 
-            {/* ── Data Table ── */}
             <div className={styles.tableCard}>
               <div className={styles.tableWrapper}>
                 <table className={styles.table}>
@@ -172,7 +217,6 @@ export default function RawMaterialInventory() {
                     <tr>
                       <th>Material Name</th>
                       <th>Category</th>
-                      <th>Supplier</th>
                       <th>Unit</th>
                       <th>Quantity in Stock</th>
                       <th>Unit Cost (₦)</th>
@@ -183,61 +227,107 @@ export default function RawMaterialInventory() {
                     </tr>
                   </thead>
                   <tbody>
-                    {materials.map((m, i) => (
-                      <tr key={i}>
-                        <td>
-                          <div className={styles.materialNameCell}>
-                            <span className={styles.materialSwatch} style={{ background: m.swatch }} />
-                            <span className={styles.materialName}>{m.name}</span>
-                          </div>
-                        </td>
-                        <td className={styles.bodySecondary}>{m.category}</td>
-                        <td className={styles.bodySecondary}>{m.supplier}</td>
-                        <td>{m.unit}</td>
-                        <td>{f(m.qty)}</td>
-                        <td>{formatCurrency(m.unitCost)}</td>
-                        <td className={styles.stockValueCell}>{formatCurrency(m.stockValue)}</td>
-                        <td>
-                          <span className={`${styles.statusPill} ${m.status === 'In Stock' ? styles.statusInStock : styles.statusLowStock}`}>
-                            {m.status}
-                          </span>
-                        </td>
-                        <td className={styles.bodySecondary}>{m.lastUpdated}</td>
-                        <td>
-                          <PortalDropdown
-                            btnClass={feedStyles.threeDotBtn}
-                            menuStyle={{
-                              background: '#fff',
-                              color: '#374151',
-                              border: '1px solid #E5E7EB',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                              borderRadius: 8,
-                              padding: '4px 0',
-                            }}
-                            items={getActionItems(m)}
-                          />
+                    {loading ? (
+                      <tr>
+                        <td colSpan={9} style={{ textAlign: 'center', padding: '40px 12px', color: '#9CA3AF' }}>
+                          Loading raw materials...
                         </td>
                       </tr>
-                    ))}
+                    ) : fetchError ? (
+                      <tr>
+                        <td colSpan={9} style={{ textAlign: 'center', padding: '32px 12px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                            <FiAlertTriangle size={24} color="#DC2626" />
+                            <span style={{ color: '#6B7280', fontSize: 14 }}>{fetchError}</span>
+                            <button
+                              onClick={fetchMaterials}
+                              style={{
+                                padding: '8px 20px',
+                                borderRadius: 8,
+                                border: '1px solid #D1D5DB',
+                                background: '#fff',
+                                color: '#374151',
+                                fontSize: 13,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              Try Again
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : materials.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} style={{ textAlign: 'center', padding: '40px 12px', color: '#9CA3AF' }}>
+                          No raw materials found. Click "Add Raw Material" to create one.
+                        </td>
+                      </tr>
+                    ) : (
+                      materials.map((m) => {
+                        const qty = Number(m.quantity);
+                        const cost = Number(m.unitCost);
+                        const total = qty * cost;
+                        const statusCfg = STATUS_CONFIG[m.status] || { label: m.status, className: 'statusInStock' };
+
+                        return (
+                          <tr key={m.id}>
+                            <td>
+                              <div className={styles.materialNameCell}>
+                                <span className={styles.materialName}>{m.name}</span>
+                              </div>
+                            </td>
+                            <td className={styles.bodySecondary}>{m.category}</td>
+                            <td>{m.unit}</td>
+                            <td>{f(qty)}</td>
+                            <td>{formatCurrency(cost)}</td>
+                            <td className={styles.stockValueCell}>{formatCurrency(total)}</td>
+                            <td>
+                              <span className={`${styles.statusPill} ${styles[statusCfg.className]}`}>
+                                {statusCfg.label}
+                              </span>
+                            </td>
+                            <td className={styles.bodySecondary}>{formatDate(m.updatedAt)}</td>
+                            <td>
+                              <PortalDropdown
+                                btnClass={feedStyles.threeDotBtn}
+                                menuStyle={{
+                                  background: '#fff',
+                                  color: '#374151',
+                                  border: '1px solid #E5E7EB',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                  borderRadius: 8,
+                                  padding: '4px 0',
+                                }}
+                                items={getActionItems(m)}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
 
-              {/* ── Table Footer ── */}
               <div className={styles.tableFooter}>
-                <span className={styles.footerInfo}>Showing 1 to 10 of 24 materials</span>
+                <span className={styles.footerInfo}>
+                  {loading
+                    ? 'Loading...'
+                    : `Showing ${materials.length} of ${meta?.totalRawMaterial ?? materials.length} material${materials.length !== 1 ? 's' : ''}`
+                  }
+                </span>
                 <div className={styles.pagination}>
-                  <button className={styles.pageArrow}>
+                  <button className={styles.pageArrow} disabled>
                     <FiChevronLeft size={15} />
                   </button>
                   <button className={`${styles.pageBtn} ${styles.pageBtnActive}`}>1</button>
-                  <button className={styles.pageBtn}>2</button>
-                  <button className={styles.pageBtn}>3</button>
-                  <button className={styles.pageArrow}>
+                  <button className={styles.pageArrow} disabled>
                     <FiChevronRight size={15} />
                   </button>
                   <button className={styles.perPageDropdown}>
-                    10 / page <IoChevronDown size={11} />
+                    20 / page <IoChevronDown size={11} />
                   </button>
                 </div>
               </div>
@@ -250,9 +340,7 @@ export default function RawMaterialInventory() {
       <AddRawMaterialModal
         show={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSuccess={() => {
-          setShowAddModal(false);
-        }}
+        onSuccess={handleCreated}
       />
     </section>
   );
