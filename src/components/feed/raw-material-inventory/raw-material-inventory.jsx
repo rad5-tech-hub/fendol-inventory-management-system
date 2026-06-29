@@ -6,11 +6,13 @@ import { IoChevronDown } from 'react-icons/io5';
 import { GiGreenPower, GiMoneyStack } from 'react-icons/gi';
 import { BsBoxSeam } from 'react-icons/bs';
 import { FaExclamationTriangle } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import feedStyles from '../feed.module.scss';
 import styles from './raw-material-inventory.module.scss';
+import AddRawMaterialModal from './AddRawMaterialModal';
 
 const formatCurrency = (n) =>
   '\u20A6' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -33,6 +35,7 @@ const materials = [
 export default function RawMaterialInventory() {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -71,7 +74,7 @@ export default function RawMaterialInventory() {
                   <FiDownload size={14} />
                   Export
                 </button>
-                <button className={styles.addBtn}>
+                <button className={styles.addBtn} onClick={() => setShowAddModal(true)}>
                   <FiPlus size={16} />
                   Add Raw Material
                 </button>
@@ -243,6 +246,14 @@ export default function RawMaterialInventory() {
           </main>
         </section>
       </div>
+
+      <AddRawMaterialModal
+        show={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={() => {
+          setShowAddModal(false);
+        }}
+      />
     </section>
   );
 }
