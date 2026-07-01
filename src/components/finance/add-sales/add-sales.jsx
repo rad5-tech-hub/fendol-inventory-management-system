@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form } from 'react-bootstrap';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import styles from '../finance.module.scss';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,6 +10,7 @@ import Api from '../../shared/api/apiLink';
 import SalesForm from './dryfish';
 import FreshForm from './freshfish';
 import FingerlingsForm from './fingerlingsfish';
+import FeedForm from './feed';
 
 const AddSales = () => {
     const [salesType, setSalesType] = useState('');
@@ -81,16 +83,18 @@ const AddSales = () => {
                         <div className="d-flex flex-column flex-md-row justify-content-between mt-4 mb-5 align-items-md-center">
                             <h4 className="mb-3 mb-md-0">Add New Sale</h4>
                             <div style={{ width: '18%', minWidth: '150px' }}>
-                                <Form.Select
+                                <CustomDropdown
                                     value={salesType || ''}
-                                    onChange={(e) => setSalesType(e.target.value)}
+                                    onChange={(val) => setSalesType(val)}
+                                    placeholder="Select Sales Type"
                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                >
-                                    <option value="" disabled>Select Sales Type</option>
-                                    <option value="Dry Fish">Dry Fish</option>
-                                    <option value="Fresh Fish">Fresh Fish</option>
-                                    <option value="Fingerlings Fish">Fingerlings Fish</option>
-                                </Form.Select>
+                                    options={[
+                                        { value: 'Dry Fish', label: 'Dry Fish' },
+                                        { value: 'Fresh Fish', label: 'Fresh Fish' },
+                                        { value: 'Fingerlings Fish', label: 'Fingerlings Fish' },
+                                        { value: 'Feed', label: 'Feed' },
+                                    ]}
+                                />
                             </div>
                         </div>
 
@@ -103,16 +107,18 @@ const AddSales = () => {
                                     Please select sales type
                                 </p>
                                 <div style={{ width: '18%', minWidth: '150px' }}>
-                                    <Form.Select
+                                    <CustomDropdown
                                         value={salesType || ''}
-                                        onChange={(e) => setSalesType(e.target.value)}
+                                        onChange={(val) => setSalesType(val)}
+                                        placeholder="Select Sales Type"
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                    >
-                                        <option value="" disabled>Select Sales Type</option>
-                                        <option value="Dry Fish">Dry Fish</option>
-                                        <option value="Fresh Fish">Fresh Fish</option>
-                                        <option value="Fingerlings Fish">Fingerlings Fish</option>
-                                    </Form.Select>
+                                        options={[
+                                            { value: 'Dry Fish', label: 'Dry Fish' },
+                                            { value: 'Fresh Fish', label: 'Fresh Fish' },
+                                            { value: 'Fingerlings Fish', label: 'Fingerlings Fish' },
+                                            { value: 'Feed', label: 'Feed' },
+                                        ]}
+                                    />
                                 </div>
                             </div>
                         )}
@@ -125,6 +131,9 @@ const AddSales = () => {
                         )}
                         {salesType === 'Fingerlings Fish' && (
                             <FingerlingsForm customers={customers} stages={stages} products={products} />
+                        )}
+                        {salesType === 'Feed' && (
+                            <FeedForm customers={customers} stages={stages} />
                         )}
                     </main>
                 </section>

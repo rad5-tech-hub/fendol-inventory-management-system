@@ -1,0 +1,594 @@
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import { Form, Row, Col, Button, Alert } from 'react-bootstrap';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
+import Api, { ApiV2 } from '../../shared/api/apiLink';
+import styles from '../finance.module.scss';
+import { BsExclamationTriangleFill } from 'react-icons/bs';
+import ReceiptModal from './receipt';
+import { useConfirm } from '../../shared/confirm-modal';
+
+const FeedForm = ({ customers, stages }) => {
+    const [feeds, setFeeds] = useState([]);
+    const [productTypeId, setProductTypeId] = useState(null);
+    const [feedData, setFeedData] = useState({
+        products: [],
+        category: '',
+        customerId: '',
+        discount: 0,
+        description: '',
+        salesCategory: '',
+        paymentType: '',
+        fullName: '',
+        amountPaid: null
+    });
+    const [receiptData, setReceiptData] = useState({});
+    const [showReceipt, setShowReceipt] = useState(false);
+    const [checkedProducts, setCheckedProducts] = useState({});
+    const [currentStep, setCurrentStep] = useState(1);
+    const [loader, setLoader] = useState(false);
+    const [filteredCustomer, setFilteredCustomer] = useState([]);
+    const [customer, setCustomer] = useState([]);
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [formSubmitted, setFormSubmitted] = useState(false);
+    const [balance, setBalance] = useState();
+    const [ConfirmDialog, confirm] = useConfirm();
+
+    useEffect(() => {
+        setCustomer(customers || []);
+    }, [customers]);
+
+    const fetchCustomers = async () => {
+        try {
+            const response = await Api.get('/customers');
+            if (Array.isArray(response.data.data)) {
+                setCustomer(response.data.data);
+            } else {
+                throw new Error('Expected an array of customers');
+            }
+        } catch (err) {
+            console.log(err.response?.data?.message || 'Failed to fetch customers.');
+        }
+    };
+
+    useEffect(() => {
+        fetchFeeds();
+        fetchProductTypes();
+    }, []);
+
+    const fetchFeeds = async () => {
+        try {
+            const res = await Api.get('/feeds?siteId=all');
+            setFeeds(res.data.data || []);
+        } catch (err) {
+            console.error('Error fetching feeds:', err);
+        }
+    };
+
+    const fetchProductTypes = async () => {
+        try {
+            const res = await ApiV2.get('/api/v1/product-types');
+            const types = res.data.data || [];
+            const feedType = types.find(t => t.name?.toLowerCase() === 'feed');
+            if (feedType) {
+                setProductTypeId(feedType.id);
+                setFeedData(prev => ({ ...prev, salesCategory: feedType.id }));
+            }
+        } catch (err) {
+            console.error('Error fetching product types:', err);
+        }
+    };
+
+    useEffect(() => {
+        const total = feedData.products.reduce((total, product) => {
+            if (checkedProducts[product?.id]) {
+                const quantity = product?.quantity || 0;
+                const feedItem = feeds.find(f => f?.id === product?.id);
+                const pricePerBag = feedItem?.pricePerBag || 0;
+                return total + (quantity * Number(pricePerBag));
+            }
+            return total;
+        }, 0);
+        if (feedData.paymentType === 'customer_balance' || feedData.paymentType === 'Credit') {
+            setFeedData((prev) => ({ ...prev, amountPaid: 0 }));
+        }
+        setTotalPrice(total);
+    }, [feedData.products, checkedProducts, feeds, feedData.paymentType]);
+
+    const handleCheckChange = (e, productId) => {
+        const { checked } = e.target;
+        setCheckedProducts(prevState => ({
+            ...prevState,
+            [productId]: checked
+        }));
+        if (checked) {
+            const feed = feeds.find(f => f.id === productId);
+            setFeedData(prevState => ({
+                ...prevState,
+                salesCategory: productTypeId || prevState.salesCategory,
+                products: [
+                    ...prevState.products,
+                    {
+                        id: productId,
+                        feedName: feed.feedName,
+                        feedType: feed.feedType,
+                        quantity: '',
+                        quantityUsedToPack: ''
+                    }
+                ]
+            }));
+        } else {
+            setFeedData(prevState => ({
+                ...prevState,
+                products: prevState.products.filter(product => product.id !== productId)
+            }));
+        }
+    };
+
+    const handleInputChange = (e, productId) => {
+        const { name, value } = e.target;
+        const feedItem = feeds.find(f => f.id === productId);
+        const weightPerBag = feedItem?.weightPerBag || 0;
+
+        setFeedData(prevState => {
+            const productExists = prevState.products.find(p => p.id === productId);
+            let updatedProducts;
+
+            if (productExists) {
+                updatedProducts = prevState.products.map(product =>
+                    product.id === productId
+                        ? {
+                            ...product,
+                            [name]: value === '' ? '' : parseFloat(value) || 0,
+                            ...(name === 'quantity' && {
+                                quantityUsedToPack: value !== ''
+                                    ? (parseFloat(value) || 0) * weightPerBag
+                                    : ''
+                            })
+                        }
+                        : product
+                );
+            } else {
+                const feedInfo = feeds.find(f => f.id === productId);
+                const qty = name === 'quantity' ? (value === '' ? '' : parseFloat(value) || 0) : '';
+                const usedToPack = name === 'quantity' && value !== ''
+                    ? (parseFloat(value) || 0) * weightPerBag
+                    : (name === 'quantityUsedToPack' ? (value === '' ? '' : parseFloat(value) || 0) : '');
+
+                updatedProducts = [
+                    ...prevState.products,
+                    {
+                        id: productId,
+                        feedName: feedInfo.feedName,
+                        feedType: feedInfo.feedType,
+                        quantity: qty,
+                        quantityUsedToPack: usedToPack
+                    }
+                ];
+            }
+
+            return {
+                ...prevState,
+                products: updatedProducts,
+                salesCategory: productTypeId || prevState.salesCategory
+            };
+        });
+    };
+
+    const calculateSubtotal = (productId) => {
+        const product = feedData.products.find(p => p.id === productId);
+        if (!product) return 0;
+        const quantity = product?.quantity || 0;
+        const feedItem = feeds.find(f => f.id === productId);
+        const pricePerBag = feedItem?.pricePerBag || 0;
+        return quantity * Number(pricePerBag);
+    };
+
+    const calculateDiscountedPrice = () => {
+        let discountedPrice = totalPrice;
+        if (feedData.category === 'Marketer') {
+            discountedPrice -= (totalPrice * 0.1);
+        } else if (feedData.discount > 0) {
+            discountedPrice -= parseFloat(feedData.discount) || 0;
+        }
+        return Math.max(discountedPrice, 0);
+    };
+
+    const calculateTotalBalance = () => {
+        const discountedPrice = calculateDiscountedPrice();
+        return discountedPrice - (feedData.amountPaid || 0);
+    };
+
+    const handleNextStep = () => {
+        setFormSubmitted(true);
+        if (isNextButtonDisabled()) {
+            toast.error("Please fill in all required fields for the selected products.", {
+                position: toast.POSITION.TOP_CENTER,
+                autoClose: 3000,
+                className: 'dark-toast'
+            });
+        } else {
+            setCurrentStep(2);
+        }
+    };
+
+    const handleSearchChange = (e) => {
+        const { value } = e.target;
+        setFeedData(prevData => ({ ...prevData, fullName: value }));
+        const filtered = value
+            ? customer.filter(c => c.fullName?.toLowerCase().includes(value.toLowerCase()))
+            : customer;
+        setFilteredCustomer(filtered.length ? filtered : []);
+    };
+
+    const handleSelectCustomer = (selectedCustomer) => {
+        const discount = selectedCustomer.category === "Marketer" ? '10%' : 0;
+        setFeedData(prevData => ({
+            ...prevData,
+            customerId: selectedCustomer.id,
+            fullName: selectedCustomer.fullName,
+            category: selectedCustomer.category,
+            discount: discount
+        }));
+        setFilteredCustomer([]);
+        setBalance(selectedCustomer.balance);
+    };
+
+    const handleFocus = (e, productId) => {
+        if (!checkedProducts[productId]) {
+            setCheckedProducts(prevState => ({
+                ...prevState,
+                [productId]: true
+            }));
+            const feed = feeds.find(f => f.id === productId);
+            setFeedData(prevState => ({
+                ...prevState,
+                salesCategory: productTypeId || prevState.salesCategory,
+                products: [
+                    ...prevState.products,
+                    {
+                        id: productId,
+                        feedName: feed.feedName,
+                        feedType: feed.feedType,
+                        quantity: '',
+                        quantityUsedToPack: ''
+                    }
+                ]
+            }));
+        }
+    };
+
+    const handleAddSales = async (e) => {
+        e.preventDefault();
+        const ok = await confirm({ message: "Are you sure you want to add this sale?", title: "Confirm Sale", variant: "primary" });
+        if (!ok) return;
+
+        setLoader(true);
+        const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
+
+        try {
+            const saleResponse = await Api.post('/sales', feedData);
+
+            if (saleResponse.status < 200 || saleResponse.status >= 300) {
+                throw new Error(saleResponse.data?.message || "Sale failed!");
+            }
+
+            const transactionId = saleResponse.data.data?.transactionId;
+            if (!transactionId) {
+                throw new Error("Transaction ID not found. Please try again.");
+            }
+
+            toast.update(salesToast, {
+                render: "Sale added successfully!",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000,
+                className: 'dark-toast'
+            });
+
+            const receiptToast = toast.loading("Fetching receipt...", { className: 'dark-toast' });
+            try {
+                const receiptResponse = await Api.get(`/sales-receipts/${transactionId}`);
+
+                if (receiptResponse.status < 200 || receiptResponse.status >= 300) {
+                    throw new Error("Receipt could not be fetched.");
+                }
+
+                setReceiptData(receiptResponse);
+                toast.update(receiptToast, {
+                    render: "Receipt fetched successfully!",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 3000,
+                    className: 'dark-toast'
+                });
+                setShowReceipt(true);
+            } catch (receiptError) {
+                console.error("Error fetching receipt:", receiptError);
+                toast.update(receiptToast, {
+                    render: receiptError.message || "Failed to fetch receipt!",
+                    type: "error",
+                    isLoading: false,
+                    autoClose: 6000,
+                    className: 'dark-toast'
+                });
+            }
+
+            setFeedData({
+                products: [],
+                category: '',
+                customerId: '',
+                discount: 0,
+                description: '',
+                salesCategory: '',
+                paymentType: '',
+                fullName: '',
+                amountPaid: null
+            });
+            setCheckedProducts({});
+            setCurrentStep(1);
+            setFormSubmitted(false);
+            fetchCustomers();
+            fetchFeeds();
+        } catch (error) {
+            console.error("Error in handleAddSales:", error);
+            toast.update(salesToast, {
+                render: error.response?.message || error.response?.data?.message || 'Sale failed!',
+                type: "error",
+                isLoading: false,
+                autoClose: 6000,
+                className: 'dark-toast'
+            });
+        } finally {
+            setLoader(false);
+        }
+    };
+
+    const isNextButtonDisabled = () => {
+        const hasCheckedProduct = Object.values(checkedProducts).some(checked => checked);
+        if (!hasCheckedProduct) return true;
+        return Object.keys(checkedProducts).some(productId => {
+            if (checkedProducts[productId]) {
+                const product = feedData.products.find(p => p.id === productId);
+                return !product || (!product.quantity && product.quantity !== 0);
+            }
+            return false;
+        });
+    };
+
+    return (
+        <div>
+            {currentStep === 1 && (
+                feeds.length > 0 ? (
+                    <>
+                        <DataTable
+                            className={`bg-light px-2 ${styles.styled_table}`}
+                            columns={[
+                                { key: 'feedName', label: 'PRODUCT', render: (val, row) => (
+                                    <Form.Check
+                                        type="checkbox"
+                                        label={`${val} - ${row.feedType}`}
+                                        value={val}
+                                        data-id={row.id}
+                                        className="text-uppercase mt-2 fw-semibold"
+                                        onChange={(e) => handleCheckChange(e, row.id)}
+                                        checked={checkedProducts[row.id] || false}
+                                    />
+                                )},
+                                { key: 'weightPerBag', label: 'WEIGHT', render: (val, row) => <p className='py-2'>{val}{row.unit}</p> },
+                                { key: 'pricePerBag', label: 'PRICE', render: (val) => <p className='py-2'>₦ {new Intl.NumberFormat().format(Number(val))}</p> },
+                                { key: 'id', label: 'NO. OF BAGS', render: (val) => (
+                                    <Form.Control
+                                        placeholder="Enter no. of bags"
+                                        type="number"
+                                        name="quantity"
+                                        value={feedData.products.find(p => p.id === val)?.quantity || ''}
+                                        required
+                                        min={1}
+                                        onChange={(e) => handleInputChange(e, val)}
+                                        onFocus={(e) => handleFocus(e, val)}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                    />
+                                )},
+                                { key: 'id', label: <>QUANTITY USED TO PACK <br /> WEIGH IN KG FOR BROKEN</>, render: (val, row) => {
+                                    const product = feedData.products.find(p => p.id === val);
+                                    return (
+                                        <div className='px-2'>
+                                            <Form.Control
+                                                type="number"
+                                                value={product?.quantityUsedToPack ?? ''}
+                                                disabled
+                                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                            />
+                                        </div>
+                                    );
+                                }},
+                                { key: 'id', label: 'SUBTOTAL', render: (val) => <p className="text-muted py-2">₦ {new Intl.NumberFormat().format(calculateSubtotal(val))}</p> },
+                            ]}
+                            data={feeds}
+                        />
+                        <div className="mt-3">
+                            <h5 className='fw-semibold mt-3'>Total Price: ₦ {new Intl.NumberFormat().format(totalPrice)}</h5>
+                        </div>
+                        <div className='text-end'>
+                            <Button
+                                onClick={handleNextStep}
+                                variant='dark'
+                                className={`border-0 btn btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+                                disabled={isNextButtonDisabled()}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="d-flex justify-content-center">
+                        <Alert variant="info" className="text-center w-50 py-5">
+                            <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">No Feed yet.</span>
+                        </Alert>
+                    </div>
+                )
+            )}
+            {currentStep === 2 && (
+                <Form onSubmit={handleAddSales}>
+                    <Row xxl={2} xl={2} lg={2} md={1} sm={1} xs={1}>
+                        <Col className="mb-4">
+                            <Form.Group controlId="searchCustomer">
+                                <Form.Label className="fw-semibold">Customer Name</Form.Label>
+                                <div style={{ position: 'relative', width: '100%' }}>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Search Name..."
+                                        name="fullName"
+                                        value={feedData.fullName || ''}
+                                        onChange={handleSearchChange}
+                                        style={{ width: '100%' }}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
+                                        required
+                                    />{balance && balance > 0 && feedData.customerId ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
+                                    {feedData.fullName && filteredCustomer.length > 0 && (
+                                        <div className={`${styles.suggestions_box}`}>
+                                            <ul>
+                                                {filteredCustomer.map((customer, index) => (
+                                                    <li
+                                                        key={index}
+                                                        onClick={() => handleSelectCustomer(customer)}
+                                                        style={{ cursor: 'pointer', padding: '8px' }}
+                                                    >
+                                                        {customer.fullName} ({customer.category})
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </Form.Group>
+                        </Col>
+
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Discount</Form.Label>
+                            <div className={`${styles.inputContainer} position-relative`}>
+                                <Form.Control
+                                    placeholder="Enter discount"
+                                    type="text"
+                                    name="discount"
+                                    value={feedData.category === 'Marketer' ? '10%' : feedData.discount || ''}
+                                    onChange={(e) => setFeedData({ ...feedData, discount: parseFloat(e.target.value) || 0 })}
+                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
+                                    readOnly={feedData.category === 'Marketer'}
+                                />
+                            </div>
+                        </Col>
+
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Description</Form.Label>
+                            <Form.Control
+                                placeholder="Enter description"
+                                as="textarea"
+                                name="description"
+                                value={feedData.description || ''}
+                                onChange={(e) => setFeedData({ ...feedData, description: e.target.value })}
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                            />
+                        </Col>
+
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Total Price (₦)</Form.Label>
+                            <Form.Control
+                                placeholder="Total price"
+                                type="text"
+                                name="totalPrice"
+                                value={new Intl.NumberFormat().format(totalPrice)}
+                                readOnly
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                            />
+                        </Col>
+
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Total Balance (₦)</Form.Label>
+                            <Form.Control
+                                placeholder="Total balance"
+                                type="text"
+                                name="totalBalance"
+                                value={new Intl.NumberFormat().format(calculateTotalBalance())}
+                                readOnly
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                            />
+                        </Col>
+
+                        <Col className="mb-4">
+                            <Form.Label className="fw-semibold">Payment Type</Form.Label>
+                            <CustomDropdown
+                                name="paymentType"
+                                value={feedData.paymentType || ''}
+                                onChange={(val) => {
+                                    setFeedData((prev) => ({
+                                        ...prev,
+                                        paymentType: val,
+                                        amountPaid: '',
+                                    }));
+                                }}
+                                required
+                                placeholder="Select Payment Type"
+                                className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                options={[
+                                    { value: 'Cash', label: 'Cash' },
+                                    { value: 'Credit', label: 'Credit' },
+                                    { value: 'Transfer', label: 'Transfer' },
+                                    { value: 'Pos', label: 'Pos' },
+                                    ...(balance > 0 ? [{ value: 'customer_balance', label: 'Customer Balance' }] : []),
+                                ]}
+                            />
+                        </Col>
+
+                        {["customer_balance", "Credit"].includes(feedData.paymentType) ? null : (
+                            <Col className="mb-4">
+                                <Form.Label className="fw-semibold">Amount Paid (₦)</Form.Label>
+                                <Form.Control
+                                    placeholder="Enter amount paid"
+                                    type="text"
+                                    name="amountPaid"
+                                    value={
+                                        feedData.amountPaid !== null && feedData.amountPaid !== ""
+                                            ? new Intl.NumberFormat().format(feedData.amountPaid)
+                                            : ""
+                                    }
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/,/g, "");
+                                        setFeedData({
+                                            ...feedData,
+                                            amountPaid: value ? parseFloat(value) : "",
+                                        });
+                                    }}
+                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                />
+                            </Col>
+                        )}
+                    </Row>
+                    <div className="d-flex justify-content-between">
+                        <Button
+                            variant="secondary"
+                            className={`border-0 btn btn-secondary shadow py-2 px-5 fs-6 mb-5 fw-semibold`}
+                            onClick={() => setCurrentStep(1)}
+                        >
+                            Back
+                        </Button>
+                        <Button
+                            variant="dark"
+                            disabled={loader}
+                            className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
+                            type="submit"
+                        >
+                            {loader ? 'Adding Sale...' : 'Add Sale'}
+                        </Button>
+                    </div>
+                </Form>
+            )}
+            <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
+            <ConfirmDialog />
+        </div>
+    );
+};
+
+export default FeedForm;
