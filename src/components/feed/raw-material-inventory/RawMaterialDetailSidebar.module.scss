@@ -316,6 +316,115 @@
   font-weight: 600;
 }
 
+/* ── Stock History ── */
+.emptyHistory {
+  font-size: 13px;
+  color: #9CA3AF;
+  padding: 16px;
+  text-align: center;
+  background: #F9FAFB;
+  border-radius: 10px;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.historyItem {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #F3F4F6;
+  position: relative;
+}
+
+.historyItem:last-child {
+  border-bottom: none;
+}
+
+.historyDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #DCFCE7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.historyContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.historyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.historyQty {
+  font-size: 14px;
+  font-weight: 700;
+  color: #16A34A;
+}
+
+.historyStatus {
+  line-height: 0;
+}
+
+.historyMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #9CA3AF;
+}
+
+.historyStock {
+  font-weight: 500;
+  color: #6B7280;
+}
+
+.historyDate {
+  color: #9CA3AF;
+}
+
+.loadMoreBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: #6B7280;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.loadMoreBtn:hover {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+  color: #374151;
+}
+
+.loadMoreBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ── Responsive ── */
 @media (max-width: 576px) {
   .sidebar {

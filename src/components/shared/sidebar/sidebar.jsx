@@ -21,7 +21,7 @@ const computeOpenFromPath = (path) => {
     open.feed_management = true;
     if (path.includes('/feed/production')) open.feed_production = true;
     if (path.includes('/feed/inventory')) open.feed_inventory = true;
-    if (path.includes('/feed/raw-materials') || path.includes('/feed/view-all')) open.raw_materials = true;
+    if (path.includes('/feed/raw-materials')) open.raw_materials = true;
   }
   if (path.includes("/store")) open.store = true;
   if (path.includes("/products")) open.product = true;
@@ -90,7 +90,7 @@ export default function SideBar({ show, handleClose }) {
       updates.feed_management = true;
       if (path.includes('/feed/production')) updates.feed_production = true;
       if (path.includes('/feed/inventory')) updates.feed_inventory = true;
-      if (path.includes('/feed/raw-materials') || path.includes('/feed/view-all')) updates.raw_materials = true;
+      if (path.includes('/feed/raw-materials')) updates.raw_materials = true;
     }
     if (path.includes("/store")) updates.store = true;
     if (path.includes("/products")) updates.product = true;
@@ -327,7 +327,6 @@ export default function SideBar({ show, handleClose }) {
               {renderCard("raw_materials", "Raw Materials", <GiChipsBag size={25} className="me-1" />,
                 <>
                   {renderNavItem("Raw Material Inventory", "/feed/raw-materials")}
-                  {renderNavItem("View all", "/feed/view-all")}
                 </>
               )}
               {renderCard("feed_production", "Feed production", <GiFoodChain size={25} className="me-1" />,

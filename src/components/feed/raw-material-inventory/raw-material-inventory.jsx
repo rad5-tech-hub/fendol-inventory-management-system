@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { FiDownload, FiPlus, FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight, FiEdit2, FiAlertTriangle } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSelector } from 'react-redux';
+import { FiDownload, FiPlus, FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight, FiEdit2, FiAlertTriangle, FiPackage, FiX } from 'react-icons/fi';
 import { BsEye, BsBoxSeam } from 'react-icons/bs';
 import { IoChevronDown } from 'react-icons/io5';
 import { GiGreenPower, GiMoneyStack } from 'react-icons/gi';
@@ -14,6 +15,7 @@ import { ApiV2 } from '../../shared/api/apiLink';
 import feedStyles from '../feed.module.scss';
 import styles from './raw-material-inventory.module.scss';
 import AddRawMaterialModal from './AddRawMaterialModal';
+import RestockRawMaterialModal from './RestockRawMaterialModal';
 import RawMaterialDetailSidebar from './RawMaterialDetailSidebar';
 
 const formatCurrency = (n) =>
@@ -34,14 +36,34 @@ const formatDate = (dateStr) => {
 };
 
 export default function RawMaterialInventory() {
+  const activeSite = useSelector((store) => store.activeSite);
+
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editMaterial, setEditMaterial] = useState(null);
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [restockMaterial, setRestockMaterial] = useState(null);
   const [materials, setMaterials] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [detailMaterial, setDetailMaterial] = useState(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const filterRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -51,9 +73,15 @@ export default function RawMaterialInventory() {
     setFetchError(null);
 
     try {
-      const res = await ApiV2.get('/v2/raw-material');
+      const params = { siteId: activeSite?.id || 'all' };
+
+      const res = await ApiV2.get('/v2/raw-material', { params });
       if (res.data?.success && res.data?.data) {
-        setMaterials(res.data.data);
+        const normalized = res.data.data.map((m) => ({
+          ...m,
+          quantity: m.quantityInStock !== undefined ? m.quantityInStock : m.quantity,
+        }));
+        setMaterials(normalized);
         setMeta(res.data.meta || null);
       } else {
         throw new Error(res.data?.response_message || 'Unexpected response format');
@@ -72,7 +100,7 @@ export default function RawMaterialInventory() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeSite?.id]);
 
   useEffect(() => {
     fetchMaterials();
@@ -81,6 +109,20 @@ export default function RawMaterialInventory() {
   const handleCreated = useCallback((success, message) => {
     if (success) {
       setShowAddModal(false);
+      toast.success(message, { autoClose: 4000 });
+      setSearchQuery('');
+      setCategoryFilter('');
+      setStatusFilter('');
+      fetchMaterials();
+    } else {
+      toast.error(message, { autoClose: 6000 });
+    }
+  }, [fetchMaterials]);
+
+  const handleRestocked = useCallback((success, message) => {
+    if (success) {
+      setShowRestockModal(false);
+      setRestockMaterial(null);
       toast.success(message, { autoClose: 4000 });
       fetchMaterials();
     } else {
@@ -94,10 +136,23 @@ export default function RawMaterialInventory() {
       onClick: () => setDetailMaterial(material),
     },
     {
+      label: <><FiPackage size={14} style={{ marginRight: 10 }} /> Restock</>,
+      onClick: () => { setRestockMaterial(material); setShowRestockModal(true); },
+    },
+    {
       label: <><FiEdit2 size={14} style={{ marginRight: 10 }} /> Edit</>,
       onClick: () => { setEditMaterial(material); setShowAddModal(true); },
     },
   ];
+
+  const categories = [...new Set(materials.map((m) => m.category).filter(Boolean))].sort();
+
+  const filteredMaterials = materials.filter((m) => {
+    if (searchQuery.trim() && !m.name.toLowerCase().includes(searchQuery.trim().toLowerCase())) return false;
+    if (categoryFilter && m.category !== categoryFilter) return false;
+    if (statusFilter && m.status !== statusFilter) return false;
+    return true;
+  });
 
   const stockValue = materials.reduce((sum, m) => sum + (Number(m.quantity) * Number(m.unitCost)), 0);
   const lowStockCount = materials.filter((m) => {
@@ -105,6 +160,48 @@ export default function RawMaterialInventory() {
     if (m.status === 'low stock') return true;
     return Number(m.quantity) <= Number(m.threshold);
   }).length;
+
+  const hasActiveFilters = searchQuery || categoryFilter || statusFilter;
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setCategoryFilter('');
+    setStatusFilter('');
+  };
+
+  const renderDropdown = (type, label, options) => {
+    const isOpen = openDropdown === type;
+    const value = type === 'category' ? categoryFilter : statusFilter;
+    return (
+      <div style={{ position: 'relative' }}>
+        <button
+          className={`${styles.filterDropdown} ${value ? styles.filterDropdownActive : ''}`}
+          onClick={() => setOpenDropdown(isOpen ? null : type)}
+        >
+          {value || label} <IoChevronDown size={11} />
+        </button>
+        {isOpen && (
+          <div className={styles.filterDropdownMenu}>
+            <button
+              className={`${styles.filterDropdownOption} ${!value ? styles.filterDropdownOptionActive : ''}`}
+              onClick={() => { setOpenDropdown(null); type === 'category' ? setCategoryFilter('') : setStatusFilter(''); }}
+            >
+              {`All ${type === 'category' ? 'Categories' : 'Status'}`}
+            </button>
+            {options.map((opt) => (
+              <button
+                key={opt}
+                className={`${styles.filterDropdownOption} ${value === opt ? styles.filterDropdownOptionActive : ''}`}
+                onClick={() => { setOpenDropdown(null); type === 'category' ? setCategoryFilter(opt) : setStatusFilter(opt); }}
+              >
+                {opt === 'in stock' ? 'In Stock' : opt === 'low stock' ? 'Low Stock' : opt === 'out of stock' ? 'Out of Stock' : opt}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <section className={`${feedStyles.body}`}>
@@ -197,25 +294,39 @@ export default function RawMaterialInventory() {
               </div>
             </div>
 
-            <div className={styles.filterBar}>
+            <div className={styles.filterBar} ref={filterRef}>
               <div className={styles.searchWrapper}>
                 <FiSearch size={15} className={styles.searchIcon} />
-                <input type="text" className={styles.searchInput} placeholder="Search by material name..." />
+                <input
+                  type="text"
+                  className={styles.searchInput}
+                  placeholder="Search by material name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button className={styles.searchClear} onClick={() => setSearchQuery('')}>
+                    <FiX size={14} />
+                  </button>
+                )}
               </div>
-              <button className={styles.filterDropdown}>
-                All Categories <IoChevronDown size={11} />
-              </button>
-              <button className={styles.filterDropdown}>
-                All Status <IoChevronDown size={11} />
-              </button>
-              <button className={styles.filterActionBtn}>
+              {renderDropdown('category', 'All Categories', categories)}
+              {renderDropdown('status', 'All Status', Object.keys(STATUS_CONFIG))}
+              <button className={styles.filterActionBtn} onClick={() => {}}>
                 <FiFilter size={13} />
                 Filter
               </button>
-              <button className={styles.resetBtn} onClick={() => fetchMaterials()}>
-                <FiRefreshCw size={13} />
-                Refresh
-              </button>
+              {hasActiveFilters ? (
+                <button className={styles.clearBtn} onClick={clearFilters}>
+                  <FiX size={13} />
+                  Clear
+                </button>
+              ) : (
+                <button className={styles.resetBtn} onClick={() => fetchMaterials()}>
+                  <FiRefreshCw size={13} />
+                  Refresh
+                </button>
+              )}
             </div>
 
             <div className={styles.tableCard}>
@@ -255,7 +366,7 @@ export default function RawMaterialInventory() {
                     },
                     { key: 'updatedAt', label: 'Last Updated', render: (value) => <span className={styles.bodySecondary}>{formatDate(value)}</span> },
                   ]}
-                  data={materials}
+                  data={filteredMaterials}
                   loading={loading}
                   error={fetchError || ''}
                   emptyMessage='No raw materials found. Click "Add Raw Material" to create one.'
@@ -280,7 +391,9 @@ export default function RawMaterialInventory() {
                 <span className={styles.footerInfo}>
                   {loading
                     ? 'Loading...'
-                    : `Showing ${materials.length} of ${meta?.totalRawMaterial ?? materials.length} material${materials.length !== 1 ? 's' : ''}`
+                    : hasActiveFilters
+                      ? `Showing ${filteredMaterials.length} of ${materials.length} material${materials.length !== 1 ? 's' : ''}`
+                      : `Showing ${materials.length} of ${meta?.totalRawMaterial ?? materials.length} material${materials.length !== 1 ? 's' : ''}`
                   }
                 </span>
                 <div className={styles.pagination}>
@@ -309,6 +422,13 @@ export default function RawMaterialInventory() {
         editData={editMaterial}
         onClose={() => { setShowAddModal(false); setEditMaterial(null); }}
         onSuccess={handleCreated}
+      />
+
+      <RestockRawMaterialModal
+        show={showRestockModal}
+        material={restockMaterial}
+        onClose={() => { setShowRestockModal(false); setRestockMaterial(null); }}
+        onSuccess={handleRestocked}
       />
 
       <RawMaterialDetailSidebar

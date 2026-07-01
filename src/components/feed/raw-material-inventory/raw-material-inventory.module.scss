@@ -220,6 +220,94 @@
   background: #F9FAFB;
 }
 
+.filterDropdownActive {
+  composes: filterDropdown;
+  background: #512728;
+  color: #FFFFFF;
+  border-color: #512728;
+}
+
+.filterDropdownActive:hover {
+  background: #3D1E1F;
+}
+
+.filterDropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 200px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  z-index: 100;
+}
+
+.filterDropdownOption {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s ease;
+}
+
+.filterDropdownOption:hover {
+  background: #F3F4F6;
+}
+
+.filterDropdownOptionActive {
+  background: #F0E4E4;
+  color: #512728;
+  font-weight: 600;
+}
+
+.searchClear {
+  background: none;
+  border: none;
+  color: #9CA3AF;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.searchClear:hover {
+  color: #374151;
+}
+
+.clearBtn {
+  height: 40px;
+  padding: 0 14px;
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #DC2626;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+  font-family: inherit;
+}
+
+.clearBtn:hover {
+  background: #FECACA;
+}
+
 .filterActionBtn {
   height: 40px;
   padding: 0 16px;

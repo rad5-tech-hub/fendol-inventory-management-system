@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSelector } from 'react-redux';
 import { createPortal } from 'react-dom';
-import { FiX, FiPackage, FiDollarSign, FiAlertTriangle, FiClock, FiRefreshCw } from 'react-icons/fi';
-import { BsBoxSeam, BsTag } from 'react-icons/bs';
+import { FiX, FiPackage, FiDollarSign, FiAlertTriangle, FiClock, FiRefreshCw, FiChevronDown } from 'react-icons/fi';
+import { BsBoxSeam, BsTag, BsArrowUpShort } from 'react-icons/bs';
+import { ApiV2 } from '../../shared/api/apiLink';
 import styles from './RawMaterialDetailSidebar.module.scss';
 
 const formatCurrency = (n) =>
@@ -15,6 +17,12 @@ const formatDate = (dateStr) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '--';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
 const STATUS_CONFIG = {
   'in stock': { label: 'In Stock', className: 'statusInStock' },
   'low stock': { label: 'Low Stock', className: 'statusLowStock' },
@@ -22,6 +30,39 @@ const STATUS_CONFIG = {
 };
 
 export default function RawMaterialDetailSidebar({ material, onClose }) {
+  const activeSite = useSelector((store) => store.activeSite);
+  const [history, setHistory] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const fetchHistory = useCallback(async (cursor) => {
+    if (!material?.id) return;
+    setHistoryLoading(true);
+    try {
+      const params = { siteId: activeSite?.id || 'all' };
+      if (cursor) params.cursor = cursor;
+
+      const res = await ApiV2.get(`/v2/raw-material-history/${material.id}`, { params });
+      if (res.data?.success) {
+        const entries = res.data.data || [];
+        setHistory((prev) => cursor ? [...prev, ...entries] : entries);
+        setPagination(res.data.pagination || null);
+      }
+    } catch {
+      // silently fail — history is non-critical
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [material?.id, activeSite?.id]);
+
+  useEffect(() => {
+    if (material?.id) {
+      setHistory([]);
+      setPagination(null);
+      fetchHistory();
+    }
+  }, [material?.id, fetchHistory]);
+
   if (!material) return null;
 
   const statusCfg = STATUS_CONFIG[material.status] || { label: material.status, className: 'statusInStock' };
@@ -125,6 +166,44 @@ export default function RawMaterialDetailSidebar({ material, onClose }) {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Stock History</h3>
+            {history.length === 0 && !historyLoading && (
+              <div className={styles.emptyHistory}>No stock history recorded yet.</div>
+            )}
+            <div className={styles.historyList}>
+              {history.map((entry) => {
+                const entryStatusCfg = STATUS_CONFIG[entry.status] || { label: entry.status, className: 'statusInStock' };
+                return (
+                  <div key={entry.id} className={styles.historyItem}>
+                    <div className={styles.historyDot}>
+                      <BsArrowUpShort size={16} color="#16A34A" />
+                    </div>
+                    <div className={styles.historyContent}>
+                      <div className={styles.historyRow}>
+                        <span className={styles.historyQty}>+{f(Number(entry.quantityAdded))}</span>
+                        <span className={styles.historyStatus}><span className={`${styles.statusBadge} ${styles[entryStatusCfg.className]}`}>{entryStatusCfg.label}</span></span>
+                      </div>
+                      <div className={styles.historyMeta}>
+                        <span className={styles.historyStock}>Stock: {f(Number(entry.quantityInStock))}</span>
+                        <span className={styles.historyDate}>{formatDateTime(entry.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {pagination?.hasMore && (
+              <button
+                className={styles.loadMoreBtn}
+                onClick={() => fetchHistory(pagination.nextCursor)}
+                disabled={historyLoading}
+              >
+                {historyLoading ? 'Loading...' : <>Load older <FiChevronDown size={13} /></>}
+              </button>
+            )}
           </div>
         </div>
       </div>

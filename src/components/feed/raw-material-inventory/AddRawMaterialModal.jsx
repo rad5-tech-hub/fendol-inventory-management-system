@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { createPortal } from 'react-dom';
 import { FiX, FiPackage, FiDollarSign, FiAlertTriangle } from 'react-icons/fi';
 import { HiOutlineTag } from 'react-icons/hi';
@@ -124,6 +125,7 @@ function validateAll(form) {
 }
 
 export default function AddRawMaterialModal({ show, onClose, onSuccess, editData }) {
+  const activeSite = useSelector((store) => store.activeSite);
   const [form, setForm] = useState(defaultForm);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -239,6 +241,7 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
         unitCost: Number(form.unitCost),
         threshold: Number(form.threshold),
       };
+      if (activeSite?.id) payload.siteId = activeSite.id;
 
       const res = isEditing
         ? await ApiV2.patch(`/v2/raw-material/${editData.id}`, payload)
