@@ -20,9 +20,13 @@ export default function Complaints() {
   const [staffSearch, setStaffSearch] = useState('');
   const [showStaffDropdown, setShowStaffDropdown] = useState(false);
   const [staffLoading, setStaffLoading] = useState(false);
+  const [staffAgainst, setStaffAgainst] = useState(null);
+  const [staffAgainstSearch, setStaffAgainstSearch] = useState('');
+  const [showStaffAgainstDropdown, setShowStaffAgainstDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const staffRef = useRef(null);
+  const staffAgainstRef = useRef(null);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -37,6 +41,9 @@ export default function Complaints() {
     const handleClickOutside = (e) => {
       if (staffRef.current && !staffRef.current.contains(e.target)) {
         setShowStaffDropdown(false);
+      }
+      if (staffAgainstRef.current && !staffAgainstRef.current.contains(e.target)) {
+        setShowStaffAgainstDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -63,6 +70,13 @@ export default function Complaints() {
       )
     : staff;
 
+  const filteredStaffAgainst = staffAgainstSearch
+    ? staff.filter((s) =>
+        s.id !== selectedStaff?.id &&
+        (s.name || '').toLowerCase().includes(staffAgainstSearch.toLowerCase())
+      )
+    : staff.filter((s) => s.id !== selectedStaff?.id);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!complainant.trim() || !complaintType || !description.trim()) {
@@ -73,10 +87,47 @@ export default function Complaints() {
       toast.error('Please select a staff member.', { className: 'dark-toast' });
       return;
     }
+
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
-    toast.info('Submission will be available once the backend API is ready.', { className: 'dark-toast' });
-    setSubmitting(false);
+    const loadingToast = toast.loading('Submitting complaint...', { className: 'dark-toast' });
+
+    try {
+      const body = complaintType === 'Staff'
+        ? {
+            staffId: selectedStaff.id,
+            description: description.trim(),
+            ...(staffAgainst && { staffAgainstId: staffAgainst.id }),
+          }
+        : { name: complainant.trim(), description: description.trim() };
+
+      const res = await ApiV2.post('/v2/complaint', body);
+
+      toast.update(loadingToast, {
+        render: res.data?.response_message || 'Complaint submitted successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+        className: 'dark-toast',
+      });
+
+      setComplainant('');
+      setComplaintType('');
+      setDescription('');
+      setSelectedStaff(null);
+      setStaffSearch('');
+      setStaffAgainst(null);
+      setStaffAgainstSearch('');
+    } catch (error) {
+      toast.update(loadingToast, {
+        render: error.response?.data?.response_message || error.response?.data?.message || 'Failed to submit complaint',
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+        className: 'dark-toast',
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -167,6 +218,61 @@ export default function Complaints() {
                                     setSelectedStaff(s);
                                     setStaffSearch(s.name);
                                     setShowStaffDropdown(false);
+                                  }}
+                                >
+                                  {s.name}
+                                </div>
+                              ))
+                            ) : (
+                              <div className={styles.noStaff}>No staff found</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {complaintType === 'Staff' && (
+                    <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+                      <label>Complaint Against <span className={styles.optional}>(optional)</span></label>
+                      <div className={styles.staffDropdown} ref={staffAgainstRef}>
+                        <div style={{ position: 'relative' }}>
+                          <Form.Control
+                            type="text"
+                            placeholder="Search staff to complain against..."
+                            value={staffAgainstSearch}
+                            onChange={(e) => {
+                              setStaffAgainstSearch(e.target.value);
+                              setShowStaffAgainstDropdown(true);
+                              setStaffAgainst(null);
+                            }}
+                            onFocus={() => setShowStaffAgainstDropdown(true)}
+                          />
+                          <FiChevronDown
+                            size={16}
+                            style={{
+                              position: 'absolute',
+                              right: 14,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#9CA3AF',
+                              pointerEvents: 'none',
+                            }}
+                          />
+                        </div>
+                        {showStaffAgainstDropdown && (
+                          <div className={styles.staffList}>
+                            {filteredStaffAgainst.length > 0 ? (
+                              filteredStaffAgainst.map((s) => (
+                                <div
+                                  key={s.id}
+                                  className={`${styles.staffItem} ${
+                                    staffAgainst?.id === s.id ? styles.selected : ''
+                                  }`}
+                                  onClick={() => {
+                                    setStaffAgainst(s);
+                                    setStaffAgainstSearch(s.name);
+                                    setShowStaffAgainstDropdown(false);
                                   }}
                                 >
                                   {s.name}

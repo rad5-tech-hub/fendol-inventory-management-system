@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ReactPaginate from 'react-paginate';
 import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
@@ -7,11 +7,12 @@ import styles from './complaints.module.scss';
 import { toast } from 'react-toastify';
 import {
   FiSearch, FiMoreVertical, FiX, FiEye, FiCheckCircle, FiXCircle, FiAlertCircle,
-  FiChevronLeft, FiChevronRight,
+  FiChevronLeft, FiChevronRight, FiLoader,
 } from 'react-icons/fi';
 import { BsPeople, BsClock, BsCheckCircle, BsExclamationCircle } from 'react-icons/bs';
 import CustomDropdown from '../shared/custom-dropdown/CustomDropdown';
 import DataTable from '../shared/data-table/DataTable';
+import { ApiV2 } from '../shared/api/apiLink';
 
 const MOCK_COMPLAINTS = [
   { id: 'CMP-001', complainant: 'John Doe', type: 'Staff', staffName: 'Jane Smith', description: 'Late arrival to work on multiple occasions affecting team productivity and morning shift handover procedures.', date: '2026-06-28T09:15:00', status: 'Pending' },
@@ -33,6 +34,19 @@ const formatDate = (iso) => {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 };
 
+const toTitle = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+
+const mapApiComplaint = (item) => ({
+  id: item.id,
+  complainant: item.name || item.staff?.name || 'Unknown',
+  type: item.staffId ? 'Staff' : 'General',
+  staffName: item.staffAgainst ? item.staffAgainst.name : null,
+  staffAgainstId: item.staffAgainstId,
+  description: item.description,
+  date: item.createdAt,
+  status: toTitle(item.status),
+});
+
 export default function AllComplaints() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [search, setSearch] = useState('');
@@ -41,14 +55,34 @@ export default function AllComplaints() {
   const [currentPage, setCurrentPage] = useState(0);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const itemsPerPage = 8;
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
+
+  const fetchComplaints = async () => {
+    setLoading(true);
+    try {
+      const res = await ApiV2.get('/v2/complaint');
+      const data = Array.isArray(res.data?.data) ? res.data.data : [];
+      setComplaints(data.map(mapApiComplaint));
+    } catch (err) {
+      console.warn('Failed to fetch complaints, using mock data:', err);
+      setComplaints(MOCK_COMPLAINTS);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filtered = useMemo(() => {
-    let list = MOCK_COMPLAINTS;
+    let list = complaints;
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -62,11 +96,11 @@ export default function AllComplaints() {
     if (typeFilter) list = list.filter((c) => c.type === typeFilter);
     if (statusFilter) list = list.filter((c) => c.status === statusFilter);
     return list;
-  }, [search, typeFilter, statusFilter]);
+  }, [search, typeFilter, statusFilter, complaints]);
 
-  const totalCount = MOCK_COMPLAINTS.length;
-  const pendingCount = MOCK_COMPLAINTS.filter((c) => c.status === 'Pending').length;
-  const resolvedCount = MOCK_COMPLAINTS.filter((c) => c.status === 'Resolved').length;
+  const totalCount = complaints.length;
+  const pendingCount = complaints.filter((c) => c.status === 'Pending').length;
+  const resolvedCount = complaints.filter((c) => c.status === 'Resolved').length;
 
   const offset = currentPage * itemsPerPage;
   const currentItems = filtered.slice(offset, offset + itemsPerPage);
@@ -169,6 +203,12 @@ export default function AllComplaints() {
               />
             </div>
 
+            {loading ? (
+              <div className={styles.emptyState}>
+                <FiLoader size={36} className={styles.emptyIcon} style={{ animation: 'spin 1s linear infinite' }} />
+                <p>Loading complaints...</p>
+              </div>
+            ) : (
             <DataTable
               columns={[
                 { key: 'index', label: '#', render: (_, row, idx) => <span style={{ color: '#8C949B', fontWeight: 500 }}>{offset + idx + 1}</span> },
@@ -198,6 +238,7 @@ export default function AllComplaints() {
               ]}
               data={currentItems}
               emptyMessage="No complaints match your filters."
+              className={styles.tableNoClip}
               actions={(row) => (
                 <div className={styles.actionsDropdown}>
                   <button
@@ -222,6 +263,7 @@ export default function AllComplaints() {
                 </div>
               )}
             />
+            )}
 
             {pageCount > 1 && (
               <div className={styles.paginationWrapper}>
