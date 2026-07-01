@@ -13,6 +13,7 @@ import { BsPeople, BsClock, BsCheckCircle, BsExclamationCircle } from 'react-ico
 import CustomDropdown from '../shared/custom-dropdown/CustomDropdown';
 import DataTable from '../shared/data-table/DataTable';
 import { ApiV2 } from '../shared/api/apiLink';
+import { useConfirm } from '../shared/confirm-modal';
 
 const MOCK_COMPLAINTS = [
   { id: 'CMP-001', complainant: 'John Doe', type: 'Staff', staffName: 'Jane Smith', description: 'Late arrival to work on multiple occasions affecting team productivity and morning shift handover procedures.', date: '2026-06-28T09:15:00', status: 'Pending' },
@@ -57,6 +58,9 @@ export default function AllComplaints() {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState(null);
+
+  const [ConfirmDialog, confirm] = useConfirm();
 
   const itemsPerPage = 8;
 
@@ -78,6 +82,43 @@ export default function AllComplaints() {
       setComplaints(MOCK_COMPLAINTS);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async (id, newStatus) => {
+    const label = newStatus === 'resolved' ? 'Resolve' : 'Dismiss';
+    const ok = await confirm({
+      title: `${label} Complaint`,
+      message: `Are you sure you want to ${label.toLowerCase()} this complaint?`,
+      variant: newStatus === 'resolved' ? 'primary' : 'danger',
+      confirmText: label,
+    });
+    if (!ok) return;
+
+    setUpdatingId(id);
+    const loadingToast = toast.loading(`Updating complaint...`, { className: 'dark-toast' });
+    try {
+      await ApiV2.patch(`/v2/complaint/${id}`, { status: newStatus });
+      toast.update(loadingToast, {
+        render: `Complaint ${newStatus === 'resolved' ? 'resolved' : 'dismissed'} successfully`,
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+        className: 'dark-toast',
+      });
+      setSelectedComplaint(null);
+      setOpenDropdown(null);
+      fetchComplaints();
+    } catch (error) {
+      toast.update(loadingToast, {
+        render: error.response?.data?.response_message || error.response?.data?.message || 'Failed to update complaint',
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+        className: 'dark-toast',
+      });
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -252,10 +293,18 @@ export default function AllComplaints() {
                       <button className={styles.dropdownItem} onClick={() => { setSelectedComplaint(row); setOpenDropdown(null); }}>
                         <FiEye size={15} /> View Details
                       </button>
-                      <button className={`${styles.dropdownItem} ${styles.itemSuccess}`} onClick={() => { toast.info('Resolve action will be available once the API is ready.', { className: 'dark-toast' }); setOpenDropdown(null); }}>
+                      <button
+                        className={`${styles.dropdownItem} ${styles.itemSuccess}`}
+                        onClick={() => handleStatusUpdate(row.id, 'resolved')}
+                        disabled={updatingId === row.id}
+                      >
                         <FiCheckCircle size={15} /> Resolve
                       </button>
-                      <button className={`${styles.dropdownItem} ${styles.itemDanger}`} onClick={() => { toast.info('Dismiss action will be available once the API is ready.', { className: 'dark-toast' }); setOpenDropdown(null); }}>
+                      <button
+                        className={`${styles.dropdownItem} ${styles.itemDanger}`}
+                        onClick={() => handleStatusUpdate(row.id, 'dismissed')}
+                        disabled={updatingId === row.id}
+                      >
                         <FiXCircle size={15} /> Dismiss
                       </button>
                     </div>
@@ -348,26 +397,25 @@ export default function AllComplaints() {
                   <div className={styles.panelFooter}>
                     <button
                       className={`${styles.panelActionBtn} ${styles.btnResolve}`}
-                      onClick={() => {
-                        toast.info('Resolve action will be available once the API is ready.', { className: 'dark-toast' });
-                      }}
+                      onClick={() => handleStatusUpdate(selectedComplaint.id, 'resolved')}
+                      disabled={updatingId === selectedComplaint.id}
                     >
                       <FiCheckCircle size={16} />
-                      Resolve
+                      {updatingId === selectedComplaint.id ? 'Updating...' : 'Resolve'}
                     </button>
                     <button
                       className={`${styles.panelActionBtn} ${styles.btnDismiss}`}
-                      onClick={() => {
-                        toast.info('Dismiss action will be available once the API is ready.', { className: 'dark-toast' });
-                      }}
+                      onClick={() => handleStatusUpdate(selectedComplaint.id, 'dismissed')}
+                      disabled={updatingId === selectedComplaint.id}
                     >
                       <FiXCircle size={16} />
-                      Dismiss
+                      {updatingId === selectedComplaint.id ? 'Updating...' : 'Dismiss'}
                     </button>
                   </div>
                 </div>
               </>
             )}
+            <ConfirmDialog loading={!!updatingId} />
           </main>
         </section>
       </div>
