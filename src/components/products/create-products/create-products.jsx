@@ -8,6 +8,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
@@ -240,17 +241,15 @@ export default function CreateProducts() {
                                 </Col>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Product Unit</Form.Label>
-                                    <Form.Select
-                                        name="unit"
+                                    <CustomDropdown
+                                        options={[
+                                            { value: 'kg', label: 'Kilogram' },
+                                            { value: 'g', label: 'Gram' },
+                                        ]}
                                         value={formData.unit}
-                                        required
-                                        onChange={handleInputChange}
-                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                    >
-                                        <option value="" disabled>Select Unit</option>
-                                        <option value="kg">Kilogram</option>
-                                        <option value="g">Gram</option>
-                                    </Form.Select>
+                                        onChange={(val) => handleInputChange({ target: { name: 'unit', value: val } })}
+                                        placeholder="Select Unit"
+                                    />
                                 </Col>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Base Price (₦)</Form.Label>
@@ -267,17 +266,12 @@ export default function CreateProducts() {
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Assign to Site</Form.Label>
                                     {isSuperAdmin ? (
-                                        <Form.Select
-                                            name="siteId"
+                                        <CustomDropdown
+                                            options={siteTypes.map(type => ({ value: type.id, label: type.name }))}
                                             value={formData.siteId}
-                                            onChange={handleInputChange}
-                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                        >
-                                            <option value="" disabled>Select Site Type</option>
-                                            {siteTypes.map((type) => (
-                                                <option key={type.id} value={type.id}>{type.name}</option>
-                                            ))}
-                                        </Form.Select>
+                                            onChange={(val) => handleInputChange({ target: { name: 'siteId', value: val } })}
+                                            placeholder="Select Site Type"
+                                        />
                                     ) : (
                                         <Form.Control
                                             value={profileSiteId}

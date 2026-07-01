@@ -10,6 +10,7 @@ import { GiCube } from 'react-icons/gi';
 import { BsInfoCircle } from 'react-icons/bs';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
+import DataTable from "../../shared/data-table/DataTable";
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import feedStyles from '../feed.module.scss';
 import styles from './feed-ledger.module.scss';
@@ -173,67 +174,53 @@ export default function FeedLedger() {
 
             <div className={styles.tableCard}>
               <div className={styles.tableWrapper}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Feed Name</th>
-                      <th>Feed Type</th>
-                      <th>Site</th>
-                      <th style={{ textAlign: 'right' }}>Original Qty</th>
-                      <th style={{ textAlign: 'right' }}>Qty Used</th>
-                      <th style={{ textAlign: 'right' }}>Bags Added</th>
-                      <th style={{ textAlign: 'right' }}>Price (&#8358;)</th>
-                      <th>Status</th>
-                      <th style={{ textAlign: 'right' }}>Qty Remaining</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={10} style={{ textAlign: 'center', padding: '40px 12px', color: '#9CA3AF' }}>
-                          Loading...
-                        </td>
-                      </tr>
-                    ) : historyData.length === 0 ? (
-                      <tr>
-                        <td colSpan={10} style={{ textAlign: 'center', padding: '40px 12px', color: '#9CA3AF' }}>
-                          No records found.
-                        </td>
-                      </tr>
-                    ) : (
-                      historyData.map((row, i) => {
-                        const pillStyle = STATUS_PILL_COLORS[row.status] || { bg: '#F3F4F6', color: '#374151' };
-                        const date = new Date(row.createdAt);
+                <DataTable
+                  className={styles.table}
+                  columns={[
+                    {
+                      key: 'createdAt',
+                      label: 'Date',
+                      render: (value) => {
+                        const date = new Date(value);
                         const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                         const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
                         return (
-                          <tr key={row.id}>
-                            <td>
-                              <div className={styles.dateCell}>
-                                <span className={styles.dateTop}>{dateStr}</span>
-                                <span className={styles.dateBottom}>{timeStr}</span>
-                              </div>
-                            </td>
-                            <td className={styles.feedNameCell}>{feedDetails?.feedName || '--'}</td>
-                            <td>{feedDetails?.feedType || '--'}</td>
-                            <td>{siteTypes.find(s => s.id === row.siteId)?.name || row.stage || '--'}</td>
-                            <td className={styles.numCell}>{f(row.originalQuantity)}</td>
-                            <td className={styles.numCell}>{f(row.quantityUsed)}</td>
-                            <td className={styles.numCell}>{f(row.noOfBagAdded)}</td>
-                            <td className={styles.numCell}>{formatCurrency(row.feedPrice)}</td>
-                            <td>
-                              <span className={styles.txPill} style={{ background: pillStyle.bg, color: pillStyle.color }}>
-                                {row.status}
-                              </span>
-                            </td>
-                            <td className={styles.boldNumCell}>{f(row.remainingFeed)}</td>
-                          </tr>
+                          <div className={styles.dateCell}>
+                            <span className={styles.dateTop}>{dateStr}</span>
+                            <span className={styles.dateBottom}>{timeStr}</span>
+                          </div>
                         );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                      },
+                    },
+                    { key: 'feedName', label: 'Feed Name', render: () => feedDetails?.feedName || '--' },
+                    { key: 'feedType', label: 'Feed Type', render: () => feedDetails?.feedType || '--' },
+                    {
+                      key: 'siteId',
+                      label: 'Site',
+                      render: (value, row) => siteTypes.find(s => s.id === value)?.name || row.stage || '--',
+                    },
+                    { key: 'originalQuantity', label: 'Original Qty', align: 'right', render: (value) => <span className={styles.numCell}>{f(value)}</span> },
+                    { key: 'quantityUsed', label: 'Qty Used', align: 'right', render: (value) => <span className={styles.numCell}>{f(value)}</span> },
+                    { key: 'noOfBagAdded', label: 'Bags Added', align: 'right', render: (value) => <span className={styles.numCell}>{f(value)}</span> },
+                    { key: 'feedPrice', label: 'Price (₦)', align: 'right', render: (value) => <span className={styles.numCell}>{formatCurrency(value)}</span> },
+                    {
+                      key: 'status',
+                      label: 'Status',
+                      render: (value) => {
+                        const pillStyle = STATUS_PILL_COLORS[value] || { bg: '#F3F4F6', color: '#374151' };
+                        return (
+                          <span className={styles.txPill} style={{ background: pillStyle.bg, color: pillStyle.color }}>
+                            {value}
+                          </span>
+                        );
+                      },
+                    },
+                    { key: 'remainingFeed', label: 'Qty Remaining', align: 'right', render: (value) => <span className={styles.boldNumCell}>{f(value)}</span> },
+                  ]}
+                  data={historyData}
+                  loading={loading}
+                  emptyMessage="No records found."
+                />
               </div>
 
               <div className={styles.tableFooter}>

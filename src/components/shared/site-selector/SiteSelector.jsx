@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Form } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import { FaMapMarkerAlt, FaGlobe } from "react-icons/fa";
+import CustomDropdown from "../custom-dropdown/CustomDropdown";
 import { ApiV2 } from "../api/apiLink";
 import styles from "./SiteSelector.module.scss";
 
@@ -31,8 +31,10 @@ export default function SiteSelector({ value, onChange, allSitesLabel = "All Sit
 
   const displayValue = isDisabled ? activeSite.id : (value || "");
 
-  const handleChange = (e) => {
-    const id = e.target.value || null;
+  const siteOptions = sites.map((s) => ({ value: s.id, label: s.name }));
+
+  const handleChange = (val) => {
+    const id = val || null;
     const site = sites.find((s) => s.id === id);
     if (onChange) onChange(id, site?.name || null);
   };
@@ -57,19 +59,15 @@ export default function SiteSelector({ value, onChange, allSitesLabel = "All Sit
         <span className={styles.icon}>
           {isDisabled ? <FaMapMarkerAlt /> : <FaGlobe />}
         </span>
-        <Form.Select
+        <CustomDropdown
+          options={siteOptions}
           value={displayValue}
           onChange={handleChange}
           disabled={isDisabled}
-          className={`${styles.select} ${isDisabled ? styles.disabled : ""}`}
-        >
-          <option value="">{allSitesLabel}</option>
-          {sites.map((site) => (
-            <option key={site.id} value={site.id}>
-              {site.name}
-            </option>
-          ))}
-        </Form.Select>
+          placeholder={isDisabled ? (activeSite?.name || allSitesLabel) : allSitesLabel}
+          triggerClassName={styles.selectTrigger}
+          className={styles.select}
+        />
         {isDisabled && (
           <span className={styles.lockHint}>Header site active</span>
         )}

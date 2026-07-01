@@ -4,6 +4,7 @@ import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../product-stages.module.scss";
 import { Alert, Form } from "react-bootstrap";
+import DataTable from "../../shared/data-table/DataTable";
 import { SkeletonTable, SkeletonFilterBar } from "../../shared/skeleton/Skeleton";
 import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
@@ -179,51 +180,29 @@ export default function ViewAllHistory() {
     const currentConfig = tabConfig[activeTab];
     if (!currentConfig) return null;
 
+    const columns = currentConfig.headers.map((header, index) => {
+      const key = currentConfig.dataKeys[index];
+      let render;
+      if (key === "createdAt") {
+        render = (value) => formatDate(value);
+      } else if (key === "destinationPond") {
+        render = (value, row) => row.destinationPond?.title || value || "-";
+      } else if (key === "sourcePond") {
+        render = (value, row) => row.sourcePond?.title || value || "-";
+      } else if (key === "FishStage") {
+        render = (value, row) => row.FishStage?.title || value || "-";
+      } else if (key === "remarks") {
+        render = (value) => truncateRemark(value);
+      }
+      return { key, label: header, render };
+    });
+
     return (
-      <div className="table-responsive">
-        <table className={styles.styled_table}>
-          <thead>
-            <tr>
-              {currentConfig.headers.map((header, index) => (
-                <th key={index} className="text-uppercase" style={{ cursor: 'pointer' }}>
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.length === 0 ? (
-              <tr>
-                <td colSpan={currentConfig.headers.length} className="text-center border-none">
-                  <Alert variant="info" className="py-5">No available history data.</Alert>
-                </td>
-              </tr>
-            ) : (
-              filteredData.map((item, index) => (
-                <tr key={index}>
-                  {currentConfig.dataKeys.map((key, idx) => (
-                    <td key={idx}>
-                      {key === "createdAt"
-                        ? formatDate(item[key])
-                        : key === "destinationPond" && item.destinationPond?.title
-                        ? item.destinationPond.title
-                        : key === "sourcePond" && item.sourcePond?.title
-                        ? item.sourcePond.title
-                        : key === "FishStage" && item.FishStage?.title
-                        ? item.FishStage.title
-                        : key === "remarks"
-                        ? truncateRemark(item[key])
-                        : item[key] !== null && item[key] !== undefined
-                        ? item[key]
-                        : "-"}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={filteredData}
+        emptyMessage="No available history data."
+      />
     );
   };
 

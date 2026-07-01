@@ -5,6 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../feed.module.scss';
 import { Alert } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
+import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from 'react-paginate';
 import Api from '../../shared/api/apiLink';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
@@ -119,49 +120,40 @@ export default function InventoryHistory() {
               <>
                 {/* Table for Desktop */}
                 <div className={`d-none d-lg-block ${styles.tableWrapper}`}>
-                  <table className={styles.styled_table}>
-                    <thead>
-                      <tr>
-                        <th>DATE CREATED</th>
-                        <th>FEED NAME</th>
-                        <th>FEED TYPE</th>
-                        <th>POND</th>
-                        <th>QUANTITY <br /> ADDED (KG)</th>
-                        <th>QUANTITY <br /> USED (KG)</th>
-                        <th>QUANTITY <br /> REMAINING (KG)</th>
-                        <th>STATUS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedData.map((history, index) => {
-                        const formattedDate = formatDate(history.createdAt);
-                        return (
-                          <tr key={index}>
-                            <td>{formattedDate}</td>
-                            <td>{history.feedDetails.feedName}</td>
-                            <td>{history.feedDetails.feedType}</td>
-                            <td>{history.stage || '-'}</td>
-                            <td>{history.stage === null ? history.feedDetails.originalQuantity : '-'}</td>
-                            <td>{history.quantityUsed}</td>
-                            <td>{history.remainingFeed}</td>
-                            <td className="text-uppercase fw-semibold">
-                              <span className={
-                                history.status === 'in stock'
-                                  ? 'text-success'
-                                  : history.status === 'out of stock'
-                                  ? 'text-danger'
-                                  : history.status === 'low stock'
-                                  ? 'text-warning'
-                                  : ''
-                              }>
-                                {history.status}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <DataTable
+                    className={styles.styled_table}
+                    columns={[
+                      { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
+                      { key: 'feedDetails', label: 'FEED NAME', render: (value) => value?.feedName },
+                      { key: 'feedDetails', label: 'FEED TYPE', render: (value) => value?.feedType, },
+                      { key: 'stage', label: 'POND', render: (value) => value || '-' },
+                      {
+                        key: 'feedDetails',
+                        label: 'QUANTITY ADDED (KG)',
+                        render: (value, row) => row.stage === null ? value?.originalQuantity : '-',
+                      },
+                      { key: 'quantityUsed', label: 'QUANTITY USED (KG)' },
+                      { key: 'remainingFeed', label: 'QUANTITY REMAINING (KG)' },
+                      {
+                        key: 'status',
+                        label: 'STATUS',
+                        render: (value) => (
+                          <span className={`text-uppercase fw-semibold ${
+                            value === 'in stock'
+                              ? 'text-success'
+                              : value === 'out of stock'
+                              ? 'text-danger'
+                              : value === 'low stock'
+                              ? 'text-warning'
+                              : ''
+                          }`}>
+                            {value}
+                          </span>
+                        ),
+                      },
+                    ]}
+                    data={paginatedData}
+                  />
                 </div>
 
                 {/* Card Layout for Tablet and Below */}

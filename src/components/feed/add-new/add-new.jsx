@@ -7,6 +7,7 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 
 const AddFeed = () => {
     const [formData, setFormData] = useState({
@@ -110,16 +111,14 @@ const AddFeed = () => {
                                 </Col>
                                 <Col md={12} lg={6} className="mb-4">
                                     <Form.Label className="fw-semibold">Unit</Form.Label>
-                                    <Form.Select
-                                        name="unit"
-                                        required
+                                    <CustomDropdown
+                                        options={[{ value: 'kg', label: 'Kg' }]}
                                         value={formData.unit}
-                                        onChange={handleInputChange}
+                                        onChange={(val) => handleInputChange({ target: { name: 'unit', value: val } })}
+                                        placeholder="Select Unit"
+                                        required
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                    >
-                                        <option value="" disabled>Select Unit</option>
-                                        <option value="kg">Kg</option>
-                                    </Form.Select>
+                                    />
                                 </Col>
                                 <Col md={12} lg={6} className="mb-4">
                                     <Form.Label className="fw-semibold">Feed Type</Form.Label>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Alert, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Form, Button, Alert, Modal } from 'react-bootstrap';
 import { BsExclamationTriangleFill } from "react-icons/bs";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,6 +9,7 @@ import Api from '../../shared/api/apiLink';
 import { FaTrashAlt } from "react-icons/fa";
 import styles from '../product-stages.module.scss';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import DataTable from "../../shared/data-table/DataTable";
 import { useConfirm } from '../../shared/confirm-modal';
 
 const AddSpecies = () => {
@@ -194,50 +195,38 @@ const AddSpecies = () => {
                                         </Alert>
                                     </div>
                                 ) : (
-                                    <table className={`${styles.styled_table} table-responsive`}>
-                                        <thead>
-                                            <tr>
-                                                <th>DATE CREATED</th>
-                                                <th>NAME</th>
-                                                <th>DESCRIPTION</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {stages.map((stage) => (
-                                                <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-view-all">Click on {stage.speciesName} to edit</Tooltip>}>
-                                                <tr
-                                                    key={stage.id}
-                                                    style={{ cursor: 'pointer' }}
-                                                    onClick={() => handleEditStage(stage)}                                                    
-                                                >                                                    
-                                                        <td>{formatDate(stage.createdAt)}</td>
-                                                        <td>{stage.speciesName}</td>
-                                                        <td className="d-flex justify-content-between">
-                                                            <span>
-                                                                {stage.description.length > 40
-                                                                    ? `${stage.description.slice(0, 40)}...`
-                                                                    : stage.description}
-                                                            </span>
-                                                            <span
-                                                                className={`p-2 bg-light rounded-circle shadow-sm ${styles.delete}`}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleDelete(stage.id);
-                                                                }}
+                                    <DataTable
+                                        columns={[
+                                            { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
+                                            { key: 'speciesName', label: 'NAME' },
+                                            {
+                                                key: 'description',
+                                                label: 'DESCRIPTION',
+                                                render: (value, row) => (
+                                                    <div className="d-flex justify-content-between align-items-center">
+                                                        <span>
+                                                            {value && value.length > 40 ? `${value.slice(0, 40)}...` : value}
+                                                        </span>
+                                                        <span
+                                                            className={`p-2 bg-light rounded-circle shadow-sm ${styles.delete}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(row.id);
+                                                            }}
+                                                            title="Delete Process"
+                                                        >
+                                                            <FaTrashAlt
+                                                                style={{ cursor: "pointer", color: "red" }}
                                                                 title="Delete Process"
-                                                            >
-                                                                <FaTrashAlt
-                                                                    style={{ cursor: "pointer", color: "red" }}
-                                                                    title="Delete Process"
-                                                                />
-                                                            </span>
-                                                        </td>
-                                                </tr>
-                                                </OverlayTrigger>
-
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                                            />
+                                                        </span>
+                                                    </div>
+                                                )
+                                            },
+                                        ]}
+                                        data={stages}
+                                        onRowClick={(row) => handleEditStage(row)}
+                                    />
                                 )}
                             </div>
                         ) : (

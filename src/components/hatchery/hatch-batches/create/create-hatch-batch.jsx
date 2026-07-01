@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import { IoArrowBackOutline, IoInformationCircleOutline, IoCheckmarkCircle, IoCalendarOutline, IoSaveOutline, IoClose } from 'react-icons/io5';
+import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
 import { GiCirclingFish } from 'react-icons/gi';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -365,18 +366,13 @@ export default function CreateHatchBatch() {
                   </Col>
                   <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Site</Form.Label>
-                    <Form.Select name="site" value={form.site} onChange={handleChange}>
-                      <option value="">Select site</option>
-                      {!sitesLoaded ? (
-                        <option value="" disabled>Loading sites...</option>
-                      ) : sites.length === 0 ? (
-                        <option value="" disabled>No sites available</option>
-                      ) : (
-                        sites.map((site) => (
-                          <option key={site.id} value={site.name}>{site.name}</option>
-                        ))
-                      )}
-                    </Form.Select>
+                    <CustomDropdown
+                      options={sitesLoaded ? sites.map(s => ({ value: s.name, label: s.name })) : []}
+                      value={form.site}
+                      onChange={(val) => handleChange({ target: { name: 'site', value: val } })}
+                      placeholder="Select site"
+                      loading={!sitesLoaded}
+                    />
                   </Col>
                   <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Date Injected</Form.Label>

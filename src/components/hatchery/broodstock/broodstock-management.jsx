@@ -11,6 +11,7 @@ import {
   BsPauseFill, BsDropletFill, BsPlusLg, BsXLg,
 } from 'react-icons/bs';
 import { FaArrowRight, FaPlus, FaSkull } from 'react-icons/fa';
+import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import sharedStyles from '../hatchery.module.scss';
 import styles from './broodstock-management.module.scss';
@@ -727,14 +728,15 @@ export default function BroodstockManagement() {
                     </div>
                     <div className={styles.formGroup}>
                       <label className={styles.formLabel}>Gender</label>
-                      <select
-                        className={styles.formSelect}
+                      <CustomDropdown
+                        options={[
+                          { value: 'Female', label: 'Female' },
+                          { value: 'Male', label: 'Male' },
+                        ]}
                         value={formData.gender}
-                        onChange={(e) => handleFormChange('gender', e.target.value)}
-                      >
-                        <option value="Female">Female</option>
-                        <option value="Male">Male</option>
-                      </select>
+                        onChange={(val) => handleFormChange('gender', val)}
+                        className={styles.formSelect}
+                      />
                     </div>
                   </div>
 
@@ -750,14 +752,15 @@ export default function BroodstockManagement() {
                           onChange={(e) => handleFormChange('age', e.target.value)}
                           min="0"
                         />
-                        <select
-                          className={styles.ageSelect}
+                        <CustomDropdown
+                          options={[
+                            { value: 'weeks', label: 'Weeks' },
+                            { value: 'months', label: 'Months' },
+                          ]}
                           value={formData.ageUnit || 'weeks'}
-                          onChange={(e) => handleFormChange('ageUnit', e.target.value)}
-                        >
-                          <option value="weeks">Weeks</option>
-                          <option value="months">Months</option>
-                        </select>
+                          onChange={(val) => handleFormChange('ageUnit', val)}
+                          className={styles.ageSelect}
+                        />
                       </div>
                     </div>
                     <div className={styles.formGroup}>
@@ -777,33 +780,27 @@ export default function BroodstockManagement() {
                   <div className={styles.formRow}>
                     <div className={styles.formGroup}>
                       <label className={styles.formLabel}>Origin / Source</label>
-                      <select
-                        className={styles.formSelect}
+                      <CustomDropdown
+                        options={[
+                          { value: '', label: 'Select origin' },
+                          ...sites.map(site => ({ value: site.id, label: site.name })),
+                        ]}
                         value={formData.origin}
-                        onChange={(e) => handleFormChange('origin', e.target.value)}
-                      >
-                        <option value="">Select origin</option>
-                        {sites.map((site) => (
-                          <option key={site.id} value={site.id}>
-                            {site.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleFormChange('origin', val)}
+                        className={styles.formSelect}
+                      />
                     </div>
                     <div className={styles.formGroup}>
                       <label className={styles.formLabel}>Site / Location</label>
-                      <select
-                        className={styles.formSelect}
+                      <CustomDropdown
+                        options={[
+                          { value: '', label: 'Select site' },
+                          ...sites.map(site => ({ value: site.id, label: site.name })),
+                        ]}
                         value={formData.site}
-                        onChange={(e) => handleFormChange('site', e.target.value)}
-                      >
-                        <option value="">Select site</option>
-                        {sites.map((site) => (
-                          <option key={site.id} value={site.id}>
-                            {site.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleFormChange('site', val)}
+                        className={styles.formSelect}
+                      />
                     </div>
                   </div>
 
@@ -905,15 +902,16 @@ export default function BroodstockManagement() {
                     </div>
                     <div className={styles.logCardSexRow}>
                       <div className={styles.sexBadge}>Sex (applies to mortality only)</div>
-                      <select
-                        className={styles.logSexSelect}
+                      <CustomDropdown
+                        options={[
+                          { value: '', label: 'All / Not specified' },
+                          { value: 'male', label: 'Male' },
+                          { value: 'female', label: 'Female' },
+                        ]}
                         value={logData.sex}
-                        onChange={(e) => setLogData((p) => ({ ...p, sex: e.target.value }))}
-                      >
-                        <option value="">All / Not specified</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                      </select>
+                        onChange={(val) => setLogData((p) => ({ ...p, sex: val }))}
+                        className={styles.logSexSelect}
+                      />
                     </div>
                   </div>
 

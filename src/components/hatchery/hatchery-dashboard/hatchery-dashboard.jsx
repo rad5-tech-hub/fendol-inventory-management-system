@@ -6,6 +6,7 @@ import {
   CartesianGrid, ReferenceDot,
 } from 'recharts';
 import { IoGridOutline, IoCalendarOutline } from 'react-icons/io5';
+import DataTable from "../../shared/data-table/DataTable";
 import { GiCirclingFish, GiEggClutch } from 'react-icons/gi';
 import { FaChartLine, FaSkull, FaExchangeAlt, FaEye, FaPlus } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
@@ -173,47 +174,27 @@ export default function HatcheryDashboard() {
               <span className={styles.statLink} onClick={() => navigate('/hatchery/hatch-batches/view-all')} style={{ cursor: 'pointer' }}>View all batches &rarr;</span>
             </div>
 
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th className="text-start">Batch Number</th>
-                    <th className="text-start">Date Injected</th>
-                    <th className="text-start">Date Stripped</th>
-                    <th className="text-start">Date Hatched</th>
-                    <th className="text-end">Females</th>
-                    <th className="text-end">Males</th>
-                    <th className="text-end">Egg Wt (kg)</th>
-                    <th className="text-end">Hatchability</th>
-                    <th className="text-end">Fry Produced</th>
-                    <th className="text-start">Status</th>
-                    <th className="text-start">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hatchRows.map((row) => (
-                    <tr key={row.id}>
-                      <td className="text-start" style={{ fontWeight: 600 }}>{row.batchNo}</td>
-                      <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.dateInjected}</td>
-                      <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.dateStripped}</td>
-                      <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.dateHatched}</td>
-                      <td className="text-end">{row.females}</td>
-                      <td className="text-end">{row.males}</td>
-                      <td className="text-end">{row.eggWeight.toFixed(2)}</td>
-                      <td className="text-end"><HatchabilityBadge value={row.hatchability} /></td>
-                      <td className="text-end">{f(row.fryProduced)}</td>
-                      <td className="text-start"><StatusBadge status={row.status} /></td>
-                      <td className="text-start">
-                        <div className={styles.actionsCell}>
-                          <button className={styles.eyeBtn} onClick={() => navigate(`/hatchery/hatch-batches/summary/${row.id}`)}><FaEye size={16} /></button>
-                          <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={[
+                { key: 'batchNo', label: 'Batch Number', render: (v) => <span style={{ fontWeight: 600 }}>{v}</span> },
+                { key: 'dateInjected', label: 'Date Injected', render: (v) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{v}</span> },
+                { key: 'dateStripped', label: 'Date Stripped', render: (v) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{v}</span> },
+                { key: 'dateHatched', label: 'Date Hatched', render: (v) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{v}</span> },
+                { key: 'females', label: 'Females', align: 'right' },
+                { key: 'males', label: 'Males', align: 'right' },
+                { key: 'eggWeight', label: 'Egg Wt (kg)', align: 'right', render: (v) => Number(v).toFixed(2) },
+                { key: 'hatchability', label: 'Hatchability', align: 'right', render: (v) => <HatchabilityBadge value={v} /> },
+                { key: 'fryProduced', label: 'Fry Produced', align: 'right', render: (v) => f(v) },
+                { key: 'status', label: 'Status', render: (v) => <StatusBadge status={v} /> },
+              ]}
+              data={hatchRows}
+              actions={(row) => (
+                <div className={styles.actionsCell}>
+                  <button className={styles.eyeBtn} onClick={() => navigate(`/hatchery/hatch-batches/summary/${row.id}`)}><FaEye size={16} /></button>
+                  <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
+                </div>
+              )}
+            />
           </main>
         </section>
       </div>

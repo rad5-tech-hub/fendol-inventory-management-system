@@ -6,6 +6,7 @@ import styles from './complaints.module.scss';
 import { Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { FiSend, FiUser, FiType, FiAlignLeft, FiChevronDown } from 'react-icons/fi';
+import CustomDropdown from '../shared/custom-dropdown/CustomDropdown';
 import { BsPeople } from 'react-icons/bs';
 import { ApiV2 } from '../shared/api/apiLink';
 
@@ -107,18 +108,20 @@ export default function Complaints() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Complaint Type <span>*</span></label>
-                    <Form.Select
+                    <CustomDropdown
+                      options={[
+                        { value: '', label: 'Select type' },
+                        { value: 'Staff', label: 'Staff' },
+                        { value: 'General', label: 'General' },
+                      ]}
                       value={complaintType}
-                      onChange={(e) => {
-                        setComplaintType(e.target.value);
+                      onChange={(val) => {
+                        setComplaintType(val);
                         setSelectedStaff(null);
                         setStaffSearch('');
                       }}
-                    >
-                      <option value="">Select type</option>
-                      <option value="Staff">Staff</option>
-                      <option value="General">General</option>
-                    </Form.Select>
+                      placeholder="Select type"
+                    />
                   </div>
 
                   {complaintType === 'Staff' && (

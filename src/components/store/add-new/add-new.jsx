@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import { useNavigate } from 'react-router-dom';
 
 const AddStock = () => {
@@ -93,18 +94,19 @@ const AddStock = () => {
                                 </Col>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Unit</Form.Label>
-                                    <Form.Select
+                                    <CustomDropdown
                                         name="unit"
                                         required
                                         value={formData.unit}
-                                        onChange={handleInputChange}
+                                        onChange={(value) => setFormData({ ...formData, unit: value })}
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                    >
-                                        <option value="" disabled>Select Unit</option>
-                                        <option value="kg">Kg</option>
-                                        <option value="liters">Liters</option>
-                                        <option value="pieces">Pieces</option>
-                                    </Form.Select>
+                                        placeholder="Select Unit"
+                                        options={[
+                                            { value: 'kg', label: 'Kg' },
+                                            { value: 'liters', label: 'Liters' },
+                                            { value: 'pieces', label: 'Pieces' },
+                                        ]}
+                                    />
                                 </Col>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Threshold Value</Form.Label>

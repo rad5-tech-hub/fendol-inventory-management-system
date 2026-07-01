@@ -14,6 +14,7 @@ import { useSelector } from 'react-redux';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import { useConfirm } from '../../shared/confirm-modal';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
+import DataTable from "../../shared/data-table/DataTable";
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
 
@@ -455,90 +456,67 @@ export default function ViewAllSupplier() {
             {!loading && !error && filteredSuppliers.length > 0 && (
               <>
                 <div className="table-responsive" style={{ overflow: 'visible' }}>
-                  <table className={`table ${styles.styled_table} mb-0`} style={{ tableLayout: 'fixed' }}>
-                    <thead className={styles.theader}>
-                      <tr>
-                        <th style={{ width: '100px', fontSize: '11px' }}>DATE ADDED</th>
-                        <th style={{ width: '26%', fontSize: '11px' }}>SUPPLIER</th>
-                        <th style={{ width: '18%', fontSize: '11px' }}>SUPPLIER TYPE</th>
-                        <th style={{ width: '16%', fontSize: '11px' }}>PHONE</th>
-                        <th style={{ width: '18%', fontSize: '11px', textAlign: 'right' }}>BALANCE (₦)</th>
-                        <th style={{ width: '50px', fontSize: '11px', textAlign: 'center' }}></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentSuppliers.map((supplier, idx) => {
-                        const balance = supplier.balance || 0;
+                  <DataTable
+                    className={`${styles.styled_table} mb-0`}
+                    columns={[
+                      { key: 'createdAt', label: 'DATE ADDED', width: '100px', render: (val) => (
+                        <span style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>
+                          {new Date(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      )},
+                      { key: 'name', label: 'SUPPLIER', width: '26%', render: (val, row, idx) => {
+                        const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                        return (
+                          <div className="d-flex align-items-center gap-2">
+                            <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#ffffff', flexShrink: 0 }}>
+                              {getInitials(val)}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '14px', fontWeight: 600, color: '#2E3135' }}>{val}</div>
+                            </div>
+                          </div>
+                        );
+                      }},
+                      { key: 'supplierType', label: 'SUPPLIER TYPE', width: '18%', render: (val) => {
+                        const typeName = getSupplierTypeName(val);
+                        const typeColor = getTypeColor(val);
+                        return typeName ? (
+                          <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, background: typeColor.bg, color: typeColor.text }}>
+                            {typeName}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '12px', color: '#9CA3AF' }}>—</span>
+                        );
+                      }},
+                      { key: 'phone', label: 'PHONE', width: '16%', render: (val) => <span style={{ fontSize: '13px', color: '#374151' }}>{val}</span> },
+                      { key: 'balance', label: 'BALANCE (₦)', width: '18%', align: 'right', render: (val) => {
+                        const balance = val || 0;
                         const balanceColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';
                         const balanceLabel = balance > 0 ? 'Owed to Supplier' : balance < 0 ? 'Supplier Owes Us' : 'Settled';
-                        const typeName = getSupplierTypeName(supplier.supplierType);
-                        const typeColor = getTypeColor(supplier.supplierType);
-                        const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-
                         return (
-                          <tr
-                            key={supplier.id}
-                            style={{ transition: 'background-color 0.12s ease', verticalAlign: 'middle' }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                          >
-                            <td style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>
-                              {new Date(supplier.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </td>
-                            <td>
-                              <div className="d-flex align-items-center gap-2">
-                                <div
-                                  style={{
-                                    width: '34px', height: '34px', borderRadius: '50%', background: avatarColor,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '12px', fontWeight: 700, color: '#ffffff', flexShrink: 0,
-                                  }}
-                                >
-                                  {getInitials(supplier.name)}
-                                </div>
-                                <div>
-                                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#2E3135' }}>{supplier.name}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              {typeName ? (
-                                <span
-                                  style={{
-                                    display: 'inline-block', padding: '3px 10px', borderRadius: '6px',
-                                    fontSize: '12px', fontWeight: 600, background: typeColor.bg, color: typeColor.text,
-                                  }}
-                                >
-                                  {typeName}
-                                </span>
-                              ) : (
-                                <span style={{ fontSize: '12px', color: '#9CA3AF' }}>—</span>
-                              )}
-                            </td>
-                            <td style={{ fontSize: '13px', color: '#374151' }}>{supplier.phone}</td>
-                            <td style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '14px', fontWeight: 700, color: balanceColor }}>{formatCurrency(balance)}</div>
-                              <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
-                            </td>
-                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                              <PortalDropdown
-                                btnClass={styles.threeDotBtn}
-                                menuStyle={{ minWidth: 180 }}
-                                items={[
-                                  { label: 'Edit', onClick: () => navigate('/finance/supplier/new', { state: { supplier } }) },
-                                  ...(isSuperAdminOrMD
-                                    ? [{ label: 'Delete', onClick: () => handleDelete(supplier) }]
-                                    : []),
-                                  { divider: true },
-                                  { label: 'View Ledger', onClick: () => navigate(`/finance/supplier/ledger?id=${supplier.id}`) },
-                                ]}
-                              />
-                            </td>
-                          </tr>
+                          <>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: balanceColor }}>{formatCurrency(balance)}</div>
+                            <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
+                          </>
                         );
-                      })}
-                    </tbody>
-                  </table>
+                      }},
+                    ]}
+                    data={currentSuppliers}
+                    actions={(supplier) => (
+                      <PortalDropdown
+                        btnClass={styles.threeDotBtn}
+                        menuStyle={{ minWidth: 180 }}
+                        items={[
+                          { label: 'Edit', onClick: () => navigate('/finance/supplier/new', { state: { supplier } }) },
+                          ...(isSuperAdminOrMD
+                            ? [{ label: 'Delete', onClick: () => handleDelete(supplier) }]
+                            : []),
+                          { divider: true },
+                          { label: 'View Ledger', onClick: () => navigate(`/finance/supplier/ledger?id=${supplier.id}`) },
+                        ]}
+                      />
+                    )}
+                  />
                 </div>
 
                 {/* ── Pagination ── */}

@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FiArrowLeft, FiPlus, FiUploadCloud, FiInfo, FiTrash2, FiX } from 'react-icons/fi';
-import { IoCalendarOutline, IoChevronDown } from 'react-icons/io5';
 import { BsBoxSeam } from 'react-icons/bs';
 import { createPortal } from 'react-dom';
+import { toast, ToastContainer } from 'react-toastify';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
+import DataTable from "../../shared/data-table/DataTable";
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import feedStyles from '../feed.module.scss';
 import styles from './create-batch.module.scss';
 
@@ -19,11 +21,6 @@ const f = (n) => new Intl.NumberFormat().format(n);
 const FEED_TYPE_OPTIONS = [
   'Starter (0-1mm)', 'Grower (1-3mm)', 'Finisher (3-5mm)',
   'Broodstock Feed', 'Special / Others',
-];
-
-const COST_TYPE_OPTIONS = [
-  'Labor', 'Utilities (Power)', 'Transportation', 'Maintenance',
-  'Packaging', 'Other',
 ];
 
 const PACKAGE_UNIT_OPTIONS = ['kg', 'g', 'bags', 'units', 'L'];
@@ -59,28 +56,26 @@ const ModalShell = ({ title, show, onClose, children }) => {
 
 export default function CreateFeedBatch() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const editBatch = location.state?.editBatch || null;
+  const isEditing = !!editBatch;
   const [showSidebar, setShowSidebar] = useState(false);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
   // Batch Information fields
-  const [feedName, setFeedName] = useState('Starter Feed - Batch 018');
-  const [feedType, setFeedType] = useState('Starter (0-1mm)');
-  const [startDate, setStartDate] = useState('May 24, 2025');
-  const [endDate, setEndDate] = useState('May 24, 2025');
-  const [producedBy, setProducedBy] = useState('John Doe');
-  const [machineUsed, setMachineUsed] = useState('Hammer Mill Line 1');
+  const [feedId, setFeedId] = useState('');
+  const [feedTypeId, setFeedTypeId] = useState('');
+  const [siteTypeId, setSiteTypeId] = useState('');
+  const [siteTypeOptions, setSiteTypeOptions] = useState([]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [machineUsed, setMachineUsed] = useState('');
   const [batchNotes, setBatchNotes] = useState('');
 
   // Raw Materials table
-  const [rawMaterials, setRawMaterials] = useState([
-    { id: 1, name: 'Maize', unit: 'kg', qty: 500, unitCost: 220, swatch: '#F59E0B' },
-    { id: 2, name: 'Soybean Meal', unit: 'kg', qty: 300, unitCost: 480, swatch: '#D4A373' },
-    { id: 3, name: 'Fishmeal (60%)', unit: 'kg', qty: 200, unitCost: 780, swatch: '#FEF3C7' },
-    { id: 4, name: 'Wheat Bran', unit: 'kg', qty: 150, unitCost: 160, swatch: '#92400E' },
-    { id: 5, name: 'Fish Oil', unit: 'L', qty: 20, unitCost: 1350, swatch: '#F59E0B' },
-  ]);
+  const [rawMaterials, setRawMaterials] = useState([]);
 
   const handleRawMaterialChange = (id, field, value) => {
     setRawMaterials(prev => prev.map(m => m.id === id ? { ...m, [field]: parseFloat(value) || 0 } : m));
@@ -100,11 +95,11 @@ export default function CreateFeedBatch() {
   const totalRawMaterialCost = rawMaterials.reduce((sum, m) => sum + ((parseFloat(m.qty) || 0) * (parseFloat(m.unitCost) || 0)), 0);
 
   // Production Summary
-  const [totalFeedProduced, setTotalFeedProduced] = useState(1000);
-  const [packagingRows, setPackagingRows] = useState([{ id: 1, unit: 'kg', qty: '' }]);
-  const [otherCostInput, setOtherCostInput] = useState(25000);
-  const [shelfLife, setShelfLife] = useState('90');
-  const [expiryDate, setExpiryDate] = useState('Aug 22, 2025');
+  const [totalFeedProduced, setTotalFeedProduced] = useState(0);
+  const [packagingRows, setPackagingRows] = useState([]);
+  const [otherCostInput, setOtherCostInput] = useState(0);
+  const [shelfLife, setShelfLife] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
 
   // Modal state
   const [showFeedProducedModal, setShowFeedProducedModal] = useState(false);
@@ -116,6 +111,169 @@ export default function CreateFeedBatch() {
   const [newMaterialName, setNewMaterialName] = useState('');
   const [newMaterialQty, setNewMaterialQty] = useState('');
   const [totalBagsProduced, setTotalBagsProduced] = useState(0);
+  const [feedOptions, setFeedOptions] = useState([]);
+  const [feedTypeDisplay, setFeedTypeDisplay] = useState('');
+  const [rawMaterialOptions, setRawMaterialOptions] = useState([]);
+  const [staffOptions, setStaffOptions] = useState([]);
+  const [staffId, setStaffId] = useState('');
+  const [costTypeOptions, setCostTypeOptions] = useState([]);
+  const [costTypeDropdownOpen, setCostTypeDropdownOpen] = useState(null);
+  const [costTypeDropdownMode, setCostTypeDropdownMode] = useState('list');
+  const [costTypeCreateName, setCostTypeCreateName] = useState('');
+  const [costTypeCreating, setCostTypeCreating] = useState(false);
+  const [costTypeDropdownCoords, setCostTypeDropdownCoords] = useState({ top: 0, left: 0, width: 0 });
+  const [submitting, setSubmitting] = useState(false);
+
+  /* ── Pre-fill form when editing ── */
+  useEffect(() => {
+    if (!editBatch) return;
+    setFeedId(editBatch.feedId || '');
+    setFeedTypeDisplay(editBatch.feed?.feedType || '');
+    setFeedTypeId(editBatch.feedTypeId || '');
+    setSiteTypeId(editBatch.siteTypeId || '');
+    setStaffId(editBatch.staffId || '');
+    setStartDate(editBatch.productionStartDate ? editBatch.productionStartDate.slice(0, 10) : '');
+    setEndDate(editBatch.productionEndDate ? editBatch.productionEndDate.slice(0, 10) : '');
+    setMachineUsed(editBatch.machineUsed || '');
+    setBatchNotes(editBatch.comments || '');
+    setTotalFeedProduced(parseFloat(editBatch.totalFeedProduced) || 0);
+    setTotalBagsProduced(parseInt(editBatch.totalBagsProduced, 10) || 0);
+    setExpiryDate(editBatch.expiryDate ? editBatch.expiryDate.slice(0, 10) : '');
+    if (editBatch.shelfLife) setShelfLife(editBatch.shelfLife);
+
+    // Raw materials
+    const rawMats = Array.isArray(editBatch.rawMaterials) ? editBatch.rawMaterials : [];
+    const mats = rawMats
+      .filter(m => m.rawMaterialId && m.rawMaterial)
+      .map(m => ({
+        id: m.rawMaterialId,
+        name: m.rawMaterial?.name || 'Unknown',
+        unit: 'kg',
+        qty: parseFloat(m.quantityUsed) || 0,
+        unitCost: parseFloat(m.unitCost) || 0,
+        swatch: '#6366F1',
+      }));
+    setRawMaterials(mats);
+
+    // Other cost items
+    const costItems = rawMats
+      .filter(m => !m.rawMaterialId && m.costTypeId)
+      .map((m, i) => ({
+        id: i + 1,
+        type: m.costTypeId,
+        desc: m.comment || '',
+        amount: parseFloat(m.amount) || 0,
+      }));
+    setOtherCostItems(costItems);
+  }, [editBatch]);
+
+  /* ── Sync feed info when options load in edit mode ── */
+  useEffect(() => {
+    if (!isEditing || !feedId || feedOptions.length === 0) return;
+    const feed = feedOptions.find(f => f.id === feedId);
+    if (feed) {
+      setFeedTypeDisplay(feed.feedType || '');
+      setFeedTypeId(feed.feedTypeId || '');
+    }
+  }, [feedOptions, feedId, isEditing]);
+
+  /* ── Fetch feeds from API ── */
+  useEffect(() => {
+    let cancelled = false;
+    const fetchFeeds = async () => {
+      try {
+        const res = await ApiV2.get('/api/v1/feeds', { params: { siteId: 'all' } });
+        const list = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (!cancelled) setFeedOptions(list);
+      } catch {
+        if (!cancelled) setFeedOptions([]);
+      }
+    };
+    fetchFeeds();
+    return () => { cancelled = true; };
+  }, []);
+
+  /* ── Fetch staff from API ── */
+  useEffect(() => {
+    let cancelled = false;
+    const fetchStaff = async () => {
+      try {
+        const res = await ApiV2.get('/api/v1/staff', { params: { siteId: 'all' } });
+        const list = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (!cancelled) setStaffOptions(list);
+      } catch {
+        if (!cancelled) setStaffOptions([]);
+      }
+    };
+    fetchStaff();
+    return () => { cancelled = true; };
+  }, []);
+
+  /* ── Fetch site types from API ── */
+  useEffect(() => {
+    let cancelled = false;
+    const fetchSiteTypes = async () => {
+      try {
+        const res = await ApiV2.get('/v2/site-types');
+        const list = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (!cancelled) setSiteTypeOptions(list);
+      } catch {
+        if (!cancelled) setSiteTypeOptions([]);
+      }
+    };
+    fetchSiteTypes();
+    return () => { cancelled = true; };
+  }, []);
+
+  /* ── Fetch raw materials on demand when modal opens ── */
+  const openRawMaterialModal = async () => {
+    setNewMaterialName('');
+    setNewMaterialQty('');
+    try {
+      const res = await ApiV2.get('/v2/raw-material');
+      const list = Array.isArray(res.data?.data) ? res.data.data : [];
+      setRawMaterialOptions(list);
+    } catch {
+      setRawMaterialOptions([]);
+    }
+    setShowAddMaterialModal(true);
+  };
+
+  /* ── Fetch cost types from API ── */
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCostTypes = async () => {
+      try {
+        const res = await ApiV2.get('/v2/cost-type');
+        const list = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (!cancelled) setCostTypeOptions(list);
+      } catch {
+        if (!cancelled) setCostTypeOptions([]);
+      }
+    };
+    fetchCostTypes();
+    return () => { cancelled = true; };
+  }, []);
+
+  /* ── Click-outside for inline cost type dropdown ── */
+  useEffect(() => {
+    if (costTypeDropdownOpen === null) return;
+    const clickOutside = (e) => {
+      if (!e.target.closest('[data-cost-dropdown]')) {
+        setCostTypeDropdownOpen(null);
+        setCostTypeDropdownMode('list');
+      }
+    };
+    const close = () => { setCostTypeDropdownOpen(null); setCostTypeDropdownMode('list'); };
+    document.addEventListener('mousedown', clickOutside);
+    window.addEventListener('scroll', close, { once: true });
+    window.addEventListener('resize', close, { once: true });
+    return () => {
+      document.removeEventListener('mousedown', clickOutside);
+      window.removeEventListener('scroll', close);
+      window.removeEventListener('resize', close);
+    };
+  }, [costTypeDropdownOpen]);
 
   const handleAddPackaging = () => {
     const newId = Math.max(...packagingRows.map(r => r.id)) + 1;
@@ -159,17 +317,26 @@ export default function CreateFeedBatch() {
   };
 
   const handleAddNewMaterial = () => {
-    if (!newMaterialName.trim()) return;
-    const info = MATERIAL_CATALOG[newMaterialName];
-    const newId = Math.max(...rawMaterials.map(m => m.id), 0) + 1;
-    setRawMaterials([...rawMaterials, {
-      id: newId,
-      name: newMaterialName,
-      unit: info?.unit || 'kg',
-      qty: parseFloat(newMaterialQty) || 0,
-      unitCost: info?.unitCost || 0,
-      swatch: info?.swatch || '#D1D5DB',
-    }]);
+    if (!newMaterialName) return;
+    const found = rawMaterialOptions.find(m => m.id === newMaterialName);
+    if (!found) return;
+    const already = rawMaterials.find(m => m.id === found.id);
+    if (already) {
+      setRawMaterials(prev => prev.map(m =>
+        m.id === found.id
+          ? { ...m, qty: (parseFloat(m.qty) || 0) + (parseFloat(newMaterialQty) || 0) }
+          : m
+      ));
+    } else {
+      setRawMaterials([...rawMaterials, {
+        id: found.id,
+        name: found.name,
+        unit: found.unit || 'kg',
+        qty: parseFloat(newMaterialQty) || 0,
+        unitCost: found.unitCost ? Number(found.unitCost) : 0,
+        swatch: '#6366F1',
+      }]);
+    }
     setNewMaterialName('');
     setNewMaterialQty('');
     setShowAddMaterialModal(false);
@@ -179,10 +346,7 @@ export default function CreateFeedBatch() {
   const costPerKg = totalFeedProduced > 0 ? totalProductionCost / totalFeedProduced : 0;
 
   // Other Costs Breakdown
-  const [otherCostItems, setOtherCostItems] = useState([
-    { id: 1, type: 'Labor', desc: 'Production staff wages', amount: 15000 },
-    { id: 2, type: 'Utilities (Power)', desc: 'Electricity for production', amount: 10000 },
-  ]);
+  const [otherCostItems, setOtherCostItems] = useState([]);
 
   const handleCostItemChange = (id, field, value) => {
     setOtherCostItems(prev => prev.map(c => c.id === id ? { ...c, [field]: field === 'amount' ? (parseFloat(value) || 0) : value } : c));
@@ -190,23 +354,165 @@ export default function CreateFeedBatch() {
 
   const handleAddCostItem = () => {
     const newId = Math.max(...otherCostItems.map(c => c.id)) + 1;
-    setOtherCostItems([...otherCostItems, { id: newId, type: COST_TYPE_OPTIONS[0], desc: '', amount: 0 }]);
+    const defaultType = costTypeOptions[0]?.id || '';
+    setOtherCostItems([...otherCostItems, { id: newId, type: defaultType, desc: '', amount: 0 }]);
+  };
+
+  const handleCreateCostType = async (rowId) => {
+    const name = costTypeCreateName.trim();
+    if (!name) return;
+    setCostTypeCreating(true);
+    try {
+      const res = await ApiV2.post('/v2/cost-type', { name });
+      if (res.data?.success) {
+        const refreshed = await ApiV2.get('/v2/cost-type');
+        const list = Array.isArray(refreshed.data?.data) ? refreshed.data.data : [];
+        setCostTypeOptions(list);
+        const created = res.data?.data;
+        if (created?.id) {
+          handleCostItemChange(rowId, 'type', created.id);
+        }
+        toast.success(`Cost type "${name}" created!`, { className: 'dark-toast' });
+        setCostTypeDropdownOpen(null);
+        setCostTypeCreateName('');
+        setCostTypeDropdownMode('list');
+      } else {
+        throw new Error(res.data?.response_message || 'Failed to create cost type.');
+      }
+    } catch (err) {
+      const serverMsg = err?.response?.data?.response_message;
+      const fallbackMsg = err?.response?.data?.message;
+      const networkMsg = err?.message;
+      const finalMsg = serverMsg || fallbackMsg || networkMsg || 'An unexpected error occurred.';
+      toast.error(finalMsg, { className: 'dark-toast' });
+      console.error('[CreateCostType] Failed:', {
+        endpoint: '/v2/cost-type',
+        payload: { name },
+        status: err?.response?.status,
+        responseData: err?.response?.data,
+        networkMessage: err?.message,
+        stack: err?.stack?.split('\n').slice(0, 4).join('\n'),
+      });
+    } finally {
+      setCostTypeCreating(false);
+    }
   };
 
   const handleRemoveCostItem = (id) => {
     setOtherCostItems(otherCostItems.filter(c => c.id !== id));
   };
 
+  // ── Client-side validation ──
+  const validate = () => {
+    const missing = [];
+    if (!isEditing) {
+      if (!feedId) missing.push('Feed Name');
+      if (!siteTypeId) missing.push('Site');
+      if (!staffId) missing.push('Staff');
+      if (!startDate) missing.push('Production Start Date');
+    }
+    if (rawMaterials.length === 0) missing.push('at least one Raw Material');
+    return missing;
+  };
+
   // Submit
-  const handleSubmit = () => {
-    // TODO: replace with real API call
-    // const payload = { feedName, feedType, startDate, endDate, producedBy, machineUsed, batchNotes, rawMaterials, totalFeedProduced, packagingRows, otherCostInput, otherCostItems, shelfLife, expiryDate };
-    // await Api.post('/create-feed-batch', payload);
-    navigate('/feed/production/history');
+  const handleSubmit = async () => {
+    const missing = validate();
+    if (missing.length > 0) {
+      toast.error(`Please fill in the required fields: ${missing.join(', ')}`, {
+        autoClose: 5000,
+        className: 'dark-toast',
+      });
+      return;
+    }
+    setSubmitting(true);
+    const loadingToast = toast.loading(isEditing ? 'Updating production batch...' : 'Starting production batch...', { className: 'dark-toast' });
+    try {
+      const basePayload = {
+        machineUsed,
+        comments: batchNotes || undefined,
+        productionEndDate: endDate ? new Date(endDate + 'T00:00:00').toISOString() : undefined,
+        rawMaterials: rawMaterials.map(m => ({
+          rawMaterialId: String(m.id),
+          quantityUsed: parseFloat(m.qty) || 0,
+        })),
+        costTypes: otherCostItems
+          .filter(c => c.type && c.amount > 0)
+          .map(c => ({
+            costTypeId: c.type,
+            amount: c.amount,
+            comment: c.desc || undefined,
+          })),
+      };
+      const payload = isEditing ? basePayload : {
+        ...basePayload,
+        feedId: feedId || undefined,
+        siteTypeId: siteTypeId || undefined,
+        staffId: staffId || undefined,
+        productionStartDate: startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined,
+      };
+      const res = isEditing
+        ? await ApiV2.patch(`/v2/feed-production-batch/${editBatch.batchNumber}`, payload)
+        : await ApiV2.post('/v2/feed-production-batch/start', payload);
+      if (res.data?.success) {
+        toast.update(loadingToast, {
+          render: res.data.response_message || (isEditing ? 'Batch updated successfully!' : 'Batch created successfully!'),
+          type: 'success',
+          isLoading: false,
+          autoClose: 3000,
+          className: 'dark-toast',
+        });
+        navigate('/feed/production/history');
+      } else {
+        throw new Error(res.data?.response_message || `Failed to ${isEditing ? 'update' : 'create'} batch.`);
+      }
+    } catch (err) {
+      const { status, data } = err?.response || {};
+      const serverMsg = data?.response_message;
+      const fallbackMsg = data?.message;
+      const networkMsg = err?.message;
+      const fieldErrors = data?.errors || data?.fieldErrors;
+      let finalMsg;
+
+      if (!err.response) {
+        finalMsg = 'Network error — please check your internet connection and try again.';
+      } else if (status === 422 || status === 400) {
+        if (fieldErrors && typeof fieldErrors === 'object') {
+          const lines = Object.entries(fieldErrors)
+            .map(([key, msgs]) => `• ${key}: ${Array.isArray(msgs) ? msgs[0] : msgs}`);
+          finalMsg = `Validation failed:\n${lines.slice(0, 5).join('\n')}${lines.length > 5 ? `\n…and ${lines.length - 5} more` : ''}`;
+        } else {
+          finalMsg = serverMsg || `Request was rejected (status ${status}).`;
+        }
+      } else if (status >= 500) {
+        finalMsg = 'Server error — please try again later or contact support.';
+      } else {
+        finalMsg = serverMsg || fallbackMsg || networkMsg || 'An unexpected error occurred.';
+      }
+
+      toast.update(loadingToast, {
+        render: finalMsg,
+        type: 'error',
+        isLoading: false,
+        autoClose: 8000,
+        className: 'dark-toast',
+      });
+      console.error(`[CreateBatch] Failed to ${isEditing ? 'update' : 'start'} batch:`, {
+        endpoint: isEditing ? `/v2/feed-production-batch/${editBatch.batchNumber}` : '/v2/feed-production-batch/start',
+        status,
+        statusText: err?.response?.statusText,
+        responseData: data,
+        networkMessage: err?.message,
+        stack: err?.stack?.split('\n').slice(0, 4).join('\n'),
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <section className={`${feedStyles.body}`}>
+      <ToastContainer />
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -223,14 +529,14 @@ export default function CreateFeedBatch() {
               <span className={styles.breadcrumbSep}>&gt;</span>
               <span className={styles.breadcrumbItem}>Feed Production</span>
               <span className={styles.breadcrumbSep}>&gt;</span>
-              <span className={styles.breadcrumbActive}>Create Batch</span>
+              <span className={styles.breadcrumbActive}>{isEditing ? 'Edit Batch' : 'Create Batch'}</span>
             </div>
 
             {/* ── Page Header ── */}
             <div className={styles.headerRow}>
               <div className={styles.headerLeft}>
-                <h1 className={styles.pageTitle}>Create Feed Production Batch</h1>
-                <p className={styles.pageSubtitle}>Record a new batch of feed produced from raw materials.</p>
+                <h1 className={styles.pageTitle}>{isEditing ? `Edit Batch #${editBatch.batchNumber}` : 'Create Feed Production Batch'}</h1>
+                <p className={styles.pageSubtitle}>{isEditing ? 'Update the details of this production batch.' : 'Record a new batch of feed produced from raw materials.'}</p>
               </div>
               <div className={styles.headerRight}>
                 <button className={styles.backBtn} onClick={() => navigate('/feed/production/history')}>
@@ -246,51 +552,68 @@ export default function CreateFeedBatch() {
               <div className={styles.formGrid}>
                 {/* Row 1 */}
                 <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>Feed name <span className={styles.required}>*</span></label>
+                  <label className={styles.fieldLabel}>Feed Name <span className={styles.required}>*</span></label>
+                   <CustomDropdown
+                      options={feedOptions.map(f => ({ value: f.id, label: f.feedName }))}
+                      value={feedId}
+                      onChange={(val) => {
+                        setFeedId(val);
+                        const feed = feedOptions.find(f => f.id === val);
+                        if (feed) {
+                          setFeedTypeDisplay(feed.feedType || '');
+                          setFeedTypeId(feed.feedTypeId || '');
+                          if (feed.siteTypeId) setSiteTypeId(feed.siteTypeId);
+                        } else {
+                          setFeedTypeDisplay('');
+                          setFeedTypeId('');
+                        }
+                      }}
+                      placeholder="— Select Feed —"
+                      className={styles.fieldDropdown}
+                      triggerClassName={styles.fieldTrigger}
+                    />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Feed Type</label>
                   <input
                     type="text"
                     className={styles.textInput}
-                    value={feedName}
-                    onChange={e => setFeedName(e.target.value)}
+                    value={feedTypeDisplay}
+                    readOnly
+                    placeholder="Auto-populated from feed"
                   />
                 </div>
                 <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>Feed Type <span className={styles.required}>*</span></label>
-                  <div className={styles.selectWrapper}>
-                    <select
-                      className={styles.selectInput}
-                      value={feedType}
-                      onChange={e => setFeedType(e.target.value)}
-                    >
-                      {FEED_TYPE_OPTIONS.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                    <IoChevronDown size={13} className={styles.selectChevron} />
-                  </div>
+                  <label className={styles.fieldLabel}>Site <span className={styles.required}>*</span></label>
+                   <CustomDropdown
+                      options={siteTypeOptions.map(s => ({ value: s.id, label: s.name }))}
+                      value={siteTypeId}
+                      onChange={(val) => setSiteTypeId(val)}
+                      placeholder="— Select Site —"
+                      className={styles.fieldDropdown}
+                      triggerClassName={styles.fieldTrigger}
+                    />
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Production Period (Start and End Date) <span className={styles.required}>*</span></label>
                   <div className={styles.dateFieldGroup}>
                     <div className={styles.dateField}>
                       <input
-                        type="text"
+                        type="date"
                         className={styles.dateTextInput}
                         value={startDate}
                         onChange={e => setStartDate(e.target.value)}
                         placeholder="Start Date"
                       />
-                      <IoCalendarOutline size={15} className={styles.dateIcon} />
                     </div>
                     <div className={styles.dateField}>
                       <input
-                        type="text"
+                        type="date"
                         className={styles.dateTextInput}
                         value={endDate}
                         onChange={e => setEndDate(e.target.value)}
                         placeholder="End Date"
                       />
-                      <IoCalendarOutline size={15} className={styles.dateIcon} />
                     </div>
                   </div>
                 </div>
@@ -298,11 +621,13 @@ export default function CreateFeedBatch() {
                 {/* Row 2 */}
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Produced By <span className={styles.required}>*</span></label>
-                  <input
-                    type="text"
-                    className={styles.textInput}
-                    value={producedBy}
-                    onChange={e => setProducedBy(e.target.value)}
+                  <CustomDropdown
+                    options={staffOptions.map(s => ({ value: s.id, label: s.name }))}
+                    value={staffId}
+                    onChange={(val) => setStaffId(val)}
+                    placeholder="— Select Staff —"
+                    className={styles.fieldDropdown}
+                    triggerClassName={styles.fieldTrigger}
                   />
                 </div>
                 <div className={styles.fieldGroup}>
@@ -335,82 +660,85 @@ export default function CreateFeedBatch() {
                       <h2 className={styles.cardTitle}>Raw Materials Used</h2>
                       <p className={styles.cardSubtitle}>Add the raw materials and quantities used for this batch.</p>
                     </div>
-                    <button className={styles.addBtnOutline} onClick={() => { setNewMaterialName(''); setNewMaterialQty(''); setShowAddMaterialModal(true); }}>
+                    <button className={styles.addBtnOutline} onClick={openRawMaterialModal}>
                       <FiPlus size={14} />
                       Add Material
                     </button>
                   </div>
                   <div className={styles.tableWrapper}>
-                    <table className={styles.rawTable}>
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Raw Material</th>
-                          <th>Unit</th>
-                          <th>Quantity Used</th>
-                          <th>Unit Cost (₦)</th>
-                          <th>Total Cost (₦)</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rawMaterials.map((m, i) => (
-                          <tr key={m.id}>
-                            <td className={styles.rowNum}>{i + 1}</td>
-                            <td>
-                              <div className={styles.materialNameCell}>
-                                <span className={styles.materialSwatch} style={{ background: m.swatch }} />
-                                <span className={styles.materialName}>{m.name}</span>
-                              </div>
-                            </td>
-                            <td>{m.unit}</td>
-                            <td>
-                              <input
-                                type="number"
-                                className={styles.inlineInput}
-                                value={m.qty}
-                                onChange={e => handleRawMaterialChange(m.id, 'qty', e.target.value)}
-                                step="0.01"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                className={styles.inlineInput}
-                                value={m.unitCost}
-                                onChange={e => handleRawMaterialChange(m.id, 'unitCost', e.target.value)}
-                                step="0.01"
-                              />
-                            </td>
-                            <td className={styles.totalCostCell}>{formatCurrency((parseFloat(m.qty) || 0) * (parseFloat(m.unitCost) || 0))}</td>
-                            <td>
-                              <PortalDropdown
-                                btnClass={feedStyles.threeDotBtn}
-                                menuStyle={{
-                                  background: '#fff',
-                                  color: '#374151',
-                                  border: '1px solid #E5E7EB',
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                  borderRadius: 8,
-                                  padding: '4px 0',
-                                }}
-                                items={[
-                                  {
-                                    label: 'Top Up Raw Material',
-                                    onClick: () => { setSelectedMaterial(m); setModalInputValue(''); setShowTopUpModal(true); },
-                                  },
-                                  {
-                                    label: 'Delete',
-                                    onClick: () => handleRemoveMaterial(m.id),
-                                    style: { color: '#DC2626' },
-                                  },
-                                ]}
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <DataTable
+                      className={styles.rawTable}
+                      columns={[
+                        { key: 'index', label: '#', render: (_, row, i) => <span className={styles.rowNum}>{i + 1}</span> },
+                        {
+                          key: 'name',
+                          label: 'Raw Material',
+                          render: (value, row) => (
+                            <div className={styles.materialNameCell}>
+                              <span className={styles.materialSwatch} style={{ background: row.swatch }} />
+                              <span className={styles.materialName}>{row.name}</span>
+                            </div>
+                          ),
+                        },
+                        { key: 'unit', label: 'Unit' },
+                        {
+                          key: 'qty',
+                          label: 'Quantity Used',
+                          render: (value, row) => (
+                            <input
+                              type="number"
+                              className={styles.inlineInput}
+                              value={row.qty}
+                              onChange={e => handleRawMaterialChange(row.id, 'qty', e.target.value)}
+                              step="0.01"
+                            />
+                          ),
+                        },
+                        {
+                          key: 'unitCost',
+                          label: 'Unit Cost (₦)',
+                          render: (value, row) => (
+                            <input
+                              type="number"
+                              className={styles.inlineInput}
+                              value={row.unitCost}
+                              onChange={e => handleRawMaterialChange(row.id, 'unitCost', e.target.value)}
+                              step="0.01"
+                            />
+                          ),
+                        },
+                        {
+                          key: 'totalCost',
+                          label: 'Total Cost (₦)',
+                          render: (_, row) => <span className={styles.totalCostCell}>{formatCurrency((parseFloat(row.qty) || 0) * (parseFloat(row.unitCost) || 0))}</span>,
+                        },
+                      ]}
+                      data={rawMaterials}
+                      actions={(m) => (
+                        <PortalDropdown
+                          btnClass={feedStyles.threeDotBtn}
+                          menuStyle={{
+                            background: '#fff',
+                            color: '#374151',
+                            border: '1px solid #E5E7EB',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            borderRadius: 8,
+                            padding: '4px 0',
+                          }}
+                          items={[
+                            {
+                              label: 'Top Up Raw Material',
+                              onClick: () => { setSelectedMaterial(m); setModalInputValue(''); setShowTopUpModal(true); },
+                            },
+                            {
+                              label: 'Delete',
+                              onClick: () => handleRemoveMaterial(m.id),
+                              style: { color: '#DC2626' },
+                            },
+                          ]}
+                        />
+                      )}
+                    />
                   </div>
                   <div className={styles.tableFooter}>
                     <div>
@@ -461,18 +789,13 @@ export default function CreateFeedBatch() {
                     <div key={row.id} className={styles.packagingRow}>
                       <div className={styles.packagingField}>
                         <label className={styles.fieldLabel}>Packaging Unit</label>
-                        <div className={styles.selectWrapper}>
-                          <select
-                            className={styles.selectInput}
-                            value={row.unit}
-                            onChange={e => handlePackagingChange(row.id, 'unit', e.target.value)}
-                          >
-                            {PACKAGE_UNIT_OPTIONS.map(opt => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                          <IoChevronDown size={13} className={styles.selectChevron} />
-                        </div>
+                        <CustomDropdown
+                          options={PACKAGE_UNIT_OPTIONS.map(opt => ({ value: opt, label: opt }))}
+                          value={row.unit}
+                          onChange={(val) => handlePackagingChange(row.id, 'unit', val)}
+                          className={styles.fieldDropdown}
+                          triggerClassName={styles.fieldTrigger}
+                        />
                       </div>
                       <div className={styles.packagingField}>
                         <label className={styles.fieldLabel}>Bags / Units Produced</label>
@@ -562,13 +885,12 @@ export default function CreateFeedBatch() {
                       <label className={styles.fieldLabel}>Expiry Date <span className={styles.optional}>(Optional)</span></label>
                       <div className={styles.dateField}>
                         <input
-                          type="text"
+                          type="date"
                           className={styles.dateTextInput}
                           value={expiryDate}
                           onChange={e => setExpiryDate(e.target.value)}
                           placeholder="Select date"
                         />
-                        <IoCalendarOutline size={15} className={styles.dateIcon} />
                       </div>
                     </div>
                   </div>
@@ -587,60 +909,160 @@ export default function CreateFeedBatch() {
                     </div>
                   </div>
                   <div className={styles.tableWrapper}>
-                    <table className={styles.rawTable}>
-                      <thead>
-                        <tr>
-                          <th>Cost Type</th>
-                          <th>Description</th>
-                          <th>Amount (₦)</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {otherCostItems.map(item => (
-                          <tr key={item.id}>
-                            <td>
-                              <div className={styles.selectWrapper}>
-                                <select
-                                  className={styles.selectInput}
-                                  value={item.type}
-                                  onChange={e => handleCostItemChange(item.id, 'type', e.target.value)}
+                    <DataTable
+                      className={styles.rawTable}
+                      columns={[
+                        {
+                          key: 'type',
+                          label: 'Cost Type',
+                          render: (value, item) => {
+                            const isOpen = costTypeDropdownOpen === item.id;
+                            const selectedName = costTypeOptions.find(o => o.id === value)?.name || '';
+                            return (
+                              <div data-cost-dropdown="true" style={{ position: 'relative' }}>
+                                <div
+                                  className={styles.fieldTrigger}
+                                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+                                  onClick={(e) => {
+                                    if (isOpen) {
+                                      setCostTypeDropdownOpen(null);
+                                    } else {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setCostTypeDropdownCoords({ top: rect.bottom + 2, left: rect.left, width: rect.width });
+                                      setCostTypeDropdownOpen(item.id);
+                                      setCostTypeDropdownMode('list');
+                                      setCostTypeCreateName('');
+                                    }
+                                  }}
                                 >
-                                  {COST_TYPE_OPTIONS.map(opt => (
-                                    <option key={opt} value={opt}>{opt}</option>
-                                  ))}
-                                </select>
-                                <IoChevronDown size={13} className={styles.selectChevron} />
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                                    {selectedName || <span style={{ color: '#9CA3AF' }}>Select...</span>}
+                                  </span>
+                                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                                    <path d="M3 4.5L6 7.5L9 4.5" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </div>
+                                {isOpen && (
+                                  <div
+                                    className={styles.costDropdownPanel}
+                                    style={{ top: costTypeDropdownCoords.top, left: costTypeDropdownCoords.left, width: Math.max(costTypeDropdownCoords.width, 300) }}
+                                  >
+                                    {costTypeDropdownMode === 'list' ? (
+                                      <>
+                                        {costTypeOptions.length === 0 && (
+                                          <div className={styles.costDropdownOption} style={{ color: '#9CA3AF', fontStyle: 'italic', cursor: 'default' }}>
+                                            No cost types available
+                                          </div>
+                                        )}
+                                        {costTypeOptions.map(opt => (
+                                          <div
+                                            key={opt.id}
+                                            className={`${styles.costDropdownOption} ${value === opt.id ? styles.costDropdownOptionActive : ''}`}
+                                            onClick={() => {
+                                              handleCostItemChange(item.id, 'type', opt.id);
+                                              setCostTypeDropdownOpen(null);
+                                            }}
+                                          >
+                                            {opt.name}
+                                          </div>
+                                        ))}
+                                        <div
+                                          className={styles.costDropdownCreateBtn}
+                                          onClick={() => { setCostTypeDropdownMode('create'); setCostTypeCreateName(''); }}
+                                        >
+                                          <span style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            width: 22, height: 22, borderRadius: '50%',
+                                            background: '#512728', color: '#fff', fontSize: 16, flexShrink: 0,
+                                          }}>+</span>
+                                          Create cost type
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className={styles.costDropdownCreateForm}>
+                                        <div className={styles.costDropdownCreateTitle}>New Cost Type</div>
+                                        <div className="d-flex gap-2" style={{ flexWrap: 'nowrap' }}>
+                                          <input
+                                            type="text"
+                                            placeholder="Enter name"
+                                            value={costTypeCreateName}
+                                            onChange={e => setCostTypeCreateName(e.target.value)}
+                                            autoFocus
+                                            className={styles.costDropdownCreateInput}
+                                            onKeyDown={e => { if (e.key === 'Enter') handleCreateCostType(item.id); }}
+                                          />
+                                          <button
+                                            className={styles.costDropdownCreateBtnAction}
+                                            onClick={() => handleCreateCostType(item.id)}
+                                            disabled={costTypeCreating || !costTypeCreateName.trim()}
+                                          >
+                                            {costTypeCreating ? '...' : 'Save'}
+                                          </button>
+                                          <button
+                                            className={styles.costDropdownCreateBtnCancel}
+                                            onClick={() => { setCostTypeDropdownMode('list'); setCostTypeCreateName(''); }}
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                            </td>
-                            <td>
-                              <input
-                                type="text"
-                                className={styles.inlineInput}
-                                value={item.desc}
-                                onChange={e => handleCostItemChange(item.id, 'desc', e.target.value)}
-                                placeholder="Enter description"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                className={styles.inlineInput}
-                                value={item.amount}
-                                onChange={e => handleCostItemChange(item.id, 'amount', e.target.value)}
-                                step="0.01"
-                                style={{ textAlign: 'right' }}
-                              />
-                            </td>
-                            <td>
-                              <button className={styles.deleteBtn} onClick={() => handleRemoveCostItem(item.id)}>
-                                <FiTrash2 size={15} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            );
+                          },
+                        },
+                        {
+                          key: 'desc',
+                          label: 'Description',
+                          render: (value, item) => (
+                            <input
+                              type="text"
+                              className={styles.inlineInput}
+                              value={item.desc}
+                              onChange={e => handleCostItemChange(item.id, 'desc', e.target.value)}
+                              placeholder="Enter description"
+                            />
+                          ),
+                        },
+                        {
+                          key: 'amount',
+                          label: 'Amount (₦)',
+                          render: (value, item) => (
+                            <input
+                              type="number"
+                              className={styles.inlineInput}
+                              value={item.amount}
+                              onChange={e => handleCostItemChange(item.id, 'amount', e.target.value)}
+                              step="0.01"
+                              style={{ textAlign: 'right' }}
+                            />
+                          ),
+                        },
+                      ]}
+                      data={otherCostItems}
+                      actions={(item) => (
+                        <PortalDropdown
+                          btnClass={feedStyles.threeDotBtn}
+                          menuStyle={{
+                            background: '#fff',
+                            color: '#374151',
+                            border: '1px solid #E5E7EB',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            borderRadius: 8,
+                            padding: '4px 0',
+                          }}
+                          items={[
+                            {
+                              label: 'Delete',
+                              onClick: () => handleRemoveCostItem(item.id),
+                              style: { color: '#DC2626' },
+                            },
+                          ]}
+                        />
+                      )}
+                    />
                   </div>
                   <button className={styles.addBtnOutline} onClick={handleAddCostItem}>
                     <FiPlus size={14} />
@@ -667,8 +1089,8 @@ export default function CreateFeedBatch() {
               <button className={styles.cancelBtn} onClick={() => navigate('/feed/production/history')}>
                 Cancel
               </button>
-              <button className={styles.saveBtn} onClick={handleSubmit}>
-                Save &amp; Create Batch
+              <button className={styles.saveBtn} onClick={handleSubmit} disabled={submitting}>
+                {submitting ? 'Saving...' : isEditing ? 'Update Batch' : 'Save & Create Batch'}
               </button>
             </div>
 
@@ -708,16 +1130,19 @@ export default function CreateFeedBatch() {
 
             <ModalShell title="Add Raw Material" show={showAddMaterialModal} onClose={() => { setNewMaterialName(''); setNewMaterialQty(''); setShowAddMaterialModal(false); }}>
               <div className={styles.modalField}>
-                <label className={styles.modalLabel}>Raw Material Name</label>
-                <div className={styles.selectWrapper}>
-                  <select className={styles.selectInput} value={newMaterialName} onChange={e => setNewMaterialName(e.target.value)}>
-                    <option value="">— Select Material —</option>
-                    {Object.keys(MATERIAL_CATALOG).map(name => (
-                      <option key={name} value={name}>{name}</option>
-                    ))}
-                  </select>
-                  <IoChevronDown size={13} className={styles.selectChevron} />
-                </div>
+                <label className={styles.modalLabel}>Raw Material</label>
+                <CustomDropdown
+                  options={rawMaterialOptions.map(m => ({ value: m.id, label: m.name }))}
+                  value={newMaterialName}
+                  onChange={(val) => {
+                    setNewMaterialName(val);
+                    const found = rawMaterialOptions.find(m => m.id === val);
+                    if (found) setNewMaterialQty('');
+                  }}
+                  placeholder="— Select Material —"
+                  className={styles.fieldDropdown}
+                  triggerClassName={styles.fieldTrigger}
+                />
               </div>
               <div className={styles.modalField}>
                 <label className={styles.modalLabel}>Quantity Used</label>

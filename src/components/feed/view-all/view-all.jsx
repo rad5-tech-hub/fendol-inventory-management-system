@@ -6,6 +6,7 @@ import styles from '../feed.module.scss';
 import Api from "../../shared/api/apiLink";
 import { Spinner, Alert, Modal, Form, Button } from 'react-bootstrap';
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -245,52 +246,45 @@ export default function UpdateFeedInventory() {
             {!loading && !error && (
               <>
                 <div className={styles.tableWrapper}>
-                  <table className={styles.styled_table}>
-                    <thead>
-                      <tr className="fw-semibold">
-                        <th>DATE CREATED</th>
-                        <th>FEED NAME</th>
-                        <th>UNIT</th>
-                        <th>QUANTITY</th>
-                        <th>FEED TYPE</th>
-                        <th>THRESHOLD VALUE</th>
-                        <th>STATUS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentProducts.map((product) => (
-                        <tr key={product.id}>
-                          <td>{formatDate(product.createdAt)}</td>
-                          <td>{product.feedName}</td>
-                          <td>{product.unit}</td>
-                          <td>{product.quantity}</td>
-                          <td>{product.feedType}</td>
-                          <td>{product.threshold}</td>
-                          <td className="d-flex justify-content-between position-relative">
-                            <span className={
-                              product.status === 'in stock'
-                                ? 'text-success text-uppercase fw-semibold'
-                                : product.status === 'out of stock'
-                                ? 'text-danger text-uppercase fw-semibold'
-                                : product.status === 'low stock'
-                                ? 'text-warning text-uppercase fw-semibold'
-                                : ''
-                            }>
-                              {product.status}
-                            </span>
-                            <PortalDropdown
-                              btnClass={styles.threeDotBtn}
-                              items={[
-                                { label: 'Edit', onClick: () => handleEditClick(product) },
-                                { divider: true },
-                                { label: 'Delete', onClick: () => handleDeleteClick(product.id), style: { color: '#dc3545', fontWeight: 600 } },
-                              ]}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <DataTable
+                    className={styles.styled_table}
+                    columns={[
+                      { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
+                      { key: 'feedName', label: 'FEED NAME' },
+                      { key: 'unit', label: 'UNIT' },
+                      { key: 'quantity', label: 'QUANTITY' },
+                      { key: 'feedType', label: 'FEED TYPE' },
+                      { key: 'threshold', label: 'THRESHOLD VALUE' },
+                      {
+                        key: 'status',
+                        label: 'STATUS',
+                        render: (value) => (
+                          <span className={
+                            value === 'in stock'
+                              ? 'text-success text-uppercase fw-semibold'
+                              : value === 'out of stock'
+                              ? 'text-danger text-uppercase fw-semibold'
+                              : value === 'low stock'
+                              ? 'text-warning text-uppercase fw-semibold'
+                              : ''
+                          }>
+                            {value}
+                          </span>
+                        ),
+                      },
+                    ]}
+                    data={currentProducts}
+                    actions={(row) => (
+                      <PortalDropdown
+                        btnClass={styles.threeDotBtn}
+                        items={[
+                          { label: 'Edit', onClick: () => handleEditClick(row) },
+                          { divider: true },
+                          { label: 'Delete', onClick: () => handleDeleteClick(row.id), style: { color: '#dc3545', fontWeight: 600 } },
+                        ]}
+                      />
+                    )}
+                  />
                 </div>
 
                 <div className="d-flex justify-content-center mt-4">

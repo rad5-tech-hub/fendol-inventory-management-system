@@ -3,11 +3,13 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../customer.module.scss';
-import { BsSearch, BsPlusLg, BsChevronDown, BsX } from "react-icons/bs";
+import { BsSearch, BsPlusLg, BsX } from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import { Alert, Modal, Button, Form } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
@@ -152,6 +154,66 @@ export default function ViewAllCustomers() {
   };
 
   const hasActiveFilters = searchQuery || selectedCategory || balanceFilter !== 'all';
+
+  const columns = [
+    {
+      key: 'createdAt',
+      label: 'DATE ADDED',
+      width: '100px',
+      render: (value) => (
+        <span style={{ color: '#8C949B', whiteSpace: 'nowrap' }}>
+          {new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </span>
+      ),
+    },
+    {
+      key: 'fullName',
+      label: 'CUSTOMER',
+      width: '26%',
+      render: (value, row, idx) => (
+        <div className="d-flex align-items-center gap-2">
+          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: AVATAR_COLORS[idx % AVATAR_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#ffffff', flexShrink: 0 }}>
+            {getInitials(row.fullName)}
+          </div>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: '#2E3135' }}>{row.fullName}</div>
+          </div>
+        </div>
+      ),
+    },
+    { key: 'category', label: 'CATEGORY', width: '18%', render: (value) => <span style={{ fontWeight: 500 }}>{value}</span> },
+    { key: 'phone', label: 'PHONE', width: '16%' },
+    {
+      key: 'balance',
+      label: 'BALANCE (₦)',
+      width: '18%',
+      align: 'right',
+      render: (value) => {
+        const bal = Number(value) || 0;
+        const displayBal = Math.abs(bal);
+        const balanceColor = bal < 0 ? '#DC2626' : bal > 0 ? '#16A34A' : '#6B7280';
+        const balanceLabel = bal < 0 ? 'Owes Us' : bal > 0 ? 'We Owe' : '';
+        return (
+          <>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: balanceColor }}>{formatCurrency(displayBal)}</div>
+            <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
+          </>
+        );
+      },
+    },
+  ];
+
+  const tableActions = (row) => (
+    <PortalDropdown
+      btnClass={styles.threeDotBtn}
+      items={[
+        { label: 'Edit', onClick: () => handleEdit(row) },
+        { label: 'Delete', onClick: () => handleDelete(row) },
+        { divider: true },
+        { label: 'View Ledger', onClick: () => navigate(`/customer/personal-ledger?id=${row.id}`) },
+      ]}
+    />
+  );
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -319,25 +381,13 @@ export default function ViewAllCustomers() {
               {/* Filters */}
               <div className="d-flex align-items-center gap-2 flex-wrap">
                 {/* Category Filter */}
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    style={{
-                      padding: '6px 28px 6px 12px', border: '1px solid #e5e7eb',
-                      borderRadius: '8px', fontSize: '13px', color: selectedCategory ? '#512728' : '#374151',
-                      fontWeight: selectedCategory ? 600 : 500, outline: 'none', cursor: 'pointer',
-                      background: selectedCategory ? '#fdf5f5' : '#ffffff',
-                      appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
-                    }}
-                  >
-                    <option value="">All Categories</option>
-                    {CATEGORY_OPTIONS.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                  <BsChevronDown style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#8C949B', pointerEvents: 'none' }} />
-                </div>
+                <CustomDropdown
+                  value={selectedCategory}
+                  onChange={(val) => setSelectedCategory(val)}
+                  options={CATEGORY_OPTIONS.map(cat => ({ value: cat, label: cat }))}
+                  placeholder="All Categories"
+                  className="w-100"
+                />
 
                 {/* Balance Filter */}
                 <div
@@ -402,76 +452,11 @@ export default function ViewAllCustomers() {
             {/* ── Table ── */}
             {!loading && !error && filteredCustomers.length > 0 && (
               <>
-                <div className="table-responsive">
-                  <table className={`table ${styles.styled_tables} mb-0`} style={{ tableLayout: 'fixed' }}>
-                    <thead className={styles.theaders}>
-                      <tr>
-                        <th style={{ width: '100px', fontSize: '11px' }}>DATE ADDED</th>
-                        <th style={{ width: '26%', fontSize: '11px' }}>CUSTOMER</th>
-                        <th style={{ width: '18%', fontSize: '11px' }}>CATEGORY</th>
-                        <th style={{ width: '16%', fontSize: '11px' }}>PHONE</th>
-                        <th style={{ width: '18%', fontSize: '11px', textAlign: 'right' }}>BALANCE (₦)</th>
-                        <th style={{ width: '50px', fontSize: '11px', textAlign: 'center' }}></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentCustomers.map((customer, idx) => {
-                        const bal = Number(customer.balance) || 0;
-                        const displayBal = Math.abs(bal);
-                        const balanceColor = bal < 0 ? '#DC2626' : bal > 0 ? '#16A34A' : '#6B7280';
-                        const balanceLabel = bal < 0 ? 'Owes Us' : bal > 0 ? 'We Owe' : '';
-                        const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-
-                        return (
-                          <tr
-                            key={customer.id}
-                            style={{ transition: 'background-color 0.12s ease', verticalAlign: 'middle' }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                          >
-                            <td style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>
-                              {new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </td>
-                            <td>
-                              <div className="d-flex align-items-center gap-2">
-                                <div
-                                  style={{
-                                    width: '34px', height: '34px', borderRadius: '50%',
-                                    background: avatarColor, display: 'flex', alignItems: 'center',
-                                    justifyContent: 'center', fontSize: '12px', fontWeight: 700,
-                                    color: '#ffffff', flexShrink: 0,
-                                  }}
-                                >
-                                  {getInitials(customer.fullName)}
-                                </div>
-                                <div>
-                                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#2E3135' }}>{customer.fullName}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>{customer.category}</td>
-                            <td style={{ fontSize: '13px', color: '#374151' }}>{customer.phone}</td>
-                            <td style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '14px', fontWeight: 700, color: balanceColor }}>{formatCurrency(displayBal)}</div>
-                              <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
-                            </td>
-                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                              <PortalDropdown
-                                btnClass={styles.threeDotBtn}
-                                items={[
-                                  { label: 'Edit', onClick: () => handleEdit(customer) },
-                                  { label: 'Delete', onClick: () => handleDelete(customer) },
-                                  { divider: true },
-                                  { label: 'View Ledger', onClick: () => navigate(`/customer/personal-ledger?id=${customer.id}`) },
-                                ]}
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={columns}
+                  data={currentCustomers}
+                  actions={tableActions}
+                />
 
                 {/* ── Pagination ── */}
                 <div className="d-flex justify-content-between align-items-center mt-3">
@@ -554,17 +539,17 @@ export default function ViewAllCustomers() {
               <Form.Group className="mb-3 row">
                 <Form.Label className="col-4 fw-semibold">Category</Form.Label>
                 <div className="col-8">
-                  <Form.Select
+                  <CustomDropdown
                     name="category"
                     value={selectedCustomer.category}
                     required
-                    onChange={handleInputChange}
-                    className="py-2 shadow-none border-secondary-subtle border-1"
-                  >
-                    <option value="">Select Category</option>
-                    <option value="Marketer">Marketer</option>
-                    <option value="Customer">Customer</option>
-                  </Form.Select>
+                    onChange={(val) => handleInputChange({ target: { name: 'category', value: val } })}
+                    options={[
+                      { value: '', label: 'Select Category' },
+                      { value: 'Marketer', label: 'Marketer' },
+                      { value: 'Customer', label: 'Customer' },
+                    ]}
+                  />
                 </div>
               </Form.Group>
             </Form>

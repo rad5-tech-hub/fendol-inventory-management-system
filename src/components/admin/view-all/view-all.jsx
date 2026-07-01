@@ -9,6 +9,7 @@ import Api from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import { Alert } from 'react-bootstrap';
 import { SkeletonTable, SkeletonFilterBar } from '../../shared/skeleton/Skeleton';
 import { FaUserPlus, FaFilter } from "react-icons/fa";
@@ -109,6 +110,50 @@ export default function ViewAll() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const columns = [
+    {
+      key: 'fullName', label: 'Full Name',
+      render: (value, _row, rowIndex) => (
+        <div className={styles.nameCell}>
+          <div className={styles.avatar} style={{ backgroundColor: avatarColors[rowIndex % avatarColors.length] }}>
+            {getInitials(value).toUpperCase()}
+          </div>
+          {value}
+        </div>
+      ),
+    },
+    { key: 'email', label: 'E-mail Address' },
+    { key: 'role', label: 'Role', render: (value, row) => formatRole(row.roleRef?.name || row.role) },
+    { key: 'UserSites', label: 'Assigned Site', render: (value) =>
+      value?.length ? value.map(us => us.Site?.name).filter(Boolean).join(', ') : '-'
+    },
+    { key: 'createdAt', label: 'Date Created', render: (value) => formatDate(value) },
+  ];
+
+  const renderActions = (admin) => (
+    <PortalDropdown
+      btnClass={styles.threeDotBtn}
+      stopPropagation
+      items={[
+        { label: 'Edit', onClick: () => navigate('/admin/add-new-admin', {
+          state: {
+            isEdit: true,
+            adminData: {
+              id: admin.id,
+              fullName: admin.fullName,
+              email: admin.email,
+              role: admin.role,
+              roleId: admin.roleRef?.id || admin.roleId || '',
+              UserSites: admin.UserSites || [],
+            }
+          }
+        })},
+        { divider: true },
+        { label: 'Delete', onClick: () => handleDelete(admin.id), style: { color: '#dc3545', fontWeight: 600 } },
+      ]}
+    />
+  );
+
   return (
     <section className={`${styles.body}`}>
       <div className="sticky-top">
@@ -158,64 +203,13 @@ export default function ViewAll() {
               </div>
             ) : (
               <>
-                <div>
-                  <table className={styles.adminTable}>
-                    <thead>
-                      <tr>
-                        <th>Full Name</th>
-                        <th>E-mail Address</th>
-                        <th>Role</th>
-                        <th>Assigned Site</th>
-                        <th>Date Created</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {displayAdmins.map((admin, index) => (
-                        <tr key={admin.id}>
-                          <td>
-                            <div className={styles.nameCell}>
-                              <div
-                                className={styles.avatar}
-                                style={{ backgroundColor: avatarColors[index % avatarColors.length] }}
-                              >
-                                {getInitials(admin.fullName).toUpperCase()}
-                              </div>
-                              {admin.fullName}
-                            </div>
-                          </td>
-                          <td>{admin.email}</td>
-                          <td>{formatRole(admin.roleRef?.name || admin.role)}</td>
-                          <td>{admin.UserSites?.length ? admin.UserSites.map(us => us.Site?.name).filter(Boolean).join(', ') : '-'}</td>
-                          <td>{formatDate(admin.createdAt)}</td>
-                          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                            <PortalDropdown
-                              btnClass={styles.threeDotBtn}
-                              stopPropagation
-                              items={[
-                                { label: 'Edit', onClick: () => navigate('/admin/add-new-admin', {
-                                  state: {
-                                    isEdit: true,
-                                    adminData: {
-                                      id: admin.id,
-                                      fullName: admin.fullName,
-                                      email: admin.email,
-                                      role: admin.role,
-                                      roleId: admin.roleRef?.id || admin.roleId || '',
-                                      UserSites: admin.UserSites || [],
-                                    }
-                                  }
-                                })},
-                                { divider: true },
-                                { label: 'Delete', onClick: () => handleDelete(admin.id), style: { color: '#dc3545', fontWeight: 600 } },
-                              ]}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={columns}
+                  data={displayAdmins}
+                  emptyMessage="No available data"
+                  className={styles.adminTable}
+                  actions={renderActions}
+                />
 
                 <div className={styles.tableFooter}>
                   <small className="text-muted">

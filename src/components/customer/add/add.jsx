@@ -5,6 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import Api from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
 
@@ -109,17 +110,17 @@ const AddCustomer = () => {
                 </Col>
                 <Col className="mb-4">
                   <Form.Label className="fw-semibold">Category</Form.Label>
-                  <Form.Select
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                  <CustomDropdown
                     name="category"
                     value={formData.category}
-                    onChange={handleInputChange}
+                    onChange={(val) => handleInputChange({ target: { name: 'category', value: val } })}
                     required
-                  >
-                    <option value="" disabled>Select Category</option>
-                    <option value="Marketer">Marketer</option>
-                    <option value="Customer">Customer</option>
-                  </Form.Select>
+                    options={[
+                      { value: '', label: 'Select Category' },
+                      { value: 'Marketer', label: 'Marketer' },
+                      { value: 'Customer', label: 'Customer' },
+                    ]}
+                  />
                 </Col>
                 <Col className="mb-4">
                   <Form.Label className="fw-semibold">Address</Form.Label>

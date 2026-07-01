@@ -14,62 +14,47 @@ import { useSelector } from 'react-redux';
 import { hasPermission } from '../../shared/permissions/permissions';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
+import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
+import DataTable from '../../shared/data-table/DataTable';
 
 const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick }) => (
-  <table className={styles.productTable}>
-    <thead>
-      <tr>
-        <th>Product Name</th>
-        <th>Category</th>
-        <th>Created By</th>
-        <th>Date Created</th>
-        <th style={{ width: '50px' }}></th>
-      </tr>
-    </thead>
-    <tbody>
-      {rows.map((product, idx) => (
-        <tr key={product.id}>
-          <td className={styles.productNameCell}>{product.productName}</td>
-          <td>{product.category?.name || '—'}</td>
-          <td>
-            {product.creator?.fullName ? (
-              <div className={styles.createdByCell}>
-                <div
-                  className={styles.createdByAvatar}
-                  style={{ background: avatarColors[idx % avatarColors.length] }}
-                >
-                  {(() => {
-                    const parts = product.creator.fullName.trim().split(' ');
-                    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
-                  })()}
-                </div>
-                <span>{product.creator.fullName}</span>
-              </div>
-            ) : '—'}
-          </td>
-          <td>
-            {(() => {
-              const date = new Date(product.createdAt);
-              return date.toLocaleDateString('en-US', {
-                month: 'short', day: 'numeric', year: 'numeric',
-              });
-            })()}
-          </td>
-          <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-            <PortalDropdown
-              btnClass={styles.threeDotBtn}
-              menuStyle={{ minWidth: 160 }}
-              items={[
-                { label: 'Edit', onClick: () => onEditClick(product) },
-                { divider: true },
-                { label: 'Delete', onClick: () => onDeleteClick(product.id), style: { color: '#dc3545', fontWeight: 600 } },
-              ]}
-            />
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
+  <DataTable
+    columns={[
+      { key: 'productName', label: 'Product Name' },
+      { key: 'category', label: 'Category', render: (v) => v?.name || '—' },
+      { key: 'creator', label: 'Created By', render: (v, row) => (
+        v?.fullName ? (
+          <div className={styles.createdByCell}>
+            <div className={styles.createdByAvatar} style={{ background: avatarColors[rows.indexOf(row) % avatarColors.length] }}>
+              {(() => {
+                const parts = v.fullName.trim().split(' ');
+                return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+              })()}
+            </div>
+            <span>{v.fullName}</span>
+          </div>
+        ) : '—'
+      )},
+      { key: 'createdAt', label: 'Date Created', render: (v) => {
+        const date = new Date(v);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }},
+    ]}
+    data={rows}
+    actions={(product) => (
+      <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'center' }}>
+        <PortalDropdown
+          btnClass={styles.threeDotBtn}
+          menuStyle={{ minWidth: 160 }}
+          items={[
+            { label: 'Edit', onClick: () => onEditClick(product) },
+            { divider: true },
+            { label: 'Delete', onClick: () => onDeleteClick(product.id), style: { color: '#dc3545', fontWeight: 600 } },
+          ]}
+        />
+      </div>
+    )}
+  />
 );
 
 export default function ViewAllProducts() {
@@ -301,16 +286,14 @@ export default function ViewAllProducts() {
             {/* ── Site type dropdown (only in by-site-type mode) ── */}
             {canAssignSite && viewMode === 'by-site-type' && (
               <div className={styles.filterBar}>
-                <select
-                  className={`form-select ${styles.filterSelect}`}
+                <CustomDropdown
+                  options={[
+                    { value: '', label: 'All Site Types' },
+                    ...siteTypes.map(st => ({ value: st.name, label: st.name })),
+                  ]}
                   value={selectedSiteTypeFilter}
-                  onChange={(e) => setSelectedSiteTypeFilter(e.target.value)}
-                >
-                  <option value="">All Site Types</option>
-                  {siteTypes.map(st => (
-                    <option key={st.id} value={st.name}>{st.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedSiteTypeFilter(val)}
+                />
               </div>
             )}
 
@@ -480,16 +463,15 @@ export default function ViewAllProducts() {
                   <Form.Group className="mb-3 row">
                     <Form.Label className="col-4 fw-semibold">Unit</Form.Label>
                     <div className="col-8">
-                      <Form.Select
-                        name="unit"
+                      <CustomDropdown
+                        options={[
+                          { value: 'KG', label: 'Kilogram' },
+                          { value: 'G', label: 'Gram' },
+                        ]}
                         value={selectedProduct.unit}
-                        onChange={handleInputChange}
-                        className="py-2 shadow-none border-secondary-subtle border-1"
-                      >
-                        <option value="" disabled>Select Unit</option>
-                        <option value="KG">Kilogram</option>
-                        <option value="G">Gram</option>
-                      </Form.Select>
+                        onChange={(val) => handleInputChange({ target: { name: 'unit', value: val } })}
+                        placeholder="Select Unit"
+                      />
                     </div>
                   </Form.Group>
 

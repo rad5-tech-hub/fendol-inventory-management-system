@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { FiDownload, FiPlus, FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight, FiEdit2, FiAlertTriangle } from 'react-icons/fi';
 import { BsEye, BsBoxSeam } from 'react-icons/bs';
 import { IoChevronDown } from 'react-icons/io5';
@@ -10,10 +9,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
+import DataTable from "../../shared/data-table/DataTable";
 import { ApiV2 } from '../../shared/api/apiLink';
 import feedStyles from '../feed.module.scss';
 import styles from './raw-material-inventory.module.scss';
 import AddRawMaterialModal from './AddRawMaterialModal';
+import RawMaterialDetailSidebar from './RawMaterialDetailSidebar';
 
 const formatCurrency = (n) =>
   '\u20A6' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -33,7 +34,6 @@ const formatDate = (dateStr) => {
 };
 
 export default function RawMaterialInventory() {
-  const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editMaterial, setEditMaterial] = useState(null);
@@ -41,6 +41,7 @@ export default function RawMaterialInventory() {
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [detailMaterial, setDetailMaterial] = useState(null);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -90,7 +91,7 @@ export default function RawMaterialInventory() {
   const getActionItems = (material) => [
     {
       label: <><BsEye size={14} style={{ marginRight: 10 }} /> View Details</>,
-      onClick: () => navigate(`/feed/raw-materials/${encodeURIComponent(material.name)}`),
+      onClick: () => setDetailMaterial(material),
     },
     {
       label: <><FiEdit2 size={14} style={{ marginRight: 10 }} /> Edit</>,
@@ -219,103 +220,60 @@ export default function RawMaterialInventory() {
 
             <div className={styles.tableCard}>
               <div className={styles.tableWrapper}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Material Name</th>
-                      <th>Category</th>
-                      <th>Unit</th>
-                      <th>Quantity in Stock</th>
-                      <th>Unit Cost (₦)</th>
-                      <th>Stock Value (₦)</th>
-                      <th>Status</th>
-                      <th>Last Updated</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={9} style={{ textAlign: 'center', padding: '40px 12px', color: '#9CA3AF' }}>
-                          Loading raw materials...
-                        </td>
-                      </tr>
-                    ) : fetchError ? (
-                      <tr>
-                        <td colSpan={9} style={{ textAlign: 'center', padding: '32px 12px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                            <FiAlertTriangle size={24} color="#DC2626" />
-                            <span style={{ color: '#6B7280', fontSize: 14 }}>{fetchError}</span>
-                            <button
-                              onClick={fetchMaterials}
-                              style={{
-                                padding: '8px 20px',
-                                borderRadius: 8,
-                                border: '1px solid #D1D5DB',
-                                background: '#fff',
-                                color: '#374151',
-                                fontSize: 13,
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                fontFamily: 'inherit',
-                              }}
-                            >
-                              Try Again
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : materials.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} style={{ textAlign: 'center', padding: '40px 12px', color: '#9CA3AF' }}>
-                          No raw materials found. Click "Add Raw Material" to create one.
-                        </td>
-                      </tr>
-                    ) : (
-                      materials.map((m) => {
-                        const qty = Number(m.quantity);
-                        const cost = Number(m.unitCost);
-                        const total = qty * cost;
-                        const statusCfg = STATUS_CONFIG[m.status] || { label: m.status, className: 'statusInStock' };
-
-                        return (
-                          <tr key={m.id}>
-                            <td>
-                              <div className={styles.materialNameCell}>
-                                <span className={styles.materialName}>{m.name}</span>
-                              </div>
-                            </td>
-                            <td className={styles.bodySecondary}>{m.category}</td>
-                            <td>{m.unit}</td>
-                            <td>{f(qty)}</td>
-                            <td>{formatCurrency(cost)}</td>
-                            <td className={styles.stockValueCell}>{formatCurrency(total)}</td>
-                            <td>
-                              <span className={`${styles.statusPill} ${styles[statusCfg.className]}`}>
-                                {statusCfg.label}
-                              </span>
-                            </td>
-                            <td className={styles.bodySecondary}>{formatDate(m.updatedAt)}</td>
-                            <td>
-                              <PortalDropdown
-                                btnClass={feedStyles.threeDotBtn}
-                                menuStyle={{
-                                  background: '#fff',
-                                  color: '#374151',
-                                  border: '1px solid #E5E7EB',
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                  borderRadius: 8,
-                                  padding: '4px 0',
-                                }}
-                                items={getActionItems(m)}
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                <DataTable
+                  className={styles.table}
+                  columns={[
+                    {
+                      key: 'name',
+                      label: 'Material Name',
+                      render: (value) => (
+                        <div className={styles.materialNameCell}>
+                          <span className={styles.materialName}>{value}</span>
+                        </div>
+                      ),
+                    },
+                    { key: 'category', label: 'Category', render: (value) => <span className={styles.bodySecondary}>{value}</span> },
+                    { key: 'unit', label: 'Unit' },
+                    { key: 'quantity', label: 'Quantity in Stock', render: (value) => f(Number(value)) },
+                    { key: 'unitCost', label: 'Unit Cost (₦)', render: (value) => formatCurrency(Number(value)) },
+                    {
+                      key: 'stockValue',
+                      label: 'Stock Value (₦)',
+                      render: (_, row) => {
+                        const qty = Number(row.quantity);
+                        const cost = Number(row.unitCost);
+                        return <span className={styles.stockValueCell}>{formatCurrency(qty * cost)}</span>;
+                      },
+                    },
+                    {
+                      key: 'status',
+                      label: 'Status',
+                      render: (value) => {
+                        const statusCfg = STATUS_CONFIG[value] || { label: value, className: 'statusInStock' };
+                        return <span className={`${styles.statusPill} ${styles[statusCfg.className]}`}>{statusCfg.label}</span>;
+                      },
+                    },
+                    { key: 'updatedAt', label: 'Last Updated', render: (value) => <span className={styles.bodySecondary}>{formatDate(value)}</span> },
+                  ]}
+                  data={materials}
+                  loading={loading}
+                  error={fetchError || ''}
+                  emptyMessage='No raw materials found. Click "Add Raw Material" to create one.'
+                  actions={(m) => (
+                    <PortalDropdown
+                      btnClass={feedStyles.threeDotBtn}
+                      menuStyle={{
+                        background: '#fff',
+                        color: '#374151',
+                        border: '1px solid #E5E7EB',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        borderRadius: 8,
+                        padding: '4px 0',
+                      }}
+                      items={getActionItems(m)}
+                    />
+                  )}
+                />
               </div>
 
               <div className={styles.tableFooter}>
@@ -351,6 +309,11 @@ export default function RawMaterialInventory() {
         editData={editMaterial}
         onClose={() => { setShowAddModal(false); setEditMaterial(null); }}
         onSuccess={handleCreated}
+      />
+
+      <RawMaterialDetailSidebar
+        material={detailMaterial}
+        onClose={() => setDetailMaterial(null)}
       />
     </section>
   );

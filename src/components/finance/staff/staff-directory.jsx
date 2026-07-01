@@ -8,6 +8,8 @@ import Header from '../../shared/header/header';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import styles from './staff-directory.module.scss';
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
@@ -199,41 +201,28 @@ export default function StaffDirectory() {
   };
 
   const renderTable = (rows) => (
-    <table className={styles.staffTable}>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Staff Name</th>
-          <th>Role</th>
-          <th>Site</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((s, idx) => (
-          <tr key={s.id || idx}>
-            <td style={{ color: '#8C949B', fontSize: 13 }}>{formatDate(s.createdAt)}</td>
-            <td>
-              <div className={styles.nameCell}>
-                <div
-                  className={styles.avatar}
-                  style={{ background: AVATAR_COLORS[idx % AVATAR_COLORS.length] }}
-                >
-                  {getInitials(s.name)}
-                </div>
-                <span>{s.name}</span>
-              </div>
-            </td>
-            <td><span className={styles.rolePill}>{s.role}</span></td>
-            <td>
-              <span className={styles.sitePill}>
-                <FaMapMarkerAlt size={10} />
-                {s._siteName || '\u2014'}
-              </span>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable
+      className={styles.staffTable}
+      columns={[
+        { key: 'createdAt', label: 'Date', render: (val) => <span style={{ color: '#8C949B', fontSize: 13 }}>{formatDate(val)}</span> },
+        { key: 'name', label: 'Staff Name', render: (val, row, idx) => (
+          <div className={styles.nameCell}>
+            <div className={styles.avatar} style={{ background: AVATAR_COLORS[idx % AVATAR_COLORS.length] }}>
+              {getInitials(val)}
+            </div>
+            <span>{val}</span>
+          </div>
+        )},
+        { key: 'role', label: 'Role', render: (val) => <span className={styles.rolePill}>{val}</span> },
+        { key: '_siteName', label: 'Site', render: (val) => (
+          <span className={styles.sitePill}>
+            <FaMapMarkerAlt size={10} />
+            {val || '\u2014'}
+          </span>
+        )},
+      ]}
+      data={rows}
+    />
   );
 
   const renderEmpty = (msg = 'No staff found.') => (
@@ -490,20 +479,17 @@ export default function StaffDirectory() {
                       <label className={styles.formLabel}>
                         Assign Site <span className={styles.required}>*</span>
                       </label>
-                      <select
+                      <CustomDropdown
                         className={`${styles.formSelect} ${formErrors.siteId ? styles.formInputError : ''}`}
                         value={form.siteId}
-                        onChange={(e) => {
-                          setForm({ ...form, siteId: e.target.value });
+                        onChange={(val) => {
+                          setForm({ ...form, siteId: val });
                           if (formErrors.siteId) setFormErrors({ ...formErrors, siteId: undefined });
                         }}
                         disabled={modalLoading || sites.length === 0}
-                      >
-                        <option value="">{sites.length === 0 ? 'No sites available' : 'Select a site'}</option>
-                        {sites.map((site) => (
-                          <option key={site.id} value={site.id}>{site.name}</option>
-                        ))}
-                      </select>
+                        placeholder={sites.length === 0 ? 'No sites available' : 'Select a site'}
+                        options={sites.map((site) => ({ value: site.id, label: site.name }))}
+                      />
                       {formErrors.siteId && <div className={styles.fieldError}><FaExclamationCircle /> {formErrors.siteId}</div>}
                     </div>
                   )}

@@ -75,6 +75,19 @@
   margin-bottom: 4px;
 }
 
+.incomingBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  background: #F3F0F0;
+  color: #512728;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
 .headingSubtitle {
   font-size: 0.85rem;
   color: #8C949B;

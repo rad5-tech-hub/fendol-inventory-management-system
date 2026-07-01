@@ -7,6 +7,7 @@ import { Alert } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from 'react-paginate';
 import Api from '../../shared/api/apiLink';
+import DataTable from "../../shared/data-table/DataTable";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 export default function InventoryHistory() {
@@ -118,49 +119,30 @@ export default function InventoryHistory() {
               </div>
             ) : (
               <>
-                <div className={styles.tableWrapper}>
-                  <table className={styles.styled_table}>
-                    <thead>
-                      <tr>
-                        <th>DATE CREATED</th>
-                        <th>NAME</th>
-                        <th>POND</th>
-                        <th>QUANTITY <br /> ADDED (KG)</th>
-                        <th>QUANTITY <br /> USED (KG)</th>
-                        <th>QUANTITY <br /> REMAINING (KG)</th>
-                        <th>STATUS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedData.map((history, index) => {
-                        const formattedDate = formatDate(history.createdAt);
-                        return (
-                          <tr key={index}>
-                            <td>{formattedDate}</td>
-                            <td>{history.storeDetails.name}</td>
-                            <td>{history.stage || '-'}</td>
-                            <td>{history.stage === null ? history.storeDetails.originalQuantity : '-'}</td>
-                            <td>{history.quantityUsed || '-'}</td>
-                            <td>{history.remainingStock}</td>
-                            <td className="text-uppercase fw-semibold d-flex">
-                              <span className={
-                                history.status === 'in stock' 
-                                  ? 'text-success' 
-                                  : history.status === 'out of stock' 
-                                  ? 'text-danger' 
-                                  : history.status === 'low stock' 
-                                  ? 'text-warning' 
-                                  : ''
-                              }>
-                                {history.status}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={[
+                    { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
+                    { key: 'storeName', label: 'NAME', render: (_, row) => row.storeDetails?.name },
+                    { key: 'stage', label: 'POND', render: (value) => value || '-' },
+                    { key: 'quantityAdded', label: 'QUANTITY ADDED (KG)', render: (_, row) => row.stage === null ? row.storeDetails.originalQuantity : '-' },
+                    { key: 'quantityUsed', label: 'QUANTITY USED (KG)', render: (value) => value || '-' },
+                    { key: 'remainingStock', label: 'QUANTITY REMAINING (KG)' },
+                    { key: 'status', label: 'STATUS', render: (value) => (
+                      <span className={`text-uppercase fw-semibold ${
+                        value === 'in stock' 
+                          ? 'text-success' 
+                          : value === 'out of stock' 
+                          ? 'text-danger' 
+                          : value === 'low stock' 
+                          ? 'text-warning' 
+                          : ''
+                      }`}>
+                        {value}
+                      </span>
+                    )},
+                  ]}
+                  data={paginatedData}
+                />
                 <div className="d-flex justify-content-center mt-4">
                   <ReactPaginate
                     previousLabel={"<"}

@@ -7,6 +7,7 @@ import { Alert, Button, Modal, Form } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -160,6 +161,12 @@ export default function ViewBrokenHistory() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const columns = [
+    { key: 'createdAt', label: 'DATE & TIME', render: (value) => formatDate(value) },
+    { key: 'description', label: 'DESCRIPTION', render: (value) => <span title={value}>{value}</span> },
+    { key: 'quantity', label: 'QUANTITY', align: 'right' },
+  ];
+
   return (
     <section className={`${styles.body}`}>
       <div className="sticky-top">
@@ -224,33 +231,13 @@ export default function ViewBrokenHistory() {
                 </Alert>
               </div>
             ) : (
-              <div className="table-responsive">
-                <table className={`${styles.styled_table} table table-striped w-100`}>
-                  <thead className={`rounded-2 ${styles.theader}`}>
-                    <tr>
-                      <th scope="col">DATE & TIME</th>
-                      <th scope="col">DESCRIPTION</th>
-                      <th scope="col" className="text-end pe-4">QUANTITY</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.length > 0 ? (
-                      paginatedData.map((data, index) => (
-                        <tr key={index}>
-                          <td>{formatDate(data.createdAt)}</td> {/* Assuming createdAt exists */}
-                          <td title={data.description}>{data.description}</td>
-                          <td className="text-end pe-4">{data.quantity}</td> {/* Adjust based on actual field */}
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="3" className="text-center">
-                          No broken history available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <>
+                <DataTable
+                  columns={columns}
+                  data={paginatedData}
+                  emptyMessage="No broken history available"
+                  className={`${styles.styled_table} table table-striped w-100`}
+                />
 
                 <div className="d-flex justify-content-center mt-4">
                   <ReactPaginate
@@ -273,7 +260,7 @@ export default function ViewBrokenHistory() {
                     activeClassName={"active"}
                   />
                 </div>
-              </div>
+              </>
             )}
           </main>
         </section>

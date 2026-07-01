@@ -3,6 +3,8 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../site-management.module.scss';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import {
   BsBuildings,
   BsFillDropletFill,
@@ -181,6 +183,73 @@ const SitePerformance = () => {
   const toggleSidebar     = () => setShowSidebar((p) => !p);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const siteTypeOptions = [
+    { value: '', label: 'All Site Types' },
+    { value: 'Main Farm', label: 'Main Farm' },
+    { value: 'Hatchery', label: 'Hatchery' },
+  ];
+
+  const tableColumns = [
+    { key: 'name', label: 'Site Name' },
+    {
+      key: 'type', label: 'Site Type',
+      render: (value) => {
+        const isMainFarm = value === 'Main Farm';
+        return (
+          <span style={{
+            display: 'inline-block', padding: '3px 10px', borderRadius: '100px',
+            fontSize: '0.75rem', fontWeight: 600,
+            backgroundColor: isMainFarm ? '#FFF0E8' : '#EFF6FF',
+            color: isMainFarm ? '#E87722' : '#2563EB',
+          }}>{value}</span>
+        );
+      },
+    },
+    { key: 'fishStock', label: 'Fish Stock (pcs)', render: (value) => fmt(value) },
+    { key: 'biomass', label: 'Biomass (kg)', render: (value) => fmt(value) },
+    {
+      key: 'survivalRate', label: 'Survival Rate (%)',
+      render: (value) =>
+        value != null ? (
+          <span style={{ fontWeight: 600, color: value >= 85 ? '#16A34A' : '#D97706' }}>
+            {fmtPct(value)}
+          </span>
+        ) : <span style={{ color: '#9CA3AF' }}>--</span>,
+    },
+    { key: 'mortality', label: 'Mortality (pcs)', render: (value) => fmt(value) },
+    { key: 'fcr', label: 'FCR', render: (value) => (value != null ? value.toFixed(2) : '--') },
+    { key: 'revenue', label: 'Revenue (₦)', render: (value) => fmtN(value) },
+    {
+      key: 'status', label: 'Status',
+      render: (value) => (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: '5px',
+          padding: '3px 10px', borderRadius: '100px',
+          fontSize: '0.75rem', fontWeight: 600,
+          backgroundColor: '#F0FDF4', color: '#16A34A',
+        }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16A34A', flexShrink: 0 }} />
+          {value}
+        </span>
+      ),
+    },
+  ];
+
+  const renderActions = (site) => (
+    <button
+      title="View site details"
+      style={{
+        background: 'none', border: 'none', cursor: 'pointer',
+        color: '#6B7280', padding: '4px 6px', borderRadius: '6px',
+        transition: 'color 0.15s, background 0.15s',
+      }}
+      onMouseOver={(e) => { e.currentTarget.style.color = '#2563EB'; e.currentTarget.style.background = '#EFF6FF'; }}
+      onMouseOut={(e) => { e.currentTarget.style.color = '#6B7280'; e.currentTarget.style.background = 'none'; }}
+    >
+      <BsEye size={16} />
+    </button>
+  );
+
   /* ── Stat card meta ──────────────────── */
   const statCards = [
     {
@@ -277,44 +346,12 @@ const SitePerformance = () => {
               {/* Controls row */}
               <div className="d-flex flex-wrap gap-2 align-items-center">
                 {/* Site type filter */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '8px',
-                    background: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '0.82rem',
-                    color: '#374151',
-                    fontWeight: 500,
-                    minWidth: '150px',
-                  }}
-                >
-                  <select
-                    value={siteFilter}
-                    onChange={(e) => { setSiteFilter(e.target.value); setCurrentPage(0); }}
-                    style={{
-                      border: 'none',
-                      outline: 'none',
-                      background: 'transparent',
-                      fontSize: '0.82rem',
-                      color: '#374151',
-                      fontWeight: 500,
-                      flex: 1,
-                      cursor: 'pointer',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                    }}
-                  >
-                    <option value="">All Site Types</option>
-                    <option value="Main Farm">Main Farm</option>
-                    <option value="Hatchery">Hatchery</option>
-                  </select>
-                  <BsChevronDown size={12} color="#9CA3AF" />
-                </div>
+                <CustomDropdown
+                  options={siteTypeOptions}
+                  value={siteFilter}
+                  onChange={(val) => { setSiteFilter(val); setCurrentPage(0); }}
+                  placeholder="All Site Types"
+                />
 
                 {/* Date range display */}
                 <div
@@ -620,167 +657,12 @@ const SitePerformance = () => {
                 </p>
               </div>
 
-              <div className={styles.table_wrap}>
-                <table
-                  className="table table-hover mb-0"
-                  style={{ fontSize: '0.855rem', minWidth: '900px' }}
-                >
-                  <thead style={{ backgroundColor: '#F9FAFB' }}>
-                    <tr>
-                      {[
-                        'Site Name',
-                        'Site Type',
-                        'Fish Stock (pcs)',
-                        'Biomass (kg)',
-                        'Survival Rate (%)',
-                        'Mortality (pcs)',
-                        'FCR',
-                        'Revenue (₦)',
-                        'Status',
-                        'Action',
-                      ].map((col) => (
-                        <th
-                          key={col}
-                          className="py-3 px-3 border-0 fw-semibold"
-                          style={{
-                            color: '#6B7280',
-                            fontSize: '0.75rem',
-                            letterSpacing: '0.03em',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {col}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayedSites.map((site) => {
-                      const isMainFarm = site.type === 'Main Farm';
-                      return (
-                        <tr key={site.id} style={{ borderTop: '1px solid #F5F5F5' }}>
-                          {/* Site Name */}
-                          <td className="py-3 px-3 align-middle fw-semibold" style={{ color: '#111827' }}>
-                            {site.name}
-                          </td>
-
-                          {/* Site Type badge */}
-                          <td className="py-3 px-3 align-middle">
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                padding: '3px 10px',
-                                borderRadius: '100px',
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                backgroundColor: isMainFarm ? '#FFF0E8' : '#EFF6FF',
-                                color:           isMainFarm ? '#E87722' : '#2563EB',
-                              }}
-                            >
-                              {site.type}
-                            </span>
-                          </td>
-
-                          {/* Fish Stock */}
-                          <td className="py-3 px-3 align-middle" style={{ color: '#374151' }}>
-                            {fmt(site.fishStock)}
-                          </td>
-
-                          {/* Biomass */}
-                          <td className="py-3 px-3 align-middle" style={{ color: '#374151' }}>
-                            {fmt(site.biomass)}
-                          </td>
-
-                          {/* Survival Rate */}
-                          <td className="py-3 px-3 align-middle">
-                            {site.survivalRate != null ? (
-                              <span
-                                style={{
-                                  fontWeight: 600,
-                                  color: site.survivalRate >= 85 ? '#16A34A' : '#D97706',
-                                }}
-                              >
-                                {fmtPct(site.survivalRate)}
-                              </span>
-                            ) : (
-                              <span style={{ color: '#9CA3AF' }}>--</span>
-                            )}
-                          </td>
-
-                          {/* Mortality */}
-                          <td className="py-3 px-3 align-middle" style={{ color: '#374151' }}>
-                            {fmt(site.mortality)}
-                          </td>
-
-                          {/* FCR */}
-                          <td className="py-3 px-3 align-middle" style={{ color: '#374151' }}>
-                            {site.fcr != null ? site.fcr.toFixed(2) : '--'}
-                          </td>
-
-                          {/* Revenue */}
-                          <td className="py-3 px-3 align-middle fw-semibold" style={{ color: '#111827' }}>
-                            {fmtN(site.revenue)}
-                          </td>
-
-                          {/* Status */}
-                          <td className="py-3 px-3 align-middle">
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                padding: '3px 10px',
-                                borderRadius: '100px',
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                backgroundColor: '#F0FDF4',
-                                color: '#16A34A',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  width: '6px',
-                                  height: '6px',
-                                  borderRadius: '50%',
-                                  backgroundColor: '#16A34A',
-                                  flexShrink: 0,
-                                }}
-                              />
-                              {site.status}
-                            </span>
-                          </td>
-
-                          {/* Action */}
-                          <td className="py-3 px-3 align-middle text-center">
-                            <button
-                              title="View site details"
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                color: '#6B7280',
-                                padding: '4px 6px',
-                                borderRadius: '6px',
-                                transition: 'color 0.15s, background 0.15s',
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.color = '#2563EB';
-                                e.currentTarget.style.background = '#EFF6FF';
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.color = '#6B7280';
-                                e.currentTarget.style.background = 'none';
-                              }}
-                            >
-                              <BsEye size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                columns={tableColumns}
+                data={displayedSites}
+                className={styles.table_wrap}
+                actions={renderActions}
+              />
 
               {/* Pagination row */}
               <div

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Pagination, Form } from 'react-bootstrap';
+import { Pagination } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -14,6 +14,8 @@ import { FaCheckCircle, FaSkull, FaDollarSign } from 'react-icons/fa';
 import { GiCirclingFish, GiCannedFish } from 'react-icons/gi';
 import { MdOutlinePointOfSale } from 'react-icons/md';
 import { BsThreeDotsVertical } from 'react-icons/bs';
+import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
+import DataTable from '../../shared/data-table/DataTable';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { SkeletonTable, SkeletonStatGrid } from '../../shared/skeleton/Skeleton';
@@ -184,17 +186,27 @@ export default function BatchDashboard() {
                     <IoSearchOutline size={16} className={styles.searchIcon} />
                   </div>
                   <div className={styles.filterSelect}>
-                    <Form.Select value={stageFilter} onChange={(e) => setStageFilter(e.target.value)}>
-                      <option value="">All Stages</option>
-                      {stages.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </Form.Select>
+                    <CustomDropdown
+                      options={[
+                        { value: '', label: 'All Stages' },
+                        ...stages.map((s) => ({ value: s, label: s })),
+                      ]}
+                      value={stageFilter}
+                      onChange={setStageFilter}
+                      placeholder="All Stages"
+                    />
                   </div>
                   <div className={styles.filterSelect}>
-                    <Form.Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                      <option value="">All Statuses</option>
-                      <option value="Active">Active</option>
-                      <option value="Completed">Completed</option>
-                    </Form.Select>
+                    <CustomDropdown
+                      options={[
+                        { value: '', label: 'All Statuses' },
+                        { value: 'Active', label: 'Active' },
+                        { value: 'Completed', label: 'Completed' },
+                      ]}
+                      value={statusFilter}
+                      onChange={setStatusFilter}
+                      placeholder="All Statuses"
+                    />
                   </div>
                   <button className={styles.filterBtn} onClick={() => {}}>
                     <IoFilterOutline size={16} /> Filters
@@ -204,64 +216,29 @@ export default function BatchDashboard() {
                   </button>
                 </div>
 
-                <div className={styles.tableWrapper}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th className="text-start">Batch Number</th>
-                        <th className="text-start">Date Created <span style={{ cursor: 'pointer' }}>↕</span></th>
-                        <th className="text-start">Descriptions</th>
-                        <th className="text-start">Current Stage</th>
-                        <th className="text-end">Fish Stocks</th>
-                        <th className="text-end">Processed</th>
-                        <th className="text-end">Harvested</th>
-                        <th className="text-end">Mortality</th>
-                        <th className="text-start">Status</th>
-                        <th className="text-start">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredData.length === 0 ? (
-                        <tr>
-                          <td colSpan={10} className="text-center py-4" style={{ color: '#8C949B', fontWeight: 600 }}>
-                            No batches found.
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredData.map((batch, idx) => {
-                          const batchId = batch.batchNumber || batch.id || idx;
-                          return (
-                            <tr key={batch.batchNumber || batch.id || idx}>
-                              <td style={{ fontWeight: 600 }} className="text-start">
-                                FDL-BT-{String(batch.batchNumber).padStart(4, '0')}
-                              </td>
-                              <td style={{ fontSize: '0.82rem', color: '#8C949B' }} className="text-start">
-                                {formatDate(batch.createdAt)}
-                              </td>
-                              <td className="text-start" style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {batch.comments || '—'}
-                              </td>
-                              <td className="text-start"><StageBadge stage={batch.currentStage} /></td>
-                              <td className="text-end">{f(totalFish(batch.fishStocks))}</td>
-                              <td className="text-end">{f(totalProcessed(batch.fishProcesses))}</td>
-                              <td className="text-end">{f(totalHarvested(batch.harvestLogs))}</td>
-                              <td className={`text-end ${styles.mortalityValue}`}>{f(totalDamaged(batch.damagedFish))}</td>
-                              <td className="text-start"><StatusBadge completed={!!batch.endDate} /></td>
-                              <td className="text-start">
-                                <div className={styles.actionsCell}>
-                                  <button className={styles.viewBtn} onClick={() => navigate(`/batch-dashboard/summary/${batch.batchNumber}`)}>
-                                    View Summary
-                                  </button>
-                                  <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={[
+                    { key: 'batchNumber', label: 'Batch Number', render: (value) => <span style={{ fontWeight: 600 }}>FDL-BT-{String(value).padStart(4, '0')}</span> },
+                    { key: 'createdAt', label: 'Date Created', render: (value) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{formatDate(value)}</span> },
+                    { key: 'comments', label: 'Descriptions', render: (value) => <span style={{ maxWidth: '200px', display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value || '—'}</span> },
+                    { key: 'currentStage', label: 'Current Stage', render: (value) => <StageBadge stage={value} /> },
+                    { key: 'fishStocks', label: 'Fish Stocks', align: 'right', render: (value) => f(totalFish(value)) },
+                    { key: 'fishProcesses', label: 'Processed', align: 'right', render: (value) => f(totalProcessed(value)) },
+                    { key: 'harvestLogs', label: 'Harvested', align: 'right', render: (value) => f(totalHarvested(value)) },
+                    { key: 'damagedFish', label: 'Mortality', align: 'right', render: (value) => <span className={styles.mortalityValue}>{f(totalDamaged(value))}</span> },
+                    { key: 'endDate', label: 'Status', render: (value) => <StatusBadge completed={!!value} /> },
+                  ]}
+                  data={filteredData}
+                  emptyMessage="No batches found."
+                  actions={(row) => (
+                    <div className={styles.actionsCell}>
+                      <button className={styles.viewBtn} onClick={() => navigate(`/batch-dashboard/summary/${row.batchNumber}`)}>
+                        View Summary
+                      </button>
+                      <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
+                    </div>
+                  )}
+                />
 
                 {hasMore && (
                   <div className="text-center mt-3">

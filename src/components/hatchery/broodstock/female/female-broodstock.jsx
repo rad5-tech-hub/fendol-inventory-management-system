@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Pagination } from 'react-bootstrap';
+import { Pagination } from 'react-bootstrap';
+import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../../shared/data-table/DataTable";
 import { toast } from 'react-toastify';
 import { IoSearchOutline, IoFilterOutline, IoRefreshOutline, IoDownloadOutline } from 'react-icons/io5';
 import { FaVenus, FaCheckCircle, FaClock, FaHeart, FaArchive, FaEye } from 'react-icons/fa';
@@ -108,19 +110,22 @@ export default function FemaleBroodstock() {
                 <IoSearchOutline size={16} className={styles.searchIcon} />
               </div>
               <div className={styles.filterSelect}>
-                <Form.Select>
-                  <option>All Statuses</option>
-                </Form.Select>
+                <CustomDropdown
+                  options={[{ value: '', label: 'All Statuses' }]}
+                  placeholder="All Statuses"
+                />
               </div>
               <div className={styles.filterSelect}>
-                <Form.Select>
-                  <option>All Age Groups</option>
-                </Form.Select>
+                <CustomDropdown
+                  options={[{ value: '', label: 'All Age Groups' }]}
+                  placeholder="All Age Groups"
+                />
               </div>
               <div className={styles.filterSelect}>
-                <Form.Select>
-                  <option>All Usage</option>
-                </Form.Select>
+                <CustomDropdown
+                  options={[{ value: '', label: 'All Usage' }]}
+                  placeholder="All Usage"
+                />
               </div>
               <button className={styles.filterBtn} onClick={() => {}}>
                 <IoFilterOutline size={16} /> Filters
@@ -130,48 +135,24 @@ export default function FemaleBroodstock() {
               </button>
             </div>
 
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th className="text-start">ID / Tag No.</th>
-                    <th className="text-start">Weight (kg)</th>
-                    <th className="text-start">Age (Years)</th>
-                    <th className="text-start">Last Strip Date</th>
-                    <th className="text-start">Usage Count</th>
-                    <th className="text-start">Status</th>
-                    <th className="text-start">Notes</th>
-                    <th className="text-start">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => {
-                    const ss = statusStyle(row.status);
-                    return (
-                      <tr key={row.id}>
-                        <td className="text-start">
-                          <span className={styles.broodstockIdLink} onClick={() => {}}>{row.id}</span>
-                        </td>
-                        <td className="text-start">{row.weight.toFixed(2)}</td>
-                        <td className="text-start">{row.age.toFixed(1)}</td>
-                        <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.lastSpawn}</td>
-                        <td className="text-start">{row.usageCount}</td>
-                        <td className="text-start">
-                          <span className={styles.statusBadge} style={{ background: ss.bg, color: ss.color }}>{row.status}</span>
-                        </td>
-                        <td className="text-start" style={{ fontSize: '0.82rem', color: '#6B7280' }}>{row.notes}</td>
-                        <td className="text-start">
-                          <div className={styles.actionsCell}>
-                            <button className={styles.eyeBtn} onClick={() => {}}><FaEye size={16} /></button>
-                            <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={[
+                { key: 'id', label: 'ID / Tag No.', render: (v) => <span className={styles.broodstockIdLink} onClick={() => {}}>{v}</span> },
+                { key: 'weight', label: 'Weight (kg)', render: (v) => Number(v).toFixed(2) },
+                { key: 'age', label: 'Age (Years)', render: (v) => Number(v).toFixed(1) },
+                { key: 'lastSpawn', label: 'Last Strip Date', render: (v) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{v}</span> },
+                { key: 'usageCount', label: 'Usage Count' },
+                { key: 'status', label: 'Status', render: (v) => { const ss = statusStyle(v); return <span className={styles.statusBadge} style={{ background: ss.bg, color: ss.color }}>{v}</span>; } },
+                { key: 'notes', label: 'Notes', render: (v) => <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{v}</span> },
+              ]}
+              data={rows}
+              actions={() => (
+                <div className={styles.actionsCell}>
+                  <button className={styles.eyeBtn} onClick={() => {}}><FaEye size={16} /></button>
+                  <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
+                </div>
+              )}
+            />
 
             <div className={styles.paginationRow}>
               <span className={styles.paginationInfo}>Showing 1 to 8 of 38 females</span>
@@ -189,11 +170,14 @@ export default function FemaleBroodstock() {
                   <Pagination.Next />
                   <Pagination.Last />
                 </Pagination>
-                <Form.Select style={{ width: 120, fontSize: '0.85rem' }}>
-                  <option>10 / page</option>
-                  <option>25 / page</option>
-                  <option>50 / page</option>
-                </Form.Select>
+                <CustomDropdown
+                  options={[
+                    { value: '10', label: '10 / page' },
+                    { value: '25', label: '25 / page' },
+                    { value: '50', label: '50 / page' },
+                  ]}
+                  placeholder="10 / page"
+                />
               </div>
             </div>
           </main>

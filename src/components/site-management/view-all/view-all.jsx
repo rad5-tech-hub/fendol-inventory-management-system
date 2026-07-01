@@ -11,6 +11,7 @@ import ReactPaginate from 'react-paginate';
 import { ToastContainer } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import DataTable from "../../shared/data-table/DataTable";
 
 const typeBadgeStyle = (type) => {
   const map = {
@@ -145,63 +146,51 @@ const ViewAllSites = () => {
 
             {!loading && !error && displayedSites.length > 0 && (
               <>
-                <div>
-                  <table className={`${styles.styled_table} ${styles.viewSitesTable}`}>
-                    <thead>
-                      <tr>
-                        <th>SITE NAME</th>
-                        <th>TYPE</th>
-                        <th>ADDRESS</th>
-                        <th>MANAGERS</th>
-                        <th>CONTACT</th>
-                        <th>ACTIONS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {displayedSites.map((site) => (
-                        <tr key={site.id} style={{ cursor: 'pointer' }} onClick={() => handleRowClick(site)}>
-                          <td>{site.name}</td>
-                          <td>
-                            <span
-                              style={{
-                                ...typeBadgeStyle(site.type?.name || site.description),
-                                padding: '2px 10px',
-                                borderRadius: '12px',
-                                fontSize: '0.8rem',
-                                fontWeight: 500,
-                                display: 'inline-block',
-                              }}
-                            >
-                              {site.type?.name || site.description}
-                            </span>
-                          </td>
-                          <td>{site.location}</td>
-                          <td>
-                            {site.userSites?.length > 0 ? (
-                              <span>{site.userSites.length} {site.userSites.length === 1 ? 'Admin' : 'Admins'}</span>
-                            ) : (
-                              <span style={{ color: '#8C949B', fontStyle: 'italic' }}>Not assigned</span>
-                            )}
-                          </td>
-                          <td>
-                            {site.userSites?.[0]?.Admin?.email || (
-                              <span style={{ color: '#8C949B', fontStyle: 'italic' }}>No contact</span>
-                            )}
-                          </td>
-                          <td style={{ textAlign: 'center', verticalAlign: 'middle', overflow: 'visible' }}>
-                            <PortalDropdown
-                              btnClass={styles.threeDotBtn}
-                              stopPropagation
-                              items={[
-                                { label: 'Edit', onClick: () => handleEdit(site) },
-                              ]}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={[
+                    { key: 'name', label: 'SITE NAME' },
+                    { key: 'type', label: 'TYPE', render: (_, row) => (
+                      <span
+                        style={{
+                          ...typeBadgeStyle(row.type?.name || row.description),
+                          padding: '2px 10px',
+                          borderRadius: '12px',
+                          fontSize: '0.8rem',
+                          fontWeight: 500,
+                          display: 'inline-block',
+                        }}
+                      >
+                        {row.type?.name || row.description}
+                      </span>
+                    )},
+                    { key: 'location', label: 'ADDRESS' },
+                    { key: 'managers', label: 'MANAGERS', render: (_, row) => (
+                      row.userSites?.length > 0 ? (
+                        <span>{row.userSites.length} {row.userSites.length === 1 ? 'Admin' : 'Admins'}</span>
+                      ) : (
+                        <span style={{ color: '#8C949B', fontStyle: 'italic' }}>Not assigned</span>
+                      )
+                    )},
+                    { key: 'contact', label: 'CONTACT', render: (_, row) => (
+                      row.userSites?.[0]?.Admin?.email || (
+                        <span style={{ color: '#8C949B', fontStyle: 'italic' }}>No contact</span>
+                      )
+                    )},
+                  ]}
+                  data={displayedSites}
+                  onRowClick={handleRowClick}
+                  actions={(site) => (
+                    <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'center' }}>
+                      <PortalDropdown
+                        btnClass={styles.threeDotBtn}
+                        stopPropagation
+                        items={[
+                          { label: 'Edit', onClick: () => handleEdit(site) },
+                        ]}
+                      />
+                    </div>
+                  )}
+                />
 
                 <div className="d-flex justify-content-center mt-4">
                   <ReactPaginate

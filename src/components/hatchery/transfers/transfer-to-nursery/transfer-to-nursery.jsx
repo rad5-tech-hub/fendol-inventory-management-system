@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Form } from 'react-bootstrap';
+import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
 import { toast } from 'react-toastify';
 import { FaExchangeAlt, FaArrowLeft, FaClock, FaCheckCircle } from 'react-icons/fa';
 import { BsFileText, BsInfoCircle } from 'react-icons/bs';
@@ -267,9 +268,11 @@ export default function TransferToNursery() {
                       <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
                         Hatch Batch <span style={{ color: '#dc3545' }}>*</span>
                       </Form.Label>
-                      <Form.Select value={batchData?.hatchbatchNo || ''} disabled>
-                        <option value={batchData?.hatchbatchNo || ''}>{batchData?.hatchbatchNo || '—'}</option>
-                      </Form.Select>
+                      <CustomDropdown
+                        options={[{ value: batchData?.hatchbatchNo || '', label: batchData?.hatchbatchNo || '—' }]}
+                        value={batchData?.hatchbatchNo || ''}
+                        disabled
+                      />
                       <small style={{ color: '#8C949B', fontSize: '0.75rem' }}>
                         Site: {siteName}
                       </small>
@@ -289,16 +292,13 @@ export default function TransferToNursery() {
                       <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
                         Destination Nursery Pond <span style={{ color: '#dc3545' }}>*</span>
                       </Form.Label>
-                      <Form.Select
+                      <CustomDropdown
+                        options={ponds.map(p => ({ value: p.id, label: p.title }))}
                         value={selectedPondId}
-                        onChange={(e) => { setSelectedPondId(e.target.value); setTransferError(''); }}
+                        onChange={(val) => { setSelectedPondId(val); setTransferError(''); }}
+                        placeholder={pondsLoading ? 'Loading ponds...' : (ponds.length === 0 ? 'No ponds available' : 'Select a pond')}
                         disabled={pondsLoading}
-                      >
-                        <option value="">{pondsLoading ? 'Loading ponds...' : (ponds.length === 0 ? 'No ponds available' : 'Select a pond')}</option>
-                        {ponds.map(p => (
-                          <option key={p.id} value={p.id}>{p.title}</option>
-                        ))}
-                      </Form.Select>
+                      />
                     </div>
                     <div className="col-md-6">
                       <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>

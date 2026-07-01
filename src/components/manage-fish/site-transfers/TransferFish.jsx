@@ -8,6 +8,7 @@ import Api, { ApiV2 } from "../../shared/api/apiLink";
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { useConfirm } from '../../shared/confirm-modal';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 
 export default function TransferFish() {
   const [ConfirmDialog, confirm] = useConfirm();
@@ -32,19 +33,19 @@ export default function TransferFish() {
   const selectedPond = pondOptions.find((p) => p.id === selectedPondId) || null;
   const selectedSite = siteOptions.find((s) => s.id === selectedSiteId) || null;
 
-  /* ── Fetch ponds from backend by siteId ── */
+  /* ── Fetch ponds from backend by specific siteId (never siteId=all) ── */
   useEffect(() => {
     let cancelled = false;
     const fetchPonds = async () => {
       setPondsLoading(true);
       try {
-        const siteId = activeSite?.id || 'all';
-        const res = await Api.get(`/fish-stages?siteId=${siteId}`);
-        let list = Array.isArray(res.data?.data) ? res.data.data : [];
-        if (list.length === 0 && siteId !== 'all') {
-          const fallback = await Api.get('/fish-stages?siteId=all');
-          list = Array.isArray(fallback.data?.data) ? fallback.data.data : [];
+        const siteId = activeSite?.id;
+        if (!siteId) {
+          if (!cancelled) { setPondOptions([]); setPondsLoading(false); setLoading(false); }
+          return;
         }
+        const res = await Api.get(`/fish-stages?siteId=${siteId}`);
+        const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setPondOptions(list);
       } catch {
         if (!cancelled) setPondOptions([]);
@@ -196,21 +197,14 @@ export default function TransferFish() {
               <Form onSubmit={handleSubmit}>
                 {/* ── Pond From ── */}
                 <Form.Label className="fw-semibold mt-4">Pond From</Form.Label>
-                <Form.Select
+                <CustomDropdown
                   value={selectedPondId}
-                  onChange={(e) => setSelectedPondId(e.target.value)}
+                  onChange={(value) => setSelectedPondId(value)}
                   disabled={pondsLoading}
-                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                >
-                  <option value="">
-                    {pondsLoading ? 'Loading ponds...' : (pondOptions.length === 0 ? 'No ponds available' : 'Select a pond')}
-                  </option>
-                  {pondOptions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title} {p.quantity != null ? `(${p.quantity.toLocaleString()} pcs)` : ''}
-                    </option>
-                  ))}
-                </Form.Select>
+                  placeholder={pondsLoading ? 'Loading ponds...' : (pondOptions.length === 0 ? 'No ponds available' : 'Select a pond')}
+                  options={pondOptions.map(p => ({ value: p.id, label: `${p.title}${p.quantity != null ? ` (${p.quantity.toLocaleString()} pcs)` : ''}` }))}
+                  className="py-2 bg-light-subtle shadow-none"
+                />
                 {selectedPond && (
                   <small style={{ color: '#16A34A', fontWeight: 500 }}>
                     Available: {selectedPond.quantity?.toLocaleString() || 0} pcs
@@ -219,19 +213,14 @@ export default function TransferFish() {
 
                 {/* ── Site To ── */}
                 <Form.Label className="fw-semibold mt-4">Site To</Form.Label>
-                <Form.Select
+                <CustomDropdown
                   value={selectedSiteId}
-                  onChange={(e) => setSelectedSiteId(e.target.value)}
+                  onChange={(value) => setSelectedSiteId(value)}
                   disabled={sitesLoading}
-                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                >
-                  <option value="">
-                    {sitesLoading ? 'Loading sites...' : (siteOptions.length === 0 ? 'No sites available' : 'Select a destination site')}
-                  </option>
-                  {siteOptions.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </Form.Select>
+                  placeholder={sitesLoading ? 'Loading sites...' : (siteOptions.length === 0 ? 'No sites available' : 'Select a destination site')}
+                  options={siteOptions.map(s => ({ value: s.id, label: s.name }))}
+                  className="py-2 bg-light-subtle shadow-none"
+                />
 
                 {/* ── Quantity ── */}
                 <Form.Label className="fw-semibold mt-4">Quantity</Form.Label>

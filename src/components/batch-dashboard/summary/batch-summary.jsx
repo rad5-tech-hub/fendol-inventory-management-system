@@ -19,6 +19,7 @@ import {
 import { GiCirclingFish, GiCannedFish } from 'react-icons/gi';
 import { MdWarning } from 'react-icons/md';
 import { BsThreeDotsVertical } from 'react-icons/bs';
+import DataTable from '../../shared/data-table/DataTable';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { SkeletonTable } from '../../shared/skeleton/Skeleton';
@@ -468,57 +469,20 @@ export default function BatchSummary() {
 
                 <div className={styles.colCard}>
                   <h5>Processing / Harvest History</h5>
-                  <div className={styles.tableWrapper}>
-                    <table className={styles.table}>
-                      <thead>
-                        <tr>
-                          <th rowSpan={2} className="text-start">Date</th>
-                          <th rowSpan={2} className="text-start">Type</th>
-                          <th rowSpan={2} className="text-end">Qty Taken</th>
-                          <th colSpan={3} className="text-center" style={{ letterSpacing: '0.04em', textTransform: 'uppercase' }}>Output (pcs)</th>
-                          <th rowSpan={2} className="text-end">Qty (pcs)</th>
-                          <th rowSpan={2} className="text-start">Recorded By</th>
-                        </tr>
-                        <tr>
-                          <th className="text-end">Whole</th>
-                          <th className="text-end">Broken</th>
-                          <th className="text-end">Damaged</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {/*
-                          TODO: confirm field-to-column mapping with user.
-                          The screenshot shows rows mixing pond-to-pond sorting and broodstock transfer.
-                          The exact mapping of fields to columns is ambiguous.
-                          Currently showing harvestLogs only as a safe fallback.
-                        */}
-                        {(batch.harvestLogs || []).length === 0 ? (
-                          <tr>
-                            <td colSpan={9} className="text-center py-3" style={{ color: '#8C949B', fontWeight: 600 }}>
-                              No processing or harvest records.
-                            </td>
-                          </tr>
-                        ) : (
-                          (batch.harvestLogs || []).map((h, i) => (
-                            <tr key={h.id || i}>
-                              <td style={{ fontSize: '0.82rem', color: '#8C949B' }} className="text-start">
-                                {formatShortDate(h.createdAt)}
-                              </td>
-                              <td className="text-start">Harvest</td>
-                              <td className="text-end">{f(Number(h.pre_quantity) || 0)}</td>
-                              <td className="text-end">{h.wholeFishQuantity ? f(Number(h.wholeFishQuantity)) : '—'}</td>
-                              <td className="text-end">{h.brokenFishQuantity ? f(Number(h.brokenFishQuantity)) : '—'}</td>
-                              <td className="text-end">{h.damageOrLoss ? f(Number(h.damageOrLoss)) : '—'}</td>
-                              <td className="text-end">{f(Number(h.actual_quantity) || 0)}</td>
-                              <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>
-                                {h.addedByRole || '—'}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                  <DataTable
+                    columns={[
+                      { key: 'createdAt', label: 'Date', render: (value) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{formatShortDate(value)}</span> },
+                      { key: 'type', label: 'Type', render: () => 'Harvest' },
+                      { key: 'pre_quantity', label: 'Qty Taken', align: 'right', render: (value) => f(Number(value) || 0) },
+                      { key: 'wholeFishQuantity', label: 'Whole', align: 'right', render: (value) => value ? f(Number(value)) : '—' },
+                      { key: 'brokenFishQuantity', label: 'Broken', align: 'right', render: (value) => value ? f(Number(value)) : '—' },
+                      { key: 'damageOrLoss', label: 'Damaged', align: 'right', render: (value) => value ? f(Number(value)) : '—' },
+                      { key: 'actual_quantity', label: 'Qty (pcs)', align: 'right', render: (value) => f(Number(value) || 0) },
+                      { key: 'addedByRole', label: 'Recorded By', render: (value) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{value || '—'}</span> },
+                    ]}
+                    data={batch.harvestLogs || []}
+                    emptyMessage="No processing or harvest records."
+                  />
                   {/* View All Movements link */}
                   <div className={styles.viewAllRow} onClick={() => { console.log('View All Movements clicked'); /* TODO: confirm navigation target */ }}>
                     <span className={styles.viewAllRowLabel}>View All Movements</span>

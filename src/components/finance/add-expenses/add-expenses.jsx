@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Row, Col, Button } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import styles from '../finance.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { useConfirm } from '../../shared/confirm-modal';
 
 // Utility function to format numbers with commas
@@ -17,12 +19,36 @@ const AddExpense = () => {
     const [formData, setFormData] = useState({
         price: '',
         description: '',
-        paymentType: ''
+        paymentType: '',
+        siteId: ''
     });
     const [unformattedPrice, setUnformattedPrice] = useState(0);
     const [loader, setLoader] = useState(false);
-    const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+    const [showSidebar, setShowSidebar] = useState(false);
+    const [siteOptions, setSiteOptions] = useState([]);
     const [ConfirmDialog, confirm] = useConfirm();
+    const userTypes = useSelector((store) => store.user?.userTypes || []);
+    const activeSite = useSelector((store) => store.activeSite);
+    const isAdmin = userTypes.includes('super_admin');
+
+    useEffect(() => {
+        const fetchSites = async () => {
+            try {
+                const res = await ApiV2.get('/v2/all-site');
+                const list = Array.isArray(res.data?.data) ? res.data.data : [];
+                setSiteOptions(list.map(s => ({ value: s.id, label: s.name })));
+            } catch {
+                setSiteOptions([]);
+            }
+        };
+        if (isAdmin) fetchSites();
+    }, [isAdmin]);
+
+    useEffect(() => {
+        if (!isAdmin && activeSite?.id) {
+            setFormData(prev => ({ ...prev, siteId: activeSite.id }));
+        }
+    }, [isAdmin, activeSite]);
 
     // Handle input changes
     const handleInputChange = (e) => {
@@ -52,7 +78,8 @@ const AddExpense = () => {
         try {
             const response = await Api.post('/expense', {
                 ...formData,
-                price: unformattedPrice
+                price: unformattedPrice,
+                siteId: formData.siteId || activeSite?.id || undefined
             });
 
             toast.update(loadingToast, {
@@ -66,7 +93,8 @@ const AddExpense = () => {
             setFormData({
                 price: '',
                 description: '',
-                paymentType: ''
+                paymentType: '',
+                siteId: isAdmin ? '' : (activeSite?.id || '')
             });
             setUnformattedPrice(0);
         } catch (error) {
@@ -115,17 +143,18 @@ const AddExpense = () => {
                                 </Col>
                                 <Col>
                                     <Form.Label className="fw-semibold">Payment Type</Form.Label>
-                                    <Form.Select
+                                    <CustomDropdown
                                         name="paymentType"
                                         value={formData.paymentType || ''}
-                                        onChange={handleInputChange}
+                                        onChange={(val) => handleInputChange({ target: { name: 'paymentType', value: val } })}
+                                        placeholder="Select Payment Type"
                                         required
-                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                    >
-                                        <option value="" disabled>Select Payment Type</option>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                    </Form.Select>
+                                        className={`py-2 bg-light-subtle shadow-none ${styles.fullWidthDropdown}`}
+                                        options={[
+                                            { value: 'Cash', label: 'Cash' },
+                                            { value: 'Bank Transfer', label: 'Bank Transfer' },
+                                        ]}
+                                    />
                                 </Col>
                                 <Col>
                                     <Form.Label className="fw-semibold">Description</Form.Label>
@@ -140,6 +169,20 @@ const AddExpense = () => {
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 </Col>
+                                {isAdmin && (
+                                    <Col>
+                                        <Form.Label className="fw-semibold">Site</Form.Label>
+                                        <CustomDropdown
+                                            name="siteId"
+                                            value={formData.siteId || ''}
+                                            onChange={(val) => handleInputChange({ target: { name: 'siteId', value: val } })}
+                                            placeholder="Select Site"
+                                            required
+                                            className={`py-2 bg-light-subtle shadow-none ${styles.fullWidthDropdown}`}
+                                            options={siteOptions}
+                                        />
+                                    </Col>
+                                )}
                             </Row>
                             <div className="d-flex justify-content-end my-4">
                                 <Button

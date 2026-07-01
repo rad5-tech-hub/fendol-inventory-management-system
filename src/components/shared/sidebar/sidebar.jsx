@@ -405,9 +405,7 @@ export default function SideBar({ show, handleClose }) {
               {hasPermission(userTypes, 'staff') && renderCard("staff", "Staff", <RiTeamFill size={25} className="me-1" />,
                 <>
                   {renderNavItem("Staff Directory", "/finance/staff/directory")}
-                  {renderNavItem("Payroll", "/finance/staff/payroll")}
                   {renderNavItem("Attendance", "/finance/staff/attendance")}
-                  {renderNavItem("Appraisals", "/finance/staff/appraisals")}
                 </>
               )}
             </>

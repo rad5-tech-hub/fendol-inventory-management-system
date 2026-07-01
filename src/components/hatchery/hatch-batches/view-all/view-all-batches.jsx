@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Pagination } from 'react-bootstrap';
+import { Pagination } from 'react-bootstrap';
+import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
 import { toast } from 'react-toastify';
 import { IoSearchOutline, IoFilterOutline, IoRefreshOutline, IoEyeOutline, IoPencilOutline, IoSendOutline, IoTrashOutline } from 'react-icons/io5';
 import { GiCirclingFish } from 'react-icons/gi';
@@ -255,12 +256,11 @@ export default function ViewAllBatches() {
                 <IoSearchOutline size={16} className={styles.searchIcon} />
               </div>
               <div className={styles.filterSelect}>
-                <Form.Select value={filterSiteId} onChange={(e) => setFilterSiteId(e.target.value)}>
-                  <option value="">All Sites</option>
-                  {sites.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </Form.Select>
+                <CustomDropdown
+                  options={[{ value: '', label: 'All Sites' }, ...sites.map(s => ({ value: s.id, label: s.name }))]}
+                  value={filterSiteId}
+                  onChange={(val) => setFilterSiteId(val)}
+                />
               </div>
               <div className={styles.dateRange}>
                 <IoFilterOutline size={14} />
@@ -346,11 +346,15 @@ export default function ViewAllBatches() {
                   <Pagination.Next />
                   <Pagination.Last />
                 </Pagination>
-                <Form.Select style={{ width: 120, fontSize: '0.85rem' }}>
-                  <option>45 / page</option>
-                  <option>100 / page</option>
-                  <option>200 / page</option>
-                </Form.Select>
+                <CustomDropdown
+                  options={[
+                    { value: '45', label: '45 / page' },
+                    { value: '100', label: '100 / page' },
+                    { value: '200', label: '200 / page' },
+                  ]}
+                  placeholder="45 / page"
+                  style={{ width: 120 }}
+                />
               </div>
             </div>
           </main>

@@ -19,6 +19,7 @@ import { FaSkull } from 'react-icons/fa';
 import { HiTrendingDown } from 'react-icons/hi';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
+import DataTable from "../../shared/data-table/DataTable";
 import Api from '../../shared/api/apiLink';
 import feedStyles from '../feed.module.scss';
 import styles from './feed-dashboard.module.scss';
@@ -528,30 +529,18 @@ export default function FeedDashboard() {
                   <h3 className={styles.cardTitleNoMargin}>Low Stock Alerts</h3>
                   <span className={styles.viewAllLink}>View All</span>
                 </div>
-                <table className={styles.alertsTable}>
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Type</th>
-                      <th>Current Stock</th>
-                      <th>Reorder Level</th>
-                      <th>Unit</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lowStockRows.map((row, i) => (
-                      <tr key={i}>
-                        <td style={{ fontWeight: 600 }}>{row.item}</td>
-                        <td style={{ color: '#6B7280' }}>{row.type}</td>
-                        <td>{row.stock}</td>
-                        <td>{row.reorder}</td>
-                        <td>{row.unit}</td>
-                        <td><span className={styles.lowStockBadge}>Low Stock</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <DataTable
+                  className={styles.alertsTable}
+                  columns={[
+                    { key: 'item', label: 'Item', render: (value) => <span style={{ fontWeight: 600 }}>{value}</span> },
+                    { key: 'type', label: 'Type', render: (value) => <span style={{ color: '#6B7280' }}>{value}</span> },
+                    { key: 'stock', label: 'Current Stock' },
+                    { key: 'reorder', label: 'Reorder Level' },
+                    { key: 'unit', label: 'Unit' },
+                    { key: 'status', label: 'Status', render: () => <span className={styles.lowStockBadge}>Low Stock</span> },
+                  ]}
+                  data={lowStockRows}
+                />
               </div>
             </div>
 

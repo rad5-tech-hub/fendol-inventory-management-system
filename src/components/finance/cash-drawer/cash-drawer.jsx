@@ -8,6 +8,7 @@ import { Spinner, Alert, Modal, Button, Form, Toast, ToastContainer } from "reac
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from "react-paginate";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import DataTable from "../../shared/data-table/DataTable";
 
 const CashDrawer = () => {
   const [ledgerData, setLedgerData] = useState([]);
@@ -263,41 +264,21 @@ const CashDrawer = () => {
                 )}
                 {!cashLoading && !cashError && displayedCashData.length > 0 && (
                   <>
-                    <table className={`${styles.styled_table} ${styles.table_responsive}`}>
-                      <thead className={`rounded-2 ${styles.theader}`}>
-                        <tr>
-                          <th>DATE</th>
-                          <th className="pt-3">DESCRIPTION</th>
-                          <th style={{ color: "green" }} className="pt-3">
-                            CREDIT(₦)
-                          </th>
-                          <th style={{ color: "red" }} className="pt-3">
-                            DEBIT(₦)
-                          </th>
-                          <th>BALANCE(₦)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {displayedCashData.map((record, index) => (
-                          <tr key={index}>
-                            <td>{formatDate(record.date)}</td>
-                            <td
-                              title={record.description}
-                              style={{ cursor: record.description?.length > 50 ? "pointer" : "normal" }}
-                            >
-                              {record.description?.slice(0, 50) + (record.description?.length > 50 ? "..." : "") || ""}
-                            </td>
-                            <td style={{ color: "green" }}>
-                              {record.credit ? `₦${record.credit.toLocaleString()}` : "-"}
-                            </td>
-                            <td style={{ color: "red" }}>
-                              {record.debit ? `₦${record.debit.toLocaleString()}` : "-"}
-                            </td>
-                            <td>{`₦${record.balance.toLocaleString()}`}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <DataTable
+                      className={`${styles.styled_table} ${styles.table_responsive}`}
+                      columns={[
+                        { key: 'date', label: 'DATE', render: (val) => formatDate(val) },
+                        { key: 'description', label: 'DESCRIPTION', render: (val) => (
+                          <span title={val} style={{ cursor: val?.length > 50 ? "pointer" : "normal" }}>
+                            {val?.slice(0, 50) + (val?.length > 50 ? "..." : "") || ""}
+                          </span>
+                        )},
+                        { key: 'credit', label: 'CREDIT(₦)', render: (val) => <span style={{ color: "green" }}>{val ? `₦${val.toLocaleString()}` : "-"}</span> },
+                        { key: 'debit', label: 'DEBIT(₦)', render: (val) => <span style={{ color: "red" }}>{val ? `₦${val.toLocaleString()}` : "-"}</span> },
+                        { key: 'balance', label: 'BALANCE(₦)', render: (val) => `₦${val.toLocaleString()}` },
+                      ]}
+                      data={displayedCashData}
+                    />
                     <div className="d-flex justify-content-center mt-4">
                       <ReactPaginate
                         previousLabel={"< "}
@@ -341,33 +322,19 @@ const CashDrawer = () => {
                 )}
                 {!withdrawLoading && !withdrawError && displayedWithdrawData.length > 0 && (
                   <>
-                    <table className={`${styles.styled_table} table-responsive`}>
-                      <thead className={`rounded-2 ${styles.theader}`}>
-                        <tr>
-                          <th>DATE</th>
-                          <th className="pt-3">DESCRIPTION</th>
-                          <th style={{ color: "red" }} className="pt-3">
-                            AMOUNT(₦)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {displayedWithdrawData.map((record, index) => (
-                          <tr key={index}>
-                            <td>{formatDate(record.WithdrawalDate)}</td>
-                            <td
-                              title={record.description}
-                              style={{ cursor: record.description?.length > 50 ? "pointer" : "normal" }}
-                            >
-                              {record.description?.slice(0, 50) + (record.description?.length > 50 ? "..." : "") || ""}
-                            </td>
-                            <td style={{ color: "red" }}>
-                              {record.amountWithdraw ? `₦${record.amountWithdraw.toLocaleString()}` : "-"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <DataTable
+                      className={`${styles.styled_table}`}
+                      columns={[
+                        { key: 'WithdrawalDate', label: 'DATE', render: (val) => formatDate(val) },
+                        { key: 'description', label: 'DESCRIPTION', render: (val) => (
+                          <span title={val} style={{ cursor: val?.length > 50 ? "pointer" : "normal" }}>
+                            {val?.slice(0, 50) + (val?.length > 50 ? "..." : "") || ""}
+                          </span>
+                        )},
+                        { key: 'amountWithdraw', label: 'AMOUNT(₦)', render: (val) => <span style={{ color: "red" }}>{val ? `₦${val.toLocaleString()}` : "-"}</span> },
+                      ]}
+                      data={displayedWithdrawData}
+                    />
                     <div className="d-flex justify-content-center mt-4">
                       <ReactPaginate
                         previousLabel={"< "}

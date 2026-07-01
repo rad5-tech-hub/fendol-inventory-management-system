@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Form, Row, Col, Button, Table, Alert } from 'react-bootstrap';
+import { Form, Row, Col, Button, Alert } from 'react-bootstrap';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import Api from '../../shared/api/apiLink';
 import styles from '../finance.module.scss';
 import { BsExclamationTriangleFill } from 'react-icons/bs';
@@ -326,74 +328,56 @@ const SalesForm = ({ customers, stages, products }) => {
             {currentStep === 1 && (
                 products.length > 0 ? (
                     <>
-                        <Table variant="light" className={`bg-light px-2 ${styles.styled_table}`} responsive>
-                            <thead className={`rounded-2 px-2`}>
-                                <tr>
-                                    <th>PRODUCT</th>
-                                    <th>PRODUCT WEIGHT</th>
-                                    <th>PRICE</th>
-                                    <th>QUANTITY</th>
-                                    <th>QUANTITY USED TO PACK <br /> WEIGH IN KG FOR BROKEN</th>
-                                    <th>SUBTOTAL</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {products
-                                    .filter(product => {
-                                        const lowerProductName = product.productName?.toLowerCase() || '';
-                                        return (
-                                            product.productName &&
-                                            !lowerProductName.includes('fresh') &&
-                                            !lowerProductName.includes('fingerlings')
-                                        );
-                                    })
-                                    .map((product, index) => (
-                                        <tr key={index}>
-                                            <td className='ps-3'>
-                                                <Form.Check
-                                                    type="checkbox"
-                                                    label={product.productName}
-                                                    value={product.productName}
-                                                    data-id={product.id}
-                                                    className="text-uppercase mt-2 fw-semibold"
-                                                    onChange={(e) => handleCheckChange(e, product.id)}
-                                                    checked={checkedProducts[product.id] || false}
-                                                />
-                                            </td>
-                                            <td><p className='py-2'>{product.productWeight}{product.unit}</p></td>
-                                            <td><p className='py-2'>₦ {new Intl.NumberFormat().format(product.basePrice)}</p></td>
-                                            <td>
-                                                <Form.Control
-                                                    placeholder="Enter quantity"
-                                                    type="number"
-                                                    name="quantity"
-                                                    value={dryData.products.find(p => p.id === product.id)?.quantity || ''}
-                                                    required
-                                                    min={1}
-                                                    onChange={(e) => handleInputChange(e, product.id)}
-                                                    onFocus={(e) => handleFocus(e, product.id)}
-                                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                                />
-                                            </td>
-                                            <td className='px-2'>
-                                                <Form.Control
-                                                    placeholder={!product.productName?.toLowerCase().includes("broken") ? `Fishes in the ${product.productName}` : `Weigh in Kg`}
-                                                    type="number"
-                                                    name="quantityUsedToPack"
-                                                    value={dryData.products.find(p => p.id === product.id)?.quantityUsedToPack || ''}
-                                                    min="0"
-                                                    onChange={(e) => handleInputChange(e, product.id)}
-                                                    onFocus={(e) => handleFocus(e, product.id)}
-                                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                                />
-                                            </td>
-                                            <td><p className="text-muted py-2">
-                                                ₦ {new Intl.NumberFormat().format(calculateSubtotal(product.id))}
-                                            </p></td>
-                                        </tr>
-                                    ))}
-                            </tbody>
-                        </Table>
+                        <DataTable
+                            className={`bg-light px-2 ${styles.styled_table}`}
+                            columns={[
+                                { key: 'productName', label: 'PRODUCT', render: (val, row) => (
+                                    <Form.Check
+                                        type="checkbox"
+                                        label={val}
+                                        value={val}
+                                        data-id={row.id}
+                                        className="text-uppercase mt-2 fw-semibold"
+                                        onChange={(e) => handleCheckChange(e, row.id)}
+                                        checked={checkedProducts[row.id] || false}
+                                    />
+                                )},
+                                { key: 'productWeight', label: 'PRODUCT WEIGHT', render: (val, row) => <p className='py-2'>{val}{row.unit}</p> },
+                                { key: 'basePrice', label: 'PRICE', render: (val) => <p className='py-2'>₦ {new Intl.NumberFormat().format(val)}</p> },
+                                { key: 'id', label: 'QUANTITY', render: (val) => (
+                                    <Form.Control
+                                        placeholder="Enter quantity"
+                                        type="number"
+                                        name="quantity"
+                                        value={dryData.products.find(p => p.id === val)?.quantity || ''}
+                                        required
+                                        min={1}
+                                        onChange={(e) => handleInputChange(e, val)}
+                                        onFocus={(e) => handleFocus(e, val)}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                    />
+                                )},
+                                { key: 'id', label: <>QUANTITY USED TO PACK <br /> WEIGH IN KG FOR BROKEN</>, render: (val, row) => (
+                                    <div className='px-2'>
+                                        <Form.Control
+                                            placeholder={!row.productName?.toLowerCase().includes("broken") ? `Fishes in the ${row.productName}` : `Weigh in Kg`}
+                                            type="number"
+                                            name="quantityUsedToPack"
+                                            value={dryData.products.find(p => p.id === val)?.quantityUsedToPack || ''}
+                                            min="0"
+                                            onChange={(e) => handleInputChange(e, val)}
+                                            onFocus={(e) => handleFocus(e, val)}
+                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                        />
+                                    </div>
+                                )},
+                                { key: 'id', label: 'SUBTOTAL', render: (val) => <p className="text-muted py-2">₦ {new Intl.NumberFormat().format(calculateSubtotal(val))}</p> },
+                            ]}
+                            data={products.filter(product => {
+                                const lowerProductName = product.productName?.toLowerCase() || '';
+                                return product.productName && !lowerProductName.includes('fresh') && !lowerProductName.includes('fingerlings');
+                            })}
+                        />
                         <div className="mt-3">
                             <h5 className='fw-semibold mt-3'>Total Price: ₦ {new Intl.NumberFormat().format(totalPrice)}</h5>
                         </div>
@@ -511,27 +495,27 @@ const SalesForm = ({ customers, stages, products }) => {
                         {/* Payment Type */}
                         <Col className="mb-4">
                             <Form.Label className="fw-semibold">Payment Type</Form.Label>
-                            <Form.Select
+                            <CustomDropdown
                                 name="paymentType"
                                 value={dryData.paymentType || ''}
-                                onChange={(e) => {
-                                    const selectedPayment = e.target.value;
+                                onChange={(val) => {
                                     setDryData((prev) => ({
                                         ...prev,
-                                        paymentType: selectedPayment,
-                                        amountPaid: '' // Reset amount paid when payment type changes,
+                                        paymentType: val,
+                                        amountPaid: '',
                                     }));
                                 }}
                                 required
+                                placeholder="Select Payment Type"
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                            >
-                                <option value="" disabled>Select Payment Type</option>
-                                <option value="Cash">Cash</option>                              
-                                <option value="Credit">Credit</option>                              
-                                <option value="Transfer">Transfer</option>
-                                <option value="Pos">Pos</option>
-                                {balance > 0 && <option value="customer_balance">Customer Balance</option>}
-                            </Form.Select>
+                                options={[
+                                    { value: 'Cash', label: 'Cash' },
+                                    { value: 'Credit', label: 'Credit' },
+                                    { value: 'Transfer', label: 'Transfer' },
+                                    { value: 'Pos', label: 'Pos' },
+                                    ...(balance > 0 ? [{ value: 'customer_balance', label: 'Customer Balance' }] : []),
+                                ]}
+                            />
                         </Col>   
                         
                        {/* Amount Paid Input (Only for Non-Credit and Non-Customer Balance Payments) */}

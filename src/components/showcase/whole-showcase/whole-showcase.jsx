@@ -7,6 +7,7 @@ import { Alert, Button, Modal, Form } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -153,6 +154,12 @@ export default function ViewWholeHistory() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const columns = [
+    { key: 'date', label: 'DATE CREATED', render: (value) => formatDate(value) },
+    { key: 'description', label: 'DESCRIPTION', render: (value) => <span title={value}>{value}</span> },
+    { key: 'quantity', label: 'QUANTITY', align: 'right' },
+  ];
+
   return (
     <section className={styles.body}>
       <div className="sticky-top">
@@ -226,37 +233,12 @@ export default function ViewWholeHistory() {
               </div>
             ) : (
               <>
-                <table className={styles.styled_table}>
-                  <thead className={`rounded-2 ${styles.theader}`}>
-                    <tr>
-                      <th>DATE CREATED</th>
-                      <th>DESCRIPTION</th>
-                      <th className="text-end pe-4">QUANTITY</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.length > 0 ? (
-                      paginatedData.map((data, index) => (
-                        <tr key={data.id || index}>
-                          <td>{formatDate(data.date)}</td>
-                          <td
-                            className="text-end pe-4"
-                            title={data.description}
-                          >
-                            {data.description}
-                          </td>
-                          <td className="text-end pe-4">{data.quantity}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="3" className="text-center">
-                          No data available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                <DataTable
+                  columns={columns}
+                  data={paginatedData}
+                  emptyMessage="No data available"
+                  className={styles.styled_table}
+                />
 
                 <div className="d-flex justify-content-center mt-4">
                   <ReactPaginate

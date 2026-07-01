@@ -6,6 +6,8 @@ import styles from '../store.module.scss';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { Alert, Modal, Form, Button, Spinner } from 'react-bootstrap';
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -217,50 +219,37 @@ export default function UpdateStoreInventory() {
 
             {!loading && !error && (
               <>
-                <div className={styles.tableWrapper}>
-                  <table className={styles.styled_table}>
-                    <thead>
-                      <tr className="fw-semibold">
-                        <th>DATE CREATED</th>
-                        <th>NAME</th>
-                        <th>UNIT</th>
-                        <th>QUANTITY</th>
-                        <th>THRESHOLD VALUE</th>
-                        <th>STATUS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentProducts.map((product) => (
-                        <tr key={product.id}>
-                          <td>{formatDate(product.createdAt)}</td>
-                          <td>{product.name}</td>
-                          <td>{product.unit}</td>
-                          <td>{product.quantity}</td>
-                          <td>{product.threshold}</td>
-                          <td className="d-flex justify-content-between align-items-center position-relative">
-                            <span className={
-                              product.status === 'in stock'
-                                ? 'text-success text-uppercase fw-semibold'
-                                : product.status === 'out of stock'
-                                ? 'text-danger text-uppercase fw-semibold'
-                                : product.status === 'low stock'
-                                ? 'text-warning text-uppercase fw-semibold'
-                                : ''
-                            }>
-                              {product.status}
-                            </span>
-                            <PortalDropdown btnClass={styles.threeDotBtn} items={[
-                              { label: 'Restock Store', onClick: () => handleAddClick(product) },
-                              { label: 'Use', onClick: () => handleRemoveClick(product) },
-                              { divider: true },
-                              { label: 'Edit', onClick: () => handleEditClick(product) },
-                            ]} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={[
+                    { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
+                    { key: 'name', label: 'NAME' },
+                    { key: 'unit', label: 'UNIT' },
+                    { key: 'quantity', label: 'QUANTITY' },
+                    { key: 'threshold', label: 'THRESHOLD VALUE' },
+                    { key: 'status', label: 'STATUS', render: (value) => (
+                      <span className={
+                        value === 'in stock'
+                          ? 'text-success text-uppercase fw-semibold'
+                          : value === 'out of stock'
+                          ? 'text-danger text-uppercase fw-semibold'
+                          : value === 'low stock'
+                          ? 'text-warning text-uppercase fw-semibold'
+                          : ''
+                      }>
+                        {value}
+                      </span>
+                    )},
+                  ]}
+                  data={currentProducts}
+                  actions={(row) => (
+                    <PortalDropdown btnClass={styles.threeDotBtn} items={[
+                      { label: 'Restock Store', onClick: () => handleAddClick(row) },
+                      { label: 'Use', onClick: () => handleRemoveClick(row) },
+                      { divider: true },
+                      { label: 'Edit', onClick: () => handleEditClick(row) },
+                    ]} />
+                  )}
+                />
 
                 <div className="d-flex justify-content-center mt-4">
                   <ReactPaginate
@@ -307,17 +296,18 @@ export default function UpdateStoreInventory() {
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Unit</Form.Label>
-                <Form.Select
+                <CustomDropdown
                   required
                   value={newStock.unit}
-                  onChange={(e) => setNewStock({ ...newStock, unit: e.target.value })}
+                  onChange={(value) => setNewStock({ ...newStock, unit: value })}
                   className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                >
-                  <option value="" disabled>Select Unit</option>
-                  <option value="kg">Kg</option>
-                  <option value="liters">Liters</option>
-                  <option value="pieces">Pieces</option>
-                </Form.Select>
+                  placeholder="Select Unit"
+                  options={[
+                    { value: 'kg', label: 'Kg' },
+                    { value: 'liters', label: 'Liters' },
+                    { value: 'pieces', label: 'Pieces' },
+                  ]}
+                />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Threshold Value</Form.Label>
@@ -333,18 +323,16 @@ export default function UpdateStoreInventory() {
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Site</Form.Label>
-                <Form.Select
+                <CustomDropdown
                   required
                   value={newStock.siteId}
-                  onChange={(e) => setNewStock({ ...newStock, siteId: e.target.value })}
+                  onChange={(value) => setNewStock({ ...newStock, siteId: value })}
                   className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                   disabled={sitesLoading}
-                >
-                  <option value="" disabled>{sitesLoading ? 'Loading sites...' : 'Select Site'}</option>
-                  {sites.map((site) => (
-                    <option key={site.id} value={site.id}>{site.name}</option>
-                  ))}
-                </Form.Select>
+                  loading={sitesLoading}
+                  placeholder="Select Site"
+                  options={sites.map(site => ({ value: site.id, label: site.name }))}
+                />
               </Form.Group>
             </Modal.Body>
             <Modal.Footer className="border-0 pt-0">

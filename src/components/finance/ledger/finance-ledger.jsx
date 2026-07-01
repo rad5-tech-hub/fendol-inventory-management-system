@@ -8,6 +8,7 @@ import { Alert } from "react-bootstrap";
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from "react-paginate";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import DataTable from "../../shared/data-table/DataTable";
 
 const FinanceLedger = () => {
   const [ledgerData, setLedgerData] = useState([]);
@@ -132,56 +133,26 @@ const FinanceLedger = () => {
             {/* Ledger Table */}
             {!loading && !error && displayedLedgerData.length > 0 && (
               <>
-                <table className={`${styles.styled_table} ${styles.table_responsive}`}>
-                  <thead className={`rounded-2 ${styles.theader}`}>
-                    <tr>
-                      <th>DATE</th>
-                      <th>PRODUCT</th>
-                      <th className="pt-3">DESCRIPTION</th>
-                      <th style={{ color: "green" }} className="pt-3">
-                        CREDIT(₦)
-                      </th>
-                      <th style={{ color: "red" }} className="pt-3">
-                        DEBIT(₦)
-                      </th>
-                      <th>BALANCE(₦)</th>
-                    </tr>
-                  </thead>
-                  <tbody style={{ cursor: "pointer" }}>
-                    {displayedLedgerData.map((record, index) => (
-                      <tr key={index}>
-                        <td>{formatDate(record.date)}</td>
-                        <td
-                          title={record.productName}
-                          style={{
-                            cursor: record.productName && record.productName.length > 40 ? "pointer" : "normal",
-                          }}
-                        >
-                          {record.productName
-                            ? record.productName.slice(0, 40) + (record.productName.length > 40 ? "..." : "")
-                            : "-"}
-                        </td>
-                        <td
-                          title={record.description}
-                          style={{
-                            cursor: record.description && record.description.length > 40 ? "pointer" : "normal",
-                          }}
-                        >
-                          {record.description
-                            ? record.description.slice(0, 40) + (record.description.length > 40 ? "..." : "")
-                            : ""}
-                        </td>
-                        <td style={{ color: "green" }}>
-                          {record.credit ? `₦${new Intl.NumberFormat().format(record.credit)}` : "-"}
-                        </td>
-                        <td style={{ color: "red" }}>
-                          {record.debit ? `₦${new Intl.NumberFormat().format(record.debit)}` : "-"}
-                        </td>
-                        <td>{`₦${new Intl.NumberFormat().format(record.balance)}`}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <DataTable
+                  className={`${styles.styled_table} ${styles.table_responsive}`}
+                  columns={[
+                    { key: 'date', label: 'DATE', render: (val) => formatDate(val) },
+                    { key: 'productName', label: 'PRODUCT', render: (val) => (
+                      <span title={val} style={{ cursor: val && val.length > 40 ? "pointer" : "normal" }}>
+                        {val ? val.slice(0, 40) + (val.length > 40 ? "..." : "") : "-"}
+                      </span>
+                    )},
+                    { key: 'description', label: 'DESCRIPTION', render: (val) => (
+                      <span title={val} style={{ cursor: val && val.length > 40 ? "pointer" : "normal" }}>
+                        {val ? val.slice(0, 40) + (val.length > 40 ? "..." : "") : ""}
+                      </span>
+                    )},
+                    { key: 'credit', label: 'CREDIT(₦)', render: (val) => <span style={{ color: "green" }}>{val ? `₦${new Intl.NumberFormat().format(val)}` : "-"}</span> },
+                    { key: 'debit', label: 'DEBIT(₦)', render: (val) => <span style={{ color: "red" }}>{val ? `₦${new Intl.NumberFormat().format(val)}` : "-"}</span> },
+                    { key: 'balance', label: 'BALANCE(₦)', render: (val) => `₦${new Intl.NumberFormat().format(val)}` },
+                  ]}
+                  data={displayedLedgerData}
+                />
 
                 {/* Pagination */}
                 <div className="d-flex justify-content-center mt-4">

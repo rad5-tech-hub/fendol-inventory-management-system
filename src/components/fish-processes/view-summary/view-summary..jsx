@@ -8,6 +8,8 @@ import styles from '../process.module.scss';
 import { Alert, OverlayTrigger, Popover } from "react-bootstrap";
 import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
 import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from "react-paginate";
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 
@@ -537,6 +539,202 @@ export default function ViewSummary() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const statusOptions = [
+    { value: '', label: 'All Statuses' },
+    { value: 'Completed', label: 'Completed' },
+    { value: 'In Progress', label: 'In Progress' },
+    { value: 'Saved Draft', label: 'Saved Draft' },
+  ];
+
+  const tableColumns = [
+    { key: 'createdAt', label: 'Date Created', render: (value) => formatDate(value) },
+    {
+      key: 'batchNumber', label: 'Batch Number',
+      render: (value, row) => {
+        const batchNum = str(pick(row, 'batchNumber', 'batch')) || `#${(row.id || '').slice(0, 8).toUpperCase()}`;
+        return <span style={s.batchLink}>{batchNum}</span>;
+      },
+    },
+    { key: 'site', label: 'Site', render: (value, row) => deriveSite(row) },
+    {
+      key: 'wholeFishQuantity', label: 'Qty Before',
+      render: (value) => `${new Intl.NumberFormat().format(value || 0)} Units`,
+    },
+    {
+      key: 'wholeFishQtyAfter', label: 'Whole (W)',
+      render: (_value, row) => {
+        const status = deriveStatus(row);
+        const isInProgress = status === 'In Progress';
+        const isSavedDraft = status === 'Saved Draft';
+        if (isInProgress) {
+          return (
+            <div style={s.progressWrap}>
+              <div style={s.progressBar}><div style={s.progressFill(67)} /></div>
+              <span style={s.progressPct}>67%</span>
+            </div>
+          );
+        }
+        if (isSavedDraft) return <span style={{ color: TEXT_MUTED }}>—</span>;
+        return (
+          <span style={{
+            display: 'inline-block', padding: '3px 10px', borderRadius: '20px',
+            fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap',
+            backgroundColor: '#e6f9ee', color: '#28a745',
+          }}>
+            {new Intl.NumberFormat().format(row.wholeFishQuantity || 0)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'brokenFishQuantity', label: 'Broken (B)',
+      render: (value, row) => {
+        const status = deriveStatus(row);
+        if (status === 'In Progress' || status === 'Saved Draft') return <span style={{ color: TEXT_MUTED }}>—</span>;
+        return (
+          <span style={{
+            display: 'inline-block', padding: '3px 10px', borderRadius: '20px',
+            fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap',
+            backgroundColor: '#fff3e0', color: '#e07b00',
+          }}>
+            {new Intl.NumberFormat().format(value || 0)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'damageOrLoss', label: 'Damaged (D)',
+      render: (value, row) => {
+        const status = deriveStatus(row);
+        if (status === 'In Progress' || status === 'Saved Draft') return <span style={{ color: TEXT_MUTED }}>—</span>;
+        return (
+          <span style={{
+            display: 'inline-block', padding: '3px 10px', borderRadius: '20px',
+            fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap',
+            backgroundColor: '#fdecea', color: '#dc3545',
+          }}>
+            {new Intl.NumberFormat().format(value || 0)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'processingTeam', label: 'Processing Team',
+      render: (value, row) => (
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {(() => {
+            const team = value || row.team || [];
+            const dummyColors = ['#512728', '#8C949B', '#c4c4c4'];
+            const dummyInits = ['FT', 'JA', 'MK'];
+            const count = Math.max(team.length, 3);
+            return Array.from({ length: Math.min(count, 3) }, (_, i) => {
+              const member = team[i];
+              return (
+                <div key={i} style={{
+                  width: '28px', height: '28px', borderRadius: '50%',
+                  backgroundColor: member ? '#c4c4c4' : dummyColors[i],
+                  border: '2px solid #fff', marginLeft: i > 0 ? '-8px' : '0',
+                  flexShrink: 0, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', fontSize: '10px', fontWeight: 700,
+                  color: member ? 'transparent' : '#fff',
+                  backgroundImage: member?.avatar ? `url(${member.avatar})` : 'none',
+                  backgroundSize: 'cover', backgroundPosition: 'center',
+                }}>
+                  {!member && dummyInits[i]}
+                </div>
+              );
+            });
+          })()}
+        </div>
+      ),
+    },
+    {
+      key: '_status', label: 'Status',
+      render: (_value, row) => {
+        const status = deriveStatus(row);
+        const displayStatus = status === 'Saved Draft' ? 'In Progress' : status;
+        return (
+          <span style={{
+            display: 'inline-block', padding: '4px 12px', borderRadius: '20px',
+            fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap',
+            ...(displayStatus === 'Completed' && { backgroundColor: '#e6f9ee', color: '#28a745' }),
+            ...(displayStatus === 'In Progress' && { backgroundColor: '#fff8e1', color: '#f9a825' }),
+          }}>
+            {displayStatus}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'updatedAt', label: 'Last Updated',
+      render: (value, row) => {
+        const dateStr = formatDate(row.updatedAt || row.createdAt);
+        const [datePart, timePart] = dateStr.split(' ');
+        return (
+          <div style={{ fontSize: '12px', color: TEXT_MAIN, lineHeight: '1.4', whiteSpace: 'nowrap' }}>
+            <div>{datePart}</div>
+            <div style={{ color: TEXT_MUTED }}>{timePart}</div>
+          </div>
+        );
+      },
+    },
+    {
+      key: '_actions', label: 'Actions', align: 'right',
+      render: (_value, row, index) => {
+        const status = deriveStatus(row);
+        return (
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <button
+              ref={btnRef => { if (btnRef) actionBtnRefs.current[index] = btnRef; }}
+              style={s.actionBtn}
+              onClick={e => {
+                e.stopPropagation();
+                if (openActionMenu === index) {
+                  setOpenActionMenu(null);
+                } else {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setMenuPosition({ top: rect.bottom + 4, left: rect.right - 180 });
+                  setOpenActionMenu(index);
+                }
+              }}
+            >
+              <FaEllipsisV />
+            </button>
+            {openActionMenu === index && createPortal(
+              <div style={{
+                position: 'fixed', top: menuPosition.top, left: menuPosition.left,
+                zIndex: 9999, backgroundColor: '#fff',
+                border: `1px solid ${BORDER}`, borderRadius: '8px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                minWidth: '180px', padding: '6px 0',
+              }}>
+                {status === 'Completed' ? (
+                  <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(row); }}>
+                    <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
+                  </button>
+                ) : (
+                  <>
+                    <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(row); }}>
+                      <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
+                    </button>
+                    <button style={menuItemStyle} onClick={() => {
+                      setOpenActionMenu(null);
+                      sessionStorage.setItem('batchProcessId', JSON.stringify(row.id));
+                      navigate('/fish-processes/process-fish');
+                    }}>
+                      <span style={{ marginRight: '8px', fontSize: '12px' }}>▶</span> Continue Progress
+                    </button>
+                  </>
+                )}
+              </div>,
+              document.body
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
   // ── computed summary stats ────────────────────────────────────────────────
   const totalProcesses = moveFishHistory.length;
   const inProgress = moveFishHistory.filter(h => deriveStatus(h) === 'In Progress').length;
@@ -696,16 +894,12 @@ export default function ViewSummary() {
                 <FaChevronDown style={s.filterSelectIcon} />
               </div>
 
-              <select
+              <CustomDropdown
+                options={statusOptions}
                 value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                style={{ ...s.filterSelect, border: `1px solid ${BORDER}`, appearance: 'auto', cursor: 'pointer' }}
-              >
-                <option value="">All Statuses</option>
-                <option value="Completed">Completed</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Saved Draft">Saved Draft</option>
-              </select>
+                onChange={(val) => setStatusFilter(val)}
+                placeholder="All Statuses"
+              />
               <div style={s.filterIconBtn}>
                 <FaSlidersH />
               </div>
@@ -735,214 +929,10 @@ export default function ViewSummary() {
               </div>
             ) : (
               <div style={s.tablePanel}>
-                <div style={s.tableResponsive}>
-                  <table style={s.table}>
-                  <thead style={s.thead}>
-                    <tr>
-                      <th style={{ ...s.th, rowSpan: 2 }}>Date Created</th>
-                      <th style={{ ...s.th, rowSpan: 2 }}>Batch Number</th>
-                      <th style={{ ...s.th, rowSpan: 2 }}>Site</th>
-                      <th style={{ ...s.th, rowSpan: 2 }}>Qty Before</th>
-                      <th style={{ ...s.th, textAlign: 'center', borderBottom: `1px solid ${BORDER}` }} colSpan={3}>
-                        Qty After (W, B, D)
-                      </th>
-                      <th style={{ ...s.th, rowSpan: 2 }}>Processing Team</th>
-                      <th style={{ ...s.th, rowSpan: 2 }}>Status</th>
-                      <th style={{ ...s.th, rowSpan: 2 }}>Last Updated</th>
-                      <th style={{ ...s.th, rowSpan: 2, textAlign: 'right' }}>Actions</th>
-                    </tr>
-                    <tr>
-                      <th style={{ ...s.th, textAlign: 'center', paddingTop: '4px', paddingBottom: '10px' }}>Whole (W)</th>
-                      <th style={{ ...s.th, textAlign: 'center', paddingTop: '4px', paddingBottom: '10px' }}>Broken (B)</th>
-                      <th style={{ ...s.th, textAlign: 'center', paddingTop: '4px', paddingBottom: '10px' }}>Damaged (D)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.isArray(paginatedData) && paginatedData.map((history, index) => {
-                      const formattedDate = formatDate(history.createdAt);
-                      const status = deriveStatus(history);
-                      const displayStatus = status === 'Saved Draft' ? 'In Progress' : status;
-                      const site   = deriveSite(history);
-                      const batchNum = str(pick(history, 'batchNumber', 'batch')) || `#${(history.id || '').slice(0, 8).toUpperCase()}`;
-                      const isInProgress = status === 'In Progress';
-                      const isSavedDraft = status === 'Saved Draft';
-
-                      const pillStyle = {
-                        display: 'inline-block',
-                        padding: '3px 10px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        whiteSpace: 'nowrap',
-                      };
-
-                      return (
-                        <tr key={index} style={{ backgroundColor: BG_CARD }}>
-                          <td style={s.td}>{formattedDate}</td>
-                          <td style={s.td}>
-                            <span style={s.batchLink}>{batchNum}</span>
-                          </td>
-                          <td style={s.td}>{site}</td>
-                          <td style={s.td}>{new Intl.NumberFormat().format(history.wholeFishQuantity || 0)} Units</td>
-                          {isInProgress ? (
-                            <>
-                              <td style={{ ...s.td, textAlign: 'center' }}>
-                                <div style={s.progressWrap}>
-                                  <div style={s.progressBar}>
-                                    <div style={s.progressFill(67)} />
-                                  </div>
-                                  <span style={s.progressPct}>67%</span>
-                                </div>
-                              </td>
-                              <td style={{ ...s.td, textAlign: 'center', color: TEXT_MUTED }}>—</td>
-                              <td style={{ ...s.td, textAlign: 'center', color: TEXT_MUTED }}>—</td>
-                            </>
-                          ) : isSavedDraft ? (
-                            <>
-                              <td style={{ ...s.td, textAlign: 'center', color: TEXT_MUTED }}>—</td>
-                              <td style={{ ...s.td, textAlign: 'center', color: TEXT_MUTED }}>—</td>
-                              <td style={{ ...s.td, textAlign: 'center', color: TEXT_MUTED }}>—</td>
-                            </>
-                          ) : (
-                            <>
-                              <td style={{ ...s.td, textAlign: 'center' }}>
-                                <span style={{ ...pillStyle, backgroundColor: '#e6f9ee', color: '#28a745' }}>
-                                  {new Intl.NumberFormat().format(history.wholeFishQuantity || 0)}
-                                </span>
-                              </td>
-                              <td style={{ ...s.td, textAlign: 'center' }}>
-                                <span style={{ ...pillStyle, backgroundColor: '#fff3e0', color: '#e07b00' }}>
-                                  {new Intl.NumberFormat().format(history.brokenFishQuantity || 0)}
-                                </span>
-                              </td>
-                              <td style={{ ...s.td, textAlign: 'center' }}>
-                                <span style={{ ...pillStyle, backgroundColor: '#fdecea', color: '#dc3545' }}>
-                                  {new Intl.NumberFormat().format(history.damageOrLoss || 0)}
-                                </span>
-                              </td>
-                            </>
-                          )}
-                          <td style={s.td}>
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                              {(() => {
-                                const team = history.processingTeam || history.team || [];
-                                const dummyColors = ['#512728', '#8C949B', '#c4c4c4'];
-                                const dummyInits = ['FT', 'JA', 'MK'];
-                                const count = Math.max(team.length, 3);
-                                return Array.from({ length: Math.min(count, 3) }, (_, i) => {
-                                  const member = team[i];
-                                  return (
-                                    <div
-                                      key={i}
-                                      style={{
-                                        width: '28px',
-                                        height: '28px',
-                                        borderRadius: '50%',
-                                        backgroundColor: member ? '#c4c4c4' : dummyColors[i],
-                                        border: '2px solid #fff',
-                                        marginLeft: i > 0 ? '-8px' : '0',
-                                        flexShrink: 0,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '10px',
-                                        fontWeight: 700,
-                                        color: member ? 'transparent' : '#fff',
-                                        backgroundImage: member?.avatar ? `url(${member.avatar})` : 'none',
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center',
-                                      }}
-                                    >
-                                      {!member && dummyInits[i]}
-                                    </div>
-                                  );
-                                });
-                              })()}
-                            </div>
-                          </td>
-                          <td style={s.td}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '4px 12px',
-                              borderRadius: '20px',
-                              fontSize: '12px',
-                              fontWeight: 600,
-                              whiteSpace: 'nowrap',
-                              ...(displayStatus === 'Completed'   && { backgroundColor: '#e6f9ee', color: '#28a745' }),
-                              ...(displayStatus === 'In Progress' && { backgroundColor: '#fff8e1', color: '#f9a825' }),
-                            }}>
-                              {displayStatus}
-                            </span>
-                          </td>
-                          <td style={s.td}>
-                            <div style={{ fontSize: '12px', color: TEXT_MAIN, lineHeight: '1.4', whiteSpace: 'nowrap' }}>
-                              <div>{formatDate(history.updatedAt || history.createdAt).split(' ')[0]}</div>
-                              <div style={{ color: TEXT_MUTED }}>{formatDate(history.updatedAt || history.createdAt).split(' ')[1]}</div>
-                            </div>
-                          </td>
-                          <td style={s.tdLast}>
-                            <div style={{ position: 'relative', display: 'inline-block' }}>
-                              <button
-                                ref={btnRef => {
-                                  if (btnRef) actionBtnRefs.current[index] = btnRef;
-                                }}
-                                style={s.actionBtn}
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  if (openActionMenu === index) {
-                                    setOpenActionMenu(null);
-                                  } else {
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    setMenuPosition({ top: rect.bottom + 4, left: rect.right - 180 });
-                                    setOpenActionMenu(index);
-                                  }
-                                }}
-                              >
-                                <FaEllipsisV />
-                              </button>
-
-                              {openActionMenu === index && createPortal(
-                                <div style={{
-                                  position: 'fixed',
-                                  top: menuPosition.top,
-                                  left: menuPosition.left,
-                                  zIndex: 9999,
-                                  backgroundColor: '#fff',
-                                  border: `1px solid ${BORDER}`,
-                                  borderRadius: '8px',
-                                  boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                                  minWidth: '180px',
-                                  padding: '6px 0',
-                                }}>
-                                  {status === 'Completed' ? (
-                                    <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(history); }}>
-                                      <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
-                                    </button>
-                                  ) : (
-                                    <>
-                                      <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(history); }}>
-                                        <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
-                                      </button>
-                                      <button style={menuItemStyle} onClick={() => {
-                                        setOpenActionMenu(null);
-                                        sessionStorage.setItem('batchProcessId', JSON.stringify(history.id));
-                                        navigate('/fish-processes/process-fish');
-                                      }}>
-                                        <span style={{ marginRight: '8px', fontSize: '12px' }}>▶</span> Continue Progress
-                                      </button>
-                                    </>
-                                  )}
-                                </div>,
-                                document.body
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                </div>
+                <DataTable
+                  columns={tableColumns}
+                  data={paginatedData}
+                />
 
                 {/* ── table footer / pagination ─────────────────────────── */}
                 <div style={s.tableFooter}>

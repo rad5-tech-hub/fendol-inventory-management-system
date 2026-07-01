@@ -9,6 +9,7 @@ import Api from '../../shared/api/apiLink';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { useConfirm } from '../../shared/confirm-modal';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 
 
 const AddFish = () => {
@@ -93,6 +94,10 @@ const AddFish = () => {
     setFormData({ ...formData, stageId: pond.id });
     setPondSearch(pond.title);
     setShowPondDropdown(false);
+  };
+
+  const handleSpeciesChange = (value) => {
+    setFormData(prev => ({ ...prev, speciesId: value }));
   };
 
   const handleAddFish = async (e) => {
@@ -207,28 +212,15 @@ const AddFish = () => {
                 </Col>
                 <Col md={6} lg={6} className="mb-4">
                   <Form.Label className="fw-semibold">Fish Type</Form.Label>
-                  <Form.Select
+                  <CustomDropdown
                     name="speciesId"
                     value={formData.speciesId}
-                    onChange={handleInputChange}
+                    onChange={handleSpeciesChange}
                     required
+                    placeholder="Choose fish type"
+                    options={(fishType || []).map(type => ({ value: type.id, label: type.speciesName }))}
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  >
-                    <option value="" disabled>
-                      Choose fish type
-                    </option>
-                    {!fishType ? (
-                      <option>Please wait...</option>
-                    ) : fishType.length < 1 ? (
-                      <option>No data available</option>
-                    ) : (
-                      fishType.map((type, index) => (
-                        <option value={type.id} key={index}>
-                          {type.speciesName}
-                        </option>
-                      ))
-                    )}
-                  </Form.Select>
+                  />
                 </Col>
               </Row>
               <div className="d-flex justify-content-end my-4">

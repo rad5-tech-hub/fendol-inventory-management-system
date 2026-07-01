@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Form, Row, Col, Button } from "react-bootstrap";
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import Api from "../../shared/api/apiLink";
 import styles from "../finance.module.scss";
 import ReceiptModal from "./receipt";
@@ -64,10 +65,7 @@ const FreshForm = ({ customers, stages, products }) => {
     }
   }, [freshData.products, freshData.basePrice, freshData.paymentType]);
 
-  const handleProductSelect = (e) => {
-    const selectedOption = e.target.selectedOptions[0];
-    const selectedProductId = selectedOption?.getAttribute("data-id");
-
+  const handleProductSelect = (selectedProductId) => {
     if (selectedProductId) {
       const product = productList.find((p) => p.id === selectedProductId);
       if (product) {
@@ -329,24 +327,23 @@ const FreshForm = ({ customers, stages, products }) => {
           {/* Product */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Product</Form.Label>
-            <Form.Select
+            <CustomDropdown
               name="id"
               required
               value={freshData.products[0]?.id || ""}
               onChange={handleProductSelect}
+              placeholder="Select Fresh Fish Products"
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            >
-              <option value="" disabled>
-                Select Fresh Fish Products
-              </option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id} data-id={product.id}>
-                  {`${product.productName} - (₦${new Intl.NumberFormat().format(
+              options={[
+                { value: '', label: 'Select Fresh Fish Products' },
+                ...products.map(product => ({
+                  value: product.id,
+                  label: `${product.productName} - (₦${new Intl.NumberFormat().format(
                     product.basePrice || 0
-                  )} for ${product.productWeight || "0"} ${product.unit || ""})`}
-                </option>
-              ))}
-            </Form.Select>
+                  )} for ${product.productWeight || "0"} ${product.unit || ""})`
+                }))
+              ]}
+            />
           </Col>
 
           {/* Quantity */}
@@ -470,29 +467,27 @@ const FreshForm = ({ customers, stages, products }) => {
           {/* Payment Type */}
           <Col className="mb-4">
             <Form.Label className="fw-semibold">Payment Type</Form.Label>
-            <Form.Select
+            <CustomDropdown
               name="paymentType"
               value={freshData.paymentType || ""}
-              onChange={(e) => {
-                const selectedPayment = e.target.value;
+              onChange={(val) => {
                 setFreshData((prev) => ({
                   ...prev,
-                  paymentType: selectedPayment,
+                  paymentType: val,
                   amountPaid: "",
                 }));
               }}
               required
+              placeholder="Select Payment Type"
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-            >
-              <option value="" disabled>
-                Select Payment Type
-              </option>
-              <option value="Cash">Cash</option>
-              <option value="Credit">Credit</option>
-              <option value="Transfer">Transfer</option>
-              <option value="Pos">Pos</option>
-              {balance > 0 && <option value="customer_balance">Customer Balance</option>}
-            </Form.Select>
+              options={[
+                { value: 'Cash', label: 'Cash' },
+                { value: 'Credit', label: 'Credit' },
+                { value: 'Transfer', label: 'Transfer' },
+                { value: 'Pos', label: 'Pos' },
+                ...(balance > 0 ? [{ value: 'customer_balance', label: 'Customer Balance' }] : []),
+              ]}
+            />
           </Col>
 
           {/* Amount Paid Input (Only for Non-Credit and Non-Customer Balance Payments) */}

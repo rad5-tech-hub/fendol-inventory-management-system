@@ -10,6 +10,8 @@ import {
   FiChevronLeft, FiChevronRight,
 } from 'react-icons/fi';
 import { BsPeople, BsClock, BsCheckCircle, BsExclamationCircle } from 'react-icons/bs';
+import CustomDropdown from '../shared/custom-dropdown/CustomDropdown';
+import DataTable from '../shared/data-table/DataTable';
 
 const MOCK_COMPLAINTS = [
   { id: 'CMP-001', complainant: 'John Doe', type: 'Staff', staffName: 'Jane Smith', description: 'Late arrival to work on multiple occasions affecting team productivity and morning shift handover procedures.', date: '2026-06-28T09:15:00', status: 'Pending' },
@@ -140,120 +142,86 @@ export default function AllComplaints() {
                   onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
                 />
               </div>
-              <select
-                className={styles.filterSelect}
+              <CustomDropdown
+                options={[
+                  { value: '', label: 'All Types' },
+                  { value: 'Staff', label: 'Staff' },
+                  { value: 'General', label: 'General' },
+                ]}
                 value={typeFilter}
-                onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(0); }}
-              >
-                <option value="">All Types</option>
-                <option value="Staff">Staff</option>
-                <option value="General">General</option>
-              </select>
-              <select
-                className={styles.filterSelect}
+                onChange={(val) => { setTypeFilter(val); setCurrentPage(0); }}
+                className={styles.filterDropdown}
+                triggerClassName={styles.filterTrigger}
+                placeholder="All Types"
+              />
+              <CustomDropdown
+                options={[
+                  { value: '', label: 'All Status' },
+                  { value: 'Pending', label: 'Pending' },
+                  { value: 'Resolved', label: 'Resolved' },
+                  { value: 'Dismissed', label: 'Dismissed' },
+                ]}
                 value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(0); }}
-              >
-                <option value="">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Resolved">Resolved</option>
-                <option value="Dismissed">Dismissed</option>
-              </select>
+                onChange={(val) => { setStatusFilter(val); setCurrentPage(0); }}
+                className={styles.filterDropdown}
+                triggerClassName={styles.filterTrigger}
+                placeholder="All Status"
+              />
             </div>
 
-            <div className={styles.tableWrapper}>
-              <table className={styles.styled_table}>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Complainant</th>
-                    <th>Type</th>
-                    <th>Staff</th>
-                    <th>Description</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentItems.length > 0 ? (
-                    currentItems.map((c, idx) => (
-                      <tr key={c.id}>
-                        <td style={{ color: '#8C949B', fontWeight: 500 }}>{offset + idx + 1}</td>
-                        <td style={{ fontWeight: 600 }}>{c.complainant}</td>
-                        <td>
-                          <span className={typeClass(c.type)}>
-                            {c.type === 'Staff' ? <BsPeople size={12} /> : null}
-                            {c.type}
-                          </span>
-                        </td>
-                        <td style={{ color: c.staffName ? '#2E3135' : '#9CA3AF' }}>
-                          {c.staffName || '\u2014'}
-                        </td>
-                        <td>
-                          <div className={styles.descCell} title={c.description}>
-                            {c.description}
-                          </div>
-                        </td>
-                        <td style={{ color: '#6B7280', fontSize: 13 }}>{formatDate(c.date)}</td>
-                        <td>
-                          <span className={statusClass(c.status)}>{c.status}</span>
-                        </td>
-                        <td>
-                          <div className={styles.actionsDropdown}>
-                            <button
-                              className={styles.actionsBtn}
-                              onClick={() => setOpenDropdown(openDropdown === c.id ? null : c.id)}
-                            >
-                              <FiMoreVertical size={18} />
-                            </button>
-                            {openDropdown === c.id && (
-                              <div className={styles.dropdownMenu}>
-                                <button
-                                  className={styles.dropdownItem}
-                                  onClick={() => { setSelectedComplaint(c); setOpenDropdown(null); }}
-                                >
-                                  <FiEye size={15} /> View Details
-                                </button>
-                                <button
-                                  className={`${styles.dropdownItem} ${styles.itemSuccess}`}
-                                  onClick={() => {
-                                    toast.info('Resolve action will be available once the API is ready.', { className: 'dark-toast' });
-                                    setOpenDropdown(null);
-                                  }}
-                                >
-                                  <FiCheckCircle size={15} /> Resolve
-                                </button>
-                                <button
-                                  className={`${styles.dropdownItem} ${styles.itemDanger}`}
-                                  onClick={() => {
-                                    toast.info('Dismiss action will be available once the API is ready.', { className: 'dark-toast' });
-                                    setOpenDropdown(null);
-                                  }}
-                                >
-                                  <FiXCircle size={15} /> Dismiss
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={8}>
-                        <div className={styles.emptyState}>
-                          <div className={styles.emptyIcon}>
-                            <FiAlertCircle />
-                          </div>
-                          <p>No complaints match your filters.</p>
-                        </div>
-                      </td>
-                    </tr>
+            <DataTable
+              columns={[
+                { key: 'index', label: '#', render: (_, row, idx) => <span style={{ color: '#8C949B', fontWeight: 500 }}>{offset + idx + 1}</span> },
+                { key: 'complainant', label: 'Complainant', render: (value) => <span style={{ fontWeight: 600 }}>{value}</span> },
+                {
+                  key: 'type',
+                  label: 'Type',
+                  render: (value) => (
+                    <span className={typeClass(value)}>
+                      {value === 'Staff' ? <BsPeople size={12} /> : null}
+                      {value}
+                    </span>
+                  ),
+                },
+                { key: 'staffName', label: 'Staff', render: (value) => <span style={{ color: value ? '#2E3135' : '#9CA3AF' }}>{value || '\u2014'}</span> },
+                {
+                  key: 'description',
+                  label: 'Description',
+                  render: (value) => (
+                    <div className={styles.descCell} title={value}>
+                      {value}
+                    </div>
+                  ),
+                },
+                { key: 'date', label: 'Date', render: (value) => <span style={{ color: '#6B7280', fontSize: 13 }}>{formatDate(value)}</span> },
+                { key: 'status', label: 'Status', render: (value) => <span className={statusClass(value)}>{value}</span> },
+              ]}
+              data={currentItems}
+              emptyMessage="No complaints match your filters."
+              actions={(row) => (
+                <div className={styles.actionsDropdown}>
+                  <button
+                    className={styles.actionsBtn}
+                    onClick={() => setOpenDropdown(openDropdown === row.id ? null : row.id)}
+                  >
+                    <FiMoreVertical size={18} />
+                  </button>
+                  {openDropdown === row.id && (
+                    <div className={styles.dropdownMenu}>
+                      <button className={styles.dropdownItem} onClick={() => { setSelectedComplaint(row); setOpenDropdown(null); }}>
+                        <FiEye size={15} /> View Details
+                      </button>
+                      <button className={`${styles.dropdownItem} ${styles.itemSuccess}`} onClick={() => { toast.info('Resolve action will be available once the API is ready.', { className: 'dark-toast' }); setOpenDropdown(null); }}>
+                        <FiCheckCircle size={15} /> Resolve
+                      </button>
+                      <button className={`${styles.dropdownItem} ${styles.itemDanger}`} onClick={() => { toast.info('Dismiss action will be available once the API is ready.', { className: 'dark-toast' }); setOpenDropdown(null); }}>
+                        <FiXCircle size={15} /> Dismiss
+                      </button>
+                    </div>
                   )}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              )}
+            />
 
             {pageCount > 1 && (
               <div className={styles.paginationWrapper}>

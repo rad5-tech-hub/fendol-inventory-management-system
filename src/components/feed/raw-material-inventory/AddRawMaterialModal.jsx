@@ -4,6 +4,7 @@ import { FiX, FiPackage, FiDollarSign, FiAlertTriangle } from 'react-icons/fi';
 import { HiOutlineTag } from 'react-icons/hi';
 import { BsBoxSeam } from 'react-icons/bs';
 import { ApiV2 } from '../../shared/api/apiLink';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import styles from './AddRawMaterialModal.module.scss';
 
 const UNIT_OPTIONS = [
@@ -18,15 +19,19 @@ const defaultForm = {
   quantity: '',
   unitCost: '',
   threshold: '',
+  numberOfBags: '',
+  baseWeightPerBag: '',
 };
 
 const FIELD_LABELS = {
   name: 'Material Name',
   category: 'Category',
   unit: 'Unit of Measurement',
-  quantity: 'Quantity',
+  quantity: 'Quantity (Kg)',
   unitCost: 'Unit Cost',
   threshold: 'Low Stock Threshold',
+  numberOfBags: 'Number of Bags',
+  baseWeightPerBag: 'Base Weight per Bag (Kg)',
 };
 
 function validateField(field, value, form) {
@@ -83,6 +88,26 @@ function validateField(field, value, form) {
     if (!Number.isInteger(num)) return 'Threshold must be a whole number';
     if (num < 1) return 'Threshold must be at least 1';
     if (num > 999999) return 'Threshold exceeds maximum allowed';
+    return null;
+  }
+
+  if (field === 'numberOfBags') {
+    if (value === '' || value === null || value === undefined) return null;
+    const num = Number(value);
+    if (isNaN(num)) return 'Must be a valid number';
+    if (!Number.isInteger(num)) return 'Must be a whole number';
+    if (num < 0) return 'Cannot be negative';
+    if (num > 999999) return 'Value too large';
+    return null;
+  }
+
+  if (field === 'baseWeightPerBag') {
+    if (value === '' || value === null || value === undefined) return null;
+    const num = Number(value);
+    if (isNaN(num)) return 'Must be a valid number';
+    if (num < 0) return 'Cannot be negative';
+    if (num > 999999) return 'Value too large';
+    if (value.includes('.') && value.split('.')[1]?.length > 2) return 'At most 2 decimal places';
     return null;
   }
 
@@ -156,6 +181,15 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
 
   const set = (field, value) => {
     const next = { ...form, [field]: value };
+
+    if ((field === 'numberOfBags' || field === 'baseWeightPerBag') && next.numberOfBags !== '' && next.baseWeightPerBag !== '') {
+      const bags = Number(next.numberOfBags);
+      const weight = Number(next.baseWeightPerBag);
+      if (!isNaN(bags) && !isNaN(weight) && bags >= 0 && weight >= 0) {
+        next.quantity = String(bags * weight);
+      }
+    }
+
     setForm(next);
 
     if (touched[field]) {
@@ -251,17 +285,14 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
         </label>
 
         {asType === 'select' ? (
-          <select
-            className={`${styles.select} ${err ? styles.inputError : ''} ${form[field] ? styles.hasValue : ''}`}
+          <CustomDropdown
+            options={options}
             value={form[field]}
-            onChange={(e) => set(field, e.target.value)}
-            onBlur={() => handleBlur(field)}
-          >
-            <option value="" disabled>Select unit</option>
-            {options.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+            onChange={(val) => { set(field, val); handleBlur(field); }}
+            placeholder="Select unit"
+            isInvalid={!!err}
+            className={`${err ? styles.inputError : ''}`}
+          />
         ) : (
           <div style={{ position: 'relative' }}>
             {Icon && (
@@ -286,7 +317,7 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
               placeholder={placeholder}
               type={type}
               min={type === 'number' ? 0 : undefined}
-              step={field === 'unitCost' ? '0.01' : field === 'quantity' ? '0.001' : '1'}
+              step={field === 'unitCost' ? '0.01' : field === 'quantity' ? '0.001' : field === 'numberOfBags' ? '1' : field === 'baseWeightPerBag' ? '0.01' : '1'}
               value={form[field]}
               onChange={(e) => set(field, type === 'number' ? e.target.value : e.target.value)}
               onBlur={() => handleBlur(field)}
@@ -315,7 +346,7 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
         className={styles.modal}
         style={{
           opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.97)',
+          ...(visible ? {} : { transform: 'translateY(24px) scale(0.97)' }),
           transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -350,7 +381,12 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
                 as: 'select',
                 options: UNIT_OPTIONS,
               })}
-              {renderField('quantity', { label: 'Quantity', placeholder: 'e.g. 50', type: 'number' })}
+              {renderField('numberOfBags', { label: 'Number of Bags', placeholder: 'e.g. 50', type: 'number' })}
+            </div>
+
+            <div className={styles.row}>
+              {renderField('baseWeightPerBag', { label: 'Base Weight per Bag (Kg)', placeholder: 'e.g. 25', type: 'number' })}
+              {renderField('quantity', { label: 'Quantity (Kg)', placeholder: 'Calculated or manual', type: 'number' })}
             </div>
 
             <div className={styles.row}>

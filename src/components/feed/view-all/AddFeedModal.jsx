@@ -3,6 +3,7 @@ import { Modal, Form, Row, Col, Button } from 'react-bootstrap';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { toast } from 'react-toastify';
 import feedStyles from '../feed.module.scss';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 
 
 
@@ -308,16 +309,17 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
             </Col>
             <Col md={6} className="mb-3">
               <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Unit</Form.Label>
-              <Form.Select
-                required
+              <CustomDropdown
+                options={[
+                  { value: 'kg', label: 'Kg' },
+                  { value: 'g', label: 'Gram' },
+                ]}
                 value={unit}
-                onChange={(e) => setUnit(e.target.value)}
+                onChange={(val) => setUnit(val)}
+                placeholder="Select Unit"
+                required
                 className={`py-2 bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
-              >
-                <option value="" disabled>Select Unit</option>
-                <option value="kg">Kg</option>
-                <option value="g">Gram</option>
-              </Form.Select>
+              />
             </Col>
 
             <Col md={6} className="mb-3">
@@ -519,17 +521,14 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
 
             <Col md={6} className="mb-3">
               <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Site Type</Form.Label>
-              <Form.Select
-                required
+              <CustomDropdown
+                options={siteTypes.map((st) => ({ value: st.id, label: st.name }))}
                 value={siteId}
-                onChange={(e) => setSiteId(e.target.value)}
+                onChange={(val) => setSiteId(val)}
+                placeholder="Select Site Type"
+                required
                 className={`py-2 bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
-              >
-                <option value="" disabled>Select Site Type</option>
-                {siteTypes.map((st) => (
-                  <option key={st.id} value={st.id}>{st.name}</option>
-                ))}
-              </Form.Select>
+              />
             </Col>
 
             <Col md={6} className="mb-3">

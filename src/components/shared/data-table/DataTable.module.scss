@@ -1,0 +1,69 @@
+.tableWrapper {
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #F0EBE3;
+    border-radius: 2px;
+  }
+
+  scrollbar-width: thin;
+  scrollbar-color: #512728 #F0EBE3;
+
+  &::-webkit-scrollbar-thumb {
+    background: #512728;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #714445;
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  white-space: nowrap;
+
+  th {
+    background: #F9FAFB;
+    padding: 14px 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #8C949B;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-bottom: 1px solid #E5E7EB;
+  }
+
+  td {
+    padding: 14px 20px;
+    font-size: 0.875rem;
+    color: #2E3135;
+    border-bottom: 1px solid #E5E7EB;
+  }
+
+  tbody tr {
+    &:hover {
+      background: #F9FAFB;
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.statusCell {
+  text-align: center;
+  padding: 40px !important;
+  color: #9CA3AF;
+  font-size: 0.9rem;
+}

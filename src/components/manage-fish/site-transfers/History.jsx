@@ -14,6 +14,7 @@ import ReactPaginate from 'react-paginate';
 import { ToastContainer, toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
+import DataTable from "../../shared/data-table/DataTable";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -326,41 +327,26 @@ export default function History() {
                 {/* ── Table ── */}
                 {filtered.length > 0 && (
                   <>
-                    <div className={styles.tableContainer}>
-                      <table className={`table ${styles.styled_table} mb-0`}>
-                        <thead className={styles.theader}>
-                          <tr>
-                            <th>DATE</th>
-                            <th>POND FROM</th>
-                            <th>SITE TO</th>
-                            <th className={styles.qtyCell}>QUANTITY</th>
-                            <th>DESCRIPTION</th>
-                            <th className={styles.actionCell} style={{ width: '80px' }}></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pageItems.map((r) => (
-                            <tr key={r.id} className={styles.trow}>
-                              <td className={styles.dateCell}>{r.date}</td>
-                              <td className={styles.pondCell}>{r.pondFrom}</td>
-                              <td className={styles.siteCell}>{r.siteTo}</td>
-                              <td className={styles.qtyCell}>{formatNumber(r.quantity)}</td>
-                              <td className={styles.descCell}>{r.description}</td>
-                              <td className={styles.actionCell}>
-                                <PortalDropdown
-                                  show={openDropdownId === r.id}
-                                  onToggle={(isOpen) => setOpenDropdownId(isOpen ? r.id : null)}
-                                  btnClass={styles.threeDotBtn}
-                                  items={[
-                                    { label: <><IoEyeOutline size={16} style={{ marginRight: 10 }} /> View Details</>, onClick: () => handleViewDetails(r) },
-                                  ]}
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <DataTable
+                      columns={[
+                        { key: 'date', label: 'DATE' },
+                        { key: 'pondFrom', label: 'POND FROM' },
+                        { key: 'siteTo', label: 'SITE TO' },
+                        { key: 'quantity', label: 'QUANTITY', render: (value) => formatNumber(value) },
+                        { key: 'description', label: 'DESCRIPTION' },
+                      ]}
+                      data={pageItems}
+                      actions={(row) => (
+                        <PortalDropdown
+                          show={openDropdownId === row.id}
+                          onToggle={(isOpen) => setOpenDropdownId(isOpen ? row.id : null)}
+                          btnClass={styles.threeDotBtn}
+                          items={[
+                            { label: <><IoEyeOutline size={16} style={{ marginRight: 10 }} /> View Details</>, onClick: () => handleViewDetails(row) },
+                          ]}
+                        />
+                      )}
+                    />
 
                     {/* ── Pagination ── */}
                     {pageCount > 1 && (

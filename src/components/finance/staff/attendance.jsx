@@ -11,6 +11,7 @@ import { useSelector } from 'react-redux';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
+import DataTable from '../../shared/data-table/DataTable';
 import { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -419,73 +420,58 @@ export default function StaffAttendance() {
                 {/* ── Staff Table ── */}
                 <div className={styles.tableCard}>
                   <div className={styles.tableWrapper}>
-                    <table className={styles.table}>
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Staff Name</th>
-                          <th>Staff ID</th>
-                          <th>Position</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {loadingStaff ? (
-                          <tr><td colSpan={6} style={{ padding: 0, border: 'none' }}>{renderSkeletonRows()}</td></tr>
-                        ) : (() => {
-                          const filtered = !search.trim()
-                            ? staffList
-                            : staffList.filter(s =>
-                                s.name.toLowerCase().includes(search.toLowerCase()) ||
-                                s.id.toLowerCase().includes(search.toLowerCase())
-                              );
-                          return filtered.length === 0
-                            ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>No staff found.</td></tr>
-                            : filtered.map((staff, i) => {
-                              const statusStyle = STATUS_STYLES[staff.status] || {};
-                              const avatarBg = AVATAR_COLORS[i % AVATAR_COLORS.length];
-                              return (
-                                <tr key={staff.id}
-                                  className={selectedStaff?.id === staff.id ? styles.activeRow : ''}
-                                  onClick={() => handleViewProfile(staff)}
-                                >
-                                  <td className={styles.rowNum}>{i + 1}</td>
-                                  <td>
-                                    <div className={styles.staffNameCell}>
-                                      <span className={styles.avatarSmall} style={{ background: avatarBg }}>
-                                        {getInitials(staff.name)}
-                                      </span>
-                                      {staff.name}
-                                    </div>
-                                  </td>
-                                  <td className={styles.staffIdCell}>{staff.id}</td>
-                                  <td>{staff.position}</td>
-                                  <td>
-                                <span className={styles.statusPill} style={{ background: statusStyle.bg, color: statusStyle.color }}>
-                                  {staff.status}
-                                </span>
-                              </td>
-                              <td onClick={(e) => e.stopPropagation()}>
-                                <PortalDropdown
-                                  btnClass={financeStyles.threeDotBtn}
-                                  menuStyle={{
-                                    background: '#fff',
-                                    color: '#374151',
-                                    border: '1px solid #E5E7EB',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                    borderRadius: 8,
-                                    padding: '4px 0',
-                                  }}
-                                  items={getActionItems(staff)}
-                                />
-                              </td>
-                            </tr>
+                    {loadingStaff ? (
+                      renderSkeletonRows()
+                    ) : (() => {
+                      const filtered = !search.trim()
+                        ? staffList
+                        : staffList.filter(s =>
+                            s.name.toLowerCase().includes(search.toLowerCase()) ||
+                            s.id.toLowerCase().includes(search.toLowerCase())
                           );
-                        });
-                      })()}
-                      </tbody>
-                    </table>
+                      return filtered.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>No staff found.</div>
+                      ) : (
+                        <DataTable
+                          columns={[
+                            { key: 'rowNum', label: '#', render: (val, row, idx) => <span className={styles.rowNum}>{idx + 1}</span> },
+                            { key: 'name', label: 'Staff Name', render: (val, row, idx) => {
+                              const avatarBg = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                              return (
+                                <div className={styles.staffNameCell}>
+                                  <span className={styles.avatarSmall} style={{ background: avatarBg }}>
+                                    {getInitials(val)}
+                                  </span>
+                                  {val}
+                                </div>
+                              );
+                            }},
+                            { key: 'id', label: 'Staff ID', render: (val) => <span className={styles.staffIdCell}>{val}</span> },
+                            { key: 'position', label: 'Position' },
+                            { key: 'status', label: 'Status', render: (val) => {
+                              const statusStyle = STATUS_STYLES[val] || {};
+                              return <span className={styles.statusPill} style={{ background: statusStyle.bg, color: statusStyle.color }}>{val}</span>;
+                            }},
+                          ]}
+                          data={filtered}
+                          onRowClick={(row) => handleViewProfile(row)}
+                          actions={(staff, idx) => (
+                            <PortalDropdown
+                              btnClass={financeStyles.threeDotBtn}
+                              menuStyle={{
+                                background: '#fff',
+                                color: '#374151',
+                                border: '1px solid #E5E7EB',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                borderRadius: 8,
+                                padding: '4px 0',
+                              }}
+                              items={getActionItems(staff)}
+                            />
+                          )}
+                        />
+                      );
+                    })()}
                   </div>
 
                   {/* ── Table Footer ── */}
@@ -588,46 +574,27 @@ export default function StaffAttendance() {
                     </div>
 
                     <div className={styles.historyTableWrapper}>
-                      <table className={styles.historyTable}>
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            <th>Check In</th>
-                            <th>Check Out</th>
-                            <th>Status</th>
-                            <th>Notes</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {detailAttendance.length === 0 && (
-                            <tr>
-                              <td colSpan={5} style={{ textAlign: 'center', color: '#9CA3AF', padding: 24 }}>No attendance records found.</td>
-                            </tr>
-                          )}
-                          {detailAttendance.slice().reverse().map((row, i) => {
-                            const s = STATUS_API_MAP[row.status] || '\u2014';
-                            const hs = STATUS_STYLES[s] || {};
+                      <DataTable
+                        columns={[
+                          { key: 'date', label: 'Date', render: (val, row) => <span className={styles.dateCell}>{formatDateLabel(row.date)}</span> },
+                          { key: 'checkIn', label: 'Check In', render: (val, row) => {
                             const isLate = row.status === 'late';
-                            return (
-                              <tr key={row.id || i}>
-                                <td className={styles.dateCell}>{formatDateLabel(row.date)}</td>
-                                <td className={isLate ? styles.lateTimeCell : styles.timeCell}>
-                                  {formatTime(row.checkIn) || '\u2014'}
-                                </td>
-                                <td className={isLate ? styles.lateTimeCell : styles.timeCell}>
-                                  {formatTime(row.checkOut) || '\u2014'}
-                                </td>
-                                <td>
-                                  <span className={styles.statusPillSmall} style={{ background: hs.bg, color: hs.color }}>
-                                    {s}
-                                  </span>
-                                </td>
-                                <td className={styles.notesCell}>{row.comment || '\u2014'}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                            return <span className={isLate ? styles.lateTimeCell : styles.timeCell}>{formatTime(val) || '\u2014'}</span>;
+                          }},
+                          { key: 'checkOut', label: 'Check Out', render: (val, row) => {
+                            const isLate = row.status === 'late';
+                            return <span className={isLate ? styles.lateTimeCell : styles.timeCell}>{formatTime(val) || '\u2014'}</span>;
+                          }},
+                          { key: 'status', label: 'Status', render: (val) => {
+                            const s = STATUS_API_MAP[val] || '\u2014';
+                            const hs = STATUS_STYLES[s] || {};
+                            return <span className={styles.statusPillSmall} style={{ background: hs.bg, color: hs.color }}>{s}</span>;
+                          }},
+                          { key: 'comment', label: 'Notes', render: (val) => <span className={styles.notesCell}>{val || '\u2014'}</span> },
+                        ]}
+                        data={detailAttendance.slice().reverse()}
+                        emptyMessage="No attendance records found."
+                      />
                     </div>
                   </div>
                 </>

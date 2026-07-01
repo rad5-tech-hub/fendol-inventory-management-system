@@ -13,6 +13,7 @@ import { FaExclamationTriangle } from 'react-icons/fa';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
+import DataTable from "../../shared/data-table/DataTable";
 import feedStyles from '../feed.module.scss';
 import styles from './feed-inventory.module.scss';
 import AddFeedModal from '../view-all/AddFeedModal';
@@ -473,75 +474,90 @@ export default function FeedInventory() {
                   </span>
                 </div>
                 <div className={styles.tableWrapper}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>Feed Name</th>
-                        <th>Feed Type</th>
-                        <th>Unit</th>
-                        <th style={{ textAlign: 'right' }}>Total Stock (Kg)</th>
-                        <th style={{ textAlign: 'right' }}>Average Cost (&#8358;/Kg)</th>
-                        <th style={{ textAlign: 'right' }}>Total Value (&#8358;)</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentProducts.map((row, i) => {
-                        const quantity = Number(row.quantity) || 0;
-                        const unitPrice = Number(row.unitPrice) || 0;
-                        const totalValue = quantity * unitPrice;
-                        const pillStyle = pillColors[i % pillColors.length];
-                        const iconColor = nameIconColors[i % nameIconColors.length];
-                        const statusKey = row.status?.toLowerCase()?.replace(/\s+/g, ' ');
-                        const matchedStatus = Object.keys(STATUS_STYLES).find(
-                          (k) => k.toLowerCase().replace(/\s+/g, ' ') === statusKey
-                        );
-                        const statusStyle = matchedStatus ? STATUS_STYLES[matchedStatus] : { bg: '#F3F4F6', color: '#374151' };
-                        return (
-                          <tr key={row.id || i}>
-                            <td>
-                              <div className={styles.feedNameCell}>
-                                <span className={styles.feedNameIcon} style={{ background: iconColor }} />
-                                {row.feedName}
-                              </div>
-                            </td>
-                            <td>
-                              <span className={styles.typePill} style={{ background: pillStyle.bg, color: pillStyle.color }}>
-                                {row.feedType}
-                              </span>
-                            </td>
-                            <td>{row.unit}</td>
-                            <td className={styles.numCell}>{f(quantity)}</td>
-                            <td className={styles.numCell}>{formatCurrency(unitPrice)}</td>
-                            <td className={styles.boldNumCell}>{formatCurrency(totalValue)}</td>
-                            <td>
-                              <span
-                                className={styles.statusPill}
-                                style={{ background: statusStyle.bg, color: statusStyle.color }}
-                              >
-                                {row.status}
-                              </span>
-                            </td>
-                            <td>
-                              <PortalDropdown
-                                btnClass={feedStyles.threeDotBtn}
-                                menuStyle={{
-                                  background: '#fff',
-                                  color: '#374151',
-                                  border: '1px solid #E5E7EB',
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                  borderRadius: 8,
-                                  padding: '4px 0',
-                                }}
-                                items={getActionItems(row)}
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <DataTable
+                    className={styles.table}
+                    columns={[
+                      {
+                        key: 'feedName',
+                        label: 'Feed Name',
+                        render: (value, row, i) => {
+                          const iconColor = nameIconColors[i % nameIconColors.length];
+                          return (
+                            <div className={styles.feedNameCell}>
+                              <span className={styles.feedNameIcon} style={{ background: iconColor }} />
+                              {value}
+                            </div>
+                          );
+                        },
+                      },
+                      {
+                        key: 'feedType',
+                        label: 'Feed Type',
+                        render: (value, row, i) => {
+                          const pillStyle = pillColors[i % pillColors.length];
+                          return (
+                            <span className={styles.typePill} style={{ background: pillStyle.bg, color: pillStyle.color }}>
+                              {value}
+                            </span>
+                          );
+                        },
+                      },
+                      { key: 'unit', label: 'Unit' },
+                      {
+                        key: 'quantity',
+                        label: 'Total Stock (Kg)',
+                        align: 'right',
+                        render: (value) => <span className={styles.numCell}>{f(Number(value) || 0)}</span>,
+                      },
+                      {
+                        key: 'unitPrice',
+                        label: 'Average Cost (₦/Kg)',
+                        align: 'right',
+                        render: (value) => <span className={styles.numCell}>{formatCurrency(Number(value) || 0)}</span>,
+                      },
+                      {
+                        key: 'totalValue',
+                        label: 'Total Value (₦)',
+                        align: 'right',
+                        render: (_, row) => {
+                          const quantity = Number(row.quantity) || 0;
+                          const unitPrice = Number(row.unitPrice) || 0;
+                          return <span className={styles.boldNumCell}>{formatCurrency(quantity * unitPrice)}</span>;
+                        },
+                      },
+                      {
+                        key: 'status',
+                        label: 'Status',
+                        render: (value) => {
+                          const statusKey = value?.toLowerCase()?.replace(/\s+/g, ' ');
+                          const matchedStatus = Object.keys(STATUS_STYLES).find(
+                            (k) => k.toLowerCase().replace(/\s+/g, ' ') === statusKey
+                          );
+                          const statusStyle = matchedStatus ? STATUS_STYLES[matchedStatus] : { bg: '#F3F4F6', color: '#374151' };
+                          return (
+                            <span className={styles.statusPill} style={{ background: statusStyle.bg, color: statusStyle.color }}>
+                              {value}
+                            </span>
+                          );
+                        },
+                      },
+                    ]}
+                    data={currentProducts}
+                    actions={(row) => (
+                      <PortalDropdown
+                        btnClass={feedStyles.threeDotBtn}
+                        menuStyle={{
+                          background: '#fff',
+                          color: '#374151',
+                          border: '1px solid #E5E7EB',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                          borderRadius: 8,
+                          padding: '4px 0',
+                        }}
+                        items={getActionItems(row)}
+                      />
+                    )}
+                  />
                 </div>
 
                 {/* ── Table Footer ── */}

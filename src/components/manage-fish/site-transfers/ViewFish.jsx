@@ -11,6 +11,8 @@ import {
 } from "react-icons/fa";
 import { GiFishingNet, GiWaterTank } from "react-icons/gi";
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import { Modal, Button, Form } from 'react-bootstrap';
 import { SkeletonTable, SkeletonStatGrid, SkeletonFilterBar } from "../../shared/skeleton/Skeleton";
 import ReactPaginate from 'react-paginate';
@@ -426,20 +428,12 @@ export default function ViewFish() {
               }}>
                 Site
               </label>
-              <Form.Select
+              <CustomDropdown
                 value={moveSiteId}
-                onChange={(e) => { setMoveSiteId(e.target.value); fetchPonds(e.target.value); }}
-                style={{
-                  fontSize: '14px', padding: '10px 12px',
-                  border: '1px solid #e5e7eb', borderRadius: '10px',
-                  color: '#2E3135', background: '#FAFCFF',
-                }}
-              >
-                <option value="">Select a site...</option>
-                {transferSites.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </Form.Select>
+                onChange={(value) => { setMoveSiteId(value); fetchPonds(value); }}
+                placeholder="Select a site..."
+                options={transferSites.map(s => ({ value: s.id, label: s.name }))}
+              />
             </div>
 
             {/* Pond dropdown */}
@@ -451,21 +445,14 @@ export default function ViewFish() {
               }}>
                 Pond
               </label>
-              <Form.Select
+              <CustomDropdown
                 value={moveForm.pondId}
-                onChange={(e) => setMoveForm(p => ({ ...p, pondId: e.target.value }))}
-                disabled={pondsLoading || !moveSiteId}
-                style={{
-                  fontSize: '14px', padding: '10px 12px',
-                  border: '1px solid #e5e7eb', borderRadius: '10px',
-                  color: '#2E3135', background: '#FAFCFF',
-                }}
-              >
-                <option value="">{pondsLoading ? 'Loading ponds...' : 'Select a pond'}</option>
-                {pondOptions.map(p => (
-                  <option key={p.id} value={p.id}>{p.title || p.name}</option>
-                ))}
-              </Form.Select>
+                onChange={(value) => setMoveForm(p => ({ ...p, pondId: value }))}
+                disabled={!moveSiteId}
+                loading={pondsLoading}
+                placeholder={pondsLoading ? 'Loading ponds...' : 'Select a pond'}
+                options={pondOptions.map(p => ({ value: p.id, label: p.title || p.name }))}
+              />
             </div>
 
             {/* Quantity */}
@@ -551,7 +538,9 @@ export default function ViewFish() {
 
             {/* ── Header row ── */}
             <div className="mb-4">
-              <h3 className={styles.headingTitle}>Site Transfers &mdash; Incoming</h3>
+              <h3 className={styles.headingTitle}>
+                Site Transfers <span className={styles.incomingBadge}>Incoming</span>
+              </h3>
               <p className={styles.headingSubtitle}>
                 View all fish transferred to your site from other locations.
               </p>
@@ -759,51 +748,48 @@ export default function ViewFish() {
                 {filtered.length > 0 && (
                   <>
                     {/* ── Table ── */}
-                    <div className={styles.tableContainer}>
-                      <table className={`table ${styles.styled_table} mb-0`}>
-                        <thead className={styles.theader}>
-                          <tr>
-                            <th>DATE</th>
-                            <th>SITE FROM</th>
-                            <th className={styles.qtyCell}>QUANTITY</th>
-                            <th style={{ textAlign: 'center', width: '80px' }}></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pageItems.map((t) => {
-                            const color = siteColor(t.siteFrom);
+                    <DataTable
+                      columns={[
+                        { key: 'date', label: 'DATE' },
+                        {
+                          key: 'siteFrom',
+                          label: 'SITE FROM',
+                          render: (value) => {
+                            const color = siteColor(value);
                             return (
-                              <tr key={t.id} className={styles.trow}>
-                                <td style={{ color: '#8C949B' }}>{t.date}</td>
-                                <td>
-                                  <div className={styles.siteCell}>
-                                    <span className={styles.siteAvatar} style={{ background: color.bg, color: color.text }}>
-                                      <FaMapMarkerAlt size={11} />
-                                    </span>
-                                    <span className={styles.siteName}>{t.siteFrom}</span>
-                                  </div>
-                                </td>
-                                <td className={styles.qtyCell}>
-                                  {formatNumber(t.quantity)}
-                                  <div className={styles.qtyBarWrapper}>
-                                    <div className={styles.qtyBarFill} style={{ width: `${(t.quantity / pageMaxQty) * 100}%` }} />
-                                  </div>
-                                </td>
-                                <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                  <PortalDropdown
-                                    btnClass={styles.threeDotBtn}
-                                    stopPropagation
-                                    items={[
-                                      { label: 'View Details', onClick: () => handleViewDetails(t) },
-                                    ]}
-                                  />
-                                </td>
-                              </tr>
+                              <div className={styles.siteCell}>
+                                <span className={styles.siteAvatar} style={{ background: color.bg, color: color.text }}>
+                                  <FaMapMarkerAlt size={11} />
+                                </span>
+                                <span className={styles.siteName}>{value}</span>
+                              </div>
                             );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                          }
+                        },
+                        {
+                          key: 'quantity',
+                          label: 'QUANTITY',
+                          render: (value) => (
+                            <>
+                              {formatNumber(value)}
+                              <div className={styles.qtyBarWrapper}>
+                                <div className={styles.qtyBarFill} style={{ width: `${(value / pageMaxQty) * 100}%` }} />
+                              </div>
+                            </>
+                          )
+                        },
+                      ]}
+                      data={pageItems}
+                      actions={(row) => (
+                        <PortalDropdown
+                          btnClass={styles.threeDotBtn}
+                          stopPropagation
+                          items={[
+                            { label: 'View Details', onClick: () => handleViewDetails(row) },
+                          ]}
+                        />
+                      )}
+                    />
 
                     {/* ── Pagination ── */}
                     {pageCount > 1 && (

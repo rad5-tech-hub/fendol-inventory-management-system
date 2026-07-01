@@ -469,6 +469,8 @@
   | 4 | Customers / stages / products fetched independently in each sales child form | `dryfish.jsx` `freshfish.jsx` `fingerlingsfish.jsx` |
   | 5 | No lazy loading — all routes load eagerly | `router.jsx` |
   | 6 | No role-based access control — `user.role` is decoded but never checked | `protect-routes.jsx` |
-  | 7 | No test suite — `package.json` test script echoes "No tests configured" | Root |
+  | 7 | No test suite — `package.json` test script echoes "No  tests configured" | Root |
   | 8 | `console.log(error)` present in several catch blocks | Various components |
   | 9 | Sidebar has no `React.memo` — re-renders on every route change | `sidebar.jsx` |
+
+

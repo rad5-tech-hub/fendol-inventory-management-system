@@ -8,6 +8,7 @@ import { GiCirclingFish, GiEggClutch } from 'react-icons/gi';
 import { FaChartLine, FaExchangeAlt, FaHeartbeat, FaChevronDown, FaChevronUp, FaSkull } from 'react-icons/fa';
 import { BsGenderFemale, BsGenderMale } from 'react-icons/bs';
 import { IoArrowBackOutline, IoPrintOutline, IoPencilOutline } from 'react-icons/io5';
+import DataTable from "../../../shared/data-table/DataTable";
 import SideBar from '../../../shared/sidebar/sidebar';
 import Header from '../../../shared/header/header';
 import Api, { ApiV2 } from '../../../shared/api/apiLink';
@@ -417,24 +418,14 @@ export default function HatchBatchSummary() {
                       <div className={styles.broodstockTagFemale}>
                         <BsGenderFemale size={14} /> Female Broodstock ({femaleCount})
                       </div>
-                      <table className={styles.broodstockTable}>
-                        <thead>
-                          <tr>
-                            <th>ID / Tag No.</th>
-                            <th>Avg. Weight (kg)</th>
-                            <th>Role</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {femaleBroodstock.map((b, i) => (
-                            <tr key={i}>
-                              <td className={styles.broodstockTagId}>{b.tag}</td>
-                              <td>{b.avgWeight.toFixed(2)}</td>
-                              <td style={{ color: '#8C949B' }}>{b.role}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <DataTable
+                        columns={[
+                          { key: 'tag', label: 'ID / Tag No.' },
+                          { key: 'avgWeight', label: 'Avg. Weight (kg)', render: (v) => Number(v).toFixed(2) },
+                          { key: 'role', label: 'Role', render: (v) => <span style={{ color: '#8C949B' }}>{v}</span> },
+                        ]}
+                        data={femaleBroodstock}
+                      />
                       <div className={styles.broodstockTotal}>
                         <span className={styles.totalItem}>Total Females: <strong>{femaleCount}</strong></span>
                         <span className={styles.totalItem}>Avg Weight: <strong>{avgFemaleWeight} kg</strong></span>
@@ -444,32 +435,19 @@ export default function HatchBatchSummary() {
                       <div className={styles.broodstockTagMale}>
                         <BsGenderMale size={14} /> Male Broodstock ({maleCount})
                       </div>
-                      <table className={styles.broodstockTable}>
-                        <thead>
-                          <tr>
-                            <th>ID / Tag No.</th>
-                            <th>Avg. Weight (kg)</th>
-                            <th>Role</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {visibleMales.map((b, i) => (
-                            <tr key={i}>
-                              <td className={styles.broodstockTagId}>{b.tag}</td>
-                              <td>{b.avgWeight.toFixed(2)}</td>
-                              <td style={{ color: '#8C949B' }}>{b.role}</td>
-                            </tr>
-                          ))}
-                          {extraMalesCount > 0 && (
-                            <tr className={styles.expandRow} onClick={() => setShowAllMales(!showAllMales)}>
-                              <td colSpan={3}>
-                                {showAllMales ? 'Show less' : `+ ${extraMalesCount} more males`}
-                                {showAllMales ? <FaChevronUp className={styles.expandIcon} /> : <FaChevronDown className={styles.expandIcon} />}
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
+                      <DataTable
+                        columns={[
+                          { key: 'tag', label: 'ID / Tag No.' },
+                          { key: 'avgWeight', label: 'Avg. Weight (kg)', render: (v) => Number(v).toFixed(2) },
+                          { key: 'role', label: 'Role', render: (v) => <span style={{ color: '#8C949B' }}>{v}</span> },
+                        ]}
+                        data={visibleMales}
+                      />
+                      {extraMalesCount > 0 && (
+                        <div className={styles.expandRow} onClick={() => setShowAllMales(!showAllMales)} style={{ cursor: 'pointer' }}>
+                          {showAllMales ? <>Show less <FaChevronUp className={styles.expandIcon} /></> : <>+ {extraMalesCount} more males <FaChevronDown className={styles.expandIcon} /></>}
+                        </div>
+                      )}
                       <div className={styles.broodstockTotal}>
                         <span className={styles.totalItem}>Total Males: <strong>{maleCount}</strong></span>
                         <span className={styles.totalItem}>Avg Weight: <strong>{avgMaleWeight} kg</strong></span>
@@ -515,30 +493,17 @@ export default function HatchBatchSummary() {
                   <h5>Transfer Summary</h5>
                   {transferRows.length > 0 ? (
                     <>
-                      <div className={styles.tableWrapper}>
-                        <table className={styles.broodstockMiniTable}>
-                          <thead>
-                            <tr>
-                              <th>Date</th>
-                              <th>Destination</th>
-                              <th>Qty</th>
-                              <th>Avg Size</th>
-                              <th>Transferred By</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {transferRows.map((r, i) => (
-                              <tr key={i}>
-                                <td style={{ fontSize: '0.8rem', color: '#8C949B' }}>{r.date}</td>
-                                <td>{r.dest}</td>
-                                <td>{f(r.qty)}</td>
-                                <td>{r.size}</td>
-                                <td>{r.transferredBy}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                      <DataTable
+                        columns={[
+                          { key: 'date', label: 'Date', render: (v) => <span style={{ fontSize: '0.8rem', color: '#8C949B' }}>{v}</span> },
+                          { key: 'dest', label: 'Destination' },
+                          { key: 'qty', label: 'Qty', render: (v) => f(v) },
+                          { key: 'size', label: 'Avg Size' },
+                          { key: 'transferredBy', label: 'Transferred By' },
+                        ]}
+                        data={transferRows}
+                        emptyMessage="No transfers recorded yet."
+                      />
                       <div className={styles.transferTotal}>Total Transferred: {f(totalTransferred)}</div>
                     </>
                   ) : (

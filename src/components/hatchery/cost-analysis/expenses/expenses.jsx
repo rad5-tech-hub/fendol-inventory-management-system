@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Pagination } from 'react-bootstrap';
+import { Pagination } from 'react-bootstrap';
+import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../../shared/data-table/DataTable";
 import { toast } from 'react-toastify';
 import { IoFilterOutline, IoCalendarOutline, IoDownloadOutline } from 'react-icons/io5';
 import { GiCirclingFish, GiChipsBag } from 'react-icons/gi';
@@ -254,44 +256,23 @@ export default function Expenses() {
               </div>
             </div>
 
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th className="text-start">Date <span style={{ cursor: 'pointer' }}>↕</span></th>
-                    <th className="text-start">Category <span style={{ cursor: 'pointer' }}>↕</span></th>
-                    <th className="text-start">Description</th>
-                    <th className="text-start">Reference</th>
-                    <th className="text-end">Amount ({'\u20A6'}) <span style={{ cursor: 'pointer' }}>↕</span></th>
-                    <th className="text-start">Recorded By</th>
-                    <th className="text-start">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, i) => {
-                    const cb = categoryBadge(row.category);
-                    return (
-                      <tr key={i}>
-                        <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.date}</td>
-                        <td className="text-start">
-                          <span className={styles.stageBadge} style={{ background: cb.bg, color: cb.color, fontSize: 12 }}>{row.category}</span>
-                        </td>
-                        <td className="text-start" style={{ color: '#6B7280' }}>{row.description}</td>
-                        <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.reference}</td>
-                        <td className="text-end" style={{ color: '#2E3135', fontWeight: 600 }}>{row.amount.toFixed(2)}</td>
-                        <td className="text-start" style={{ fontSize: '0.82rem', color: '#6B7280' }}>{row.recordedBy}</td>
-                        <td className="text-start">
-                          <div className={styles.actionsCell}>
-                            <button className={styles.eyeBtn} onClick={() => {}}><FaEye size={16} /></button>
-                            <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={[
+                { key: 'date', label: 'Date', render: (v) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{v}</span> },
+                { key: 'category', label: 'Category', render: (v) => { const cb = categoryBadge(v); return <span className={styles.stageBadge} style={{ background: cb.bg, color: cb.color, fontSize: 12 }}>{v}</span>; } },
+                { key: 'description', label: 'Description', render: (v) => <span style={{ color: '#6B7280' }}>{v}</span> },
+                { key: 'reference', label: 'Reference', render: (v) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{v}</span> },
+                { key: 'amount', label: 'Amount (\u20A6)', align: 'right', render: (v) => <span style={{ color: '#2E3135', fontWeight: 600 }}>{Number(v).toFixed(2)}</span> },
+                { key: 'recordedBy', label: 'Recorded By', render: (v) => <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{v}</span> },
+              ]}
+              data={rows}
+              actions={() => (
+                <div className={styles.actionsCell}>
+                  <button className={styles.eyeBtn} onClick={() => {}}><FaEye size={16} /></button>
+                  <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
+                </div>
+              )}
+            />
 
             <div className={styles.paginationRow}>
               <span className={styles.paginationInfo}>Showing 1 to 5 of 28 records</span>
@@ -309,11 +290,14 @@ export default function Expenses() {
                   <Pagination.Next />
                   <Pagination.Last />
                 </Pagination>
-                <Form.Select style={{ width: 120, fontSize: '0.85rem' }}>
-                  <option>45 / page</option>
-                  <option>100 / page</option>
-                  <option>200 / page</option>
-                </Form.Select>
+                <CustomDropdown
+                  options={[
+                    { value: '45', label: '45 / page' },
+                    { value: '100', label: '100 / page' },
+                    { value: '200', label: '200 / page' },
+                  ]}
+                  placeholder="45 / page"
+                />
               </div>
             </div>
           </main>

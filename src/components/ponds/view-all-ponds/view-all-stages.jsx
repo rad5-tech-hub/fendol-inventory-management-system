@@ -5,6 +5,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product-stages.module.scss';
 import { BsExclamationTriangleFill, BsPencilFill, BsSearch } from "react-icons/bs";
 import { Form, Button, Spinner, Alert, Modal } from 'react-bootstrap';
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
 import Api from "../../shared/api/apiLink";
@@ -301,15 +303,16 @@ const ViewAllStages = () => {
                 )}
                 <div style={{ minWidth: '155px' }}>
                   <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Status</label>
-                  <select
-                    className="form-select form-select-sm shadow-none"
+                  <CustomDropdown
+                    options={[
+                      { value: '', label: 'All Status' },
+                      { value: 'active', label: 'Active' },
+                      { value: 'inactive', label: 'Inactive' },
+                    ]}
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                  >
-                    <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                    onChange={setStatusFilter}
+                    placeholder="All Status"
+                  />
                 </div>
                 <div style={{ flex: 1, minWidth: '220px' }}>
                   <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Search</label>
@@ -398,66 +401,36 @@ const ViewAllStages = () => {
             {!loading && !error && displayedStages.length > 0 && (
               <>
                 <div className="border rounded" style={{ backgroundColor: '#fff' }}>
-                  <table className="table table-hover mb-0" style={{ fontSize: '0.875rem' }}>
-                    <thead style={{ backgroundColor: '#F8F9FA' }}>
-                      <tr>
-                        <th className="py-3 px-3 border-0 fw-semibold" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>DATE CREATED</th>
-                        <th className="py-3 px-3 border-0 fw-semibold" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>POND NAME</th>
-                        <th className="py-3 px-3 border-0 fw-semibold" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>DESCRIPTION</th>
-                        <th className="py-3 px-3 border-0 fw-semibold" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>SITE</th>
-                        <th className="py-3 px-3 border-0 fw-semibold text-end" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>CURRENT STOCK</th>
-                        <th className="py-3 px-3 border-0 fw-semibold text-center" style={{ color: '#6C757D', fontSize: '0.75rem', letterSpacing: '0.04em' }}>ACTIONS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {displayedStages.map((stage, index) => {
-                        const formattedCreatedAt = formatDate(stage.createdAt);
-                        const isHatchery = stage.site?.name?.toLowerCase() === 'hatchery';
+                  <DataTable
+                    columns={[
+                      { key: 'createdAt', label: 'DATE CREATED', render: (value) => <span style={{ color: '#8C949B' }}>{formatDate(value)}</span> },
+                      { key: 'title', label: 'POND NAME', render: (value) => <span style={{ color: '#512728', fontWeight: 600 }}>{value}</span> },
+                      { key: 'description', label: 'DESCRIPTION', render: (value) => <span style={{ color: '#2E3135' }}>{value}</span> },
+                      { key: 'site', label: 'SITE', render: (_, row) => {
+                        const siteName = row.site?.name;
+                        if (!siteName) return <span style={{ color: '#8C949B' }}>--</span>;
+                        const isHatchery = siteName.toLowerCase() === 'hatchery';
                         return (
-                          <tr key={stage.id} style={{ borderTop: '1px solid #F0F0F0' }}>
-                            <td className="py-3 px-3 align-middle" style={{ color: '#8C949B' }}>{formattedCreatedAt}</td>
-                            <td className="py-3 px-3 align-middle">
-                              <span style={{ color: '#512728', fontWeight: 600 }}>{stage.title}</span>
-                            </td>
-                            <td className="py-3 px-3 align-middle" style={{ color: '#2E3135' }}>{stage.description}</td>
-                            <td className="py-3 px-3 align-middle">
-                              {stage.site?.name ? (
-                                <span
-                                  className="px-2 py-1 rounded"
-                                  style={{
-                                    backgroundColor: isHatchery ? '#FFF3CD' : '#E9ECEF',
-                                    color: isHatchery ? '#856404' : '#495057',
-                                    fontSize: '0.78rem',
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  {stage.site.name}
-                                </span>
-                              ) : (
-                                <span style={{ color: '#8C949B' }}>--</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3 align-middle text-end" style={{ fontWeight: 600, color: '#2E3135' }}>
-                              {new Intl.NumberFormat().format(stage.quantity)} pcs
-                            </td>
-                            <td className="py-3 px-3 align-middle text-center">
-                              <PortalDropdown
-                                btnClass={styles.threeDotBtn}
-                                items={[
-                                  { label: 'Pond Summary', onClick: () => { setSelectedStage(stage); setShowPondSummaryPanel(true); fetchPondDetail(stage.id); } },
-                                  { label: 'Edit Pond', onClick: () => { setSelectedStage(stage); setShowEditPondModal(true); } },
-                                  { label: 'Add Sampling Record', onClick: () => { setSelectedStage(stage); setShowAddSamplingModal(true); } },
-                                  { label: 'Add Notes', onClick: () => { setSelectedStage(stage); setShowAddNoteModal(true); } },
-                                  { divider: true },
-                                  { label: 'Delete', onClick: () => { setSelectedStage(stage); DeletePond(); }, style: { color: '#dc3545', fontWeight: 600 } },
-                                ]}
-                              />
-                            </td>
-                          </tr>
+                          <span className="px-2 py-1 rounded" style={{ backgroundColor: isHatchery ? '#FFF3CD' : '#E9ECEF', color: isHatchery ? '#856404' : '#495057', fontSize: '0.78rem', fontWeight: 500 }}>{siteName}</span>
                         );
-                      })}
-                    </tbody>
-                  </table>
+                      }},
+                      { key: 'quantity', label: 'CURRENT STOCK', align: 'right', render: (value) => <span style={{ fontWeight: 600, color: '#2E3135' }}>{new Intl.NumberFormat().format(value)} pcs</span> },
+                    ]}
+                    data={displayedStages}
+                    actions={(row) => (
+                      <PortalDropdown
+                        btnClass={styles.threeDotBtn}
+                        items={[
+                          { label: 'Pond Summary', onClick: () => { setSelectedStage(row); setShowPondSummaryPanel(true); fetchPondDetail(row.id); } },
+                          { label: 'Edit Pond', onClick: () => { setSelectedStage(row); setShowEditPondModal(true); } },
+                          { label: 'Add Sampling Record', onClick: () => { setSelectedStage(row); setShowAddSamplingModal(true); } },
+                          { label: 'Add Notes', onClick: () => { setSelectedStage(row); setShowAddNoteModal(true); } },
+                          { divider: true },
+                          { label: 'Delete', onClick: () => { setSelectedStage(row); DeletePond(); }, style: { color: '#dc3545', fontWeight: 600 } },
+                        ]}
+                      />
+                    )}
+                  />
                 </div>
 
                 {/* Pagination row */}

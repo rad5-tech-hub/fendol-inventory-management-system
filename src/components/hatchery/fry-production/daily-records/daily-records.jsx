@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Pagination } from 'react-bootstrap';
+import { Pagination } from 'react-bootstrap';
+import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../../shared/data-table/DataTable";
 import { toast } from 'react-toastify';
 import { IoFilterOutline, IoRefreshOutline, IoCalendarOutline } from 'react-icons/io5';
 import { GiCirclingFish, GiChipsBag } from 'react-icons/gi';
@@ -170,14 +172,16 @@ export default function DailyRecords() {
 
             <div className={styles.filterBar}>
               <div className={styles.filterSelect}>
-                <Form.Select>
-                  <option>All Batches</option>
-                </Form.Select>
+                <CustomDropdown
+                  options={[{ value: '', label: 'All Batches' }]}
+                  placeholder="All Batches"
+                />
               </div>
               <div className={styles.filterSelect}>
-                <Form.Select>
-                  <option>All Units</option>
-                </Form.Select>
+                <CustomDropdown
+                  options={[{ value: '', label: 'All Units' }]}
+                  placeholder="All Units"
+                />
               </div>
               <div className={styles.dateRange}>
                 <IoCalendarOutline size={14} /> May 1, 2025 \u2013 May 30, 2025
@@ -190,45 +194,25 @@ export default function DailyRecords() {
               </button>
             </div>
 
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th className="text-start">Date</th>
-                    <th className="text-start">Batch Number</th>
-                    <th className="text-start">Tank / Unit</th>
-                    <th className="text-end">Fry Count (pcs)</th>
-                    <th className="text-end">Mortality (pcs)</th>
-                    <th className="text-end">Survival Rate (%)</th>
-                    <th className="text-end">Feed Used (kg)</th>
-                    <th className="text-start">Recorded By</th>
-                    <th className="text-start">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, i) => (
-                    <tr key={i}>
-                      <td className="text-start" style={{ fontSize: '0.82rem', color: '#8C949B' }}>{row.date}</td>
-                      <td className="text-start" style={{ fontWeight: 600 }}>{row.batch}</td>
-                      <td className="text-start">{row.tank}</td>
-                      <td className="text-end">{f(row.fryCount)}</td>
-                      <td className="text-end">{f(row.mortality)}</td>
-                      <td className="text-end">
-                        <span style={{ color: survivalRateColor(row.survival), fontWeight: 600 }}>{row.survival}%</span>
-                      </td>
-                      <td className="text-end">{row.feed.toFixed(2)}</td>
-                      <td className="text-start" style={{ fontSize: '0.82rem', color: '#6B7280' }}>{row.recordedBy}</td>
-                      <td className="text-start">
-                        <div className={styles.actionsCell}>
-                          <button className={styles.eyeBtn} onClick={() => {}}><FaEye size={16} /></button>
-                          <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={[
+                { key: 'date', label: 'Date', render: (v) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{v}</span> },
+                { key: 'batch', label: 'Batch Number', render: (v) => <span style={{ fontWeight: 600 }}>{v}</span> },
+                { key: 'tank', label: 'Tank / Unit' },
+                { key: 'fryCount', label: 'Fry Count (pcs)', align: 'right', render: (v) => f(v) },
+                { key: 'mortality', label: 'Mortality (pcs)', align: 'right', render: (v) => f(v) },
+                { key: 'survival', label: 'Survival Rate (%)', align: 'right', render: (v) => <span style={{ color: survivalRateColor(v), fontWeight: 600 }}>{v}%</span> },
+                { key: 'feed', label: 'Feed Used (kg)', align: 'right', render: (v) => Number(v).toFixed(2) },
+                { key: 'recordedBy', label: 'Recorded By', render: (v) => <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{v}</span> },
+              ]}
+              data={rows}
+              actions={() => (
+                <div className={styles.actionsCell}>
+                  <button className={styles.eyeBtn} onClick={() => {}}><FaEye size={16} /></button>
+                  <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
+                </div>
+              )}
+            />
 
             <div className={styles.paginationRow}>
               <span className={styles.paginationInfo}>Showing 1 to 5 of 30 records</span>
@@ -246,11 +230,14 @@ export default function DailyRecords() {
                   <Pagination.Next />
                   <Pagination.Last />
                 </Pagination>
-                <Form.Select style={{ width: 120, fontSize: '0.85rem' }}>
-                  <option>10 / page</option>
-                  <option>25 / page</option>
-                  <option>50 / page</option>
-                </Form.Select>
+                <CustomDropdown
+                  options={[
+                    { value: '10', label: '10 / page' },
+                    { value: '25', label: '25 / page' },
+                    { value: '50', label: '50 / page' },
+                  ]}
+                  placeholder="10 / page"
+                />
               </div>
             </div>
           </main>

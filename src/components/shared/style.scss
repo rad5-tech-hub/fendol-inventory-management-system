@@ -3,6 +3,35 @@ $content-width: 83%;
 $text-color: #2E3135;
 
 /* ── Global Pagination (applied via @import in each module) ── */
+/* ── Global Form Select / native select baseline ── */
+:global {
+  select.form-select,
+  select:not(.page-link):not([class*="CustomDropdown"]) {
+    height: 48px;
+    padding: 0 16px;
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #212529;
+    background-color: #F8F9FA;
+    border: 1px solid #CED4DA;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.15s ease;
+    cursor: pointer;
+
+    &:focus {
+      border-color: #512728;
+      box-shadow: 0 0 0 0.2rem rgba(81, 39, 40, 0.15);
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      pointer-events: none;
+    }
+  }
+}
+
 :global {
   .dropdown-menu {
     z-index: 9999 !important;

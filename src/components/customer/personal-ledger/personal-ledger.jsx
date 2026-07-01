@@ -10,6 +10,8 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Alert, Button, Form, Modal, Spinner } from 'react-bootstrap';
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from 'react-paginate';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import ReceiptModal from "../../finance/add-sales/receipt";
@@ -151,6 +153,54 @@ export default function PersonalLedger() {
   };
 
   const hasActiveFilters = dateFrom || dateTo || typeFilter !== 'all';
+
+  const ledgerColumns = [
+    { key: 'date', label: 'DATE', width: '14%', render: (value) => <span style={{ color: '#8C949B', whiteSpace: 'nowrap' }}>{formatDate(value)}</span> },
+    {
+      key: '_description',
+      label: 'DESCRIPTION',
+      width: '28%',
+      render: (_, row) => (
+        <div className="d-flex align-items-center gap-2">
+          {row.productName && (
+            <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#DBEAFE', color: '#1D4ED8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
+              S
+            </span>
+          )}
+          <span>{row.productName || row.description || '-'}</span>
+        </div>
+      ),
+    },
+    { key: 'paymentType', label: 'PAYMENT', width: '14%', render: (value) => value || '-' },
+    { key: 'credit', label: 'CREDIT (₦)', width: '14%', align: 'right', render: (value) => value ? <span style={{ fontWeight: 600, color: '#16A34A' }}>{formatCurrency(value)}</span> : '-' },
+    { key: 'debit', label: 'DEBIT (₦)', width: '14%', align: 'right', render: (value) => value ? <span style={{ fontWeight: 600, color: '#DC2626' }}>{formatCurrency(value)}</span> : '-' },
+    {
+      key: 'balance',
+      label: 'BALANCE (₦)',
+      width: '14%',
+      align: 'right',
+      render: (value) => {
+        if (value == null) return '-';
+        const color = value > 0 ? '#16A34A' : value < 0 ? '#DC2626' : '#6B7280';
+        return <span style={{ fontWeight: 600, color }}>{formatCurrency(value)}</span>;
+      },
+    },
+  ];
+
+  const ledgerActions = (row) => (
+    <PortalDropdown
+      btnClass={styles.threeDotBtn}
+      items={[
+        ...(row.productName
+          ? [
+              { label: <><BsPrinter size={14} style={{ marginRight: 8 }} /> Print Receipt</>, onClick: () => handleReceipt(row) },
+              { divider: true },
+            ]
+          : []),
+        { label: 'View Details', onClick: () => {} },
+      ]}
+    />
+  );
 
   const handleAddMoney = () => {
     setShowModal(true);
@@ -431,19 +481,11 @@ export default function PersonalLedger() {
                       <label style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px', display: 'block' }}>
                         Transaction Type
                       </label>
-                      <select
+                      <CustomDropdown
                         value={typeFilter}
-                        onChange={(e) => setTypeFilter(e.target.value)}
-                        style={{
-                          width: '100%', padding: '7px 10px', border: '1px solid #e5e7eb',
-                          borderRadius: '6px', fontSize: '12px', color: '#374151', outline: 'none',
-                          background: '#ffffff', cursor: 'pointer',
-                        }}
-                      >
-                        {TRANSACTION_TYPES.map(t => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => setTypeFilter(val)}
+                        options={TRANSACTION_TYPES}
+                      />
                     </div>
 
                     <div className="d-flex gap-2" style={{ alignSelf: 'flex-end', paddingBottom: '1px' }}>
@@ -491,79 +533,11 @@ export default function PersonalLedger() {
                     </div>
                   ) : (
                     <>
-                      <div className="table-responsive" style={{ overflow: 'visible' }}>
-                        <table className={`table ${styles.styled_tables} mb-0`} style={{ tableLayout: 'fixed' }}>
-                          <thead className={styles.theaders}>
-                            <tr>
-                              <th style={{ width: '14%', fontSize: '11px' }}>DATE</th>
-                              <th style={{ width: '28%', fontSize: '11px' }}>DESCRIPTION</th>
-                              <th style={{ width: '14%', fontSize: '11px' }}>PAYMENT</th>
-                              <th style={{ width: '14%', fontSize: '11px', textAlign: 'right' }}>CREDIT (₦)</th>
-                              <th style={{ width: '14%', fontSize: '11px', textAlign: 'right' }}>DEBIT (₦)</th>
-                              <th style={{ width: '14%', fontSize: '11px', textAlign: 'right' }}>BALANCE (₦)</th>
-                              <th style={{ width: '40px', fontSize: '11px', textAlign: 'center' }}></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {displayedLedgerData.map((record) => {
-                              const balColor = record.balance > 0 ? '#16A34A' : record.balance < 0 ? '#DC2626' : '#6B7280';
-                              return (
-                                <tr
-                                  key={record.id}
-                                  style={{ transition: 'background-color 0.12s ease', verticalAlign: 'middle' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                >
-                                  <td style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>
-                                    {formatDate(record.date)}
-                                  </td>
-                                  <td style={{ fontSize: '13px', color: '#2E3135' }}>
-                                    <div className="d-flex align-items-center gap-2">
-                                      {record.productName && (
-                                        <span
-                                          style={{
-                                            width: '22px', height: '22px', borderRadius: '50%',
-                                            background: '#DBEAFE', color: '#1D4ED8', display: 'inline-flex',
-                                            alignItems: 'center', justifyContent: 'center',
-                                            fontSize: '11px', fontWeight: 700, flexShrink: 0,
-                                          }}
-                                        >
-                                          S
-                                        </span>
-                                      )}
-                                      <span>{record.productName || record.description || '-'}</span>
-                                    </div>
-                                  </td>
-                                  <td style={{ fontSize: '13px', color: '#374151' }}>{record.paymentType || '-'}</td>
-                                  <td style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A', textAlign: 'right' }}>
-                                    {record.credit ? formatCurrency(record.credit) : '-'}
-                                  </td>
-                                  <td style={{ fontSize: '13px', fontWeight: 600, color: '#DC2626', textAlign: 'right' }}>
-                                    {record.debit ? formatCurrency(record.debit) : '-'}
-                                  </td>
-                                  <td style={{ fontSize: '13px', fontWeight: 600, color: balColor, textAlign: 'right' }}>
-                                    {record.balance != null ? formatCurrency(record.balance) : '-'}
-                                  </td>
-                                  <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                    <PortalDropdown
-                                      btnClass={styles.threeDotBtn}
-                                      items={[
-                                        ...(record.productName
-                                          ? [
-                                              { label: <><BsPrinter size={14} style={{ marginRight: 8 }} /> Print Receipt</>, onClick: () => handleReceipt(record) },
-                                              { divider: true },
-                                            ]
-                                          : []),
-                                        { label: 'View Details', onClick: () => {} },
-                                      ]}
-                                    />
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                      <DataTable
+                        columns={ledgerColumns}
+                        data={displayedLedgerData}
+                        actions={ledgerActions}
+                      />
 
                       {/* ── Pagination ── */}
                       <div className="d-flex justify-content-between align-items-center px-4 py-3 border-top" style={{ borderColor: '#e5e7eb' }}>
@@ -673,17 +647,17 @@ export default function PersonalLedger() {
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>Payment Type</Form.Label>
-            <Form.Select
+            <CustomDropdown
               value={salesType}
-              className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-              onChange={handleSalesTypeChange}
               required
-            >
-              <option value="">Select Payment Method</option>
-              <option value="Cash">Cash</option>
-              <option value="Transfer">Transfer</option>
-              <option value="POS">POS</option>
-            </Form.Select>
+              onChange={(val) => setSalesType(val)}
+              options={[
+                { value: '', label: 'Select Payment Method' },
+                { value: 'Cash', label: 'Cash' },
+                { value: 'Transfer', label: 'Transfer' },
+                { value: 'POS', label: 'POS' },
+              ]}
+            />
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>Description</Form.Label>

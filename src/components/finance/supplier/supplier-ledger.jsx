@@ -10,6 +10,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Alert, Modal } from 'react-bootstrap';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import DataTable from "../../shared/data-table/DataTable";
 
 const formatCurrency = (value) => {
   if (value == null) return '₦0.00';
@@ -371,49 +372,21 @@ export default function SupplierLedger() {
                   ) : (
                     <>
                       <div className="table-responsive" style={{ overflow: 'visible' }}>
-                        <table className={`table ${styles.styled_table} mb-0`} style={{ tableLayout: 'fixed' }}>
-                          <thead className={styles.theader}>
-                            <tr>
-                              <th style={{ width: '16%', fontSize: '11px' }}>DATE</th>
-                              <th style={{ width: '34%', fontSize: '11px' }}>DESCRIPTION</th>
-                              <th style={{ width: '16%', fontSize: '11px', textAlign: 'right' }}>CREDIT (₦)</th>
-                              <th style={{ width: '16%', fontSize: '11px', textAlign: 'right' }}>DEBIT (₦)</th>
-                              <th style={{ width: '16%', fontSize: '11px', textAlign: 'right' }}>BALANCE (₦)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredEntries.map((tx) => {
-                              const credit = Number(tx.credit || 0);
-                              const debit = Number(tx.debit || 0);
-                              const balance = Number(tx.balance || 0);
+                        <DataTable
+                          className={`${styles.styled_table} mb-0`}
+                          columns={[
+                            { key: 'createdAt', label: 'DATE', width: '16%', render: (val) => <span style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>{formatDate(val)}</span> },
+                            { key: 'comment', label: 'DESCRIPTION', width: '34%', render: (val) => <span style={{ fontSize: '13px', color: '#2E3135' }}>{val || '-'}</span> },
+                            { key: 'credit', label: 'CREDIT (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A' }}>{Number(val) ? formatCurrency(val) : '-'}</span> },
+                            { key: 'debit', label: 'DEBIT (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#DC2626' }}>{Number(val) ? formatCurrency(val) : '-'}</span> },
+                            { key: 'balance', label: 'BALANCE (₦)', width: '16%', align: 'right', render: (val) => {
+                              const balance = Number(val || 0);
                               const txBalColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';
-                              return (
-                                <tr
-                                  key={tx.id}
-                                  style={{ transition: 'background-color 0.12s ease', verticalAlign: 'middle' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                >
-                                  <td style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>
-                                    {formatDate(tx.createdAt)}
-                                  </td>
-                                  <td style={{ fontSize: '13px', color: '#2E3135' }}>
-                                    {tx.comment || '-'}
-                                  </td>
-                                  <td style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A', textAlign: 'right' }}>
-                                    {credit ? formatCurrency(credit) : '-'}
-                                  </td>
-                                  <td style={{ fontSize: '13px', fontWeight: 600, color: '#DC2626', textAlign: 'right' }}>
-                                    {debit ? formatCurrency(debit) : '-'}
-                                  </td>
-                                  <td style={{ fontSize: '13px', fontWeight: 600, color: txBalColor, textAlign: 'right' }}>
-                                    {formatCurrency(balance)}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                              return <span style={{ fontSize: '13px', fontWeight: 600, color: txBalColor }}>{formatCurrency(balance)}</span>;
+                            }},
+                          ]}
+                          data={filteredEntries}
+                        />
                       </div>
 
                       {/* ── Load More (cursor-based pagination) ── */}

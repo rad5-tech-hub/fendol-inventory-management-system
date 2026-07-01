@@ -186,13 +186,13 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: #FFFFFF;
   border: 1px solid #E5E7EB;
   border-radius: 12px;
   padding: 12px 20px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   flex-wrap: wrap;
 }
 
@@ -202,72 +202,121 @@
   gap: 8px;
   flex: 1;
   min-width: 200px;
-  background: #FFFFFF;
-  border: 1px solid #D1D5DB;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: 8px;
   padding: 0 12px;
-  height: 40px;
+  height: 38px;
+  transition: all 0.2s ease;
+}
+
+.searchWrapper:focus-within {
+  border-color: #512728;
+  box-shadow: 0 0 0 3px rgba(81, 39, 40, 0.08);
+  background: #FFFFFF;
 }
 
 .searchIcon {
-  color: #9CA3AF;
+  color: #94A3B8;
   flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.searchWrapper:focus-within .searchIcon {
+  color: #512728;
 }
 
 .searchInput {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 13px;
-  color: #374151;
+  font-size: 14px;
+  color: #1E293B;
   width: 100%;
   font-family: inherit;
+  font-weight: 450;
 }
 
 .searchInput::placeholder {
-  color: #9CA3AF;
+  color: #94A3B8;
+  font-weight: 400;
 }
 
 .filterDropdown {
-  height: 40px;
-  padding: 0 14px;
-  background: #FFFFFF;
-  border: 1px solid #D1D5DB;
+  height: 38px;
+  padding: 0 30px 0 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: 8px;
   font-size: 13px;
   color: #374151;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s ease;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  min-width: 140px;
 }
 
 .filterDropdown:hover {
-  background: #F9FAFB;
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+}
+
+.filterDropdown:focus {
+  outline: none;
+  border-color: #512728;
+  box-shadow: 0 0 0 3px rgba(81, 39, 40, 0.08);
+  background: #FFFFFF;
+}
+
+select.filterDropdown {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  background-color: #F8FAFC;
+}
+
+select.filterDropdown:hover {
+  background-color: #F1F5F9;
+}
+
+select.filterDropdown:focus {
+  background-color: #FFFFFF;
 }
 
 .resetBtn {
-  height: 40px;
+  height: 38px;
   padding: 0 14px;
   background: #FFFFFF;
-  border: 1px solid #D1D5DB;
+  border: 1px solid #E2E8F0;
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
+  color: #64748B;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s ease;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .resetBtn:hover {
-  background: #F9FAFB;
+  background: #F1F5F9;
+  color: #1E293B;
+  border-color: #CBD5E1;
+}
+
+.resetBtn:active {
+  background: #E2E8F0;
 }
 
 .tableCard {
@@ -453,10 +502,22 @@
   cursor: pointer;
   white-space: nowrap;
   margin-left: 8px;
+  font-family: inherit;
 }
 
 .perPageDropdown:hover {
   background: #F3F4F6;
+}
+
+select.perPageDropdown {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
 }
 
 @media (max-width: 1200px) {
@@ -519,8 +580,8 @@
   }
 
   .filterBar {
-    flex-direction: row;
-    flex-wrap: wrap;
+    padding: 12px 16px;
+    gap: 10px;
   }
 
   .searchWrapper {
@@ -531,7 +592,6 @@
   .filterDropdown {
     flex: 1;
     min-width: 0;
-    justify-content: center;
   }
 
   .resetBtn {
@@ -608,6 +668,7 @@
 
   .filterBar {
     padding: 10px 14px;
+    gap: 8px;
   }
 
   .filterDropdown {
