@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
@@ -7,6 +7,7 @@ import {
   IoLayersOutline,
   IoLocationOutline,
   IoArrowUpOutline,
+  IoClose,
 } from 'react-icons/io5';
 import {
   FaSkull,
@@ -15,6 +16,7 @@ import {
   FaBoxOpen,
   FaPlus,
   FaCheckCircle,
+  FaRegStickyNote,
 } from 'react-icons/fa';
 import { GiCirclingFish, GiCannedFish } from 'react-icons/gi';
 import { MdWarning } from 'react-icons/md';
@@ -23,7 +25,7 @@ import DataTable from '../../shared/data-table/DataTable';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { SkeletonTable } from '../../shared/skeleton/Skeleton';
-import { ApiV2 } from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import styles from '../batch-dashboard.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
@@ -57,6 +59,47 @@ export default function BatchSummary() {
   const [activeTab, setActiveTab] = useState('notes');
   const [activeCardTip, setActiveCardTip] = useState(null);
   const infoStripRef = useRef(null);
+  const [notes, setNotes] = useState([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteForm, setNoteForm] = useState({ fullName: '', note: '' });
+  const [noteSubmitting, setNoteSubmitting] = useState(false);
+
+  const fetchNotes = useCallback(async () => {
+    if (!batchId) return;
+    setNotesLoading(true);
+    try {
+      const response = await Api.get(`/note/${batchId}`);
+      if (Array.isArray(response.data.data)) {
+        setNotes(response.data.data);
+      }
+    } catch {
+      setNotes([]);
+    } finally {
+      setNotesLoading(false);
+    }
+  }, [batchId]);
+
+  const handleAddNote = async (e) => {
+    e.preventDefault();
+    if (!noteForm.fullName.trim() || !noteForm.note.trim()) {
+      toast.warn('Both full name and note are required.');
+      return;
+    }
+    setNoteSubmitting(true);
+    const noteToast = toast.loading('Adding note...');
+    try {
+      await Api.post(`/note/${batchId}`, { fullName: noteForm.fullName, note: noteForm.note });
+      toast.update(noteToast, { render: 'Note added successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+      setShowNoteModal(false);
+      setNoteForm({ fullName: '', note: '' });
+      fetchNotes();
+    } catch (err) {
+      toast.update(noteToast, { render: 'Failed to add note. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
+    } finally {
+      setNoteSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -73,6 +116,10 @@ export default function BatchSummary() {
     };
     if (batchId) fetchSummary();
   }, [batchId]);
+
+  useEffect(() => {
+    if (batchId) fetchNotes();
+  }, [batchId, fetchNotes]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -551,43 +598,97 @@ export default function BatchSummary() {
               </div>
             </div>
 
-            {/* Bottom Tabs */}
+            {/* Bottom Tabs — only Batch Notes */}
             <div className={styles.tabs}>
-              <div className={`${styles.tab} ${activeTab === 'notes' ? styles.activeTab : ''}`} onClick={() => setActiveTab('notes')}>Batch Notes</div>
-              <div className={`${styles.tab} ${activeTab === 'attachments' ? styles.activeTab : ''}`} onClick={() => setActiveTab('attachments')}>Attachments</div>
-              <div className={`${styles.tab} ${activeTab === 'documents' ? styles.activeTab : ''}`} onClick={() => setActiveTab('documents')}>Related Documents</div>
+              <div className={`${styles.tab} ${styles.activeTab}`}>Batch Notes</div>
             </div>
 
             <div className={styles.tabPanel}>
-              {activeTab === 'notes' && (
+              {notesLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: '#9CA3AF', fontSize: '0.9rem' }}>Loading notes...</div>
+              ) : notes.length === 0 ? (
                 <div>
                   <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}><FaBoxOpen size={40} /></div>
+                    <div className={styles.emptyIcon}><FaRegStickyNote size={40} /></div>
                     <p>No notes added yet.</p>
                     <div className={styles.emptySub}>Add notes about this batch for future reference.</div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button className={styles.addNoteBtn} onClick={() => {}}>
-                      <FaPlus size={12} /> Add Note
+                </div>
+              ) : (
+                <div className={styles.notesList}>
+                  {notes.map((n, i) => (
+                    <div key={i} className={styles.noteItem}>
+                      <div className={styles.noteHeader}>
+                        <span className={styles.noteAuthor}>{n.fullName}</span>
+                        <span className={styles.noteDate}>{n.createdAt ? formatDate(n.createdAt) : ''}</span>
+                      </div>
+                      <div className={styles.noteBody}>{n.note}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                <button className={styles.addNoteBtn} onClick={() => setShowNoteModal(true)}>
+                  <FaPlus size={12} /> Add Note
+                </button>
+              </div>
+            </div>
+
+            {/* ── ADD NOTE MODAL ── */}
+            {showNoteModal && (
+              <div className={styles.modalOverlay} onClick={() => setShowNoteModal(false)}>
+                <div className={styles.noteModal} onClick={(e) => e.stopPropagation()}>
+                  <div className={styles.noteModalHeader}>
+                    <div className={styles.noteModalTitleGroup}>
+                      <span className={styles.noteModalIcon}><FaRegStickyNote size={18} /></span>
+                      <div>
+                        <h4 className={styles.noteModalTitle}>Add Note</h4>
+                        <p className={styles.noteModalSubtitle}>FDL-BT-{String(batch.batchNumber).padStart(4, '0')}</p>
+                      </div>
+                    </div>
+                    <button className={styles.noteModalClose} onClick={() => setShowNoteModal(false)}>
+                      <IoClose size={20} />
                     </button>
                   </div>
+                  <form onSubmit={handleAddNote}>
+                    <div className={styles.noteModalBody}>
+                      <div className={styles.noteField}>
+                        <label className={styles.noteLabel}>Full Name</label>
+                        <input
+                          type="text"
+                          className={styles.noteInput}
+                          placeholder="Enter your full name"
+                          value={noteForm.fullName}
+                          onChange={(e) => setNoteForm({ ...noteForm, fullName: e.target.value })}
+                          required
+                          disabled={noteSubmitting}
+                        />
+                      </div>
+                      <div className={styles.noteField}>
+                        <label className={styles.noteLabel}>Note</label>
+                        <textarea
+                          className={styles.noteTextarea}
+                          placeholder="Write your observation or note..."
+                          rows={4}
+                          value={noteForm.note}
+                          onChange={(e) => setNoteForm({ ...noteForm, note: e.target.value })}
+                          required
+                          disabled={noteSubmitting}
+                        />
+                      </div>
+                    </div>
+                    <div className={styles.noteModalFooter}>
+                      <button type="button" className={styles.noteCancelBtn} onClick={() => setShowNoteModal(false)} disabled={noteSubmitting}>
+                        Cancel
+                      </button>
+                      <button type="submit" className={styles.noteSubmitBtn} disabled={noteSubmitting}>
+                        {noteSubmitting ? <><span className={styles.noteSpinner} /> Saving...</> : <><FaPlus size={14} /> Add Note</>}
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              )}
-              {activeTab === 'attachments' && (
-                <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}><FaBoxOpen size={40} /></div>
-                  <p>No attachments yet.</p>
-                  <div className={styles.emptySub}>Upload files related to this batch.</div>
-                </div>
-              )}
-              {activeTab === 'documents' && (
-                <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}><FaBoxOpen size={40} /></div>
-                  <p>No related documents.</p>
-                  <div className={styles.emptySub}>Link documents to this batch for easy access.</div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </main>
         </section>
       </div>

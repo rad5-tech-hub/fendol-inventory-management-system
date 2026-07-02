@@ -1262,6 +1262,287 @@
   }
 }
 
+/* ── Notes List ── */
+.notesList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.noteItem {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.noteHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.noteAuthor {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.noteDate {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+}
+
+.noteBody {
+  font-size: 0.85rem;
+  color: #374151;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ── Note Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1060;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.noteModal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+  animation: modalSlideUp 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.noteModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 28px 0;
+}
+
+.noteModalTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.noteModalIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #5127281A;
+  color: #512728;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.noteModalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 2px;
+}
+
+.noteModalSubtitle {
+  font-size: 13px;
+  color: #6B7280;
+  margin: 0;
+}
+
+.noteModalClose {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #F3F4F6;
+  color: #6B7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #E5E7EB;
+    color: #111827;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.noteModalBody {
+  padding: 24px 28px;
+}
+
+.noteField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.noteLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.noteInput {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #111827;
+  border: 1px solid #D1D5DB;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+  background: #fff;
+
+  &:focus {
+    border-color: #896143aa;
+    box-shadow: 0 0 0 3px rgba(137, 97, 67, 0.1);
+  }
+
+  &:disabled {
+    background: #F9FAFB;
+    cursor: not-allowed;
+  }
+}
+
+.noteTextarea {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #111827;
+  border: 1px solid #D1D5DB;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+  background: #fff;
+  resize: vertical;
+  min-height: 72px;
+
+  &::placeholder {
+    color: #9CA3AF;
+    font-size: 13px;
+  }
+
+  &:focus {
+    border-color: #896143aa;
+    box-shadow: 0 0 0 3px rgba(137, 97, 67, 0.1);
+  }
+
+  &:disabled {
+    background: #F9FAFB;
+    cursor: not-allowed;
+  }
+}
+
+.noteModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 28px;
+  border-top: 1px solid #F3F4F6;
+  background: #FAFBFC;
+}
+
+.noteCancelBtn {
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #D1D5DB;
+  background: #fff;
+  color: #374151;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  &:hover {
+    background: #F3F4F6;
+    border-color: #9CA3AF;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.noteSubmitBtn {
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: #512728;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+  font-family: inherit;
+
+  &:hover {
+    background: #714445;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.noteSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .topInfoCards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
