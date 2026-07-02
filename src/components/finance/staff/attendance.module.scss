@@ -113,25 +113,113 @@
   background: #F9FAFB;
 }
 
-.filterActionBtn {
-  height: 40px;
-  padding: 0 14px;
-  background: #FFFFFF;
-  border: 1px solid #D1D5DB;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #374151;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s ease;
+.filterDropdownWrapper {
+  position: relative;
+  display: inline-block;
 }
 
-.filterActionBtn:hover {
-  background: #F9FAFB;
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1055;
+  padding: 4px 0;
+  animation: fadeIn 0.12s ease;
+}
+
+.dropdownItem {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  white-space: nowrap;
+}
+
+.dropdownItem:hover {
+  background: #F3F4F6;
+}
+
+.dropdownItemActive {
+  background: #5127280F;
+  color: #512728;
+  font-weight: 600;
+}
+
+.dateDropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1055;
+  padding: 12px;
+  animation: fadeIn 0.12s ease;
+}
+
+.dateDropdownFields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dateLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.dateInput {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #111827;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  outline: none;
+  font-family: inherit;
+}
+
+.dateInput:focus {
+  border-color: #896143aa;
+  box-shadow: 0 0 0 2px rgba(137, 97, 67, 0.1);
+}
+
+.dateApplyBtn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px 16px;
+  background: #512728;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+}
+
+.dateApplyBtn:hover {
+  background: #714445;
+}
+
+.perPageWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.pageArrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .resetBtn {

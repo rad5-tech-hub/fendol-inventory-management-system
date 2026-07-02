@@ -44,6 +44,18 @@ const formatDateLabel = (iso) => {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 };
 
+const formatFilterDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const formatFilterDateShort = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
 const STATUS_API_MAP = {
   present: 'Present',
   late: 'Late',
@@ -80,7 +92,19 @@ export default function StaffAttendance() {
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
   const timeStr = now.toTimeString().split(' ')[0];
+  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   const [attendanceForm, setAttendanceForm] = useState({ date: todayStr, time: timeStr, comment: '' });
+  const [statusFilter, setStatusFilter] = useState('');
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [dateFrom, setDateFrom] = useState(firstOfMonth);
+  const [dateTo, setDateTo] = useState(todayStr);
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
+  const statusRef = React.useRef(null);
+  const dateRef = React.useRef(null);
+  const perPageRef = React.useRef(null);
 
   const fetchAttendanceData = useCallback(async () => {
     try {
@@ -147,6 +171,17 @@ export default function StaffAttendance() {
       setLoadingStaff(false);
     })();
   }, [fetchAttendanceData]);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (statusRef.current && !statusRef.current.contains(e.target)) setShowStatusDropdown(false);
+      if (dateRef.current && !dateRef.current.contains(e.target)) setShowDateDropdown(false);
+      if (perPageRef.current && !perPageRef.current.contains(e.target)) setShowPerPageDropdown(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const openSettings = useCallback(() => {
     setSettingsModal(true);
@@ -380,24 +415,44 @@ export default function StaffAttendance() {
               {/* ════ LEFT PANEL: Staff List ════ */}
               <div className={`${styles.leftPanel} ${showDetail ? styles.leftPanelCompressed : ''}`}>
 
-                {/* ── Filter Bar (no card wrapper) ── */}
+                {/* ── Filter Bar ── */}
                 <div className={styles.filterBar}>
                   <div className={styles.searchWrapper}>
                     <FiSearch size={15} className={styles.searchIcon} />
-                    <input type="text" className={styles.searchInput} placeholder="Search staff by name or ID..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                    <input type="text" className={styles.searchInput} placeholder="Search staff by name or ID..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} />
                   </div>
-                  <button className={styles.filterDropdown}>
-                    All Status <IoChevronDown size={11} />
-                  </button>
-                  <button className={styles.filterDropdown}>
-                    <IoCalendarOutline size={13} />
-                    May 24, 2025
-                  </button>
-                  <button className={styles.filterActionBtn}>
-                    <FiFilter size={13} />
-                    Filter
-                  </button>
-                  <button className={styles.resetBtn}>
+                  <div className={styles.filterDropdownWrapper} ref={statusRef}>
+                    <button className={styles.filterDropdown} onClick={() => { setShowStatusDropdown(!showStatusDropdown); setShowDateDropdown(false); }}>
+                      {statusFilter || 'All Status'} <IoChevronDown size={11} />
+                    </button>
+                    {showStatusDropdown && (
+                      <div className={styles.dropdownMenu}>
+                        {['', 'Present', 'Late', 'Absent', 'Off Day'].map(s => (
+                          <div key={s} className={`${styles.dropdownItem} ${statusFilter === s ? styles.dropdownItemActive : ''}`} onClick={() => { setStatusFilter(s); setShowStatusDropdown(false); setCurrentPage(1); }}>
+                            {s || 'All Status'}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className={styles.filterDropdownWrapper} ref={dateRef}>
+                    <button className={styles.filterDropdown} onClick={() => { setShowDateDropdown(!showDateDropdown); setShowStatusDropdown(false); }}>
+                      <IoCalendarOutline size={13} />
+                      {dateFrom === dateTo ? formatFilterDate(dateFrom) : formatFilterDateShort(dateFrom) + ' - ' + formatFilterDate(dateTo)}
+                    </button>
+                    {showDateDropdown && (
+                      <div className={styles.dateDropdownMenu}>
+                        <div className={styles.dateDropdownFields}>
+                          <label className={styles.dateLabel}>From</label>
+                          <input type="date" className={styles.dateInput} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                          <label className={styles.dateLabel}>To</label>
+                          <input type="date" className={styles.dateInput} value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                        </div>
+                        <button className={styles.dateApplyBtn} onClick={() => { setShowDateDropdown(false); setCurrentPage(1); }}>Apply</button>
+                      </div>
+                    )}
+                  </div>
+                  <button className={styles.resetBtn} onClick={() => { setSearch(''); setStatusFilter(''); setDateFrom(firstOfMonth); setDateTo(todayStr); setCurrentPage(1); }}>
                     <FiRefreshCw size={13} />
                     Reset
                   </button>
@@ -423,18 +478,22 @@ export default function StaffAttendance() {
                     {loadingStaff ? (
                       renderSkeletonRows()
                     ) : (() => {
-                      const filtered = !search.trim()
-                        ? staffList
-                        : staffList.filter(s =>
-                            s.name.toLowerCase().includes(search.toLowerCase()) ||
-                            s.id.toLowerCase().includes(search.toLowerCase())
-                          );
+                      const filtered = staffList.filter(s => {
+                        const matchesSearch = !search.trim() ||
+                          s.name.toLowerCase().includes(search.toLowerCase()) ||
+                          s.id.toLowerCase().includes(search.toLowerCase());
+                        const matchesStatus = !statusFilter || s.status === statusFilter;
+                        return matchesSearch && matchesStatus;
+                      });
+                      const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+                      const safePage = Math.min(currentPage, totalPages);
+                      const paginatedData = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
                       return filtered.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>No staff found.</div>
                       ) : (
                         <DataTable
                           columns={[
-                            { key: 'rowNum', label: '#', render: (val, row, idx) => <span className={styles.rowNum}>{idx + 1}</span> },
+                            { key: 'rowNum', label: '#', render: (val, row, idx) => <span className={styles.rowNum}>{(safePage - 1) * itemsPerPage + idx + 1}</span> },
                             { key: 'name', label: 'Staff Name', render: (val, row, idx) => {
                               const avatarBg = AVATAR_COLORS[idx % AVATAR_COLORS.length];
                               return (
@@ -453,7 +512,7 @@ export default function StaffAttendance() {
                               return <span className={styles.statusPill} style={{ background: statusStyle.bg, color: statusStyle.color }}>{val}</span>;
                             }},
                           ]}
-                          data={filtered}
+                          data={paginatedData}
                           actions={(staff, idx) => (
                             <PortalDropdown
                               btnClass={financeStyles.threeDotBtn}
@@ -475,19 +534,45 @@ export default function StaffAttendance() {
 
                   {/* ── Table Footer ── */}
                   <div className={styles.tableFooter}>
-                    <span className={styles.footerInfo}>{staffList.length} staff members</span>
+                    <span className={styles.footerInfo}>{filtered.length} staff members</span>
                     <div className={styles.pagination}>
-                      <button className={styles.pageArrow}>
+                      <button className={styles.pageArrow} disabled={safePage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
                         <FiChevronLeft size={15} />
                       </button>
-                      <button className={`${styles.pageBtn} ${styles.pageBtnActive}`}>1</button>
-                      <button className={styles.pageBtn}>2</button>
-                      <button className={styles.pageArrow}>
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (safePage <= 3) {
+                          pageNum = i + 1;
+                        } else if (safePage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = safePage - 2 + i;
+                        }
+                        return (
+                          <button key={pageNum} className={`${styles.pageBtn} ${safePage === pageNum ? styles.pageBtnActive : ''}`} onClick={() => setCurrentPage(pageNum)}>
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      <button className={styles.pageArrow} disabled={safePage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
                         <FiChevronRight size={15} />
                       </button>
-                      <button className={styles.perPageDropdown}>
-                        10 / page <IoChevronDown size={11} />
-                      </button>
+                      <div className={styles.perPageWrapper} ref={perPageRef}>
+                        <button className={styles.perPageDropdown} onClick={() => setShowPerPageDropdown(!showPerPageDropdown)}>
+                          {itemsPerPage} / page <IoChevronDown size={11} />
+                        </button>
+                        {showPerPageDropdown && (
+                          <div className={styles.dropdownMenu} style={{ right: 0, left: 'auto' }}>
+                            {[5, 10, 20, 50].map(n => (
+                              <div key={n} className={`${styles.dropdownItem} ${itemsPerPage === n ? styles.dropdownItemActive : ''}`} onClick={() => { setItemsPerPage(n); setCurrentPage(1); setShowPerPageDropdown(false); }}>
+                                {n} / page
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
