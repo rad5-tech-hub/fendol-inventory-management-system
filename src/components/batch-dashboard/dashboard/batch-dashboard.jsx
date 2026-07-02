@@ -225,9 +225,6 @@ export default function BatchDashboard() {
                     { key: 'comments', label: 'Descriptions', render: (value) => <span style={{ maxWidth: '200px', display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value || '—'}</span> },
                     { key: 'currentStage', label: 'Current Stage', render: (value) => <StageBadge stage={value} /> },
                     { key: 'fishStocks', label: 'Fish Stocks', align: 'right', render: (value) => f(totalFish(value)) },
-                    { key: 'fishProcesses', label: 'Processed', align: 'right', render: (value) => f(totalProcessed(value)) },
-                    { key: 'harvestLogs', label: 'Harvested', align: 'right', render: (value) => f(totalHarvested(value)) },
-                    { key: 'damagedFish', label: 'Mortality', align: 'right', render: (value) => <span className={styles.mortalityValue}>{f(totalDamaged(value))}</span> },
                     { key: 'endDate', label: 'Status', render: (value) => <StatusBadge completed={!!value} /> },
                   ]}
                   data={filteredData}

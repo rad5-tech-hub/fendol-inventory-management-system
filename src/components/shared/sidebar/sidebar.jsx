@@ -70,6 +70,7 @@ export default function SideBar({ show, handleClose }) {
   const expandedCallbackRef = useRef(null);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const user = useSelector((store) => store.user);
+  const activeSite = useSelector((store) => store.activeSite);
 
   useLayoutEffect(() => {
     const path = location.pathname;
@@ -291,14 +292,14 @@ export default function SideBar({ show, handleClose }) {
               {hasPermission(userTypes, 'batch-dashboard') && renderDirectLink("Batch Dashboard", "/batch-dashboard", <MdOutlineBarChart size={25} className="me-1" />)}
               {hasPermission(userTypes, 'manage-fish') && renderCard("fish_activities", "Fish Activities", <GiCirclingFish size={25} className="me-1" />,
                 <>
-                  {renderNavItem("Add Fish (Transfer to Nursery)", "/manage-fish/add-fish")}
+                  {renderNavItem(activeSite?.type?.toLowerCase() === 'hatchery' ? "Transfer to Nursery" : "Add Fish", "/manage-fish/add-fish")}
                   {renderNavItem("Move/Sort Fish", "/manage-fish/move-fish")}
                   {renderNavItem("Harvest", "/manage-fish/harvest-fish")}
                 </>
               )}
               {hasPermission(userTypes, 'manage-fish') && renderCard("site_transfers", "Site Transfers", <GiFishingNet size={25} className="me-1" />,
                 <>
-                  {renderNavItem("Incoming Fish", "/manage-fish/site-transfers")}
+                  {renderNavItem("Incoming Transfers", "/manage-fish/site-transfers")}
                   {renderNavItem("Transfer", "/manage-fish/site-transfers/transfer")}
                   {renderNavItem("History", "/manage-fish/site-transfers/history")}
                 </>
