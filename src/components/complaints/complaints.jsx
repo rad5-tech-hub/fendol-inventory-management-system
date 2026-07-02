@@ -12,7 +12,6 @@ import { ApiV2 } from '../shared/api/apiLink';
 
 export default function Complaints() {
   const [showSidebar, setShowSidebar] = useState(false);
-  const [complainant, setComplainant] = useState('');
   const [complaintType, setComplaintType] = useState('');
   const [description, setDescription] = useState('');
   const [staff, setStaff] = useState([]);
@@ -32,10 +31,8 @@ export default function Complaints() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   useEffect(() => {
-    if (complaintType === 'Staff') {
-      fetchStaff();
-    }
-  }, [complaintType]);
+    fetchStaff();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -79,12 +76,8 @@ export default function Complaints() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!complainant.trim() || !complaintType || !description.trim()) {
+    if (!complaintType || !description.trim() || !selectedStaff) {
       toast.error('Please fill in all required fields.', { className: 'dark-toast' });
-      return;
-    }
-    if (complaintType === 'Staff' && !selectedStaff) {
-      toast.error('Please select a staff member.', { className: 'dark-toast' });
       return;
     }
 
@@ -92,13 +85,13 @@ export default function Complaints() {
     const loadingToast = toast.loading('Submitting complaint...', { className: 'dark-toast' });
 
     try {
-      const body = complaintType === 'Staff'
-        ? {
-            staffId: selectedStaff.id,
-            description: description.trim(),
-            ...(staffAgainst && { staffAgainstId: staffAgainst.id }),
-          }
-        : { name: complainant.trim(), description: description.trim() };
+      const body = {
+        staffId: selectedStaff.id,
+        description: description.trim(),
+      };
+      if (complaintType === 'Staff' && staffAgainst) {
+        body.staffAgainstId = staffAgainst.id;
+      }
 
       const res = await ApiV2.post('/v2/complaint', body);
 
@@ -110,7 +103,6 @@ export default function Complaints() {
         className: 'dark-toast',
       });
 
-      setComplainant('');
       setComplaintType('');
       setDescription('');
       setSelectedStaff(null);
@@ -150,12 +142,57 @@ export default function Complaints() {
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>Complainant <span>*</span></label>
-                    <Form.Control
-                      type="text"
-                      placeholder="Full name of complainant"
-                      value={complainant}
-                      onChange={(e) => setComplainant(e.target.value)}
-                    />
+                    <div className={styles.staffDropdown} ref={staffRef}>
+                      <div style={{ position: 'relative' }}>
+                        <Form.Control
+                          type="text"
+                          placeholder={staffLoading ? 'Loading staff...' : 'Search staff...'}
+                          value={staffSearch}
+                          onChange={(e) => {
+                            setStaffSearch(e.target.value);
+                            setShowStaffDropdown(true);
+                            setSelectedStaff(null);
+                          }}
+                          onFocus={() => setShowStaffDropdown(true)}
+                        />
+                        <FiChevronDown
+                          size={16}
+                          style={{
+                            position: 'absolute',
+                            right: 14,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#9CA3AF',
+                            pointerEvents: 'none',
+                          }}
+                        />
+                      </div>
+                      {showStaffDropdown && (
+                        <div className={styles.staffList}>
+                          {staffLoading ? (
+                            <div className={styles.noStaff}>Loading...</div>
+                          ) : filteredStaff.length > 0 ? (
+                            filteredStaff.map((s) => (
+                              <div
+                                key={s.id}
+                                className={`${styles.staffItem} ${
+                                  selectedStaff?.id === s.id ? styles.selected : ''
+                                }`}
+                                onClick={() => {
+                                  setSelectedStaff(s);
+                                  setStaffSearch(s.name);
+                                  setShowStaffDropdown(false);
+                                }}
+                              >
+                                {s.name}
+                              </div>
+                            ))
+                          ) : (
+                            <div className={styles.noStaff}>No staff found</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className={styles.formGroup}>
                     <label>Complaint Type <span>*</span></label>
@@ -174,63 +211,6 @@ export default function Complaints() {
                       placeholder="Select type"
                     />
                   </div>
-
-                  {complaintType === 'Staff' && (
-                    <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-                      <label>Staff Member <span>*</span></label>
-                      <div className={styles.staffDropdown} ref={staffRef}>
-                        <div style={{ position: 'relative' }}>
-                          <Form.Control
-                            type="text"
-                            placeholder={staffLoading ? 'Loading staff...' : 'Search staff...'}
-                            value={staffSearch}
-                            onChange={(e) => {
-                              setStaffSearch(e.target.value);
-                              setShowStaffDropdown(true);
-                              setSelectedStaff(null);
-                            }}
-                            onFocus={() => setShowStaffDropdown(true)}
-                          />
-                          <FiChevronDown
-                            size={16}
-                            style={{
-                              position: 'absolute',
-                              right: 14,
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              color: '#9CA3AF',
-                              pointerEvents: 'none',
-                            }}
-                          />
-                        </div>
-                        {showStaffDropdown && (
-                          <div className={styles.staffList}>
-                            {staffLoading ? (
-                              <div className={styles.noStaff}>Loading...</div>
-                            ) : filteredStaff.length > 0 ? (
-                              filteredStaff.map((s) => (
-                                <div
-                                  key={s.id}
-                                  className={`${styles.staffItem} ${
-                                    selectedStaff?.id === s.id ? styles.selected : ''
-                                  }`}
-                                  onClick={() => {
-                                    setSelectedStaff(s);
-                                    setStaffSearch(s.name);
-                                    setShowStaffDropdown(false);
-                                  }}
-                                >
-                                  {s.name}
-                                </div>
-                              ))
-                            ) : (
-                              <div className={styles.noStaff}>No staff found</div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
 
                   {complaintType === 'Staff' && (
                     <div className={`${styles.formGroup} ${styles.fullWidth}`}>
