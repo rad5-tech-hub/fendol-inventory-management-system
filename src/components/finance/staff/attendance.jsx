@@ -454,7 +454,6 @@ export default function StaffAttendance() {
                             }},
                           ]}
                           data={filtered}
-                          onRowClick={(row) => handleViewProfile(row)}
                           actions={(staff, idx) => (
                             <PortalDropdown
                               btnClass={financeStyles.threeDotBtn}

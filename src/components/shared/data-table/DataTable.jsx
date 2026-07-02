@@ -53,8 +53,7 @@ export default function DataTable({
             data.map((row, rowIndex) => (
               <tr
                 key={row.id || rowIndex}
-                onClick={() => onRowClick?.(row)}
-                style={onRowClick ? { cursor: 'pointer' } : undefined}
+                {...(onRowClick ? { onClick: () => onRowClick(row), style: { cursor: 'pointer' } } : {})}
               >
                 {columns.map((col) => {
                   const cellValue = row[col.key];

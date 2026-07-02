@@ -298,7 +298,7 @@ export default function SideBar({ show, handleClose }) {
               )}
               {hasPermission(userTypes, 'manage-fish') && renderCard("site_transfers", "Site Transfers", <GiFishingNet size={25} className="me-1" />,
                 <>
-                  {renderNavItem("View Fish", "/manage-fish/site-transfers")}
+                  {renderNavItem("Incoming Fish", "/manage-fish/site-transfers")}
                   {renderNavItem("Transfer", "/manage-fish/site-transfers/transfer")}
                   {renderNavItem("History", "/manage-fish/site-transfers/history")}
                 </>

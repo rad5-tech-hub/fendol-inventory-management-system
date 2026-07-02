@@ -377,23 +377,34 @@
 
 /* ════ Right Panel (Docked Detail) ════ */
 .detailOverlay {
-  display: none;
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1049;
 }
 
 .rightPanel {
-  flex: 0 0 42%;
-  max-width: 42%;
-  margin-left: -1px;
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  padding: 24px;
-  position: sticky;
+  position: fixed;
   top: 0;
-  max-height: calc(89vh - 100px);
+  right: 0;
+  bottom: 0;
+  width: 42%;
+  max-width: 500px;
+  flex: none;
+  background: #FFFFFF;
+  border-left: 1px solid #E5E7EB;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+  border-radius: 0;
+  padding: 24px 24px 40px;
+  z-index: 1050;
+  max-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+  animation: slideInRight 0.25s ease;
 }
 
 .detailHeader {
@@ -1360,8 +1371,7 @@
   }
 
   .rightPanel {
-    flex: 0 0 45%;
-    max-width: 45%;
+    width: 45%;
   }
 
   .summaryRow {
@@ -1385,31 +1395,9 @@
   }
 
   .rightPanel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
     max-width: 420px;
-    flex: none;
-    border-radius: 0;
-    border-left: 1px solid #E5E7EB;
-    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
-    z-index: 1050;
-    max-height: 100vh;
-    padding: 20px;
-    animation: slideInRight 0.25s ease;
-  }
-
-  .detailOverlay {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
-    z-index: 1049;
+    padding: 20px 20px 36px;
   }
 
   .filterBar {
@@ -1464,7 +1452,7 @@
 
   .rightPanel {
     max-width: 100%;
-    padding: 16px;
+    padding: 16px 16px 32px;
   }
 
   .detailHeaderLeft {
