@@ -132,6 +132,52 @@
   flex-shrink: 0;
 }
 
+.filterDateInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+
+  &::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    left: 0;
+    top: 0;
+  }
+}
+
+.filterClearBtn {
+  height: 38px;
+  padding: 0 14px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: #DC2626;
+    background: #FEF2F2;
+  }
+}
+
 .ctrlText {
   font-size: 13px;
   color: #374151;
@@ -180,6 +226,47 @@
 
 .secBtn:hover {
   background: #F9FAFB;
+}
+
+/* ── Error Banner ── */
+.errorBanner {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.errorBannerContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.errorBannerIcon {
+  color: #DC2626;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.errorBannerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.errorBannerTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #991B1B;
+}
+
+.errorBannerMsg {
+  font-size: 13px;
+  color: #B91C1C;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 /* ── Stat Cards Row ── */
@@ -275,7 +362,6 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1450px;
 }
 
 .table th {
@@ -283,8 +369,8 @@
   font-weight: 600;
   color: #6B7280;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 14px 12px;
+  letter-spacing: 0.05em;
+  padding: 16px 20px;
   text-align: left;
   border-bottom: 1px solid #E5E7EB;
   white-space: nowrap;
@@ -293,11 +379,21 @@
 .table td {
   font-size: 13px;
   color: #374151;
-  padding: 14px 12px;
+  padding: 16px 20px;
   border-bottom: 1px solid #F3F4F6;
   font-weight: 500;
   white-space: nowrap;
   vertical-align: middle;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: 24px;
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 24px;
 }
 
 .table tbody tr:last-child td {

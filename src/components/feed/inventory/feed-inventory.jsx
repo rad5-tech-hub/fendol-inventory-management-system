@@ -17,6 +17,8 @@ import DataTable from "../../shared/data-table/DataTable";
 import feedStyles from '../feed.module.scss';
 import styles from './feed-inventory.module.scss';
 import AddFeedModal from '../view-all/AddFeedModal';
+import TopUpFeedModal from './TopUpFeedModal';
+import UseFeedModal from './UseFeedModal';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -58,6 +60,10 @@ export default function FeedInventory() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAddFeedModal, setShowAddFeedModal] = useState(false);
   const [editFeed, setEditFeed] = useState(null);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [topUpFeed, setTopUpFeed] = useState(null);
+  const [showUseFeedModal, setShowUseFeedModal] = useState(false);
+  const [useFeedItem, setUseFeedItem] = useState(null);
   const [feedRows, setFeedRows] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -151,15 +157,11 @@ export default function FeedInventory() {
     { divider: true },
     {
       label: <><BsArrowUpCircle size={14} style={{ marginRight: 10, color: '#16A34A' }} /> Restock Feed</>,
-      onClick: () => {
-        toast.info('Restock feature is not yet available.', { className: 'dark-toast' });
-      },
+      onClick: () => { setTopUpFeed(row); setShowTopUpModal(true); },
     },
     {
       label: <><BsArrowDownCircle size={14} style={{ marginRight: 10, color: '#F97316' }} /> Use Feed</>,
-      onClick: () => {
-        toast.info('Use feed feature is not yet available.', { className: 'dark-toast' });
-      },
+      onClick: () => { setUseFeedItem(row); setShowUseFeedModal(true); },
     },
   ];
 
@@ -609,6 +611,36 @@ export default function FeedInventory() {
         editData={editFeed}
         onClose={() => { setShowAddFeedModal(false); setEditFeed(null); }}
         onSuccess={fetchFeeds}
+      />
+      <TopUpFeedModal
+        show={showTopUpModal}
+        feed={topUpFeed}
+        onClose={() => { setShowTopUpModal(false); setTopUpFeed(null); }}
+        onSuccess={(success, msg) => {
+          if (success) {
+            toast.success(msg, { className: 'dark-toast' });
+            fetchFeeds();
+          } else {
+            toast.error(msg, { className: 'dark-toast' });
+          }
+          setShowTopUpModal(false);
+          setTopUpFeed(null);
+        }}
+      />
+      <UseFeedModal
+        show={showUseFeedModal}
+        feed={useFeedItem}
+        onClose={() => { setShowUseFeedModal(false); setUseFeedItem(null); }}
+        onSuccess={(success, msg) => {
+          if (success) {
+            toast.success(msg, { className: 'dark-toast' });
+            fetchFeeds();
+          } else {
+            toast.error(msg, { className: 'dark-toast' });
+          }
+          setShowUseFeedModal(false);
+          setUseFeedItem(null);
+        }}
       />
     </section>
   );

@@ -1,65 +1,88 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { IoCalendarOutline, IoClose } from "react-icons/io5";
+import { FiChevronLeft, FiChevronRight, FiArrowLeft } from "react-icons/fi";
+import { BsInfoCircle } from "react-icons/bs";
+import { FaExclamationTriangle } from "react-icons/fa";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
-import 'bootstrap/dist/css/bootstrap.min.css';
-import styles from '../feed.module.scss';
-import { Alert } from "react-bootstrap";
-import { FaExclamationTriangle } from "react-icons/fa";
 import DataTable from "../../shared/data-table/DataTable";
-import ReactPaginate from 'react-paginate';
-import Api from '../../shared/api/apiLink';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import ReactPaginate from "react-paginate";
+import Api from "../../shared/api/apiLink";
+import feedStyles from "../feed.module.scss";
+import styles from "./inventory-history.module.scss";
+import { useNavigate } from "react-router-dom";
+
+const f = (n) => new Intl.NumberFormat().format(n);
+
+const formatDate = (isoDate) => {
+  const date = new Date(isoDate);
+  const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  return { dateStr, timeStr };
+};
 
 export default function InventoryHistory() {
+  const navigate = useNavigate();
+  const user = useSelector((store) => store.user);
+  const activeSite = useSelector((store) => store.activeSite);
+  const isSuperAdmin = user?.userTypes?.includes("super_admin");
   const [inventoryHistory, setInventoryHistory] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 45;
   const [selectedDate, setSelectedDate] = useState("");
-  const [showSidebar, setShowSidebar] = useState(false); // Added for sidebar toggle
+  const [showSidebar, setShowSidebar] = useState(false);
+  const itemsPerPage = 45;
 
   useEffect(() => {
     const fetchInventoryHistory = async () => {
       try {
-        const response = await Api.get('/feeds-histories');
-        setInventoryHistory(response.data.data);
-        setFilteredData(response.data.data);
-      } catch (error) {
-        setError("Error fetching inventory history. Please try again.");
+        setLoading(true);
+        const siteId = isSuperAdmin ? (activeSite?.id || "all") : (user?.siteId || "all");
+        const params = {};
+        if (siteId) params.siteId = siteId;
+        const response = await Api.get("/feeds-histories", { params });
+        if (response.data?.success) {
+          setInventoryHistory(response.data.data || []);
+          setFilteredData(response.data.data || []);
+        } else {
+          setError(response.data?.response_message || "Failed to load inventory history.");
+        }
+      } catch (err) {
+        const serverMsg = err?.response?.data?.response_message || err?.response?.data?.message;
+        const networkMsg = !err.response ? "Network error \u2014 please check your internet connection." : null;
+        setError(serverMsg || networkMsg || "Error fetching inventory history. Please try again.");
       } finally {
         setLoading(false);
       }
     };
     fetchInventoryHistory();
-  }, []);
-
-  const formatDate = (isoDate) => {
-    const date = new Date(isoDate);
-    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${date.getFullYear()}`;
-    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
-    return `${formattedDate} ${formattedTime}`;
-  };
+  }, [activeSite, isSuperAdmin, user]);
 
   const handleDateChange = (event) => {
     const date = event.target.value;
     setSelectedDate(date);
+    setCurrentPage(0);
 
     if (date) {
       const filtered = inventoryHistory.filter((history) => {
         const createdDate = new Date(history.createdAt);
-        const formattedDate = createdDate.toISOString().split('T')[0];
+        const formattedDate = createdDate.toISOString().split("T")[0];
         return formattedDate === date;
       });
       setFilteredData(filtered);
     } else {
       setFilteredData(inventoryHistory);
     }
+  };
+
+  const clearFilter = () => {
+    setSelectedDate("");
+    setFilteredData(inventoryHistory);
+    setCurrentPage(0);
   };
 
   const offset = currentPage * itemsPerPage;
@@ -73,157 +96,194 @@ export default function InventoryHistory() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const columns = [
+    {
+      key: "createdAt",
+      label: "Date",
+      render: (value) => {
+        const { dateStr, timeStr } = formatDate(value);
+        return (
+          <div className={styles.dateCell}>
+            <span className={styles.dateTop}>{dateStr}</span>
+            <span className={styles.dateBottom}>{timeStr}</span>
+          </div>
+        );
+      },
+    },
+    { key: "feedName", label: "Feed Name", render: (value, row) => row?.feed?.feedName || "--" },
+    { key: "feedType", label: "Feed Type", render: (value, row) => row?.feed?.feedType || "--" },
+    {
+      key: "originalQuantity",
+      label: "Qty Added",
+      render: (value) => <span className={styles.numCell}>{Number(value) > 0 ? f(value) : "--"}</span>,
+    },
+    {
+      key: "quantityUsed",
+      label: "Qty Used",
+      render: (value) => <span className={styles.numCell}>{Number(value) > 0 ? f(value) : "--"}</span>,
+    },
+    {
+      key: "quantitySold",
+      label: "Qty Sold",
+      render: (value) => <span className={styles.numCell}>{Number(value) > 0 ? f(value) : "--"}</span>,
+    },
+  ];
+
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${feedStyles.body}`}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
-          <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
+        <div className={`${feedStyles.sidebar} d-lg-block ${showSidebar ? "d-block" : "d-none"}`}>
+          <SideBar className={feedStyles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
-            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 align-items-md-center">
-              <h4 className="mb-4">Feed Inventory History</h4>
-              <div className="mb-4 d-flex gap-2 align-items-center">
-                <span className="fw-semibold fs-6">Filter</span>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  className={`form-control ${styles.dateInput}`}
-                  placeholder="Filter By Date"
-                />
+        <section className={`${feedStyles.content} flex-grow-1`}>
+          <main className={styles.pageWrapper}>
+            <div className={styles.breadcrumb}>
+              <span className={styles.breadcrumbItem}>Feed Management</span>
+              <span className={styles.breadcrumbSep}>&gt;</span>
+              <span className={styles.breadcrumbActive}>Inventory History</span>
+            </div>
+
+            <div className={styles.headerRow}>
+              <div className={styles.headerLeft}>
+                <h1 className={styles.pageTitle}>Feed Inventory History</h1>
+                <p className={styles.pageSubtitle}>Track all feed additions, usage, and sales.</p>
+              </div>
+              <div className={styles.headerRight}>
+                <button className={styles.backBtn} onClick={() => navigate(-1)}>
+                  <FiArrowLeft size={14} />
+                  Back
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.filterRow}>
+              <div className={styles.filterLeft}>
+                <div className={styles.filterField}>
+                  <span className={styles.filterCaption}>Filter by Date</span>
+                  <div className={styles.filterControl}>
+                    <IoCalendarOutline size={15} className={styles.ctrlIcon} />
+                    <input
+                      type="date"
+                      className={styles.filterDateInput}
+                      value={selectedDate}
+                      onChange={handleDateChange}
+                    />
+                    {selectedDate && (
+                      <IoClose size={15} className={styles.ctrlClear} onClick={clearFilter} />
+                    )}
+                  </div>
+                </div>
+                {selectedDate && (
+                  <button className={styles.filterClearBtn} onClick={clearFilter}>
+                    <IoClose size={14} />
+                    Clear filters
+                  </button>
+                )}
               </div>
             </div>
 
             {loading ? (
               <div style={{ padding: "20px 0" }}>
-                <SkeletonTable rows={5} cols={8} />
+                <SkeletonTable rows={5} cols={6} />
               </div>
             ) : error ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-75 py-5">
-                  <FaExclamationTriangle size={40} />
-                  <span className="fw-semibold">{error}</span>
-                </Alert>
+              <div className={styles.errorBanner}>
+                <div className={styles.errorBannerContent}>
+                  <FaExclamationTriangle size={18} className={styles.errorBannerIcon} />
+                  <div className={styles.errorBannerText}>
+                    <span className={styles.errorBannerTitle}>Unable to load inventory history</span>
+                    <span className={styles.errorBannerMsg}>{error}</span>
+                  </div>
+                </div>
               </div>
             ) : filteredData.length === 0 ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-75 py-5">
-                  <FaExclamationTriangle size={40} />
-                  <span className="fw-semibold">No data available.</span>
-                </Alert>
+              <div className={styles.emptyState}>
+                <BsInfoCircle size={36} className={styles.emptyStateIcon} />
+                <span className={styles.emptyStateText}>
+                  {selectedDate ? "No records for this date" : "No inventory history available"}
+                </span>
+                <span className={styles.emptyStateSub}>
+                  {selectedDate ? "Try selecting a different date." : "Feed transactions will appear here once recorded."}
+                </span>
               </div>
             ) : (
               <>
-                {/* Table for Desktop */}
-                <div className={`d-none d-lg-block ${styles.tableWrapper}`}>
-                  <DataTable
-                    className={styles.styled_table}
-                    columns={[
-                      { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
-                      { key: 'feedDetails', label: 'FEED NAME', render: (value) => value?.feedName },
-                      { key: 'feedDetails', label: 'FEED TYPE', render: (value) => value?.feedType, },
-                      { key: 'stage', label: 'POND', render: (value) => value || '-' },
-                      {
-                        key: 'feedDetails',
-                        label: 'QUANTITY ADDED (KG)',
-                        render: (value, row) => row.stage === null ? value?.originalQuantity : '-',
-                      },
-                      { key: 'quantityUsed', label: 'QUANTITY USED (KG)' },
-                      { key: 'remainingFeed', label: 'QUANTITY REMAINING (KG)' },
-                      {
-                        key: 'status',
-                        label: 'STATUS',
-                        render: (value) => (
-                          <span className={`text-uppercase fw-semibold ${
-                            value === 'in stock'
-                              ? 'text-success'
-                              : value === 'out of stock'
-                              ? 'text-danger'
-                              : value === 'low stock'
-                              ? 'text-warning'
-                              : ''
-                          }`}>
-                            {value}
-                          </span>
-                        ),
-                      },
-                    ]}
-                    data={paginatedData}
-                  />
-                </div>
+                <div className={styles.tableCard}>
+                  <div className={`d-none d-lg-block ${styles.tableWrapper}`}>
+                    <DataTable
+                      className={styles.table}
+                      columns={columns}
+                      data={paginatedData}
+                    />
+                  </div>
 
-                {/* Card Layout for Tablet and Below */}
-                <div className={`d-lg-none ${styles.cardContainer}`}>
-                  {paginatedData.map((history, index) => {
-                    const formattedDate = formatDate(history.createdAt);
-                    return (
-                      <div key={index} className={`${styles.card} mb-3 p-3 border rounded`}>
-                        <div className="d-flex flex-column">
-                          <div className="mb-2">
-                            <strong>Date Created:</strong> {formattedDate}
+                  <div className={`d-lg-none ${styles.cardContainer}`}>
+                    {paginatedData.map((history, index) => {
+                      const { dateStr, timeStr } = formatDate(history.createdAt);
+                      return (
+                        <div key={history.id || index} className={styles.historyCard}>
+                          <div className={styles.cardHeader}>
+                            <span className={styles.cardDate}>{dateStr}</span>
+                            <span className={styles.cardSite}>{timeStr}</span>
                           </div>
-                          <div className="mb-2">
-                            <strong>Feed Name:</strong> {history.feedDetails.feedName}
+                          <div className={styles.cardDivider} />
+                          <div className={styles.cardRow}>
+                            <span className={styles.cardLabel}>Feed Name</span>
+                            <span className={styles.cardValue}>{history.feed?.feedName || "--"}</span>
                           </div>
-                          <div className="mb-2">
-                            <strong>Feed Type:</strong> {history.feedDetails.feedType}
+                          <div className={styles.cardRow}>
+                            <span className={styles.cardLabel}>Feed Type</span>
+                            <span className={styles.cardValue}>{history.feed?.feedType || "--"}</span>
                           </div>
-                          <div className="mb-2">
-                            <strong>Pond:</strong> {history.stage || '-'}
+                          <div className={styles.cardDivider} />
+                          <div className={styles.cardRow}>
+                            <span className={styles.cardLabel}>Qty Added</span>
+                            <span className={styles.cardValue}>{Number(history.originalQuantity) > 0 ? f(history.originalQuantity) : "--"}</span>
                           </div>
-                          <div className="mb-2">
-                            <strong>Qty Added (KG):</strong> {history.stage === null ? history.feedDetails.originalQuantity : '-'}
+                          <div className={styles.cardRow}>
+                            <span className={styles.cardLabel}>Qty Used</span>
+                            <span className={styles.cardValue}>{Number(history.quantityUsed) > 0 ? f(history.quantityUsed) : "--"}</span>
                           </div>
-                          <div className="mb-2">
-                            <strong>Qty Used (KG):</strong> {history.quantityUsed}
-                          </div>
-                          <div className="mb-2">
-                            <strong>Qty Remaining (KG):</strong> {history.remainingFeed}
-                          </div>
-                          <div>
-                            <strong>Status:</strong>{' '}
-                            <span className={`text-uppercase fw-semibold ${
-                              history.status === 'in stock'
-                                ? 'text-success'
-                                : history.status === 'out of stock'
-                                ? 'text-danger'
-                                : history.status === 'low stock'
-                                ? 'text-warning'
-                                : ''
-                            }`}>
-                              {history.status}
-                            </span>
+                          <div className={styles.cardRow}>
+                            <span className={styles.cardLabel}>Qty Sold</span>
+                            <span className={styles.cardValue}>{Number(history.quantitySold) > 0 ? f(history.quantitySold) : "--"}</span>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
 
-                <div className="d-flex justify-content-center mt-4">
-                  <ReactPaginate
-                    previousLabel={"<"}
-                    nextLabel={">"}
-                    breakLabel={"..."}
-                    pageCount={pageCount}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageClick}
-                    containerClassName={"pagination"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
+                  {pageCount > 1 && (
+                    <div className={styles.tableFooter}>
+                      <span className={styles.footerInfo}>
+                        Showing {offset + 1} to {Math.min(offset + itemsPerPage, filteredData.length)} of {filteredData.length} records
+                      </span>
+                      <div className={styles.pagination}>
+                        <ReactPaginate
+                          previousLabel={<FiChevronLeft size={15} />}
+                          nextLabel={<FiChevronRight size={15} />}
+                          breakLabel="..."
+                          pageCount={pageCount}
+                          marginPagesDisplayed={2}
+                          pageRangeDisplayed={3}
+                          onPageChange={handlePageClick}
+                          containerClassName="pagination"
+                          pageClassName="page-item"
+                          pageLinkClassName="page-link"
+                          previousClassName="page-item"
+                          previousLinkClassName="page-link"
+                          nextClassName="page-item"
+                          nextLinkClassName="page-link"
+                          breakClassName="page-item"
+                          breakLinkClassName="page-link"
+                          activeClassName="active"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}

@@ -1,0 +1,554 @@
+@import '../../shared/style.scss';
+
+.pageWrapper {
+  padding: 24px 32px;
+  background: #F8F9FA;
+  min-height: 89vh;
+  overflow: auto;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.breadcrumbItem {
+  color: #6B7280;
+  font-weight: 400;
+}
+
+.breadcrumbSep {
+  color: #D1D5DB;
+  font-weight: 400;
+}
+
+.breadcrumbActive {
+  color: #512728;
+  font-weight: 600;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageTitle {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 4px 0 0 0;
+  font-weight: 400;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.backBtn {
+  height: 38px;
+  padding: 0 16px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  &:hover {
+    background: #F9FAFB;
+    border-color: #D1D5DB;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  &:active {
+    background: #F3F4F6;
+    transform: translateY(1px);
+  }
+}
+
+/* ── Filter Row ── */
+.filterRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.filterLeft {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterCaption {
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.filterControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.ctrlIcon {
+  color: #9CA3AF;
+  flex-shrink: 0;
+}
+
+.filterDateInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+
+  &::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    left: 0;
+    top: 0;
+  }
+}
+
+.ctrlClear {
+  color: #9CA3AF;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.ctrlClear:hover {
+  color: #6B7280;
+}
+
+.filterClearBtn {
+  height: 38px;
+  padding: 0 14px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: #DC2626;
+    background: #FEF2F2;
+  }
+}
+
+/* ── Table Card ── */
+.tableCard {
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 16px 20px;
+  text-align: left;
+  border-bottom: 1px solid #E5E7EB;
+  white-space: nowrap;
+}
+
+.table td {
+  font-size: 13px;
+  color: #374151;
+  padding: 16px 20px;
+  border-bottom: 1px solid #F3F4F6;
+  font-weight: 500;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: 24px;
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 24px;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: #F9FAFB;
+}
+
+.dateCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dateTop {
+  font-weight: 600;
+  color: #111827;
+}
+
+.dateBottom {
+  font-size: 12px;
+  color: #9CA3AF;
+  font-weight: 400;
+}
+
+.numCell {
+  font-variant-numeric: tabular-nums;
+}
+
+.tableFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  border-top: 1px solid #E5E7EB;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footerInfo {
+  font-size: 13px;
+  color: #6B7280;
+}
+
+/* ── Error Banner ── */
+.errorBanner {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.errorBannerContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.errorBannerIcon {
+  color: #DC2626;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.errorBannerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.errorBannerTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #991B1B;
+}
+
+.errorBannerMsg {
+  font-size: 13px;
+  color: #B91C1C;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* ── Empty State ── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #9CA3AF;
+  text-align: center;
+}
+
+.emptyStateIcon {
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.emptyStateText {
+  font-size: 15px;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 4px;
+}
+
+.emptyStateSub {
+  font-size: 13px;
+  color: #9CA3AF;
+}
+
+/* ── Mobile Card ── */
+.cardContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.historyCard {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.cardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.cardLabel {
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.cardValue {
+  font-size: 13px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.cardDivider {
+  height: 1px;
+  background: #F3F4F6;
+  margin: 6px 0;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.cardDate {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cardSite {
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+/* ── Pagination ── */
+.paginationWrap {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.pagination :global {
+  display: flex;
+  gap: 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  .page-item {
+    margin: 0;
+  }
+
+  .page-link {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+
+    &:hover {
+      background: #F3F4F6;
+    }
+  }
+
+  .active .page-link {
+    background: #512728;
+    border-color: #512728;
+    color: #FFFFFF;
+    font-weight: 600;
+  }
+
+  .disabled .page-link {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1200px) {
+  .filterRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterLeft {
+    flex-wrap: wrap;
+  }
+
+  .filterField {
+    flex: 1;
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 991px) {
+  .pageWrapper {
+    padding: 16px 20px;
+  }
+
+  .headerRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .headerRight {
+    width: 100%;
+  }
+
+  .filterLeft {
+    flex-direction: column;
+  }
+
+  .filterField {
+    min-width: 0;
+  }
+
+  .tableFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 576px) {
+  .pageWrapper {
+    padding: 12px 14px;
+  }
+
+  .pageTitle {
+    font-size: 20px;
+  }
+
+  .pageSubtitle {
+    font-size: 13px;
+  }
+
+  .filterRow {
+    gap: 12px;
+  }
+
+  .filterControl {
+    width: 100%;
+  }
+
+  .table th,
+  .table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .tableFooter {
+    padding: 12px 14px;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { FiArrowLeft, FiPlus, FiUploadCloud, FiInfo, FiTrash2, FiX } from 'react-icons/fi';
 import { BsBoxSeam } from 'react-icons/bs';
 import { createPortal } from 'react-dom';
@@ -57,6 +58,9 @@ const ModalShell = ({ title, show, onClose, children }) => {
 export default function CreateFeedBatch() {
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useSelector((store) => store.user);
+  const activeSite = useSelector((store) => store.activeSite);
+  const isSuperAdmin = user?.userTypes?.includes('super_admin');
   const editBatch = location.state?.editBatch || null;
   const isEditing = !!editBatch;
   const [showSidebar, setShowSidebar] = useState(false);
@@ -185,8 +189,12 @@ export default function CreateFeedBatch() {
         const res = await ApiV2.get('/api/v1/feeds', { params: { siteId: 'all' } });
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setFeedOptions(list);
-      } catch {
-        if (!cancelled) setFeedOptions([]);
+      } catch (err) {
+        if (!cancelled) {
+          setFeedOptions([]);
+          const msg = err?.response?.data?.response_message || err?.response?.data?.message || 'Failed to load feeds.';
+          toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
+        }
       }
     };
     fetchFeeds();
@@ -201,8 +209,12 @@ export default function CreateFeedBatch() {
         const res = await ApiV2.get('/api/v1/staff', { params: { siteId: 'all' } });
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setStaffOptions(list);
-      } catch {
-        if (!cancelled) setStaffOptions([]);
+      } catch (err) {
+        if (!cancelled) {
+          setStaffOptions([]);
+          const msg = err?.response?.data?.response_message || err?.response?.data?.message || 'Failed to load staff.';
+          toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
+        }
       }
     };
     fetchStaff();
@@ -217,8 +229,12 @@ export default function CreateFeedBatch() {
         const res = await ApiV2.get('/v2/site-types');
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setSiteTypeOptions(list);
-      } catch {
-        if (!cancelled) setSiteTypeOptions([]);
+      } catch (err) {
+        if (!cancelled) {
+          setSiteTypeOptions([]);
+          const msg = err?.response?.data?.response_message || err?.response?.data?.message || 'Failed to load site types.';
+          toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
+        }
       }
     };
     fetchSiteTypes();
@@ -230,13 +246,26 @@ export default function CreateFeedBatch() {
     setNewMaterialName('');
     setNewMaterialQty('');
     try {
-      const res = await ApiV2.get('/v2/raw-material');
+      const siteId = isSuperAdmin ? activeSite?.id : (user?.siteId || '');
+      const params = {};
+      if (siteId) params.siteId = siteId;
+      const res = await ApiV2.get('/v2/raw-material', { params });
       const list = Array.isArray(res.data?.data) ? res.data.data : [];
       setRawMaterialOptions(list);
-    } catch {
+      setShowAddMaterialModal(true);
+    } catch (err) {
+      const serverMsg = err?.response?.data?.response_message || err?.response?.data?.message;
+      const networkMsg = !err.response ? 'Network error — please check your internet connection.' : null;
+      const finalMsg = serverMsg || networkMsg || 'Failed to load raw materials.';
+      toast.error(finalMsg, { className: 'dark-toast', autoClose: 6000 });
+      console.error('[RawMaterials] Fetch failed:', {
+        endpoint: '/v2/raw-material',
+        status: err?.response?.status,
+        responseData: err?.response?.data,
+        networkMessage: err?.message,
+      });
       setRawMaterialOptions([]);
     }
-    setShowAddMaterialModal(true);
   };
 
   /* ── Fetch cost types from API ── */
@@ -247,8 +276,12 @@ export default function CreateFeedBatch() {
         const res = await ApiV2.get('/v2/cost-type');
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setCostTypeOptions(list);
-      } catch {
-        if (!cancelled) setCostTypeOptions([]);
+      } catch (err) {
+        if (!cancelled) {
+          setCostTypeOptions([]);
+          const msg = err?.response?.data?.response_message || err?.response?.data?.message || 'Failed to load cost types.';
+          toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
+        }
       }
     };
     fetchCostTypes();
@@ -290,14 +323,22 @@ export default function CreateFeedBatch() {
 
   const handleAddFeedProduced = () => {
     const val = parseFloat(modalInputValue);
-    if (!isNaN(val) && val > 0) setTotalFeedProduced(prev => prev + val);
+    if (!isNaN(val) && val > 0) {
+      setTotalFeedProduced(prev => prev + val);
+    } else {
+      toast.error('Please enter a valid quantity greater than 0.', { className: 'dark-toast', autoClose: 4000 });
+    }
     setModalInputValue('');
     setShowFeedProducedModal(false);
   };
 
   const handleAddBagsProduced = () => {
     const val = parseFloat(modalInputValue);
-    if (!isNaN(val) && val > 0) setTotalBagsProduced(prev => prev + val);
+    if (!isNaN(val) && val > 0) {
+      setTotalBagsProduced(prev => prev + val);
+    } else {
+      toast.error('Please enter a valid number of bags greater than 0.', { className: 'dark-toast', autoClose: 4000 });
+    }
     setModalInputValue('');
     setShowBagsProducedModal(false);
   };
@@ -310,6 +351,10 @@ export default function CreateFeedBatch() {
           ? { ...m, qty: (parseFloat(m.qty) || 0) + val }
           : m
       ));
+    } else if (!selectedMaterial) {
+      toast.error('No material selected for top-up.', { className: 'dark-toast', autoClose: 4000 });
+    } else {
+      toast.error('Please enter a valid quantity greater than 0.', { className: 'dark-toast', autoClose: 4000 });
     }
     setModalInputValue('');
     setSelectedMaterial(null);
@@ -317,9 +362,20 @@ export default function CreateFeedBatch() {
   };
 
   const handleAddNewMaterial = () => {
-    if (!newMaterialName) return;
+    if (!newMaterialName) {
+      toast.error('Please select a raw material from the list.', { className: 'dark-toast', autoClose: 4000 });
+      return;
+    }
     const found = rawMaterialOptions.find(m => m.id === newMaterialName);
-    if (!found) return;
+    if (!found) {
+      toast.error('Selected material not found. Please try again.', { className: 'dark-toast', autoClose: 4000 });
+      return;
+    }
+    const qty = parseFloat(newMaterialQty);
+    if (!newMaterialQty || isNaN(qty) || qty <= 0) {
+      toast.error('Please enter a valid quantity greater than 0.', { className: 'dark-toast', autoClose: 4000 });
+      return;
+    }
     const already = rawMaterials.find(m => m.id === found.id);
     if (already) {
       setRawMaterials(prev => prev.map(m =>

@@ -9,6 +9,7 @@ import {
   IoFilterOutline,
   IoRefreshOutline,
   IoHelpCircleOutline,
+  IoEyeOutline,
 } from 'react-icons/io5';
 import { FaCheckCircle, FaSkull, FaDollarSign } from 'react-icons/fa';
 import { GiCirclingFish, GiCannedFish } from 'react-icons/gi';
@@ -16,6 +17,7 @@ import { MdOutlinePointOfSale } from 'react-icons/md';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
 import DataTable from '../../shared/data-table/DataTable';
+import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { SkeletonTable, SkeletonStatGrid } from '../../shared/skeleton/Skeleton';
@@ -231,12 +233,14 @@ export default function BatchDashboard() {
                   data={filteredData}
                   emptyMessage="No batches found."
                   actions={(row) => (
-                    <div className={styles.actionsCell}>
-                      <button className={styles.viewBtn} onClick={() => navigate(`/batch-dashboard/summary/${row.batchNumber}`)}>
-                        View Summary
-                      </button>
-                      <button className={styles.threeDotBtn} onClick={() => {}}><BsThreeDotsVertical size={16} /></button>
-                    </div>
+                    <PortalDropdown
+                      btnClass={styles.threeDotBtn}
+                      menuStyle={{ minWidth: 210 }}
+                      stopPropagation
+                      items={[
+                        { label: <><IoEyeOutline size={16} style={{ marginRight: 10 }} /> View Summary</>, onClick: () => navigate(`/batch-dashboard/summary/${row.batchNumber}`) },
+                      ]}
+                    />
                   )}
                 />
 
