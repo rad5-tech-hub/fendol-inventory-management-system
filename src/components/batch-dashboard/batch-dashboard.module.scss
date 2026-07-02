@@ -1262,42 +1262,18 @@
   }
 }
 
-/* ── Notes List ── */
-.notesList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.noteItem {
+/* ── Comments Box ── */
+.commentsBox {
   background: #F9FAFB;
   border: 1px solid #E5E7EB;
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 16px 20px;
 }
 
-.noteHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.noteAuthor {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-.noteDate {
-  font-size: 0.75rem;
-  color: #9CA3AF;
-}
-
-.noteBody {
+.commentsText {
   font-size: 0.85rem;
   color: #374151;
-  line-height: 1.5;
+  line-height: 1.6;
   white-space: pre-wrap;
 }
 

@@ -25,7 +25,7 @@ import DataTable from '../../shared/data-table/DataTable';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { SkeletonTable } from '../../shared/skeleton/Skeleton';
-import Api, { ApiV2 } from '../../shared/api/apiLink';
+import { ApiV2 } from '../../shared/api/apiLink';
 import styles from '../batch-dashboard.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
@@ -59,67 +59,47 @@ export default function BatchSummary() {
   const [activeTab, setActiveTab] = useState('notes');
   const [activeCardTip, setActiveCardTip] = useState(null);
   const infoStripRef = useRef(null);
-  const [notes, setNotes] = useState([]);
-  const [notesLoading, setNotesLoading] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
-  const [noteForm, setNoteForm] = useState({ fullName: '', note: '' });
+  const [comments, setComments] = useState('');
   const [noteSubmitting, setNoteSubmitting] = useState(false);
 
-  const fetchNotes = useCallback(async () => {
+  const fetchSummary = useCallback(async () => {
     if (!batchId) return;
-    setNotesLoading(true);
+    setLoading(true);
+    setError('');
     try {
-      const response = await Api.get(`/note/${batchId}`);
-      if (Array.isArray(response.data.data)) {
-        setNotes(response.data.data);
-      }
-    } catch {
-      setNotes([]);
+      const response = await ApiV2.get(`/v2/batch-summary/${batchId}`);
+      setBatch(response.data.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch batch summary.');
     } finally {
-      setNotesLoading(false);
+      setLoading(false);
     }
   }, [batchId]);
 
   const handleAddNote = async (e) => {
     e.preventDefault();
-    if (!noteForm.fullName.trim() || !noteForm.note.trim()) {
-      toast.warn('Both full name and note are required.');
+    if (!comments.trim()) {
+      toast.warn('Please enter a note.');
       return;
     }
     setNoteSubmitting(true);
-    const noteToast = toast.loading('Adding note...');
+    const noteToast = toast.loading('Saving note...');
     try {
-      await Api.post(`/note/${batchId}`, { fullName: noteForm.fullName, note: noteForm.note });
-      toast.update(noteToast, { render: 'Note added successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+      await ApiV2.patch(`/v2/edit/${batch.batchNumber}`, { comments: comments.trim() });
+      toast.update(noteToast, { render: 'Note saved successfully!', type: 'success', isLoading: false, autoClose: 3000 });
       setShowNoteModal(false);
-      setNoteForm({ fullName: '', note: '' });
-      fetchNotes();
+      await fetchSummary();
     } catch (err) {
-      toast.update(noteToast, { render: 'Failed to add note. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
+      toast.update(noteToast, { render: 'Failed to save note. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
     } finally {
       setNoteSubmitting(false);
     }
   };
 
   useEffect(() => {
-    const fetchSummary = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await ApiV2.get(`/v2/batch-summary/${batchId}`);
-        setBatch(response.data.data);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch batch summary.');
-      } finally {
-        setLoading(false);
-      }
-    };
     if (batchId) fetchSummary();
-  }, [batchId]);
-
-  useEffect(() => {
-    if (batchId) fetchNotes();
-  }, [batchId, fetchNotes]);
+  }, [batchId, fetchSummary]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -604,9 +584,11 @@ export default function BatchSummary() {
             </div>
 
             <div className={styles.tabPanel}>
-              {notesLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: '#9CA3AF', fontSize: '0.9rem' }}>Loading notes...</div>
-              ) : notes.length === 0 ? (
+              {batch.comments ? (
+                <div className={styles.commentsBox}>
+                  <div className={styles.commentsText}>{batch.comments}</div>
+                </div>
+              ) : (
                 <div>
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}><FaRegStickyNote size={40} /></div>
@@ -614,22 +596,10 @@ export default function BatchSummary() {
                     <div className={styles.emptySub}>Add notes about this batch for future reference.</div>
                   </div>
                 </div>
-              ) : (
-                <div className={styles.notesList}>
-                  {notes.map((n, i) => (
-                    <div key={i} className={styles.noteItem}>
-                      <div className={styles.noteHeader}>
-                        <span className={styles.noteAuthor}>{n.fullName}</span>
-                        <span className={styles.noteDate}>{n.createdAt ? formatDate(n.createdAt) : ''}</span>
-                      </div>
-                      <div className={styles.noteBody}>{n.note}</div>
-                    </div>
-                  ))}
-                </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                <button className={styles.addNoteBtn} onClick={() => setShowNoteModal(true)}>
-                  <FaPlus size={12} /> Add Note
+                <button className={styles.addNoteBtn} onClick={() => { setComments(batch.comments || ''); setShowNoteModal(true); }}>
+                  <FaPlus size={12} /> {batch.comments ? 'Edit Note' : 'Add Note'}
                 </button>
               </div>
             </div>
@@ -653,25 +623,13 @@ export default function BatchSummary() {
                   <form onSubmit={handleAddNote}>
                     <div className={styles.noteModalBody}>
                       <div className={styles.noteField}>
-                        <label className={styles.noteLabel}>Full Name</label>
-                        <input
-                          type="text"
-                          className={styles.noteInput}
-                          placeholder="Enter your full name"
-                          value={noteForm.fullName}
-                          onChange={(e) => setNoteForm({ ...noteForm, fullName: e.target.value })}
-                          required
-                          disabled={noteSubmitting}
-                        />
-                      </div>
-                      <div className={styles.noteField}>
                         <label className={styles.noteLabel}>Note</label>
                         <textarea
                           className={styles.noteTextarea}
                           placeholder="Write your observation or note..."
                           rows={4}
-                          value={noteForm.note}
-                          onChange={(e) => setNoteForm({ ...noteForm, note: e.target.value })}
+                          value={comments}
+                          onChange={(e) => setComments(e.target.value)}
                           required
                           disabled={noteSubmitting}
                         />
