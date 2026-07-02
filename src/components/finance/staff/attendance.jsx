@@ -361,6 +361,18 @@ export default function StaffAttendance() {
     </div>
   );
 
+  // Filtered & paginated staff list
+  const filtered = loadingStaff ? [] : staffList.filter(s => {
+    const matchesSearch = !search.trim() ||
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.id.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = !statusFilter || s.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedData = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+
   // Derive detail panel data from attendance records
   const detailAttendance = detailStaff
     ? attendanceRecords.filter(a => a.staffId === detailStaff.id)
@@ -478,16 +490,6 @@ export default function StaffAttendance() {
                     {loadingStaff ? (
                       renderSkeletonRows()
                     ) : (() => {
-                      const filtered = staffList.filter(s => {
-                        const matchesSearch = !search.trim() ||
-                          s.name.toLowerCase().includes(search.toLowerCase()) ||
-                          s.id.toLowerCase().includes(search.toLowerCase());
-                        const matchesStatus = !statusFilter || s.status === statusFilter;
-                        return matchesSearch && matchesStatus;
-                      });
-                      const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-                      const safePage = Math.min(currentPage, totalPages);
-                      const paginatedData = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
                       return filtered.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>No staff found.</div>
                       ) : (
