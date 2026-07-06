@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 
+const GAP = 6;
+const MENU_WIDTH = 200;
+
 export default function PortalDropdown({
   items,
   btnClass,
@@ -13,6 +16,7 @@ export default function PortalDropdown({
   const [internalOpen, setInternalOpen] = useState(false);
   const btnRef = useRef(null);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [maxMenuHeight, setMaxMenuHeight] = useState(null);
 
   const isControlled = show !== undefined;
   const open = isControlled ? show : internalOpen;
@@ -35,11 +39,38 @@ export default function PortalDropdown({
       e.preventDefault();
       if (!open && btnRef.current) {
         const rect = btnRef.current.getBoundingClientRect();
-        setCoords({ top: rect.bottom + 4, left: Math.max(4, rect.right - 200) });
+        const estimatedHeight = items.reduce((h, item) => h + (item.divider ? 9 : 36), 8);
+
+        let left = rect.right - MENU_WIDTH;
+        if (left < GAP) left = GAP;
+        if (left + MENU_WIDTH > window.innerWidth - GAP) left = window.innerWidth - MENU_WIDTH - GAP;
+
+        const spaceBelow = window.innerHeight - rect.bottom - GAP;
+        const spaceAbove = rect.top - GAP;
+
+        let top, maxH;
+        if (spaceBelow >= estimatedHeight) {
+          top = rect.bottom + GAP;
+          maxH = null;
+        } else if (spaceAbove >= estimatedHeight) {
+          top = rect.top - estimatedHeight;
+          maxH = null;
+        } else if (spaceBelow > 80) {
+          top = rect.bottom + GAP;
+          maxH = spaceBelow;
+        } else {
+          top = GAP;
+          maxH = window.innerHeight - GAP;
+        }
+
+        setCoords({ top, left });
+        setMaxMenuHeight(maxH);
+      } else {
+        setMaxMenuHeight(null);
       }
       setOpen(!open);
     },
-    [open, setOpen],
+    [open, setOpen, items],
   );
 
   const handleClickOutside = useCallback(
@@ -75,6 +106,8 @@ export default function PortalDropdown({
               top: coords.top,
               left: coords.left,
               minWidth: 180,
+              maxHeight: maxMenuHeight,
+              overflowY: maxMenuHeight ? 'auto' : 'visible',
               background: '#4F2A25',
               color: '#fff',
               borderRadius: 6,
