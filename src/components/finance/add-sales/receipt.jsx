@@ -39,109 +39,146 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
   }
 
   const receipt = receiptData.data.data;
-  const formattedDate = new Date(receipt.date).toLocaleDateString("en-GB");
+  const createdAt = new Date(receipt.createdAt || receipt.purchasedDate);
+  const formattedDate = createdAt.toLocaleDateString("en-GB");
+  const formattedTime = createdAt.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="custom-receipt-overlay">
       <div className="custom-receipt-container">
         <div ref={printRef} className="receipt-content">
-          {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: "5px" }}>
-            <img src={Logo} alt="logo" style={{ maxWidth: "80px", margin: "0 auto", display: "block" }} />
-            <p style={{ fontWeight: "bold", margin: "5px 0" }}>SALES RECEIPT</p>
-          </div>
 
-          {/* Company Info */}
-          <div style={{ textAlign: "right", marginBottom: "5px" }}>
-            <p style={{ margin: "0" }}>FACTORY/OFFICE:</p>
-            <p style={{ margin: "0" }}>Kilometer 5 Osisioma</p>
-            <p style={{ margin: "0" }}>Industry Layout, Aba</p>
-            <p style={{ margin: "0" }}>Abia State</p>
-            <p style={{ margin: "0" }}>Tel: 08170002853</p>
-            <p style={{ margin: "0" }}>Email: fendolgroup@yahoo.com</p>
-          </div>
-
-          {/* Customer and Receipt Info */}
-          <div style={{ marginBottom: "5px" }}>
-            <p style={{ margin: "0" }}>
-              <strong>{receipt.customer.category} Name:</strong> {receipt.customer.fullName}
-            </p>
-            <p style={{ margin: "0" }}>
-              <strong>Address:</strong> {receipt.customer.address}
-            </p>
-            <p style={{ margin: "0" }}>
-              <strong>Served by:</strong> {receipt.servedBy}
-            </p>
-            <p style={{ margin: "0", fontStyle: "italic", textAlign: "right" }}>
-              Receipt No: {receipt.transactionId}
-            </p>
-            <p style={{ margin: "0", textAlign: "right" }}>
-              <strong>Date:</strong> {formattedDate}
-            </p>
-            <p style={{ margin: "0", textAlign: "right" }}>
-              <strong>Time:</strong> {receipt.time}
+          {/* ── Header ── */}
+          <div style={{ textAlign: "center", marginBottom: "16px" }}>
+            <img src={Logo} alt="logo" style={{ maxWidth: "64px", margin: "0 auto 8px", display: "block" }} />
+            <p style={{ fontSize: "14px", fontWeight: 700, letterSpacing: "1.5px", color: "#1A1C1E", margin: 0, textTransform: "uppercase" }}>
+              Sales Receipt
             </p>
           </div>
 
-          {/* Items Table */}
-          <table className="table table-bordered" style={{ width: "100%", marginBottom: "5px" }}>
-            <thead style={{ backgroundColor: "gray" }}>
-              <tr>
-                <th style={{ width: "40%", padding: "2px" }}>PROD</th>
-                <th style={{ width: "15%", padding: "2px" }}>
+          {/* ── Company Info ── */}
+          <div style={{ textAlign: "right", marginBottom: "16px", fontSize: "11px", color: "#6B7280", lineHeight: 1.6 }}>
+            <p style={{ margin: 0, fontWeight: 600, color: "#374151" }}>FENDOL FISH LIMITED</p>
+            <p style={{ margin: 0 }}>Km 5 Osisioma Industry Layout, Aba</p>
+            <p style={{ margin: 0 }}>Abia State</p>
+            <p style={{ margin: 0 }}>Tel: 08170002853</p>
+            <p style={{ margin: 0 }}>Email: fendolgroup@yahoo.com</p>
+          </div>
+
+          {/* ── Separator ── */}
+          <div style={{ height: "1px", background: "#E5E7EB", marginBottom: "14px" }} />
+
+          {/* ── Customer & Receipt Info ── */}
+          <div style={{ marginBottom: "14px" }}>
+            <div style={{ marginBottom: "8px" }}>
+              <p style={{ margin: "0 0 3px", fontSize: "11px", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Customer
+              </p>
+              <p style={{ margin: "0 0 2px", fontSize: "13px", fontWeight: 600, color: "#1A1C1E" }}>
+                {receipt.customer.fullName}
+              </p>
+              <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#6B7280" }}>
+                {receipt.customer.address}
+              </p>
+              <p style={{ margin: "0", fontSize: "11px", color: "#9CA3AF" }}>
+                Served by: {receiptData.data.serverBy || receipt.servedBy || '-'}
+              </p>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#9CA3AF" }}>
+                Receipt: <span style={{ color: "#374151", fontWeight: 600 }}>{receipt.transactionId}</span>
+              </p>
+              <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#9CA3AF" }}>
+                Date: <span style={{ color: "#374151" }}>{formattedDate}</span>
+              </p>
+              <p style={{ margin: "0", fontSize: "11px", color: "#9CA3AF" }}>
+                Time: <span style={{ color: "#374151" }}>{formattedTime}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* ── Items Table ── */}
+          <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "14px" }}>
+            <thead>
+              <tr style={{ borderBottom: "2px solid #E5E7EB" }}>
+                <th style={{ padding: "6px 4px 6px 0", textAlign: "left", fontSize: "10px", fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Item
+                </th>
+                <th style={{ padding: "6px 4px", textAlign: "center", fontSize: "10px", fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                   {receipt.salesCategory === "fresh-fish" ? "WT" : "QTY"}
                 </th>
-                <th style={{ width: "20%", padding: "2px" }}>PRC(₦)</th>
-                <th style={{ width: "25%", padding: "2px" }}>TOT(₦)</th>
+                <th style={{ padding: "6px 4px", textAlign: "right", fontSize: "10px", fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  ₦/Unit
+                </th>
+                <th style={{ padding: "6px 0 6px 4px", textAlign: "right", fontSize: "10px", fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Total
+                </th>
               </tr>
             </thead>
             <tbody>
-              {receipt.purchasedItems?.map((product, index) => (
-                <tr key={index}>
-                  <td style={{ padding: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {product.productName}
-                  </td>
-                  <td style={{ padding: "2px", textAlign: "center" }}>
-                    {product.salesCategory == "fresh-fish"
-                      ? product.weight
-                      : product.productName?.toLowerCase().includes("broken")
-                      ? product.quantityUsedToPack
-                      : product.quantity}
-                  </td>
-                  <td style={{ padding: "2px", textAlign: "center" }}>
-                    {product.basePrice?.toLocaleString()}
-                  </td>
-                  <td style={{ padding: "2px", textAlign: "center" }}>
-                    {product.totalPrice?.toLocaleString() || product.total?.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+              {receipt.salesItems?.map((product, index) => {
+                const qty = Number(product.quantity) || 0;
+                const wt = Number(product.productWeight) || 0;
+                const tot = Number(product.totalPrice) || 0;
+                const isFresh = receipt.salesCategory === "fresh-fish";
+                const displayQty = isFresh ? wt.toLocaleString() : qty.toLocaleString();
+                const unitPrice = (isFresh && wt ? tot / wt : qty ? tot / qty : tot).toLocaleString();
+                return (
+                  <tr key={index} style={{ borderBottom: index < receipt.salesItems.length - 1 ? "1px solid #F3F4F6" : "none" }}>
+                    <td style={{ padding: "6px 4px 6px 0", fontSize: "12px", color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {product.productName}
+                    </td>
+                    <td style={{ padding: "6px 4px", textAlign: "center", fontSize: "12px", color: "#6B7280" }}>
+                      {displayQty}
+                    </td>
+                    <td style={{ padding: "6px 4px", textAlign: "right", fontSize: "12px", color: "#6B7280" }}>
+                      {unitPrice}
+                    </td>
+                    <td style={{ padding: "6px 0 6px 4px", textAlign: "right", fontSize: "12px", fontWeight: 600, color: "#1A1C1E" }}>
+                      {tot.toLocaleString()}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
-          {/* Totals */}
-          <div style={{ textAlign: "right", marginBottom: "5px" }}>
-            <p style={{ margin: "0" }}>
-              <strong>Grand Total:</strong> ₦{receipt.totalPrice?.toLocaleString()}
-            </p>
-            <p style={{ margin: "0" }}>
-              <strong>Paid:</strong> ₦{receipt.totalPaid?.toLocaleString()}
-            </p>
-            <p style={{ margin: "0" }}>
-              <strong>Amount Due:</strong> ₦{receipt.remainingBalance?.toLocaleString()}
-            </p>
-            <p style={{ margin: "0" }}>
-              <strong>Payment Type:</strong> {receipt.paymentType}
-            </p>
-            <p style={{ margin: "0" }}>
-              <strong>Your Total Savings:</strong> ₦{receipt.discount?.toLocaleString()}
-            </p>
+          {/* ── Separator ── */}
+          <div style={{ height: "1px", background: "#E5E7EB", marginBottom: "10px" }} />
+
+          {/* ── Totals ── */}
+          <div style={{ fontSize: "12px", lineHeight: 1.8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: "#6B7280" }}>Grand Total</span>
+              <span style={{ fontWeight: 700, color: "#1A1C1E" }}>₦{Number(receipt.totalPrice).toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: "#6B7280" }}>Paid</span>
+              <span style={{ fontWeight: 600, color: "#16A34A" }}>₦{Number(receipt.totalPaid).toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: "#6B7280" }}>Amount Due</span>
+              <span style={{ fontWeight: 700, color: Number(receipt.remainingBalance || (Number(receipt.totalPrice) - Number(receipt.totalPaid))) > 0 ? "#DC2626" : "#1A1C1E" }}>
+                ₦{Number(receipt.remainingBalance || (Number(receipt.totalPrice) - Number(receipt.totalPaid))).toLocaleString()}
+              </span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: "#6B7280" }}>Payment</span>
+              <span style={{ fontWeight: 600, color: "#374151", textTransform: "capitalize" }}>{receipt.paymentType}</span>
+            </div>
+            {Number(receipt.discount) > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "#6B7280" }}>Savings</span>
+                <span style={{ fontWeight: 600, color: "#16A34A" }}>₦{Number(receipt.discount).toLocaleString()}</span>
+              </div>
+            )}
           </div>
 
-          {/* Footer */}
-          <div style={{ textAlign: "center", marginTop: "5px" }}>
-            <hr style={{ border: "1px dashed black", margin: "5px 0" }} />
-            <p style={{ margin: "0", fontSize: "10px" }}>Thanks For Your Kind Patronage!</p>
+          {/* ── Footer ── */}
+          <div style={{ textAlign: "center", marginTop: "16px", paddingTop: "12px", borderTop: "1px solid #E5E7EB" }}>
+            <p style={{ margin: 0, fontSize: "11px", color: "#9CA3AF", letterSpacing: "0.3px" }}>
+              Thank you for your patronage!
+            </p>
           </div>
         </div>
 
@@ -170,22 +207,23 @@ const customStyles = `
     z-index: 1000;
   }
   .custom-receipt-container {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    padding: 10px;
-    max-height: 80vh;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    padding: 24px;
+    max-height: 85vh;
     overflow-y: auto;
-    width: fit-content; /* Fit content width for modal display */
-    min-width: 300px; /* Minimum width for readability */
-    max-width: 90vw; /* Prevent overflow on small screens */
+    width: fit-content;
+    min-width: 320px;
+    max-width: 92vw;
   }
   .receipt-content {
     font-size: 12px;
-    line-height: 1.3;
+    line-height: 1.5;
+    color: #374151;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   @media print {
-    /* Hide everything except the printable content */
     body > *:not(#printable-content) {
       display: none;
     }
@@ -193,17 +231,17 @@ const customStyles = `
       position: absolute;
       top: 0;
       left: 0;
-      width: 300px; /* 80mm width for thermal printer */
-      background-color: white;
-      color: black;
-      padding: 5px;
+      width: 300px;
+      background-color: #ffffff;
+      color: #374151;
+      padding: 8px;
       font-size: 12px;
-      line-height: 1.3;
+      line-height: 1.5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .d-print-none {
-      display: none; /* Hide buttons during print */
+      display: none;
     }
-    /* Ensure table fits within 80mm */
     #printable-content table {
       width: 100%;
       table-layout: fixed;

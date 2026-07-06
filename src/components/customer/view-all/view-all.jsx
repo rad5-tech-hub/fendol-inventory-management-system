@@ -115,19 +115,13 @@ export default function ViewAllCustomers() {
       || (c.address || '').toLowerCase().includes(q);
     const matchesCategory = !selectedCategory || c.category === selectedCategory;
     let matchesBalance = true;
-    const bal = Number(c.balance) || 0;
-    if (balanceFilter === 'owed') matchesBalance = bal < 0;
-    else if (balanceFilter === 'owes') matchesBalance = bal > 0;
-    else if (balanceFilter === 'zero') matchesBalance = bal === 0;
+    if (balanceFilter === 'zero') {
+      const bal = Number(c.balance) || 0;
+      matchesBalance = bal === 0;
+    }
     return matchesSearch && matchesCategory && matchesBalance;
   });
 
-  const totalCustomers = customers.length;
-  const totalOutstanding = customers.reduce((sum, c) => {
-    const b = Number(c.balance) || 0;
-    return sum + (b < 0 ? Math.abs(b) : 0);
-  }, 0);
-  const totalDebtors = customers.filter(c => (Number(c.balance) || 0) < 0).length;
   const pageCount = Math.ceil(filteredCustomers.length / itemsPerPage);
   const offset = currentPage * itemsPerPage;
   const currentCustomers = filteredCustomers.slice(offset, offset + itemsPerPage);
@@ -161,7 +155,7 @@ export default function ViewAllCustomers() {
     try {
       await Api.put(`/customer/${selectedCustomer.id}`, selectedCustomer);
       toast.update(loadingToast, { render: 'Customer saved successfully!', type: 'success', isLoading: false, autoClose: 3000 });
-      fetchCustomers();
+      fetchCustomers(getApiFilter());
       setShowModal(false);
       setSelectedCustomer(null);
     } catch (error) {
@@ -305,7 +299,7 @@ export default function ViewAllCustomers() {
                     Total Customers
                   </div>
                   <div style={{ fontSize: '26px', fontWeight: 700, color: '#2E3135', lineHeight: 1.2 }}>
-                    {totalCustomers}
+                    {aggregates.totalCustomers}
                   </div>
                 </div>
               </div>
@@ -333,7 +327,7 @@ export default function ViewAllCustomers() {
                     Total Outstanding Debt
                   </div>
                   <div style={{ fontSize: '26px', fontWeight: 700, color: '#dc3545', lineHeight: 1.2 }}>
-                    {formatCurrency(totalOutstanding)}
+                    {formatCurrency(Math.abs(Number(aggregates.totalOutstandingDebt)))}
                   </div>
                 </div>
               </div>
@@ -363,7 +357,7 @@ export default function ViewAllCustomers() {
                     Total Debtors
                   </div>
                   <div style={{ fontSize: '26px', fontWeight: 700, color: '#DC2626', lineHeight: 1.2 }}>
-                    {totalDebtors}
+                    {aggregates.totalDebtors}
                   </div>
                 </div>
               </div>

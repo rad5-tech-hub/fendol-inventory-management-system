@@ -82,15 +82,27 @@ export default function PersonalLedger() {
     try {
       setLoading(true);
       setError('');
-      const response = await Api.get(`/customer/${customerId}`);
-      if (Array.isArray(response.data.data)) {
-        setLedgerData(response.data.data);
-        if (response.data.data.length > 0) {
-          setFullName(response.data.data[0].fullName);
-          setCategory(response.data.data[0].customerCategory);
+      const allData = [];
+      let cursor = null;
+      let hasMore = true;
+
+      while (hasMore) {
+        const params = { limit: 100 };
+        if (cursor) params.cursor = cursor;
+        const response = await Api.get(`/customer/${customerId}`, { params });
+        const body = response.data;
+        if (body.success && Array.isArray(body.data)) {
+          allData.push(...body.data.map(({ passwordHash, ...rest }) => rest));
+          hasMore = body.pagination?.hasMore || false;
+          cursor = body.pagination?.nextCursor || null;
+        } else {
+          throw new Error('Unexpected response format');
         }
-      } else {
-        throw new Error('Expected an array of ledger data');
+      }
+
+      setLedgerData(allData);
+      if (allData.length > 0) {
+        setFullName(allData[0].fullName);
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -122,12 +134,12 @@ export default function PersonalLedger() {
 
   const filteredLedgerData = useMemo(() => {
     return ledgerData.filter(record => {
-      const tDate = new Date(record.date);
+      const tDate = new Date(record.createdAt);
       if (dateFrom && tDate < new Date(dateFrom)) return false;
       if (dateTo && tDate > new Date(dateTo + 'T23:59:59')) return false;
       if (typeFilter !== 'all') {
-        const type = record.productName ? 'sale' : (record.credit > 0 ? 'payment' : 'payment');
-        if (type !== typeFilter && typeFilter !== 'all') return false;
+        const type = Number(record.debit) > 0 ? 'sale' : Number(record.credit) > 0 ? 'payment' : 'opening';
+        if (type !== typeFilter) return false;
       }
       return true;
     });
@@ -139,9 +151,9 @@ export default function PersonalLedger() {
 
   const totalCredit = ledgerData.reduce((sum, r) => sum + (Number(r.credit) || 0), 0);
   const totalDebit = ledgerData.reduce((sum, r) => sum + (Number(r.debit) || 0), 0);
-  const balance = ledgerData.length > 0 ? ledgerData[0].balanceWithRollover ?? 0 : 0;
-  const balanceColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';
-  const balanceLabel = balance > 0 ? 'Customer Owes Us' : balance < 0 ? 'We Owe Customer' : 'Settled';
+  const balance = ledgerData.length > 0 ? Number(ledgerData[0]?.balance || 0) : 0;
+  const balanceColor = balance < 0 ? '#DC2626' : balance > 0 ? '#16A34A' : '#6B7280';
+  const balanceLabel = balance < 0 ? 'Owes Us' : balance > 0 ? 'We Owe' : 'Settled';
 
   const handlePageChange = (data) => setCurrentPage(data.selected);
 
@@ -155,19 +167,19 @@ export default function PersonalLedger() {
   const hasActiveFilters = dateFrom || dateTo || typeFilter !== 'all';
 
   const ledgerColumns = [
-    { key: 'date', label: 'DATE', width: '14%', render: (value) => <span style={{ color: '#8C949B', whiteSpace: 'nowrap' }}>{formatDate(value)}</span> },
+    { key: 'createdAt', label: 'DATE', width: '14%', render: (value) => <span style={{ color: '#8C949B', whiteSpace: 'nowrap' }}>{formatDate(value)}</span> },
     {
       key: '_description',
       label: 'DESCRIPTION',
       width: '28%',
       render: (_, row) => (
         <div className="d-flex align-items-center gap-2">
-          {row.productName && (
+          {Number(row.debit) > 0 && (
             <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#DBEAFE', color: '#1D4ED8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
               S
             </span>
           )}
-          <span>{row.productName || row.description || '-'}</span>
+          <span>{row.description || '-'}</span>
         </div>
       ),
     },
@@ -181,8 +193,9 @@ export default function PersonalLedger() {
       align: 'right',
       render: (value) => {
         if (value == null) return '-';
-        const color = value > 0 ? '#16A34A' : value < 0 ? '#DC2626' : '#6B7280';
-        return <span style={{ fontWeight: 600, color }}>{formatCurrency(value)}</span>;
+        const bal = Number(value);
+        const color = bal < 0 ? '#DC2626' : bal > 0 ? '#16A34A' : '#6B7280';
+        return <span style={{ fontWeight: 600, color }}>{formatCurrency(bal)}</span>;
       },
     },
   ];
@@ -191,7 +204,7 @@ export default function PersonalLedger() {
     <PortalDropdown
       btnClass={styles.threeDotBtn}
       items={[
-        ...(row.productName
+        ...(Number(row.debit) > 0
           ? [
               { label: <><BsPrinter size={14} style={{ marginRight: 8 }} /> Print Receipt</>, onClick: () => handleReceipt(row) },
               { divider: true },
