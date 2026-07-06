@@ -423,18 +423,7 @@ export default function PersonalLedger() {
                         borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                       }}>
                         <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
-                          Total Debit (N)
-                        </div>
-                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#DC2626' }}>
-                          {formatCurrency(totalDebit)}
-                        </div>
-                      </div>
-                      <div style={{
-                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                      }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
-                          Balance (N)
+                          Current Balance
                         </div>
                         <div style={{ fontSize: '20px', fontWeight: 700, color: balanceColor }}>
                           {formatCurrency(balance)}
