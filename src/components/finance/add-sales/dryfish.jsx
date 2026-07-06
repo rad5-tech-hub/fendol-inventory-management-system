@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Form, Row, Col, Button, Alert } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
 import Api from '../../shared/api/apiLink';
@@ -9,18 +10,24 @@ import { BsExclamationTriangleFill } from 'react-icons/bs';
 import ReceiptModal from './receipt';
 import { useConfirm } from '../../shared/confirm-modal';
 
-const SalesForm = ({ customers, stages, products }) => {
+const SalesForm = ({ customers, stages, products, siteId, productTypes }) => {
+    const activeSite = useSelector((store) => store.activeSite);
+    const user = useSelector((store) => store.user);
+    const resolvedSiteId = siteId || activeSite?.id || user?.siteId;
     const [dryData, setDryData] = useState({
         products: [],
         category: '',
         customerId: '',
         discount: 0,
         description: '',
-        salesCategory: '',
         paymentType: '',
         fullName: '',
         amountPaid: null
     });
+    const dryFishTypeId = productTypes.find(t => {
+        const n = t.name?.toLowerCase() || '';
+        return n === 'dry' || n.includes('dry fish') || n.includes('dry');
+    })?.id;
 
     const [receiptData, setReceiptData] = useState({});
     const [showReceipt, setShowReceipt] = useState(false);
@@ -134,8 +141,7 @@ const SalesForm = ({ customers, stages, products }) => {
 
             return {
                 ...prevState,
-                products: updatedProducts,
-                salesCategory: 'dry'
+                products: updatedProducts
             };
         });
     };
@@ -227,13 +233,39 @@ const SalesForm = ({ customers, stages, products }) => {
     const handleAddSales = async (e) => {
         e.preventDefault();
         const ok = await confirm({ message: "Are you sure you want to add this sale?", title: "Confirm Sale", variant: "primary" }); if (!ok) return;
+
+        if (!dryFishTypeId) {
+            toast.error("Product type 'Dry Fish' not configured. Contact admin.", {
+                position: toast.POSITION.TOP_CENTER,
+                autoClose: 6000,
+                className: 'dark-toast'
+            });
+            setLoader(false);
+            return;
+        }
     
         setLoader(true);
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
     
         try {
-            // Step 1: Add the sale
-            const saleResponse = await Api.post('/sales', dryData);
+            const payload = {
+                products: dryData.products
+                    .filter(p => checkedProducts[p.id])
+                    .map(p => ({
+                        id: p.id,
+                        quantityCount: p.quantity || 0,
+                        quantityWeight: p.quantityUsedToPack || 0,
+                        packCount: p.quantity || 0
+                    })),
+                customerId: dryData.customerId,
+                paymentType: dryData.paymentType?.toLowerCase(),
+                discount: dryData.discount || 0,
+                description: dryData.description,
+                amountPaid: dryData.amountPaid,
+                salesCategoryId: dryFishTypeId,
+                siteId: resolvedSiteId
+            };
+            const saleResponse = await Api.post('/sales', payload);
     
             if (saleResponse.status < 200 || saleResponse.status >= 300) {
                 throw new Error(saleResponse.data?.message || "Sale failed!");
@@ -299,11 +331,16 @@ const SalesForm = ({ customers, stages, products }) => {
             fetchCustomers();
         } catch (error) {
             console.error("Error in handleAddSales:", error);
+            const data = error.response?.data;
+            const backendErrors = data?.errors;
+            const errorMsg = backendErrors
+                ? backendErrors.join('. ')
+                : (data?.response_message || data?.error?.message || data?.message || error.response?.message || 'Sale failed!');
             toast.update(salesToast, {
-                render: error.response?.message || error.response?.data?.message || 'Sale failed!',
+                render: errorMsg,
                 type: "error",
                 isLoading: false,
-                autoClose: 6000,
+                autoClose: 8000,
                 className: 'dark-toast'
             });
         } finally {
@@ -344,9 +381,9 @@ const SalesForm = ({ customers, stages, products }) => {
                                 )},
                                 { key: 'productWeight', label: 'PRODUCT WEIGHT', render: (val, row) => <p className='py-2'>{val}{row.unit}</p> },
                                 { key: 'basePrice', label: 'PRICE', render: (val) => <p className='py-2'>₦ {new Intl.NumberFormat().format(val)}</p> },
-                                { key: 'id', label: 'QUANTITY', render: (val) => (
+                                { key: 'id', label: 'NUMBER OF PACKS', render: (val) => (
                                     <Form.Control
-                                        placeholder="Enter quantity"
+                                        placeholder="Enter number of packs"
                                         type="number"
                                         name="quantity"
                                         value={dryData.products.find(p => p.id === val)?.quantity || ''}
@@ -357,7 +394,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 )},
-                                { key: 'id', label: <>QUANTITY USED TO PACK <br /> WEIGH IN KG FOR BROKEN</>, render: (val, row) => (
+                                { key: 'id', label: <>WEIGHT IN KG <br /> FOR BROKEN</>, render: (val, row) => (
                                     <div className='px-2'>
                                         <Form.Control
                                             placeholder={!row.productName?.toLowerCase().includes("broken") ? `Fishes in the ${row.productName}` : `Weigh in Kg`}
@@ -461,6 +498,7 @@ const SalesForm = ({ customers, stages, products }) => {
                                 as="textarea"
                                 name="description"
                                 value={dryData.description || ''}
+                                required
                                 onChange={(e) => setDryData({ ...dryData, description: e.target.value })}
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />                        

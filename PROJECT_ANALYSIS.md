@@ -8,393 +8,593 @@
 | **Owner** | Fendol Fish Limited |
 | **Repository** | `fendol-inventory-management-system` |
 | **Type** | PWA (Progressive Web App) — Inventory/POS system |
-| **Target** | Fish farming operations (ponds, feed, fish processing, sales, finance) |
-| **Build Tool** | Vite 5 (migrated from Create React App) |
-| **Entry** | `src/index.jsx` → renders `<RouterSwitch/>` in Redux `<Provider>` |
-| **Output** | `build/` (CRA-compatible `outDir`) |
+| **Target** | Fish farming operations (ponds, feed, fish processing, sales, finance, hatchery) |
+| **Build Tool** | Vite 8 |
+| **Entry** | `src/index.jsx` → renders `<App>` in Redux `<Provider>` + `<BrowserRouter>` |
+| **Output** | `dist/` |
 | **Node** | `>=18` |
 | **License** | MIT (inferred from `package.json`) |
+| **Auth storage** | `sessionStorage` (token key: `authToken`), `localStorage` (active site key: `fendol_active_site`) |
 
 ## 2. Technology Stack
 
 | Category | Library | Version (range) | Purpose |
 |---|---|---|---|
 | **Framework** | React | ^18.3.1 | UI library |
-| **Build** | Vite | ^5.4.11 | Bundler/dev server |
+| **Build** | Vite | ^8.0.14 | Bundler/dev server |
 | **Vite Plugin** | @vitejs/plugin-react | ^4.3.4 | Fast Refresh/JSX transform |
-| **Routing** | react-router-dom | ^6.28.0 | Client-side routing (v6) |
+| **Routing** | react-router-dom | ^6.26.1 | Client-side routing (v6) |
 | **State** | Redux | ^4.2.1 | Global state (auth only) |
 | **Redux** | react-redux | ^8.1.3 | React bindings |
 | **Redux** | redux-thunk | ^2.4.2 | Async actions |
 | **HTTP** | axios | ^1.7.7 | API client |
 | **UI** | bootstrap | ^5.3.3 | CSS framework |
-| **UI** | react-bootstrap | ^2.10.5 | React Bootstrap components |
-| **Icons** | react-icons | ^4.12.0 | Icon library (Fa, Bs families) |
-| **Charts** | recharts | ^2.13.3 | Dashboard charts |
+| **UI** | react-bootstrap | ^2.10.4 | React Bootstrap components |
+| **Icons** | react-icons | ^5.4.0 | Icon library (Fa, Bs, Io, Gi families) |
+| **Charts** | recharts | ^2.13.3 | Dashboard charts (used in some dashboards) |
 | **Charts** | chart.js | ^4.4.6 | Secondary charting |
 | **Charts** | react-chartjs-2 | ^5.2.0 | Chart.js React bindings |
-| **Notifications** | react-toastify | ^9.1.7 | Toast notifications |
+| **Notifications** | react-toastify | ^11.1.0 | Toast notifications |
 | **Pagination** | react-paginate | ^8.2.0 | Client-side pagination |
-| **JWT Decode** | jwt-decode | ^3.1.2 | Client-side token parsing |
-| **CSS-in-JS** | styled-components | ^6.1.13 | Component-level styling |
+| **JWT Decode** | jwt-decode | ^4.0.0 | Client-side token parsing |
 | **CSS Modules** | SCSS Modules | (built-in) | Scoped CSS with variables |
+| **Tooltips** | react-tooltip | ^5.28.0 | Tooltips |
 | **Printing** | (custom) | — | Thermal-printer-friendly receipts |
 
-**Not used (CRA leftovers):**
-- `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`, `web-vitals` — all present in `devDependencies` but no tests exist.
+**Not used (dead dependencies — installed but never imported):**
+- `@tanstack/react-query` — all data fetching uses raw `useEffect` + `axios`
+- `react-bootstrap-typeahead` — custom search dropdowns used instead
+- `react-datepicker` — native `<input type="date">` used instead
+- `styled-components` — CSS approach is SCSS modules
+- Testing libs (`@testing-library/react`, etc.) — zero test coverage
 
 ## 3. Project Structure
 
 ```
 fendol-inventory-management-system/
-├── index.html                  # Vite entry HTML (was public/index.html)
-├── vite.config.js              # Vite configuration
+├── index.html                  # Vite entry HTML
+├── vite.config.js              # Vite configuration (outDir: dist)
 ├── package.json
 ├── .env                        # Dev env vars
 ├── .env.example                # Template
 ├── .env.production             # Production env vars
 ├── .env.staging                # Staging env vars
 ├── PROJECT_ANALYSIS.md         # This file
-├── build/                      # Build output (gitignored)
+├── skill.md                    # Agent operating guide
+├── README.md
+├── dist/                       # Build output (gitignored)
 ├── public/
 │   ├── manifest.json           # PWA manifest
 │   ├── robots.txt
 │   ├── favicon.ico
-│   ├── logo192.png
-│   ├── logo512.png
-│   └── logos.png
+│   ├── logo192.png / logo512.png / logos.png
 └── src/
     ├── index.jsx               # App bootstrap / SW registration
+    ├── serviceWorkerRegistration.js
     ├── assests/
     │   └── logo.png
     ├── components/
-    │   ├── router.jsx          # Top-level route definitions
-    │   ├── protect-routes.jsx  # Auth guard wrapper
+    │   ├── router.jsx           # Top-level route definitions
+    │   ├── protect-routes.jsx   # Auth guard + RBAC wrapper
+    │   ├── permissions/
+    │   │   ├── permissions.js   # RBAC permission matrix
+    │   │   └── permissions.test.js
     │   ├── shared/
-    │   │   ├── style.scss                 # Shared SCSS variables
-    │   │   ├── api/
-    │   │   │   └── apiLink.jsx            # Axios instance + interceptors
+    │   │   ├── style.scss
+    │   │   ├── api/apiLink.jsx  # Axios instances (Api + ApiV2)
     │   │   ├── login/
-    │   │   │   ├── login.jsx
-    │   │   │   └── login.module.scss
     │   │   ├── header/
-    │   │   │   ├── header.jsx
-    │   │   │   └── header.module.scss
     │   │   ├── sidebar/
-    │   │   │   ├── sidebar.jsx
-    │   │   │   └── siderbar.module.scss
+    │   │   ├── data-table/DataTable.jsx
+    │   │   ├── custom-dropdown/CustomDropdown.jsx
+    │   │   ├── portal-dropdown/PortalDropdown.jsx
+    │   │   ├── confirm-modal/ (ConfirmModal.jsx + useConfirm.jsx)
+    │   │   ├── skeleton/Skeleton.jsx
+    │   │   ├── site-selector/SiteSelector.jsx
     │   │   └── reduxForProtectingRoute/
     │   │       ├── store.js
-    │   │       ├── actions/
-    │   │       │   ├── types.js
-    │   │       │   └── authActions.js
-    │   │       └── reducers/
-    │   │           ├── rootReducer.js
-    │   │           └── authReducer.js
-    │   ├── dashboard/
-    │   │   ├── dashbord.jsx
-    │   │   └── dashboard.module.scss
-    │   ├── admin/
-    │   │   ├── adminRoutes.jsx
-    │   │   ├── add-new-admin/add-new.jsx
-    │   │   ├── view-all/view-all.jsx
-    │   │   └── admin-styles.module.scss
-    │   ├── customer/
-    │   │   ├── customerRoute.jsx
-    │   │   ├── add/add.jsx
-    │   │   ├── view-all/view-all.jsx
-    │   │   ├── personal-ledger/personal-ledger.jsx
-    │   │   └── customer.module.scss
-    │   ├── feed/
-    │   │   ├── feedRouter.jsx
-    │   │   ├── add-new/add-new.jsx
-    │   │   ├── view-all/view-all.jsx
-    │   │   ├── inventory-history/inventory-history.jsx
-    │   │   └── feed.module.scss
-    │   ├── ponds/
-    │   │   ├── productStagesRouter.jsx
-    │   │   ├── create/create-stages.jsx
-    │   │   ├── view-all-ponds/view-all-stages.jsx
-    │   │   └── product-stages.module.scss
-    │   ├── manage-fish/
-    │   │   ├── manageRoute.jsx
-    │   │   ├── create-fish-type/create-fish-type.jsx
-    │   │   ├── add-fish/add-fish.jsx
-    │   │   ├── move-fish/move-fish.jsx
-    │   │   ├── harvest-fish/harvest.jsx
-    │   │   ├── damage-fish/damage-fish.jsx
-    │   │   ├── view-all-histories/view-all-histories.jsx
-    │   │   └── product-stages.module.scss
-    │   ├── fish-processes/
-    │   │   ├── processRouter.jsx
-    │   │   ├── process-fish/new-batch.jsx
-    │   │   ├── view-summary/view-summary..jsx
-    │   │   └── process.module.scss
-    │   ├── products/
-    │   │   ├── productRouter.jsx
-    │   │   ├── create-products/create-products.jsx
-    │   │   ├── view-all/view-all.jsx
-    │   │   └── product.module.scss
-    │   ├── store/
-    │   │   ├── storeRouter.jsx
-    │   │   ├── add-new/add-new.jsx
-    │   │   ├── view-all/view-all.jsx
-    │   │   ├── inventory-history/inventory-history.jsx
-    │   │   └── store.module.scss
-    │   ├── finance/
-    │   │   ├── financeRouter.jsx
-    │   │   ├── finance.module.scss
-    │   │   ├── add-expenses/add-expenses.jsx
-    │   │   ├── add-sales/
-    │   │   │   ├── add-sales.jsx
-    │   │   │   ├── dryfish.jsx
-    │   │   │   ├── freshfish.jsx
-    │   │   │   ├── fingerlingsfish.jsx
-    │   │   │   └── receipt.jsx
-    │   │   ├── ledger/finance-ledger.jsx
-    │   │   └── cash-drawer/cash-drawer.jsx
-    │   ├── showcase/
-    │   │   ├── showcaseRoute.jsx
-    │   │   ├── showcase.module.scss
-    │   │   ├── whole-showcase/whole-showcase.jsx
-    │   │   └── broken-showcase/broken-showcase.jsx
-    │   └── damage-loss/
-    │       ├── damges.jsx
-    │       └── damge.module.scss
-    └── serviceWorkerRegistration.js
+    │   │       ├── actions/ (types.js + authActions.js)
+    │   │       └── reducers/ (rootReducer.js + authReducer.js)
+    │   ├── dashboard/           # Main KPI dashboard
+    │   ├── admin/               # User management
+    │   ├── customer/            # CRM
+    │   ├── feed/                # Feed (inventory, production, raw materials)
+    │   ├── ponds/               # Pond/stage management
+    │   ├── manage-fish/         # Fish lifecycle
+    │   ├── fish-processes/      # Processing batches
+    │   ├── products/            # Product catalog
+    │   ├── store/               # Store inventory
+    │   ├── finance/             # Sales, expenses, ledger, cash, supplier, staff
+    │   ├── showcase/            # Whole/broken fish showcase
+    │   ├── damage-loss/         # Damage/loss records
+    │   ├── site-management/     # Site CRUD + performance
+    │   ├── batch-dashboard/     # Batch processing dashboard
+    │   ├── hatchery/            # Hatchery (batches, broodstock, fry, transfers)
+    │   ├── complaints/          # Complaint system
+    │   ├── referral/            # Referral system
+    │   └── mlm/                 # Multi-level marketing
+    └── __tests__/               # Jest tests
 ```
 
-**Total: 75 source files** (JSX/JS/SCSS/JSON), **8 config/root files**.
+**Total: ~180+ source files** across 18 feature modules + 8 shared components + config.
 
 ## 4. Entry Points
 
 ### `index.html` (Vite root)
 - `<script type="module" src="/src/index.jsx">` — Vite entry
 - `<div id="root">` mount point
-- Inline SVG favicon
-- Loads Inter font from Google Fonts via `<link>`
+- CSP header: `upgrade-insecure-requests`
+- PWA manifest linked
 
 ### `src/index.jsx`
 ```jsx
-// ~20 lines
 import store from './components/shared/reduxForProtectingRoute/store';
 import { Provider } from 'react-redux';
-import RouterSwitch from './components/router';
+import App from './components/router';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <Provider store={store}>
-    <RouterSwitch />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </Provider>
 );
-// Service worker registration
 serviceWorkerRegistration.register();
 ```
 
 ## 5. Routing Architecture (`src/components/router.jsx`)
 
-Single-level `<Routes>` with `<Route>` elements using `element` prop (v6 style):
+Top-level `<Routes>` with `<Route>` elements using `element` prop (v6 style):
 
 | Path | Component | Protected | Notes |
 |---|---|---|---|
 | `/` | `Login` | No | Redirect if already logged in |
-| `/dashboard` | `Dashboard` | Yes | Main dashboard |
-| `/admin/*` | `AdminNavigations` | Yes | Sub-routes for admin |
-| `/customers/*` | `CustomerNavigations` | Yes | CRUD + personal ledger |
-| `/feeds/*` | `FeedNavigations` | Yes | Feed inventory |
-| `/ponds/*` | `PondNavigations` | Yes | Pond/Stages management |
-| `/manage-fish/*` | `ManageFishNavigations` | Yes | Full fish lifecycle |
-| `/fish-processes/*` | `FishProcessNavigations` | Yes | Processing batches |
-| `/products/*` | `ProductNavigations` | Yes | Product CRUD |
-| `/store/*` | `StoreNavigations` | Yes | Store inventory |
-| `/finance/*` | `FinanceNavigations` | Yes | Sales, expenses, ledger, cash |
-| `/showcase/*` | `ShowcaseNavigations` | Yes | Whole/broken fish showcase |
-| `/damage-loss` | `DamageLoss` | Yes | Damage/loss records |
+| `/dashboard` | `Dashboard` | Yes (`dashboard`) | Main KPI dashboard |
+| `/admin/*` | `AdminNavigations` | Yes (`admin`) | User/role management |
+| `/customer/*` | `CustomerNavigations` | Yes (`customer`) | CRM |
+| `/ponds/*` | `ProductStagesNavigations` | Yes (`ponds`) | Pond management |
+| `/manage-fish/*` | `ManageNavigations` | Yes (`manage-fish`) | Fish lifecycle |
+| `/fish-processes/*` | `ProcessNavigations` | Yes (`fish-processes`) | Processing |
+| `/products/*` | `ProductNavigations` | Yes (`products`) | Product catalog |
+| `/feed/*` | `FeedNavigations` | Yes (`feed`) | Feed management |
+| `/store/*` | `StoreNavigations` | Yes (`store`) | Store inventory |
+| `/damage-loss` | `DamageLoss` | Yes (`damage-loss`) | Damage/loss records |
+| `/complaints` | `Complaints` | Yes (`complaints`) | Make complaint |
+| `/complaints/all` | `AllComplaints` | Yes (`complaints:view-all`) | View all complaints |
+| `/finance/*` | `FinanceNavigations` | Yes (`finance:add-sales`) | Finance |
+| `/showcase/*` | `ShowcaseNavigations` | Yes (`showcase`) | Fish showcase |
+| `/site-management/*` | `SiteManagementNavigations` | Yes (`site-management`) | Site management |
+| `/batch-dashboard/*` | `BatchDashboardNavigations` | Yes (`batch-dashboard`) | Batch dashboard |
+| `/hatchery/*` | `HatcheryNavigations` | Yes (`hatchery`) | Hatchery operations |
+| `/referral/*` | `ReferralNavigations` | Yes (`referral`) | Referral system |
+| `/mlm/*` | `MlmNavigations` | Yes (`mlm`) | Multi-level marketing |
 
-**Sub-routing pattern**: Each feature module defines its own `<Routes>` in a `*Router.jsx` file (e.g., `financeRouter.jsx`), enabling nested paths like `/finance/add-sales`.
+**RBAC**: Routes specify a `requiredResource` prop. `<RoleRoute>` enforces via `hasPermission()` from `permissions.js`. If denied, redirects to highest-permission landing page.
 
-**Auth guard**: `<ProtectedRoute>` wrapper checks `sessionStorage` for token, redirects to `/` if missing.
+### Sub-Router Detail
+
+**Admin** (`adminRoutes.jsx`):
+- `add-new-admin` → `AddNew` (create/edit admins)
+- `view-all` → `ViewAll` (list admins)
+
+**Customer** (`customerRoute.jsx`):
+- `add` → `AddCustomer`
+- `view-all` → `ViewAllCustomers`
+- `personal-ledger` → `PersonalLedger`
+
+**Ponds** (`productStagesRouter.jsx`):
+- `create` → `CreateStages` (create pond)
+- `view-all-ponds` → `ViewAllStages`
+
+**Manage Fish** (`manageRoute.jsx`):
+- `create-fish-type` → `AddSpecies`
+- `add-fish` → `AddFish`
+- `move-fish` → `MoveFish`
+- `harvest-fish` → `HarvestFish`
+- `damage-fish` → `DamageFish`
+- `view-all-histories` → `ViewAllHistory`
+- `sampling` → `Sampling`
+- `mortality` → `Mortality`
+- `site-transfers` → `ViewFish` (incoming)
+- `site-transfers/transfer` → `TransferFish`
+- `site-transfers/history` → `History`
+
+**Fish Processes** (`processRouter.jsx`):
+- `process-fish` → `NewBatchFish`
+- `view-summary` → `ViewSummary`
+
+**Products** (`productRouter.jsx`):
+- `create-products` → `CreateProducts`
+- `view-all` → `ViewAllProducts`
+
+**Feed** (`feedRouter.jsx`):
+- `dashboard` → `FeedDashboard` (placeholder)
+- `raw-materials` → `RawMaterialInventory`
+- `view-all` → `UpdateFeedInventory`
+- `inventory-history` → `InventoryHistory`
+- `production/create` → `CreateFeedBatch`
+- `production/history` → `FeedProductionHistory`
+- `production/detail/:batchNumber` → `FeedProductionBatchDetail`
+- `inventory` and `inventory/overview` → `FeedInventory`
+- `inventory/ledger/:feedName` → `FeedLedger`
+- `inventory/use` → `FeedInventoryUse`
+- `inventory/top-up` → `FeedInventoryTopUp`
+
+**Store** (`storeRouter.jsx`):
+- `view-all` → `UpdateStoreInventory`
+- `inventory-history` → `InventoryHistory`
+- `stock/use` → `StoreStockUse` (placeholder)
+- `stock/top-up` → `StoreStockTopUp` (placeholder)
+
+**Finance** (`financeRouter.jsx`):
+- `add-sales` → `AddSales`
+- `add-expenses` → `AddExpense`
+- `ledger` → `FinanceLedger`
+- `cash-drawer` → `CashDrawer`
+- `supplier/new` → `NewSupplier`
+- `supplier/view-all` → `ViewAllSupplier`
+- `supplier/ledger` → `SupplierLedger`
+- `supplier/dashboard` → `SupplierDashboard` (placeholder)
+- `staff/directory` → `StaffDirectory`
+- `staff/payroll` → `StaffPayroll` (placeholder)
+- `staff/attendance` → `StaffAttendance`
+- `staff/appraisals` → `StaffAppraisals` (placeholder)
+
+**Showcase** (`showcaseRoute.jsx`):
+- `whole-showcase` → `ViewWholeHistory`
+- `broken-showcase` → `ViewBrokenHistory`
+
+**Site Management** (`siteManagementRouter.jsx`):
+- `create` → `CreateSite`
+- `view-all` → `ViewAllSites`
+- `site-performance` → `SitePerformance` (placeholder)
+
+**Batch Dashboard** (`batchDashboardRouter.jsx`):
+- `/` (index) → `BatchDashboard`
+- `summary/:batchId` → `BatchSummary`
+
+**Hatchery** (`hatcheryRouter.jsx`):
+- `dashboard` → `HatcheryDashboard` (placeholder)
+- `hatch-batches/*` → `HatchBatchesRouter`
+- `broodstock/*` → `BroodstockNavigations`
+- `fry-production/*` → `FryProductionNavigations`
+- `transfers/*` → `TransfersNavigations`
+- `cost-analysis/*` → `CostAnalysisNavigations`
+
+**Referral** (`referralRouter.jsx`):
+- `dashboard` → `ReferralDashboard` (placeholder)
+- `agents` → `ReferralAgents`
+- `payouts` → `ReferralPayouts`
+
+**MLM** (`mlmRouter.jsx`):
+- `tree` → `MlmTree` (placeholder)
+- `leaders` → `MlmLeaders`
+- `payouts` → `MlmPayouts`
+- `earnings` → `MlmEarnings`
 
 ## 6. Authentication & Authorization
 
 ### Login Flow
 - `login.jsx`: Form with username/password
 - `Api.post('/login', credentials)` → receives JWT
-- Token stored in `sessionStorage` (cleared on tab close)
-- Token decoded client-side via `jwt-decode` to extract user info
+- Token stored in `sessionStorage` (key: `authToken`, cleared on tab close)
+- Token decoded client-side via `jwt-decode` to extract `userTypes`, `userSites`, etc.
 - Dispatches `loginUser()` Redux action on success
 
 ### Redux Auth State (`src/components/shared/reduxForProtectingRoute/`)
-- **Store**: Single `createStore` (no middleware config visible; uses Redux DevTools compose)
-- **Reducer**: `rootReducer` combines `authReducer` only
-- **Auth Reducer**: Manages `isAuth` (boolean) and `user` (object with `username`, `email`, `role`, `token`)
-- **Actions**: `LOGIN_USER`/`LOGOUT_USER` types; `loginUser()`/`logoutUser()` action creators
+- **Store**: Single `createStore` with `composeEnhancers` for Redux DevTools
+- **Reducer**: `authReducer` (directly, not via `rootReducer` — `rootReducer.js` exists but is unused)
+- **Auth Reducer**: Manages `authenticated` (boolean), `user` (object with `userTypes[]`, `userSites[]`, `username`, `email`, `role`, `token`), and `activeSite` (object with `id`, `name`, `type` | null)
+- **Actions**: `LOGIN_USER`/`LOGOUT_USER`/`SET_ACTIVE_SITE` types; `loginUser()`/`logoutUser()`/`setActiveSite()` action creators
+- **Active site persistence**: `localStorage` key `fendol_active_site`
 
 ### Route Protection
-- `protect-routes.jsx`: Reads token from `sessionStorage`, checks Redux `isAuth`. Redirects to `/login` if unauthenticated.
-- Lacks token expiry check at the route level (delegated to API interceptor).
+- `protect-routes.jsx`: Checks `sessionStorage` for `authToken` AND Redux `authenticated` flag
+- Token expiry checked every 60 seconds via interval + on mount — expired tokens trigger redirect to `/`
+- `RoleRoute` wrapper enforces RBAC via `hasPermission()` from `permissions.js`
+
+### RBAC Permission System (`permissions/permissions.js`)
+- **5 role types:** `super_admin`, `farm_manager`, `store_keeper`, `sales_manager`, `finance`
+- Permission matrix `ACCESS` maps resource keys to allowed role arrays
+- Fine-grained permissions with optional `:action` suffix (e.g., `admin:create`, `site-management:delete`)
+- `hasPermission(userTypes, resource, action?)` — returns boolean
+- `extractUserTypes(decodedJwt)` — parses roles from JWT (supports `roles[].type` array OR legacy `role` string OR `isSuperAdmin` flag)
+- `normaliseRoleType()` — fixes known backend typo `farm_manger` → `farm_manager`
+- Comprehensive test file at `permissions.test.js`
 
 ### API Interceptor Auth
-- Request interceptor in `apiLink.jsx`:
+- Request interceptor in `apiLink.jsx` (identical for both `Api` and `ApiV2`):
   - Attaches `Authorization: Bearer <token>` header
-  - Decodes JWT to check `exp` — if expired, clears sessionStorage, dispatches `logoutUser()`, shows toast, redirects to `/`
-- 401 responses: Shows toast "Session expired, please login again."
-
-**Note**: No role-based access control is implemented. All authenticated users see the same features.
+  - Decodes JWT to check `exp` — if expired, clears session, dispatches `logoutUser()`, shows toast, redirects to `/`
+- 403 responses: Shows toast notification
 
 ## 7. State Management
 
-**Redux** is used exclusively for authentication state:
+**Redux** is used exclusively for authentication and active site state:
 
 ```
 store (createStore)
-└── rootReducer
-    └── authReducer
-        ├── isAuth: boolean
-        └── user: { username, email, role, token }
+└── authReducer
+    ├── authenticated: boolean
+    ├── user: { userTypes[], userSites[], username, email, role, token }
+    └── activeSite: { id, name, type } | null
 ```
 
 **All other state is local** — each component manages its own `useState` for:
 - Form data
-- API response data (tables)
+- API response data
 - Loading/error states
-- Pagination
+- Pagination (page index)
 - Modal visibility
 - Sidebar toggle
 
-This means **no shared state** between features. Each feature re-fetches data independently (e.g., customers list is fetched in `add-sales.jsx`, `dryfish.jsx`, `freshfish.jsx`, `fingerlingsfish.jsx` separately).
+This means **no shared state** between features. Each feature re-fetches independently.
+
+**Anti-pattern**: Same data (e.g., customers, stages, products) is fetched multiple times
+across different components (e.g., in `add-sales.jsx` parent and also in child forms).
 
 ## 8. API Integration
 
-### Axios Client (`src/components/shared/api/apiLink.jsx`)
-- Base URL: `import.meta.env.VITE_API_BASE_URL` (defaults to `/api/v1`)
-- **Request interceptor**:
-  1. Reads token from `sessionStorage`
-  2. Decodes JWT, checks `exp`
-  3. If expired: clears session, dispatches logout, toast, redirect
-  4. If valid: adds `Authorization` header
-- **Response interceptor** (basic):
-  - 401 errors → toast notification + logout + redirect
+### Axios Clients (`src/components/shared/api/apiLink.jsx`)
+
+| Instance | baseURL | Usage |
+|---|---|---|
+| `Api` (default export) | `VITE_API_BASE_URL` (e.g., `https://dev-api.fendolgroup.com/api/v1`) | Older v1 endpoints |
+| `ApiV2` (named export) | `VITE_API_V2_BASE_URL` (e.g., `https://dev-api.fendolgroup.com/`) | Newer v2 endpoints |
+
+Both have identical **request interceptors**: read `authToken` from `sessionStorage`, check expiry via `jwtDecode`, attach `Authorization: Bearer` header.
+Both have **response interceptors**: catch 403 and show toast.
+
+**Anti-pattern**: Interceptor code is duplicated in both instances — should be a shared function.
 
 ### API Endpoints Used
 
-| Module | Endpoints |
-|---|---|
-| **Auth** | `/login` |
-| **Dashboard** | `/stages`, `/dashboard`, `/all-records` |
-| **Admin** | `/register` |
-| **Customers** | `/customers`, `/customer-ledger/` |
-| **Feed** | `/feeds`, `/feed-histories`, `/feed-inventories` |
-| **Ponds** | `/fish-stages`, `/fish-stage/` |
-| **Manage Fish** | `/all-fish-history`, `/add-fish`, `/move-fish`, `/harvest-fish`, `/damage-fish`, `/create-fish` |
-| **Fish Processes** | `/fish-process`, `/fish-process-summary` |
-| **Products** | `/products`, `/product/` |
-| **Store** | `/store`, `/store-histories`, `/store-inventories` |
-| **Finance** | `/sales`, `/sales-receipts/`, `/expense`, `/ledger`, `/cash`, `/withdrawals`, `/add-cash-to-drawer`, `/withdraw` |
-| **Showcase** | `/show-glass/whole`, `/show-glass/broken`, `/get-all-whole-histories`, `/get-all-broken-histories`, `/move-to-damage`, `/move-to-broken`, `/move-broken-to-damage` |
-| **Damage/Loss** | `/damage-loss` |
+| Module | v1 Endpoints | v2 Endpoints |
+|---|---|---|
+| **Auth** | `/login` | — |
+| **Dashboard** | `/dashboard` | — |
+| **Admin** | — | `/v2/roles`, `/v2/all-site`, `/api/v1/admin`, `/api/v1/edit-admin/:id` |
+| **Customers** | `/customers`, `/customer/:id`, `/customer/:id/pending-sales`, `/add-payment`, `/delete-customer/:id` | — |
+| **Feed** | `/feeds`, `/feeds-histories` | `/v2/raw-material`, `/v2/feed-production`, `/v2/feed-production/:batchNumber` |
+| **Ponds** | `/fish-stages`, `/fish-stage` | — |
+| **Manage Fish** | `/add-fish`, `/move-fish`, `/harvest-fish`, `/damage-fish`, `/all-fish-history`, `/create-fish` | `/v2/transfers`, `/v2/transfer-fish` |
+| **Fish Processes** | `/move-fish`, `/process-fish`, `/all-process-history`, `/check-stages` | — |
+| **Products** | `/products`, `/create-product`, `/update-product/:id` | `/api/v1/product-types`, `/api/v1/product-type`, `/v2/site-types`, `/api/v1/assign-site` |
+| **Store** | `/stores`, `/stores-histories`, `/create-store` | — |
+| **Finance Sales** | `/sales`, `/sales-receipts/:id` | — |
+| **Finance Expenses** | `/expense` | — |
+| **Finance Ledger** | `/ledger` | — |
+| **Finance Cash** | `/cash`, `/withdrawals`, `/add-cash-to-drawer`, `/withdraw` | — |
+| **Finance Supplier** | — | `/v2/supplier`, `/v2/supplier-type`, `/v2/supplier/:id`, `/v2/supplier-ledger/:id`, `/v2/supplier-payment` |
+| **Finance Staff** | — | `/api/v1/staff`, `/v2/attendance` |
+| **Showcase** | `/show-glass/whole`, `/show-glass/broken`, `/get-all-whole-histories`, `/get-all-broken-histories`, `/move-to-damage`, `/move-to-broken` | — |
+| **Damage/Loss** | `/damage-loss` | — |
+| **Site Management** | — | `/v2/create-site`, `/v2/all-site`, `/v2/update-site/:id`, `/v2/delete-site/:id`, `/v2/site-types` |
+| **Batch Dashboard** | — | `/v2/batch-dashboard` |
+| **Complaints** | — | `/v2/complaint`, `/v2/complaint/:id`, `/api/v1/staff` |
+| **Hatchery** | — | Sub-routers use v2 endpoints |
 
-**Pattern**: `GET` for reads, `POST` for creates. No `PUT`/`DELETE`/`PATCH` endpoints seen. No `try/catch` error standardization — each component handles errors individually.
+**Pattern note**: Some v2 endpoints have `/api/v1/` in their path (e.g., `/api/v1/staff`, `/api/v1/admin`) while others use `/v2/` prefix consistently.
 
 ## 9. Component Architecture
 
 ### Shared Components (reused across features)
 
-| Component | File | Description |
-|---|---|---|
-| **Header** | `shared/header/header.jsx` | Top navbar — hamburger (mobile), logo, user badge, logout |
-| **Sidebar** | `shared/sidebar/sidebar.jsx` | Offcanvas nav — links to all features, sub-item hover, active state |
-| **Login** | `shared/login/login.jsx` | Username/password form, auth dispatch |
-| **ProtectedRoute** | `protect-routes.jsx` | Auth guard wrapper |
-| **ReceiptModal** | `finance/add-sales/receipt.jsx` | Thermal-printer receipt modal with print support |
+| Component | File | Lines | Description |
+|---|---|---|---|
+| **SideBar** | `shared/sidebar/sidebar.jsx` | 506 | Responsive nav with collapsible sections, RBAC filter, auto-expand |
+| **Header** | `shared/header/header.jsx` | 457 | Top bar with PWA install, notifications, site selector, user menu, change password |
+| **LogIn** | `shared/login/login.jsx` | 165 | Username/password form |
+| **DataTable** | `shared/data-table/DataTable.jsx` | 81 | Reusable table with columns, actions, loading/empty/error states |
+| **CustomDropdown** | `shared/custom-dropdown/CustomDropdown.jsx` | 134 | Custom select with portal, forwardRef |
+| **PortalDropdown** | `shared/portal-dropdown/PortalDropdown.jsx` | 132 | Three-dot action menu rendered via portal |
+| **ConfirmModal** | `shared/confirm-modal/ConfirmModal.jsx` | — | Reusable confirmation dialog |
+| **useConfirm** | `shared/confirm-modal/useConfirm.jsx` | — | Promise-based confirm hook |
+| **Skeleton** | `shared/skeleton/Skeleton.jsx` | — | Loading skeleton components (line, title, card, table, stat grid, filter bar) |
+| **SiteSelector** | `shared/site-selector/SiteSelector.jsx` | — | Site filter dropdown (auto-locked when header site active) |
+| **ProtectedRoute** | `protect-routes.jsx` | — | Auth guard + RBAC wrapper |
+| **ReceiptModal** | `finance/add-sales/receipt.jsx` | 222 | Thermal printer receipt with `@media print` CSS |
 
-### Feature Components
+### Feature Components (by lines — largest first)
 
-Each feature module follows a consistent pattern:
-- **Router** (`*Router.jsx`): Defines sub-routes
-- **Add/Create** (e.g., `add-expenses.jsx`, `create-stages.jsx`): Forms with POST
-- **View** (e.g., `view-all.jsx`, `finance-ledger.jsx`): Tables with GET, pagination
-- **SCSS Module**: Scoped styles
+| Component | File | Lines | Purpose | Data Source |
+|---|---|---|---|---|
+| ViewSummary | `fish-processes/view-summary/view-summary..jsx` | 1256 | Process records viewer | API `/all-process-history` |
+| NewBatchFish | `fish-processes/process-fish/new-batch.jsx` | 1073 | Multi-step fish processing batch | API `/move-fish`, `/process-fish` |
+| StaffAttendance | `finance/staff/attendance.jsx` | 912 | Staff attendance tracking | API `/v2/attendance` |
+| ViewAllStages | `ponds/view-all-ponds/view-all-stages.jsx` | 884 | Pond/stage list with detail panel | API `/fish-stages` |
+| ViewFish | `manage-fish/site-transfers/ViewFish.jsx` | 831 | Incoming site transfer management | API `/v2/transfers` |
+| Dashboard | `dashboard/dashbord.jsx` | 803 | Main KPI dashboard | API `/dashboard` |
+| AddNew (Admin) | `admin/add-new-admin/add-new.jsx` | 701 | Create/edit admin form | API v2 |
+| PersonalLedger | `customer/personal-ledger/personal-ledger.jsx` | 688 | Customer transaction ledger | API `/customer/:id` |
+| SupplierLedger | `finance/supplier/supplier-ledger.jsx` | 594 | Supplier ledger (cursor pagination) | API v2 |
+| DryFish Sale | `finance/add-sales/dryfish.jsx` | 604 | Dry fish sales form | API `/sales` |
+| Feed Sale | `finance/add-sales/feed.jsx` | 604 | Feed sales form | API `/sales` |
+| ViewAllCustomers | `customer/view-all/view-all.jsx` | 572 | Customer list | API `/customers` |
+| ViewAllSupplier | `finance/supplier/view-all-supplier.jsx` | 555 | Supplier list with modals | API v2 |
+| FreshFish Sale | `finance/add-sales/freshfish.jsx` | 562 | Fresh fish sales form | API `/sales` |
+| CashDrawer | `finance/cash-drawer/cash-drawer.jsx` | 485 | Dual-view cash management | API `/cash`, `/withdrawals` |
+| CreateProducts | `products/create-products/create-products.jsx` | 470 | Create/edit product form | API v1 + v2 |
+| RawMaterialInventory | `feed/raw-material-inventory/raw-material-inventory.jsx` | 440 | Feed raw materials | API v2 |
+| AllComplaints | `complaints/all-complaints.jsx` | 424 | Complaint list | API v2 (+ mock fallback) |
+| NewSupplier | `finance/supplier/new-supplier.jsx` | 389 | Supplier create/edit form | API v2 |
+| ViewAllSites | `site-management/view-all/view-all.jsx` | 318 | Site list | API v2 |
+| WholeShowcase | `showcase/whole-showcase/whole-showcase.jsx` | 323 | Whole fish showcase | API `/show-glass/whole` |
+| BrokenShowcase | `showcase/broken-showcase/broken-showcase.jsx` | 314 | Broken fish showcase | API `/show-glass/broken` |
+| UpdateFeedInventory | `feed/view-all/view-all.jsx` | 513 | Feed inventory | API `/feeds` |
+| UpdateStoreInventory | `store/view-all/view-all.jsx` | 492 | Store inventory | API `/stores` |
+| InventoryHistory (Feed) | `feed/inventory-history/inventory-history.jsx` | 295 | Feed movement log | API `/feeds-histories` |
+| Complaints | `complaints/complaints.jsx` | 299 | Submit complaint | API v2 |
+| ViewAllProducts | `products/view-all/view-all.jsx` | 507 | Product catalog | API `/products` |
+| StaffDirectory | `finance/staff/staff-directory.jsx` | 517 | Staff list | API v2 |
+| BatchDashboard | `batch-dashboard/dashboard/batch-dashboard.jsx` | 268 | Batch processing dashboard | API v2 |
+| ViewAll (Admin) | `admin/view-all/view-all.jsx` | 246 | Admin list | API `/admins` |
+| AddFish | `manage-fish/add-fish/add-fish.jsx` | 244 | Add fish to pond | API `/add-fish` |
+| FinanceLedger | `finance/ledger/finance-ledger.jsx` | 188 | Finance ledger | API `/ledger` |
+| CreateSite | `site-management/create-site/create-site.jsx` | 181 | Create/edit site | API v2 |
+| InventoryHistory (Store) | `store/inventory-history/inventory-history.jsx` | 174 | Store movement log | API `/stores-histories` |
+| AddExpense | `finance/add-expenses/add-expenses.jsx` | 205 | Add expense form | API `/expense` |
+| AddSales (parent) | `finance/add-sales/add-sales.jsx` | 160 | Sales type selector | API + props to children |
+| DamageLoss | `damage-loss/damges.jsx` | 144 | Damage/loss records | API `/damage-loss` |
+| CreateStages | `ponds/create/create-stages.jsx` | 156 | Create pond | API `/fish-stage` |
+| AddCustomer | `customer/add/add.jsx` | 155 | Add customer form | API `/customers` |
+| Fingerlings Sale | `finance/add-sales/fingerlingsfish.jsx` | 562 | Fingerlings sales form | API `/sales` |
 
-### Dashboard (`dashbord.jsx`)
-- Fetches `/stages` (pond counts) and `/dashboard` (reports)
-- Renders: 4 summary cards (ponds, processes, customers, feed), interval-chart (recharts line chart), donut chart (fish distribution), recent records table, summary table
-- Key metric: `grandTotals.fishCount` displayed in hero section
+### Placeholder / Coming-Soon Components
 
-## 10. Feature Modules
+| Component | File | Lines | Route |
+|---|---|---|---|
+| FeedDashboard | `feed/feed-dashboard/feed-dashboard.jsx` | 36 | `/feed/dashboard` |
+| HatcheryDashboard | `hatchery/hatchery-dashboard/hatchery-dashboard.jsx` | 35 | `/hatchery/dashboard` |
+| SitePerformance | `site-management/site-performance/site-performance.jsx` | 37 | `/site-management/site-performance` |
+| StaffPayroll | `finance/staff/payroll.jsx` | 25 | `/finance/staff/payroll` |
+| StaffAppraisals | `finance/staff/appraisals.jsx` | 25 | `/finance/staff/appraisals` |
+| SupplierDashboard | `finance/supplier/supplier-dashboard.jsx` | 25 | `/finance/supplier/dashboard` |
+| StoreStockTopUp | `store/stock/top-up.jsx` | 25 | `/store/stock/top-up` |
+| StoreStockUse | `store/stock/use.jsx` | 25 | `/store/stock/use` |
+| ReferralDashboard | `referral/dashboard/dashboard.jsx` | 25 | `/referral/dashboard` |
+| MlmTree | `mlm/tree/tree.jsx` | 25 | `/mlm/tree` |
+| FeedProduction (create) | `feed/production/create` | — | `/feed/production/create` |
+
+## 10. Feature Modules Detail
 
 ### 10.1 Admin (`src/components/admin/`)
-- `adminRoutes.jsx`: Routes for `/add-new-admin` and `/view-all`
-- `add-new.jsx`: Register new admin users → `POST /register`
-- `view-all.jsx`: List all admins → `GET /register` with pagination
-- Styling: `admin-styles.module.scss`
+- `ViewAll`: Lists admins from `/admins`, DataTable with actions (Edit/Delete)
+- `AddNew`: Create/Edit form using API v2 (`/v2/roles`, `/v2/all-site`, `/api/v1/admin`)
 
 ### 10.2 Customer (`src/components/customer/`)
-- `customerRoute.jsx`: Routes for `/add`, `/view-all`, `/personal-ledger`
-- `add.jsx`: Create customer form → `POST /customers`
-- `view-all.jsx`: List customers with search, wallet display, pagination → `GET /customers`
-- `personal-ledger.jsx`: Per-customer transaction history → `GET /customer-ledger/{id}`
+- `AddCustomer`: Simple create form → `POST /customers`
+- `ViewAllCustomers`: Customer list with stat cards, search, filters, edit modal, delete → `/customers`
+- `PersonalLedger`: Transaction ledger with date/type filters, payment modal, receipt printing → `/customer/:id`
 
-### 10.3 Feed Inventory (`src/components/feed/`)
-- `feedRouter.jsx`: Routes for `/add-new`, `/view-all`, `/inventory-history`
-- `add-new.jsx`: Add feed stock → `POST /feeds`
-- `view-all.jsx`: Current feed inventory with search + pagination → `GET /feed-inventories`
-- `inventory-history.jsx`: Feed movement log → `GET /feed-histories`
+### 10.3 Feed (`src/components/feed/`)
+- `RawMaterialInventory`: Full inventory with stat cards, side detail panel, add/restock modals → `/v2/raw-material`
+- `UpdateFeedInventory`: Feed CRUD with top-up/use/threshold management → `/feeds`
+- `InventoryHistory`: Movement log with date filter → `/feeds-histories`
+- `FeedDashboard`: Placeholder (coming soon)
+- Plus sub-modules for production, inventory ledger, etc.
 
 ### 10.4 Ponds/Stages (`src/components/ponds/`)
-- `productStagesRouter.jsx`: Routes for `/create`, `/view`
-- `create-stages.jsx`: Create new pond/stage → `POST /fish-stages`
-- `view-all-stages.jsx`: List ponds with fish counts, search, pagination → `GET /fish-stages`
+- `CreateStages`: Create pond form → `/fish-stage`
+- `ViewAllStages`: Pond list with stat cards, site/status filters, detail slide panel, sampling notes → `/fish-stages`
 
 ### 10.5 Fish Management (`src/components/manage-fish/`)
-- `manageRoute.jsx`: Routes for `/create-fish-type`, `/add-fish`, `/move-fish`, `/harvest-fish`, `/damage-fish`, `/view-all`
-- `create-fish-type.jsx`: Define fish species → `POST /create-fish`
-- `add-fish.jsx`: Add fish to a stage → `POST /add-fish`
-- `move-fish.jsx`: Transfer between stages → `POST /move-fish`
-- `harvest.jsx`: Harvest from stage → `POST /harvest-fish`
-- `damage-fish.jsx`: Record damage/loss → `POST /damage-fish`
-- `view-all-histories.jsx`: Full audit log → `GET /all-fish-history`
+- `AddFish` / `MoveFish` / `HarvestFish` / `DamageFish`: CRUD operations → individual endpoints
+- `SiteTransfers` (ViewFish): Incoming transfer management with accept/reject → `/v2/transfers`
+- `ViewAllHistory`: Full audit log → `/all-fish-history`
+- `CreateFishType`: Define species → `/create-fish`
 
 ### 10.6 Fish Processing (`src/components/fish-processes/`)
-- `processRouter.jsx`: Routes for `/process-fish`, `/view-summary`
-- `new-batch.jsx`: Create processing batch, 3-step wizard → `POST /fish-process`
-- `view-summary..jsx`: Batch summary with search → `GET /fish-process-summary`
+- `NewBatchFish`: 1073-line multi-step wizard (washing → smoking → drying) with `sessionStorage` persistence → `/process-fish`, `/move-fish`, `/check-stages`
+- `ViewSummary`: 1256-line comprehensive process records viewer with stat cards, advanced filters, detail slide panel, export → `/all-process-history`
 
 ### 10.7 Products (`src/components/products/`)
-- `productRouter.jsx`: Routes for `/create`, `/view-all`
-- `create-products.jsx`: Define sellable products → `POST /products`
-- `view-all.jsx`: Product catalog with search → `GET /products`
+- `CreateProducts`: Create/Edit with inline product-type and site-type creation → v1 + v2 mixed endpoints
+- `ViewAllProducts`: Product catalog with site filter, edit/delete/assign-site → `/products`
 
-### 10.8 Store Inventory (`src/components/store/`)
-- `storeRouter.jsx`: Routes for `/add-new`, `/view-all`, `/inventory-history`
-- `add-new.jsx`: Add store items → `POST /store`
-- `view-all.jsx`: Store stock with low-stock detection, search → `GET /store-inventories`
-- `inventory-history.jsx`: Store movement log → `GET /store-histories`
+### 10.8 Store (`src/components/store/`)
+- `UpdateStoreInventory`: Store stock CRUD with top-up/use/threshold → `/stores`
+- `InventoryHistory`: Movement log → `/stores-histories`
+- `StoreStockTopUp` / `StoreStockUse`: Placeholders
 
 ### 10.9 Finance (`src/components/finance/`)
-- `financeRouter.jsx`: Routes for `/add-sales`, `/add-expenses`, `/ledger`, `/cash-drawer`
-- `add-expenses.jsx`: Expense form with amount formatting, payment type → `POST /expense`
-- `add-sales.jsx` (+ sub-forms): Sales entry with 3 product types
-  - `dryfish.jsx`: 2-step wizard — product selection with checkbox/quantity/subtotal, then customer/payment
-  - `freshfish.jsx`: Single-step — pond select (search dropdown), product, weight, customer
-  - `fingerlingsfish.jsx`: Similar to fresh — pond select, product, quantity, customer
-  - All 3 → `POST /sales` then `GET /sales-receipts/{transactionId}` for receipt
-- `receipt.jsx`: Modal with print-to-thermal-printer support (80mm, CSS `@media print`)
-- `finance-ledger.jsx`: Full ledger with date filter, pagination → `GET /ledger`
-- `cash-drawer.jsx`: Dual-view (cash entries / withdrawals), add/withdraw modals, date filter → `GET /cash`, `GET /withdrawals`, `POST /add-cash-to-drawer`, `POST /withdraw`
+- **Sales**: `add-sales.jsx` (parent) + 4 child forms (dryfish, freshfish, fingerlingsfish, feed) + receipt.jsx. See Section 11 for data flow.
+- **Expenses**: `AddExpense` → `/expense`
+- **Ledger**: `FinanceLedger` → `/ledger`
+- **Cash Drawer**: `CashDrawer` — dual view (entries/withdrawals) → `/cash`, `/withdrawals`
+- **Supplier**: `NewSupplier`, `ViewAllSupplier`, `SupplierLedger` (cursor pagination) — all API v2
+- **Staff**: `StaffDirectory` (grouped by site), `StaffAttendance` (912 lines, most complex), `StaffPayroll`/`StaffAppraisals` (placeholders)
 
 ### 10.10 Showcase (`src/components/showcase/`)
-- `showcaseRoute.jsx`: Routes for `/whole-showcase`, `/broken-showcase`
-- `whole-showcase.jsx`: Whole fish stock card, "Move to Damage/Broken" modal, history table → multiple API calls
-- `broken-showcase.jsx`: Broken fish stock card, "Move to Damage" modal, history table
-- Fish lifecycle in showcase: Whole → Broken → Damage
+- `WholeShowcase`: Whole fish stock card, move-to-broken modal, history table
+- `BrokenShowcase`: Broken fish stock card, move-to-damage modal, history table
+- Fish lifecycle: Whole → Broken → Damage
 
-### 10.11 Damage/Loss (`src/components/damage-loss/`)
-- Single page component `damges.jsx`: Read-only table of all damage/loss events → `GET /damage-loss`
+### 10.11 Site Management (`src/components/site-management/`)
+- `CreateSite`: Create/Edit site → API v2
+- `ViewAllSites`: Site list with type badges, edit/delete → API v2
+- `SitePerformance`: Placeholder
 
-## 11. Styling Strategy
+### 10.12 Batch Dashboard (`src/components/batch-dashboard/`)
+- `BatchDashboard`: Cursor-based pagination, stat cards, stage/status filters → `/v2/batch-dashboard`
+- `BatchSummary`: Per-batch detail view
 
-### Approach: Hybrid (SCSS Modules + Bootstrap + styled-components)
+### 10.13 Hatchery (`src/components/hatchery/`)
+- `HatcheryDashboard`: Placeholder
+- Sub-modules: hatch-batches (create, view-all, summary), broodstock (male, female, management), fry-production (daily records), transfers (transfer-to-nursery), cost-analysis
+
+### 10.14 Complaints (`src/components/complaints/`)
+- `Complaints`: Submit complaint form (staff/general) → API v2
+- `AllComplaints`: Complaint list with stat cards, filters, status management → API v2 (+ **mock data fallback**: 12 hardcoded complaints appear when API fails)
+
+## 11. Sales Flow — Data Flow & Field Mapping
+
+### Architecture
+```
+add-sales.jsx (parent, 160 lines)
+│  Fetches: /fish-stages, /customers, /products, /product-types
+│  Passes: siteId, productTypes, customers, stages as props
+│  Renders: one of 4 child forms based on selected sales type
+│
+├── feed.jsx (604 lines)
+│   Products table: quantityCount (auto-calc total weight), packCount (bags)
+│   No quantityWeight, no salesCategory
+│   Payment: paymentType.toLowerCase(), description required
+│
+├── dryfish.jsx (604 lines)
+│   Products table: quantityCount, quantityWeight, packCount
+│   Column labels: "NUMBER OF PACKS", "WEIGHT IN KG / FOR BROKEN"
+│   No salesCategory
+│
+├── freshfish.jsx (562 lines)
+│   Products table: quantityCount, quantityWeight, packCount: 0
+│   No salesCategory, batch_no, pondQuantity
+│
+├── fingerlingsfish.jsx (562 lines)
+│   Products table: quantityCount, packCount: 0
+│   No quantityWeight, no salesCategory
+│
+└── receipt.jsx (222 lines)
+    Custom overlay modal (not Bootstrap Modal)
+    Injects <style> with @media print CSS for 80mm thermal printer
+    Line: ₦ formatting
+```
+
+### Sales Payload (POST /api/v1/sales)
+```json
+{
+  "salesCategoryId": "uuid-string",
+  "siteId": "uuid-string",
+  "customerId": "uuid-string",
+  "paymentType": "cash|credit|transfer|pos|customer_balance",
+  "description": "non-empty string",
+  "products": [
+    {
+      "productId": "uuid",
+      "quantityCount": number,
+      "quantityWeight": number | undefined,
+      "packCount": number,
+      "basePrice": number,
+      "totalPrice": number
+    }
+  ],
+  "amountPaid": number,
+  "balance": number
+}
+```
+
+### Critical Rules
+- Backend rejects: `salesCategory`, `quantity`, `productWeight`, `quantityUsedToPack` (old field names)
+- Backend 500 if controller reads old field names — backend fix needed
+- `siteId` resolved via 3-level fallback: prop → `activeSite?.id` → `user?.siteId`
+- `description` made required in all forms (HTML `required` attribute)
+- Error parsing handles 3 formats: `errors[]` array, `response_message` string, `error.message` string
+- Product type name matching uses `.includes()` for flexibility
+
+## 12. Styling Strategy
+
+### Approach: Hybrid (SCSS Modules + Bootstrap)
 
 **SCSS Variables** (`src/components/shared/style.scss`):
 ```scss
@@ -405,7 +605,6 @@ $primary-color: #512728;  // Deep maroon/burgundy brand color
 
 **SCSS Modules** per feature:
 - Each module has a `.module.scss` file imported as `styles`
-- Shared theme: same font imports (Google Fonts: Roboto, Lora, Roboto Slab, etc.)
 - Responsive breakpoints: 991px (tablet), 768px (mobile)
 - Key patterns: `.sidebar { width: $sidebar-width }`, `.content { width: $content-width }`
 
@@ -414,18 +613,18 @@ $primary-color: #512728;  // Deep maroon/burgundy brand color
 - Responsive: `d-lg-block`, `d-none`, `flex-column flex-md-row`
 - UI: `btn`, `shadow`, `py-2`, `px-5`, `fw-semibold`, `bg-light-subtle`
 
-**styled-components**: Used in `receipt.jsx` (injects `<style>` tag for print CSS)
-
 **Brand colors** (consistent across modules):
-- Primary: `#512728` (buttons, headers)
-- Hover: `#714445`
-- Background: `#FAFCFF` (forms)
-- Text: `#2E3135`
-- Muted: `#8C949B`
-- Success green: `#28a745`
-- Danger red: `#dc3545`
+| Token | Hex | Usage |
+|---|---|---|
+| Primary | `#512728` | Buttons, headers, accents |
+| Hover | `#714445` | Button hover states |
+| Background | `#FAFCFF` | Form/card backgrounds |
+| Text | `#2E3135` | Body text |
+| Muted | `#8C949B` | Labels, captions |
+| Success | `#28a745` | Positive states |
+| Danger | `#dc3545` | Error / destructive states |
 
-## 12. PWA Configuration
+## 13. PWA Configuration
 
 ### `public/manifest.json`
 ```json
@@ -442,49 +641,31 @@ $primary-color: #512728;  // Deep maroon/burgundy brand color
 ### Service Worker (`src/serviceWorkerRegistration.js`)
 - Uses `import.meta.env.VITE_PUBLIC_URL` for scope
 - Registers via `serviceWorkerRegistration.register()`
-- Standard CRA-derived registration pattern (`register()`/`unregister()`)
-- PWA is always registered (no user opt-in)
+- Standard CRA-derived registration pattern
 
-### `public/robots.txt`
-- `User-agent: *` / `Disallow:` (allows all crawling — though PWA means this is a logged-in app, so SEO is irrelevant)
+## 14. Environment Configuration
 
-## 13. Environment Configuration
+| File | VITE_API_BASE_URL (v1) | VITE_API_V2_BASE_URL | VITE_PUBLIC_URL |
+|---|---|---|---|
+| `.env` | `https://dev-api.fendolgroup.com/api/v1` | `https://dev-api.fendolgroup.com/` | `http://localhost:3000` |
+| `.env.production` | `https://inventory-api.fendolgroup.com/api/v1` | `https://inventory-api.fendolgroup.com/` | `http://inventory.fendolgroup.com` |
+| `.env.staging` | Same as dev | Same as dev | `https://fendol.netlify.app` |
 
-4 env files at root:
+**Three env variables**: `VITE_API_BASE_URL`, `VITE_API_V2_BASE_URL`, `VITE_PUBLIC_URL`.
 
-| File | Content |
-|---|---|
-| `.env` | `VITE_API_BASE_URL=http://localhost:5000/api/v1` |
-| `.env.production` | `VITE_API_BASE_URL=https://fendol-api.onrender.com/api/v1` \+ `VITE_PUBLIC_URL=https://fendol-inven.netlify.app` |
-| `.env.staging` | `VITE_API_BASE_URL=https://fendol-api-staging.onrender.com/api/v1` \+ `VITE_PUBLIC_URL=https://fendol-inven-staging.netlify.app` |
-| `.env.example` | Template with `VITE_` prefixed variables |
-
-**CRA migration note**: Renamed `REACT_APP_` to `VITE_` prefix. Two variables total:
-- `VITE_API_BASE_URL` — API endpoint
-- `VITE_PUBLIC_URL` — PWA scope (only in production/staging)
-
-## 14. Build Configuration (`vite.config.js`)
+## 15. Build Configuration (`vite.config.js`)
 
 ```js
 export default defineConfig({
   plugins: [react()],
-  server: { port: 3000 },
-  build: { outDir: 'build' },  // CRA-compatible output directory
+  server: { port: 3000, open: true },
+  build: { outDir: 'dist', sourcemap: true },
 });
 ```
 
-**`package.json` scripts**:
-| Script | Command |
-|---|---|
-| `dev` | `vite` |
-| `start` | `vite` |
-| `build` | `vite build` |
-| `preview` | `vite preview` |
-| `test` | `echo "No tests configured" && exit 0` |
+**Scripts**: `start` (vite), `build` (vite build), `preview`, `test` (vitest), `test:run`, `test:coverage`, `build:staging`.
 
-Dependencies: 48 packages (19 `dependencies`, 29 `devDependencies`).
-
-## 15. Data Flow Patterns
+## 16. Data Flow Patterns
 
 ### Typical CRUD Flow
 ```
@@ -497,31 +678,20 @@ Toast/Pagination ← setState(data) ← set loading=false   Data
 ```
 Login Form → POST /login → JWT token
     ↓
-sessionStorage.setItem('token', jwt)
+sessionStorage.setItem('authToken', jwt)
     ↓
 Redux dispatch(loginUser(user))
     ↓
-ProtectedRoute checks isAuth → render children
+ProtectedRoute checks authenticated + token → render children
     ↓
 API interceptor reads token for all subsequent requests
 ```
 
-### Sales Flow (most complex)
-```
-1. Parent (add-sales.jsx) fetches stages, customers, products on mount
-2. User selects sales type (Dry/Fresh/Fingerlings)
-3. Child form renders (dryfish/freshfish/fingerlingsfish)
-4. User fills products/customer/payment
-5. POST /sales → returns transactionId
-6. GET /sales-receipts/{transactionId} → receipt data
-7. ReceiptModal displays with print option
-```
-
-## 16. Error Handling
+## 17. Error Handling
 
 **Pattern**: Inconsistent — each component implements its own try/catch.
 
-**Common approach in list/view components**:
+**Common approach**:
 ```jsx
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState("");
@@ -534,224 +704,91 @@ const [error, setError] = useState("");
 
 **API errors**: Caught in catch blocks, message extracted via `error.response?.data?.message || "Fallback message"`, displayed as toast or Alert.
 
-**Missing error boundaries**: No React Error Boundaries (`componentDidCatch` or `error boundaries`) are implemented. A runtime crash in any component will unmount the whole tree.
-
-## 17. Third-Party Integrations
-
-| Third Party | Usage | How |
-|---|---|---|
-| **Google Fonts** | Typography | Direct `@import` in SCSS files |
-| **recharts** | Dashboard charts | Line chart, pie/donut chart |
-| **chart.js** / **react-chartjs-2** | Dashboard interval chart | Bar/line combo |
-| **react-toastify** | Notifications | Loading/success/error toasts throughout |
-| **react-paginate** | Table pagination | All list views |
-| **styled-components** | Print CSS injection | `receipt.jsx` injects `<style>` |
-| **react-icons** | Icons | FontAwesome (`Fa`) + Bootstrap (`Bs`) families |
-| **jwt-decode** | Client-side JWT parsing | Token expiry check in API interceptor |
-| **Bootstrap 5** | Layout + components | CDN-loaded via npm, imported in components |
-| **react-bootstrap** | React UI components | Navbar, Modal, Form, Button, Spinner, Alert, Toast, Dropdown |
+**Missing error boundaries**: No React Error Boundaries implemented.
 
 ## 18. Security Considerations
 
 | Area | Assessment | Risk |
 |---|---|---|
-| **Token storage** | `sessionStorage` — cleared on tab close, not persistent | Medium (XSS could read it) |
-| **JWT handling** | Decoded client-side for expiry check only | Low |
+| **Token storage** | `sessionStorage` — cleared on tab close | Medium (XSS) |
+| **JWT handling** | Decoded client-side for expiry + role extraction | Low |
 | **API auth** | Bearer token in Authorization header | Standard |
-| **No HTTPS enforcement** | Relies on host/deployment | Low (deployment concern) |
-| **No input sanitization** | None visible in forms | Medium (backend should handle) |
-| **No role-based access** | All authenticated users see same features | Medium |
+| **No HTTPS enforcement** | Relies on deployment | Low |
+| **RBAC** | Implemented via `hasPermission()` checks | Medium |
 | **Error messages** | Some `console.log(error)` in catch blocks | Low |
-| **Dependencies** | No known-vulnerable packages at time of analysis | Low |
 
 ## 19. Performance Considerations
 
 | Area | Observation |
 |---|---|
-| **Bundle size** | 481 modules, 7.8s build time. No code splitting visible |
-| **API calls** | Each feature fetches independently — no dedup or caching |
-| **Re-fetching** | Parent fetches data and passes as props, but children also re-fetch (e.g., customers fetched 4+ times) |
-| **Images** | Single `logo.png` (~5KB), no heavy assets |
-| **Pagination** | All pagination is client-side — entire dataset fetched then sliced |
+| **Bundle size** | ~1450 modules, ~9s build time. No code splitting |
+| **API calls** | Each feature fetches independently — no caching/dedup |
+| **Re-fetching** | Same data (customers, stages, products) fetched 4+ times |
+| **Images** | Single `logo.png` (~5KB) |
+| **Pagination** | Mostly client-side (full dataset fetched then sliced) |
+| **Cursor pagination** | Used in SupplierLedger, BatchDashboard |
 | **Sidebar** | Re-renders on every route change (no `React.memo`) |
 | **Redux** | Minimal — only auth state, no performance concern |
-| **Lazy loading** | Not implemented — all components loaded eagerly |
-| **SCSS** | Each module imports Google Fonts — repeated 8+ times across modules |
+| **Lazy loading** | Not implemented |
+| **SCSS** | Each module imports Google Fonts — repeated across modules |
 
-## 20. Recommendations
+## 20. Known Pain Points & Technical Debt
+
+### Dead Dependencies
+- `@tanstack/react-query`, `recharts`, `react-bootstrap-typeahead`, `react-datepicker`, `styled-components` — all installed, none used
+
+### Redux
+- `rootReducer.js` combines `authReducer` but is never imported — `store.js` uses `authReducer` directly
+- Action type strings not centralized into `types.js` consistently
+
+### API Layer
+- Interceptor code duplicated in both `Api` and `ApiV2` instances
+- Endpoint naming inconsistent (`/delete-customer/:id` instead of RESTful `DELETE /customers/:id`)
+- API version path inconsistent (e.g., `/api/v1/staff` vs `/v2/complaint` — both use `ApiV2`)
+
+### Code Quality
+- 10+ components exceed 500 lines (largest: `ViewSummary` at 1256, `NewBatchFish` at 1073)
+- Inline styles mixed with SCSS modules within the same components
+- No TypeScript — entire codebase is plain JSX
+- Mock data fallback in `AllComplaints` masks production API failures
+- No React Error Boundaries — runtime crash unmounts the entire tree
+
+### Conventions
+- File naming quirks intentionally preserved (`dashbord.jsx`, `damges.jsx`, `view-summary..jsx`)
+- Google Fonts `@import` repeated across many SCSS modules
+- Some delete endpoints use `/delete-resource/:id` pattern
+
+### Placeholder Pages
+11 routes render "Coming Soon" — Feed Dashboard, Hatchery Dashboard, Site Performance, Staff Payroll, Staff Appraisals, Supplier Dashboard, Store Stock Top-Up, Store Stock Use, Referral Dashboard, MLM Tree, Feed Production (create)
+
+## 21. Known Intentional Naming Quirks
+
+| File | Do NOT "fix" to |
+|---|---|
+| `src/assests/` | `src/assets/` |
+| `dashbord.jsx` | `dashboard.jsx` |
+| `damge.module.scss` | `damage.module.scss` |
+| `damges.jsx` | `damages.jsx` |
+| `siderbar.module.scss` | `sidebar.module.scss` |
+| `view-summary..jsx` (double dot) | `view-summary.jsx` |
+
+## 22. Recommendations
 
 ### Critical
-1. **Add error boundaries** — Wrap each feature route in an ErrorBoundary to prevent full-app crashes
-2. **Server-side pagination** — For tables with growing data (ledger, histories), offset/limit should be passed to API
-3. **Deduplicate font imports** — Move Google Fonts `@import` to `index.html` or a single shared SCSS file
+1. **Add error boundaries** — Wrap each feature route in an ErrorBoundary
+2. **Deduplicate API interceptor** — Extract shared logic from `Api` and `ApiV2`
+3. **Fix mock data fallback** — Don't silently return mock data when API fails
 
 ### Medium Priority
-4. **Implement lazy loading** — `React.lazy()` + `Suspense` for each feature route (reduces initial bundle)
-5. **Standardize error handling** — Create a shared `useApi` hook or HOC for loading/error/data patterns
-6. **Add role-based access** — Current auth has role but it's never checked
-7. **Cache shared data** — Customers, stages, products are fetched repeatedly — consider React Context or SWR/React Query
+4. **Implement lazy loading** — `React.lazy()` + `Suspense` for each feature route
+5. **Standardize error handling** — Create a shared `useApi` hook
+6. **Cache shared data** — Customers, stages, products fetched repeatedly
+7. **Server-side pagination** — For tables with growing data
 
 ### Low Priority
-8. **Add tests** — Zero tests exist; start with critical paths (auth, sales flow)
-9. **TypeScript migration** — JSDoc annotations as interim, full TS for long-term maintainability
-10. **API client improvements** — Response interceptor could standardize error shape; add request retry logic
-11. **Consolidate sales forms** — `dryfish.jsx` (585 lines), `freshfish.jsx` (540 lines), `fingerlingsfish.jsx` (530 lines) share ~70% logic — extract into reusable hooks/components
-12. **Fix minor typos**: `assests/` → `assets/`, `dashbord.jsx` → `dashboard.jsx`, `damge.module.scss` → `damage.module.scss`, `damges.jsx` → `damages.jsx`
-13. **Accessibility**: Add `aria-label` to icon-only buttons, improve color contrast ratios
-
----
-
-## Appendix A: Complete File Inventory
-
-| # | File Path | Lines | Type | Purpose |
-|---|---|---|---|---|
-| 1 | `index.html` | 18 | HTML | Vite entry |
-| 2 | `vite.config.js` | 10 | JS | Build config |
-| 3 | `package.json` | 61 | JSON | Deps & scripts |
-| 4 | `.env` | 1 | Env | Dev env |
-| 5 | `.env.example` | 2 | Env | Template |
-| 6 | `.env.production` | 2 | Env | Prod env |
-| 7 | `.env.staging` | 2 | Env | Staging env |
-| 8 | `public/manifest.json` | 25 | JSON | PWA manifest |
-| 9 | `public/robots.txt` | 3 | TXT | Robots |
-| 10 | `src/index.jsx` | 26 | JSX | App bootstrap |
-| 11 | `src/serviceWorkerRegistration.js` | 70 | JS | SW registration |
-| 12 | `src/components/router.jsx` | 53 | JSX | Top-level routes |
-| 13 | `src/components/protect-routes.jsx` | 52 | JSX | Auth guard |
-| 14 | `src/components/shared/style.scss` | 5 | SCSS | Variables |
-| 15 | `src/components/shared/login/login.jsx` | 120 | JSX | Login form |
-| 16 | `src/components/shared/login/login.module.scss` | 90 | SCSS | Login styles |
-| 17 | `src/components/shared/header/header.jsx` | 73 | JSX | Top navbar |
-| 18 | `src/components/shared/header/header.module.scss` | 67 | SCSS | Header styles |
-| 19 | `src/components/shared/sidebar/sidebar.jsx` | 107 | JSX | Navigation sidebar |
-| 20 | `src/components/shared/sidebar/siderbar.module.scss` | 83 | SCSS | Sidebar styles |
-| 21 | `src/components/shared/api/apiLink.jsx` | 55 | JSX | Axios client |
-| 22 | `src/components/shared/reduxForProtectingRoute/store.js` | 13 | JS | Redux store |
-| 23 | `src/components/shared/reduxForProtectingRoute/actions/types.js` | 3 | JS | Action types |
-| 24 | `src/components/shared/reduxForProtectingRoute/actions/authActions.js` | 24 | JS | Auth actions |
-| 25 | `src/components/shared/reduxForProtectingRoute/reducers/rootReducer.js` | 8 | JS | Root reducer |
-| 26 | `src/components/shared/reduxForProtectingRoute/reducers/authReducer.js` | 33 | JS | Auth reducer |
-| 27 | `src/components/dashboard/dashbord.jsx` | 303 | JSX | Dashboard |
-| 28 | `src/components/dashboard/dashboard.module.scss` | 165 | SCSS | Dashboard styles |
-| 29 | `src/components/admin/adminRoutes.jsx` | 13 | JSX | Admin routes |
-| 30 | `src/components/admin/add-new-admin/add-new.jsx` | 129 | JSX | Add admin |
-| 31 | `src/components/admin/view-all/view-all.jsx` | 129 | JSX | View admins |
-| 32 | `src/components/admin/admin-styles.module.scss` | 79 | SCSS | Admin styles |
-| 33 | `src/components/customer/customerRoute.jsx` | 16 | JSX | Customer routes |
-| 34 | `src/components/customer/add/add.jsx` | 161 | JSX | Add customer |
-| 35 | `src/components/customer/view-all/view-all.jsx` | 178 | JSX | View customers |
-| 36 | `src/components/customer/personal-ledger/personal-ledger.jsx` | 227 | JSX | Customer ledger |
-| 37 | `src/components/customer/customer.module.scss` | 107 | SCSS | Customer styles |
-| 38 | `src/components/feed/feedRouter.jsx` | 16 | JSX | Feed routes |
-| 39 | `src/components/feed/add-new/add-new.jsx` | 152 | JSX | Add feed |
-| 40 | `src/components/feed/view-all/view-all.jsx` | 187 | JSX | View feed |
-| 41 | `src/components/feed/inventory-history/inventory-history.jsx` | 214 | JSX | Feed history |
-| 42 | `src/components/feed/feed.module.scss` | 78 | SCSS | Feed styles |
-| 43 | `src/components/ponds/productStagesRouter.jsx` | 13 | JSX | Pond routes |
-| 44 | `src/components/ponds/create/create-stages.jsx` | 237 | JSX | Create pond |
-| 45 | `src/components/ponds/view-all-ponds/view-all-stages.jsx` | 276 | JSX | View ponds |
-| 46 | `src/components/ponds/product-stages.module.scss` | 130 | SCSS | Pond styles |
-| 47 | `src/components/manage-fish/manageRoute.jsx` | 22 | JSX | Fish mgmt routes |
-| 48 | `src/components/manage-fish/create-fish-type/create-fish-type.jsx` | 114 | JSX | Create fish type |
-| 49 | `src/components/manage-fish/add-fish/add-fish.jsx` | 319 | JSX | Add fish |
-| 50 | `src/components/manage-fish/move-fish/move-fish.jsx` | 314 | JSX | Move fish |
-| 51 | `src/components/manage-fish/harvest-fish/harvest.jsx` | 303 | JSX | Harvest fish |
-| 52 | `src/components/manage-fish/damage-fish/damage-fish.jsx` | 282 | JSX | Damage fish |
-| 53 | `src/components/manage-fish/view-all-histories/view-all-histories.jsx` | 210 | JSX | Fish history |
-| 54 | `src/components/manage-fish/product-stages.module.scss` | 131 | SCSS | Fish mgmt styles |
-| 55 | `src/components/fish-processes/processRouter.jsx` | 13 | JSX | Process routes |
-| 56 | `src/components/fish-processes/process-fish/new-batch.jsx` | 316 | JSX | New batch |
-| 57 | `src/components/fish-processes/view-summary/view-summary..jsx` | 272 | JSX | Process summary |
-| 58 | `src/components/fish-processes/process.module.scss` | 126 | SCSS | Process styles |
-| 59 | `src/components/products/productRouter.jsx` | 13 | JSX | Product routes |
-| 60 | `src/components/products/create-products/create-products.jsx` | 161 | JSX | Create product |
-| 61 | `src/components/products/view-all/view-all.jsx` | 117 | JSX | View products |
-| 62 | `src/components/products/product.module.scss` | 82 | SCSS | Product styles |
-| 63 | `src/components/store/storeRouter.jsx` | 16 | JSX | Store routes |
-| 64 | `src/components/store/add-new/add-new.jsx` | 147 | JSX | Add store item |
-| 65 | `src/components/store/view-all/view-all.jsx` | 191 | JSX | View store |
-| 66 | `src/components/store/inventory-history/inventory-history.jsx` | 215 | JSX | Store history |
-| 67 | `src/components/store/store.module.scss` | 80 | SCSS | Store styles |
-| 68 | `src/components/finance/financeRouter.jsx` | 19 | JSX | Finance routes |
-| 69 | `src/components/finance/finance.module.scss` | 221 | SCSS | Finance styles |
-| 70 | `src/components/finance/add-expenses/add-expenses.jsx` | 160 | JSX | Add expense |
-| 71 | `src/components/finance/add-sales/add-sales.jsx` | 136 | JSX | Add sales (parent) |
-| 72 | `src/components/finance/add-sales/dryfish.jsx` | 585 | JSX | Dry fish sale form |
-| 73 | `src/components/finance/add-sales/freshfish.jsx` | 540 | JSX | Fresh fish sale form |
-| 74 | `src/components/finance/add-sales/fingerlingsfish.jsx` | 530 | JSX | Fingerlings sale form |
-| 75 | `src/components/finance/add-sales/receipt.jsx` | 222 | JSX | Receipt modal |
-| 76 | `src/components/finance/ledger/finance-ledger.jsx` | 222 | JSX | Finance ledger |
-| 77 | `src/components/finance/cash-drawer/cash-drawer.jsx` | 529 | JSX | Cash drawer |
-| 78 | `src/components/showcase/showcaseRoute.jsx` | 16 | JSX | Showcase routes |
-| 79 | `src/components/showcase/showcase.module.scss` | 332 | SCSS | Showcase styles |
-| 80 | `src/components/showcase/whole-showcase/whole-showcase.jsx` | 360 | JSX | Whole fish showcase |
-| 81 | `src/components/showcase/broken-showcase/broken-showcase.jsx` | 338 | JSX | Broken fish showcase |
-| 82 | `src/components/damage-loss/damges.jsx` | 158 | JSX | Damage/loss view |
-| 83 | `src/components/damage-loss/damge.module.scss` | 214 | SCSS | Damage/loss styles |
-| 84 | `src/assests/logo.png` | — | PNG | App logo |
-
-**Total**: 84 files (75 source + 9 config/root).
-
----
-
-## Appendix B: Route Hierarchy
-
-```
-/login                          → Login
-/dashboard                      → Dashboard (protected)
-/admin/*
-  /add-new-admin                → AddAdmin
-  /view-all                     → ViewAdmins
-/customers/*
-  /add                          → AddCustomer
-  /view-all                     → ViewCustomers
-  /personal-ledger               → PersonalLedger
-/feeds/*
-  /add-new                      → AddFeed
-  /view-all                     → ViewFeeds
-  /inventory-history            → FeedHistory
-/ponds/*
-  /create                       → CreatePond
-  /view                         → ViewPonds
-/manage-fish/*
-  /create-fish-type             → CreateFishType
-  /add-fish                     → AddFish
-  /move-fish                    → MoveFish
-  /harvest-fish                 → HarvestFish
-  /damage-fish                  → DamageFish
-  /view-all                     → FishHistory
-/fish-processes/*
-  /process-fish                 → NewBatch
-  /view-summary                 → ProcessSummary
-/products/*
-  /create                       → CreateProduct
-  /view-all                     → ViewProducts
-/store/*
-  /add-new                      → AddStoreItem
-  /view-all                     → ViewStore
-  /inventory-history            → StoreHistory
-/finance/*
-  /add-sales                    → AddSales
-  /add-expenses                 → AddExpense
-  /ledger                       → FinanceLedger
-  /cash-drawer                  → CashDrawer
-/showcase/*
-  /whole-showcase               → WholeShowcase
-  /broken-showcase              → BrokenShowcase
-/damage-loss                    → DamageLoss
-```
-
----
-
-## Appendix C: Key Patterns & Conventions
-
-- **File naming**: kebab-case for `.jsx` files (`add-new.jsx`, `view-all.jsx`)
-- **CSS Modules**: `*.module.scss` imported as `styles` object
-- **API error handling**: `error.response?.data?.message || "fallback"`
-- **Loading states**: `useState(true)` → set `false` in `finally`
-- **Pagination**: `react-paginate` in all list views, always client-side
-- **Sidebar**: Offcanvas on mobile (`<lg`), persistent on desktop
-- **Toast**: `dark-toast` CSS class for consistent dark theme notifications
-- **Number formatting**: `new Intl.NumberFormat().format()` for comma-separated locale strings
-- **Date formatting**: Manual `padStart` — `DD/MM/YYYY HH:mm` format
-- **Modal exit pattern**: User confirms with `window.confirm()` before destructive POST
+8. **Add tests** — Start with critical paths (auth, sales flow)
+9. **TypeScript migration** — JSDoc as interim, full TS for long-term
+10. **Consolidate sales forms** — 4 forms share ~70% logic
+11. **Reduce component size** — Break down components >500 lines
+12. **Consolidate SCSS font imports** — Move to single location
+13. **Accessibility** — Add `aria-label` to icon-only buttons

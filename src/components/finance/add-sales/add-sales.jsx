@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Form } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import styles from '../finance.module.scss';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import SalesForm from './dryfish';
 import FreshForm from './freshfish';
 import FingerlingsForm from './fingerlingsfish';
@@ -17,7 +18,9 @@ const AddSales = () => {
     const [stages, setStages] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [products, setProducts] = useState([]);
-    const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
+    const [productTypes, setProductTypes] = useState([]);
+    const [showSidebar, setShowSidebar] = useState(false);
+    const activeSite = useSelector((store) => store.activeSite);
 
     // Fetch stages
     const fetchStages = async () => {
@@ -46,6 +49,18 @@ const AddSales = () => {
             console.log(err.response?.data?.message || 'Failed to fetch customers.');
         }
     };
+
+    useEffect(() => {
+        const fetchProductTypes = async () => {
+            try {
+                const res = await ApiV2.get('/api/v1/product-types');
+                setProductTypes(res.data.data || []);
+            } catch {
+                setProductTypes([]);
+            }
+        };
+        fetchProductTypes();
+    }, []);
 
     // Fetch products
     useEffect(() => {
@@ -124,16 +139,16 @@ const AddSales = () => {
                         )}
 
                         {salesType === 'Dry Fish' && (
-                            <SalesForm customers={customers} stages={stages} products={products} />
+                            <SalesForm customers={customers} stages={stages} products={products} siteId={activeSite?.id} productTypes={productTypes} />
                         )}
                         {salesType === 'Fresh Fish' && (
-                            <FreshForm customers={customers} stages={stages} products={products} />
+                            <FreshForm customers={customers} stages={stages} products={products} siteId={activeSite?.id} productTypes={productTypes} />
                         )}
                         {salesType === 'Fingerlings Fish' && (
-                            <FingerlingsForm customers={customers} stages={stages} products={products} />
+                            <FingerlingsForm customers={customers} stages={stages} products={products} siteId={activeSite?.id} productTypes={productTypes} />
                         )}
                         {salesType === 'Feed' && (
-                            <FeedForm customers={customers} stages={stages} />
+                            <FeedForm customers={customers} stages={stages} siteId={activeSite?.id} productTypes={productTypes} />
                         )}
                     </main>
                 </section>

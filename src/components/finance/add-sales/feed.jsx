@@ -1,24 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Form, Row, Col, Button, Alert } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
-import Api, { ApiV2 } from '../../shared/api/apiLink';
+import Api from '../../shared/api/apiLink';
 import styles from '../finance.module.scss';
 import { BsExclamationTriangleFill } from 'react-icons/bs';
 import ReceiptModal from './receipt';
 import { useConfirm } from '../../shared/confirm-modal';
 
-const FeedForm = ({ customers, stages }) => {
+const FeedForm = ({ customers, stages, siteId, productTypes }) => {
+    const activeSite = useSelector((store) => store.activeSite);
+    const user = useSelector((store) => store.user);
+    const resolvedSiteId = siteId || activeSite?.id || user?.siteId;
     const [feeds, setFeeds] = useState([]);
-    const [productTypeId, setProductTypeId] = useState(null);
+    const feedTypeId = productTypes.find(t => t.name?.toLowerCase() === 'feed')?.id;
     const [feedData, setFeedData] = useState({
         products: [],
         category: '',
         customerId: '',
         discount: 0,
         description: '',
-        salesCategory: '',
         paymentType: '',
         fullName: '',
         amountPaid: null
@@ -54,7 +57,6 @@ const FeedForm = ({ customers, stages }) => {
 
     useEffect(() => {
         fetchFeeds();
-        fetchProductTypes();
     }, []);
 
     const fetchFeeds = async () => {
@@ -63,20 +65,6 @@ const FeedForm = ({ customers, stages }) => {
             setFeeds(res.data.data || []);
         } catch (err) {
             console.error('Error fetching feeds:', err);
-        }
-    };
-
-    const fetchProductTypes = async () => {
-        try {
-            const res = await ApiV2.get('/api/v1/product-types');
-            const types = res.data.data || [];
-            const feedType = types.find(t => t.name?.toLowerCase() === 'feed');
-            if (feedType) {
-                setProductTypeId(feedType.id);
-                setFeedData(prev => ({ ...prev, salesCategory: feedType.id }));
-            }
-        } catch (err) {
-            console.error('Error fetching product types:', err);
         }
     };
 
@@ -106,7 +94,6 @@ const FeedForm = ({ customers, stages }) => {
             const feed = feeds.find(f => f.id === productId);
             setFeedData(prevState => ({
                 ...prevState,
-                salesCategory: productTypeId || prevState.salesCategory,
                 products: [
                     ...prevState.products,
                     {
@@ -170,8 +157,7 @@ const FeedForm = ({ customers, stages }) => {
 
             return {
                 ...prevState,
-                products: updatedProducts,
-                salesCategory: productTypeId || prevState.salesCategory
+                products: updatedProducts
             };
         });
     };
@@ -244,7 +230,6 @@ const FeedForm = ({ customers, stages }) => {
             const feed = feeds.find(f => f.id === productId);
             setFeedData(prevState => ({
                 ...prevState,
-                salesCategory: productTypeId || prevState.salesCategory,
                 products: [
                     ...prevState.products,
                     {
@@ -264,11 +249,37 @@ const FeedForm = ({ customers, stages }) => {
         const ok = await confirm({ message: "Are you sure you want to add this sale?", title: "Confirm Sale", variant: "primary" });
         if (!ok) return;
 
+        if (!feedTypeId) {
+            toast.error("Product type 'Feed' not configured. Contact admin.", {
+                position: toast.POSITION.TOP_CENTER,
+                autoClose: 6000,
+                className: 'dark-toast'
+            });
+            setLoader(false);
+            return;
+        }
+
         setLoader(true);
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
 
         try {
-            const saleResponse = await Api.post('/sales', feedData);
+            const payload = {
+                products: feedData.products
+                    .filter(p => checkedProducts[p.id])
+                    .map(p => ({
+                        id: p.id,
+                        quantityCount: p.quantityUsedToPack || 0,
+                        packCount: p.quantity || 0
+                    })),
+                customerId: feedData.customerId,
+                paymentType: feedData.paymentType?.toLowerCase(),
+                discount: feedData.discount || 0,
+                description: feedData.description,
+                amountPaid: feedData.amountPaid,
+                salesCategoryId: feedTypeId,
+                siteId: resolvedSiteId
+            };
+            const saleResponse = await Api.post('/sales', payload);
 
             if (saleResponse.status < 200 || saleResponse.status >= 300) {
                 throw new Error(saleResponse.data?.message || "Sale failed!");
@@ -321,7 +332,6 @@ const FeedForm = ({ customers, stages }) => {
                 customerId: '',
                 discount: 0,
                 description: '',
-                salesCategory: '',
                 paymentType: '',
                 fullName: '',
                 amountPaid: null
@@ -333,11 +343,16 @@ const FeedForm = ({ customers, stages }) => {
             fetchFeeds();
         } catch (error) {
             console.error("Error in handleAddSales:", error);
+            const data = error.response?.data;
+            const backendErrors = data?.errors;
+            const errorMsg = backendErrors
+                ? backendErrors.join('. ')
+                : (data?.response_message || data?.error?.message || data?.message || error.response?.message || 'Sale failed!');
             toast.update(salesToast, {
-                render: error.response?.message || error.response?.data?.message || 'Sale failed!',
+                render: errorMsg,
                 type: "error",
                 isLoading: false,
-                autoClose: 6000,
+                autoClose: 8000,
                 className: 'dark-toast'
             });
         } finally {
@@ -391,7 +406,7 @@ const FeedForm = ({ customers, stages }) => {
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 )},
-                                { key: 'id', label: <>QUANTITY USED TO PACK <br /> WEIGH IN KG FOR BROKEN</>, render: (val, row) => {
+                                { key: 'id', label: 'QUANTITY COUNT', render: (val, row) => {
                                     const product = feedData.products.find(p => p.id === val);
                                     return (
                                         <div className='px-2'>
@@ -488,6 +503,7 @@ const FeedForm = ({ customers, stages }) => {
                                 as="textarea"
                                 name="description"
                                 value={feedData.description || ''}
+                                required
                                 onChange={(e) => setFeedData({ ...feedData, description: e.target.value })}
                                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                             />

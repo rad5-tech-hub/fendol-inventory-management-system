@@ -49,22 +49,46 @@ export default function ViewAllCustomers() {
   const [balanceFilter, setBalanceFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 45;
+  const [aggregates, setAggregates] = useState({ totalCustomers: 0, totalDebtors: 0, totalOutstandingDebt: 0 });
   const [ConfirmDialog, confirm] = useConfirm();
 
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
 
-  const fetchCustomers = async () => {
+  const getApiFilter = () => {
+    if (balanceFilter === 'owed') return 'debtors';
+    if (balanceFilter === 'owes') return 'creditors';
+    return undefined;
+  };
+
+  const fetchCustomers = async (filter) => {
     try {
       setLoading(true);
       setError('');
-      const response = await Api.get('/customers');
-      if (Array.isArray(response.data.data)) {
-        setCustomers(response.data.data);
-      } else {
-        throw new Error("Expected an array of customers");
+      const params = filter ? { filter } : {};
+      const allData = [];
+      let cursor = null;
+      let hasMore = true;
+      let agg = { totalCustomers: 0, totalDebtors: 0, totalOutstandingDebt: 0 };
+
+      while (hasMore) {
+        const queryParams = { ...params, limit: 100 };
+        if (cursor) queryParams.cursor = cursor;
+        const response = await Api.get('/customers', { params: queryParams });
+        const body = response.data;
+        if (body.success && Array.isArray(body.data)) {
+          allData.push(...body.data.map(({ passwordHash, ...rest }) => rest));
+          agg = body.aggregates || agg;
+          hasMore = body.pagination?.hasMore || false;
+          cursor = body.pagination?.nextCursor || null;
+        } else {
+          throw new Error("Unexpected response format");
+        }
       }
+
+      setCustomers(allData);
+      setAggregates(agg);
     } catch (err) {
       setError('Failed to fetch customers. Please try again.');
       console.error(err);
@@ -74,12 +98,13 @@ export default function ViewAllCustomers() {
   };
 
   useEffect(() => {
-    fetchCustomers();
-  }, []);
+    setCurrentPage(0);
+    fetchCustomers(getApiFilter());
+  }, [balanceFilter]);
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchQuery, selectedCategory, balanceFilter]);
+  }, [searchQuery, selectedCategory]);
 
   const filteredCustomers = customers.filter(c => {
     const q = searchQuery.toLowerCase();

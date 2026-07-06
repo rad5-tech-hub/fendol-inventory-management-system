@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Form, Row, Col, Button } from "react-bootstrap";
+import { useSelector } from "react-redux";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import Api from "../../shared/api/apiLink";
 import styles from "../finance.module.scss";
 import ReceiptModal from "./receipt";
 import { useConfirm } from '../../shared/confirm-modal';
 
-const FingerlingsForm = ({ customers, stages, products }) => {
+const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) => {
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const resolvedSiteId = siteId || activeSite?.id || user?.siteId;
   const [fingerlingsData, setFingerlingsData] = useState({
     products: [{ id: "", quantity: 0 }],
     category: "",
@@ -15,13 +19,16 @@ const FingerlingsForm = ({ customers, stages, products }) => {
     customerId: "",
     description: "",
     discount: 0,
-    salesCategory: "",
     pondId: "",
     paymentType: "",
     amountPaid: null,
     basePrice: 0,
     totalPrice: 0,
   });
+  const fingerlingsTypeId = productTypes.find(t => {
+      const n = t.name?.toLowerCase() || '';
+      return n === 'fingerlings' || n.includes('fingerlings');
+  })?.id;
 
   const [receiptData, setReceiptData] = useState({});
   const [showReceipt, setShowReceipt] = useState(false);
@@ -103,7 +110,6 @@ const FingerlingsForm = ({ customers, stages, products }) => {
       setFingerlingsData((prevData) => ({
         ...prevData,
         pondId: pond.id,
-        salesCategory: "fingerlings",
       }));
       const displayText = `${pond.title || "No Data Yet"} - (${pond.quantity !== undefined ? pond.quantity : "0"})`;
       setPondSearch(displayText);
@@ -153,7 +159,6 @@ const FingerlingsForm = ({ customers, stages, products }) => {
       let updatedData = {
         ...prevData,
         [name]: updatedValue,
-        salesCategory: "fingerlings",
       };
 
       if (name === "quantity") {
@@ -200,12 +205,36 @@ const FingerlingsForm = ({ customers, stages, products }) => {
     e.preventDefault();
     const ok = await confirm({ message: "Are you sure you want to add this sale?", title: "Confirm Sale", variant: "primary" }); if (!ok) return;
 
+    if (!fingerlingsTypeId) {
+      toast.error("Product type 'Fingerlings' not configured. Contact admin.", {
+          position: toast.POSITION.TOP_CENTER,
+          autoClose: 6000,
+          className: 'dark-toast'
+      });
+      setLoader(false);
+      return;
+    }
+
     setLoader(true);
     const salesToast = toast.loading("Adding sale...", { className: "dark-toast" });
 
     try {
-      // Step 1: Add the sale
-      const saleResponse = await Api.post("/sales", fingerlingsData);
+      const payload = {
+        products: [{
+          id: fingerlingsData.products[0]?.id,
+          quantityCount: fingerlingsData.products[0]?.quantity || 0,
+          packCount: 0
+        }],
+        customerId: fingerlingsData.customerId,
+        paymentType: fingerlingsData.paymentType?.toLowerCase(),
+        discount: fingerlingsData.discount || 0,
+        description: fingerlingsData.description,
+        amountPaid: fingerlingsData.amountPaid,
+        salesCategoryId: fingerlingsTypeId,
+        pondId: fingerlingsData.pondId || undefined,
+        siteId: resolvedSiteId
+      };
+      const saleResponse = await Api.post("/sales", payload);
       if (saleResponse.status < 200 || saleResponse.status >= 300) {
         throw new Error(saleResponse.data?.message || "Sale failed!");
       }
@@ -260,7 +289,6 @@ const FingerlingsForm = ({ customers, stages, products }) => {
         customerId: "",
         description: "",
         discount: 0,
-        salesCategory: "",
         pondId: "",
         paymentType: "",
         amountPaid: null,
@@ -273,11 +301,16 @@ const FingerlingsForm = ({ customers, stages, products }) => {
       fetchCustomers();
     } catch (error) {
       console.error("Error in handleAddSales:", error);
+      const data = error.response?.data;
+      const backendErrors = data?.errors;
+      const errorMsg = backendErrors
+        ? backendErrors.join('. ')
+        : (data?.response_message || data?.error?.message || data?.message || error.response?.message || 'Sale failed!');
       toast.update(salesToast, {
-        render: error.response?.message || error.response?.data?.message || "Sale failed!",
+        render: errorMsg,
         type: "error",
         isLoading: false,
-        autoClose: 6000,
+        autoClose: 8000,
         className: "dark-toast",
       });
     } finally {
@@ -371,6 +404,7 @@ const FingerlingsForm = ({ customers, stages, products }) => {
               as="textarea"
               name="description"
               value={fingerlingsData.description || ""}
+              required
               onChange={handleInputChange}
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
             />

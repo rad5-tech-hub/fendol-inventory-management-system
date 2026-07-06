@@ -1,29 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Form, Row, Col, Button } from "react-bootstrap";
+import { useSelector } from "react-redux";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import Api from "../../shared/api/apiLink";
 import styles from "../finance.module.scss";
 import ReceiptModal from "./receipt";
 import { useConfirm } from '../../shared/confirm-modal';
 
-const FreshForm = ({ customers, stages, products }) => {
+const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const resolvedSiteId = siteId || activeSite?.id || user?.siteId;
   const [freshData, setFreshData] = useState({
     products: [{ id: "", quantity: 0, productWeight: "" }],
     description: "",
-    category: "", // Will be set from selected customer
+    category: "",
     fullName: "",
     customerId: "",
     discount: 0,
-    salesCategory: "",
     amountPaid: null,
-    batch_no: "",
     pondId: "",
     paymentType: "",
     basePrice: 0,
     totalPrice: 0,
-    pondQuantity: "",
   });
+  const freshFishTypeId = productTypes.find(t => {
+      const n = t.name?.toLowerCase() || '';
+      return n === 'fresh-fish' || n.includes('fresh fish');
+  })?.id;
 
   const [receiptData, setReceiptData] = useState({});
   const [showReceipt, setShowReceipt] = useState(false);
@@ -102,8 +107,6 @@ const FreshForm = ({ customers, stages, products }) => {
       setFreshData((prevData) => ({
         ...prevData,
         pondId: pond.id,
-        pondQuantity: pond.quantity || "0",
-        salesCategory: "fresh-fish",
       }));
       setPondSearch(`${pond.title || "No Data Yet"} - (${pond.quantity || "0"})`);
       setShowPondDropdown(false);
@@ -149,7 +152,6 @@ const FreshForm = ({ customers, stages, products }) => {
       let newState = {
         ...prevData,
         [name]: numericValue,
-        salesCategory: "fresh-fish",
       };
 
       if (name === "quantity") {
@@ -199,12 +201,37 @@ const FreshForm = ({ customers, stages, products }) => {
     e.preventDefault();
     const ok = await confirm({ message: "Are you sure you want to add this sale?", title: "Confirm Sale", variant: "primary" }); if (!ok) return;
 
+    if (!freshFishTypeId) {
+      toast.error("Product type 'Fresh Fish' not configured. Contact admin.", {
+          position: toast.POSITION.TOP_CENTER,
+          autoClose: 6000,
+          className: 'dark-toast'
+      });
+      setLoader(false);
+      return;
+    }
+
     setLoader(true);
     const salesToast = toast.loading("Adding sale...", { className: "dark-toast" });
 
     try {
-      // Step 1: Add the sale
-      const saleResponse = await Api.post("/sales", freshData);
+      const payload = {
+        products: [{
+          id: freshData.products[0]?.id,
+          quantityCount: freshData.products[0]?.quantity || 0,
+          quantityWeight: parseFloat(freshData.products[0]?.productWeight) || 0,
+          packCount: 0
+        }],
+        customerId: freshData.customerId,
+        paymentType: freshData.paymentType?.toLowerCase(),
+        discount: freshData.discount || 0,
+        description: freshData.description,
+        amountPaid: freshData.amountPaid,
+        salesCategoryId: freshFishTypeId,
+        pondId: freshData.pondId || undefined,
+        siteId: resolvedSiteId
+      };
+      const saleResponse = await Api.post("/sales", payload);
       if (saleResponse.status < 200 || saleResponse.status >= 300) {
         throw new Error(saleResponse.data?.message || "Sale failed!");
       }
@@ -259,14 +286,11 @@ const FreshForm = ({ customers, stages, products }) => {
         fullName: "",
         customerId: "",
         discount: 0,
-        salesCategory: "",
         amountPaid: null,
-        batch_no: "",
         pondId: "",
         paymentType: "",
         basePrice: 0,
         totalPrice: 0,
-        pondQuantity: "",
       });
       setPondSearch("");
       setCustomerSearch("");
@@ -274,11 +298,16 @@ const FreshForm = ({ customers, stages, products }) => {
       fetchCustomers();
     } catch (error) {
       console.error("Error in handleAddSales:", error);
+      const data = error.response?.data;
+      const backendErrors = data?.errors;
+      const errorMsg = backendErrors
+        ? backendErrors.join('. ')
+        : (data?.response_message || data?.error?.message || data?.message || error.response?.message || 'Sale failed!');
       toast.update(salesToast, {
-        render: error.response?.message || error.response?.data?.message || "Sale failed!",
+        render: errorMsg,
         type: "error",
         isLoading: false,
-        autoClose: 6000,
+        autoClose: 8000,
         className: "dark-toast",
       });
     } finally {
@@ -417,6 +446,7 @@ const FreshForm = ({ customers, stages, products }) => {
               as="textarea"
               name="description"
               value={freshData.description || ""}
+              required
               onChange={handleInputChange}
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
             />
