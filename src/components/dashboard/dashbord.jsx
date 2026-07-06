@@ -595,35 +595,7 @@ const Dashboard = () => {
 
               <div className={`${styles.sectionCard} mb-4`}>
                 <h6 className={styles.sectionTitle}>Business Today</h6>
-                <Row className="g-3">
-                  <Col lg={4} md={4} sm={12} xs={12}>
-                    <div className={styles.todayTile}>
-                      <div className={`${styles.todayIcon} ${styles.todayIconOrange}`}>🛒</div>
-                      <div>
-                        <div className={styles.todayLabel}>TODAY'S SALES</div>
-                        <div className={styles.todayValue}>₦ 450,000</div>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col lg={4} md={4} sm={12} xs={12}>
-                    <div className={styles.todayTile}>
-                      <div className={`${styles.todayIcon} ${styles.todayIconYellow}`}>📦</div>
-                      <div>
-                        <div className={styles.todayLabel}>TODAY'S ORDERS</div>
-                        <div className={styles.todayValue}>12</div>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col lg={4} md={4} sm={12} xs={12}>
-                    <div className={styles.todayTile}>
-                      <div className={`${styles.todayIcon} ${styles.todayIconGray}`}>📋</div>
-                      <div>
-                        <div className={styles.todayLabel}>TODAY'S EXPENSES</div>
-                        <div className={`${styles.todayValue} ${styles.todayValueDanger}`}>₦ 120,000</div>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
+                <p className="text-muted mb-0">Coming soon</p>
               </div>
 
               <Row className="g-4 mb-4">
@@ -811,79 +783,14 @@ const Dashboard = () => {
                 <Col lg={12} md={12} sm={12} xs={12}>
                   <div className={styles.sectionCard}>
                     <h6 className={styles.sectionTitle}>Major Sites Summary</h6>
-                    <Row className="g-3">
-                      <Col md={6} sm={12} xs={12}>
-                        <div className={styles.siteSummaryCard}>
-                          <div className={styles.siteSummaryHeader}>
-                            <span className={styles.siteSummaryIcon}>📍</span>
-                            <span className={styles.siteSummaryName}>Main Hatchery</span>
-                            <span className={`${styles.siteBadge} ${styles.siteBadgeActive}`}>Active</span>
-                          </div>
-                          <div className={styles.siteSummaryStats}>
-                            <div>
-                              <div className={styles.siteSummaryStatLabel}>Active Ponds</div>
-                              <div className={styles.siteSummaryStatValue}>24</div>
-                            </div>
-                            <div>
-                              <div className={styles.siteSummaryStatLabel}>Est. Stock</div>
-                              <div className={styles.siteSummaryStatValue}>45k</div>
-                            </div>
-                          </div>
-                        </div>
-                      </Col>
-                      <Col md={6} sm={12} xs={12}>
-                        <div className={styles.siteSummaryCard}>
-                          <div className={styles.siteSummaryHeader}>
-                            <span className={styles.siteSummaryIcon}>📍</span>
-                            <span className={styles.siteSummaryName}>West Nursery</span>
-                            <span className={`${styles.siteBadge} ${styles.siteBadgeReview}`}>Needs Review</span>
-                          </div>
-                          <div className={styles.siteSummaryStats}>
-                            <div>
-                              <div className={styles.siteSummaryStatLabel}>Active Ponds</div>
-                              <div className={styles.siteSummaryStatValue}>18</div>
-                            </div>
-                            <div>
-                              <div className={styles.siteSummaryStatLabel}>Est. Stock</div>
-                              <div className={`${styles.siteSummaryStatValue} ${styles.statValueDanger}`}>12k</div>
-                            </div>
-                          </div>
-                        </div>
-                      </Col>
-                    </Row>
+                    <p className="text-muted mb-0">Coming soon</p>
                   </div>
                 </Col>
               </Row>
 
               <div className={`${styles.sectionCard} mb-4`}>
-                <div className={styles.alertsHeader}>
-                  <h6 className={styles.sectionTitle}>Recent Alerts</h6>
-                  <div className={styles.alertsHelpIcon}>?</div>
-                </div>
-                <div className={styles.alertsList}>
-                  <div className={styles.alertRow}>
-                    <div className={`${styles.alertDot} ${styles.alertDotRed}`}>⚠</div>
-                    <div className={styles.alertContent}>
-                      <div className={styles.alertText}>Feed level critically low in Pond 4 (West Nursery).</div>
-                      <div className={styles.alertTime}>10 mins ago</div>
-                    </div>
-                  </div>
-                  <div className={styles.alertRow}>
-                    <div className={`${styles.alertDot} ${styles.alertDotGreen}`}>ℹ</div>
-                    <div className={styles.alertContent}>
-                      <div className={styles.alertText}>New site admin John Doe assigned to Main Hatchery.</div>
-                      <div className={styles.alertTime}>3 hours ago</div>
-                    </div>
-                  </div>
-                  <div className={styles.alertRow}>
-                    <div className={`${styles.alertDot} ${styles.alertDotGray}`}>✓</div>
-                    <div className={styles.alertContent}>
-                      <div className={styles.alertText}>Weekly water quality assessment completed.</div>
-                      <div className={styles.alertTime}>5 hours ago</div>
-                    </div>
-                  </div>
-                </div>
-                <div className={styles.viewAllLogs}>View All Logs</div>
+                <h6 className={styles.sectionTitle}>Recent Alerts</h6>
+                <p className="text-muted mb-0">Coming soon</p>
               </div>
             </div>
           </main>
