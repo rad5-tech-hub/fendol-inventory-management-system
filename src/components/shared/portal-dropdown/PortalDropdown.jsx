@@ -38,6 +38,8 @@ export default function PortalDropdown({
     (e) => {
       e.preventDefault();
       if (!open && btnRef.current) {
+        document.dispatchEvent(new CustomEvent('portal-dropdown-close'));
+
         const rect = btnRef.current.getBoundingClientRect();
         const estimatedHeight = items.reduce((h, item) => h + (item.divider ? 9 : 36), 8);
 
@@ -85,10 +87,12 @@ export default function PortalDropdown({
   useEffect(() => {
     if (open) {
       document.addEventListener('click', handleClickOutside);
+      document.addEventListener('portal-dropdown-close', close);
       window.addEventListener('scroll', close, { once: true });
     }
     return () => {
       document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('portal-dropdown-close', close);
       window.removeEventListener('scroll', close);
     };
   }, [open, handleClickOutside, close]);
