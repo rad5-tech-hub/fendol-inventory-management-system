@@ -10,9 +10,19 @@ import Header from '../../shared/header/header';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { useConfirm } from '../../shared/confirm-modal';
 
-// Utility function to format numbers with commas
 const formatNumberWithCommas = (number) => {
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
+const extractError = (error, fallback) => {
+  const data = error?.response?.data;
+  if (data) {
+    if (Array.isArray(data.errors) && data.errors.length) return data.errors.join(". ");
+    if (data.response_message) return data.response_message;
+    if (data.error?.message) return data.error.message;
+    if (data.message) return data.message;
+  }
+  return fallback;
 };
 
 const AddExpense = () => {
@@ -70,6 +80,20 @@ const AddExpense = () => {
     const handleAddExpense = async (e) => {
         e.preventDefault();
 
+        if (!unformattedPrice || unformattedPrice <= 0) {
+            toast.error("Please enter a valid positive amount.", { className: 'dark-toast' });
+            return;
+        }
+        if (!formData.description.trim()) {
+            toast.error("Please enter a description.", { className: 'dark-toast' });
+            return;
+        }
+        const resolvedSiteId = formData.siteId || activeSite?.id;
+        if (!resolvedSiteId) {
+            toast.error("No site selected. Please select a site.", { className: 'dark-toast' });
+            return;
+        }
+
         const ok = await confirm({ message: "Are you sure you want to add this expense?", title: "Confirm Expense", variant: "primary" }); if (!ok) return;
 
         setLoader(true);
@@ -79,11 +103,11 @@ const AddExpense = () => {
             const response = await Api.post('/expense', {
                 ...formData,
                 price: unformattedPrice,
-                siteId: formData.siteId || activeSite?.id || undefined
+                siteId: resolvedSiteId
             });
 
             toast.update(loadingToast, {
-                render: "Expense added successfully!",
+                render: response.data?.message || "Expense added successfully!",
                 type: "success",
                 isLoading: false,
                 autoClose: 3000,
@@ -98,8 +122,9 @@ const AddExpense = () => {
             });
             setUnformattedPrice(0);
         } catch (error) {
+            const msg = extractError(error, "Error adding expense. Please try again.");
             toast.update(loadingToast, {
-                render: error.response?.data?.message || "Error adding expense. Please try again.",
+                render: msg,
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,
@@ -151,8 +176,8 @@ const AddExpense = () => {
                                         required
                                         className={`py-2 bg-light-subtle shadow-none ${styles.fullWidthDropdown}`}
                                         options={[
-                                            { value: 'Cash', label: 'Cash' },
-                                            { value: 'Bank Transfer', label: 'Bank Transfer' },
+                                            { value: 'cash', label: 'Cash' },
+                                            { value: 'transfer', label: 'Bank Transfer' },
                                         ]}
                                     />
                                 </Col>

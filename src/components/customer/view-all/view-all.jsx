@@ -585,7 +585,6 @@ export default function ViewAllCustomers() {
           </Button>
         </Modal.Footer>
       </Modal>
-      <ToastContainer />
     </section>
   );
 }

@@ -1,192 +1,203 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useSelector } from "react-redux";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "react-toastify/dist/ReactToastify.css";
 import styles from "../finance.module.scss";
 import { BsExclamationTriangleFill } from "react-icons/bs";
-import { Spinner, Alert, Modal, Button, Form, Toast, ToastContainer } from "react-bootstrap";
+import { Spinner, Alert, Modal, Button, Form } from "react-bootstrap";
+import { toast, ToastContainer } from "react-toastify";
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from "react-paginate";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import DataTable from "../../shared/data-table/DataTable";
 
+const extractError = (error, fallback) => {
+  const data = error?.response?.data;
+  if (data) {
+    if (Array.isArray(data.errors) && data.errors.length) return data.errors.join(". ");
+    if (data.response_message) return data.response_message;
+    if (data.error?.message) return data.error.message;
+    if (data.message) return data.message;
+  }
+  return fallback;
+};
+
 const CashDrawer = () => {
-  const [ledgerData, setLedgerData] = useState([]);
-  const [withdrawalData, setWithdrawalData] = useState([]);
-  const [cashLoading, setCashLoading] = useState(false);
-  const [withdrawLoading, setWithdrawLoading] = useState(false);
-  const [cashError, setCashError] = useState("");
-  const [withdrawError, setWithdrawError] = useState("");
-  const [cashPage, setCashPage] = useState(0);
-  const [withdrawPage, setWithdrawPage] = useState(0);
-  const [viewMode, setViewMode] = useState("cash"); // "cash" or "withdrawals"
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 45;
+
   const [showAddCashModal, setShowAddCashModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [addCashAmount, setAddCashAmount] = useState("");
   const [addCashDescription, setAddCashDescription] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawDescription, setWithdrawDescription] = useState("");
-  const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
   const [modalLoading, setModalLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const itemsPerPage = 45;
-  const [selectedDate, setSelectedDate] = useState("");
 
-  // Fetch Cash Drawer Data
-  const fetchCashDrawerData = async () => {
-    setCashLoading(true);
-    setCashError("");
+  const isSuperAdmin = user?.userTypes?.includes("super_admin");
+  const resolvedSiteId = activeSite?.id || user?.siteId;
+
+  const fetchEntries = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      const response = await Api.get("/cash");
-      if (Array.isArray(response.data.data)) {
-        setLedgerData(response.data.data);
-      } else {
-        throw new Error("Expected an array of cash drawer data");
+      const params = { siteId: isSuperAdmin ? "all" : resolvedSiteId };
+      if (typeFilter !== "all") params.type = typeFilter;
+      if (dateFrom) params.startDate = dateFrom;
+      if (dateTo) params.endDate = dateTo;
+
+      let allData = [];
+      let cursor = null;
+      let hasNext = true;
+
+      while (hasNext) {
+        if (cursor) params.cursor = cursor;
+        const res = await Api.get("/cash", { params });
+        const body = res.data;
+        if (body.success && Array.isArray(body.data)) {
+          allData.push(...body.data);
+          hasNext = body.pagination?.hasNextPage || false;
+          cursor = body.pagination?.nextCursor || null;
+        } else {
+          throw new Error(body.response_message || "Unexpected response format from server.");
+        }
       }
+      setEntries(allData);
     } catch (err) {
-      setCashError(err.response?.data?.message || "Failed to fetch cash drawer data.");
+      const msg = extractError(err, "Failed to fetch cash drawer entries.");
+      setError(msg);
+      toast.error(msg, { className: "dark-toast" });
     } finally {
-      setCashLoading(false);
+      setLoading(false);
     }
-  };
+  }, [typeFilter, dateFrom, dateTo, isSuperAdmin, resolvedSiteId]);
 
-  // Fetch Withdrawal Data
-  const fetchWithdrawalData = async () => {
-    setWithdrawLoading(true);
-    setWithdrawError("");
-    try {
-      const response = await Api.get("/withdrawals");
-      if (response.data.success && Array.isArray(response.data.withdrawals)) {
-        setWithdrawalData(response.data.withdrawals);
-      } else {
-        throw new Error("Expected an array of withdrawal data");
-      }
-    } catch (err) {
-      setWithdrawError(err.response?.data?.message || "Failed to fetch withdrawal data.");
-    } finally {
-      setWithdrawLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchEntries();
+  }, [fetchEntries]);
 
-  // Format Number with Commas
-  const formatNumberWithCommas = (number) => {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
+  const formatNumberWithCommas = (number) =>
+    number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  // Handle Add Cash Submission
-  const handleAddCash = async (e) => {
-    e.preventDefault();
-    setModalLoading(true);
-    try {
-      const cashData = {
-        amount: parseFloat(addCashAmount.replace(/,/g, "")),
-        description: addCashDescription,
-      };
-      const response = await Api.post("/add-cash-to-drawer", cashData);
-      setLedgerData([response.data.data, ...ledgerData]);
-      setToast({ show: true, message: "Cash added successfully!", variant: "success" });
-      setShowAddCashModal(false);
-      setAddCashAmount("");
-      setAddCashDescription("");
-      if (viewMode === "cash") fetchCashDrawerData();
-    } catch (err) {
-      setToast({ show: true, message: err.response?.data?.message || "Failed to add cash!", variant: "danger" });
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  // Handle Withdraw Submission
-  const handleWithdraw = async (e) => {
-    e.preventDefault();
-    setModalLoading(true);
-    try {
-      const withdrawData = {
-        amountWithdraw: parseFloat(withdrawAmount.replace(/,/g, "")),
-        description: withdrawDescription,
-      };
-      const response = await Api.post("/withdraw", withdrawData);
-      setWithdrawalData([response.data.data, ...withdrawalData]);
-      setToast({ show: true, message: "Withdrawal successful!", variant: "success" });
-      setShowWithdrawModal(false);
-      setWithdrawAmount("");
-      setWithdrawDescription("");
-      if (viewMode === "withdrawals") fetchWithdrawalData();
-    } catch (err) {
-      setToast({ show: true, message: err.response?.data?.message || "Withdrawal failed!", variant: "danger" });
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  // Format Date for Display
   const formatDate = (isoDate) => {
+    if (!isoDate) return "";
     const date = new Date(isoDate);
-    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${date.getFullYear()}`;
-    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
-    return `${formattedDate} ${formattedTime}`;
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, "0");
+    const min = String(date.getMinutes()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
   };
 
-  // Format Date to YYYY-MM-DD for Comparison
-  const formatDateForComparison = (isoDate) => {
-    const date = new Date(isoDate);
-    return date.toISOString().split("T")[0]; // Returns YYYY-MM-DD
-  };
-
-  // Handle Date Filter
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value); // Value will be in YYYY-MM-DD format
-    setCashPage(0);
-    setWithdrawPage(0);
-  };
-
-  // Filter Data by Date (ignoring time)
-  const filterData = (data, dateField) => {
-    if (!selectedDate) return data;
-    return data.filter((record) => {
-      const recordDate = formatDateForComparison(record[dateField]);
-      return recordDate === selectedDate;
-    });
-  };
-
-  const filteredCashData = filterData(ledgerData, "date");
-  const filteredWithdrawData = filterData(withdrawalData, "WithdrawalDate");
-
-  const displayedCashData = filteredCashData.slice(cashPage * itemsPerPage, (cashPage + 1) * itemsPerPage);
-  const displayedWithdrawData = filteredWithdrawData.slice(withdrawPage * itemsPerPage, (withdrawPage + 1) * itemsPerPage);
-
-  // Pagination Handlers
-  const handleCashPageChange = ({ selected }) => setCashPage(selected);
-  const handleWithdrawPageChange = ({ selected }) => setWithdrawPage(selected);
-
-  // Switch Views
-  const handleViewChange = (mode) => {
-    setViewMode(mode);
-    setSelectedDate("");
-    mode === "cash" ? fetchCashDrawerData() : fetchWithdrawalData();
-  };
-
-  // Handle Amount Input with Commas
   const handleAmountChange = (e, setAmount) => {
-    const value = e.target.value.replace(/,/g, "");
-    if (!isNaN(value) && value !== "") {
-      setAmount(formatNumberWithCommas(value));
+    const raw = e.target.value.replace(/,/g, "");
+    if (!isNaN(raw) && raw !== "") {
+      setAmount(formatNumberWithCommas(raw));
     } else {
       setAmount("");
     }
   };
 
-  // Sidebar Toggle Handlers
-  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleAddCash = async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(addCashAmount.replace(/,/g, ""));
+    if (!amount || amount <= 0) {
+      toast.error("Please enter a valid positive amount.", { className: "dark-toast" });
+      return;
+    }
+    if (!addCashDescription.trim()) {
+      toast.error("Please enter a description.", { className: "dark-toast" });
+      return;
+    }
+    setModalLoading(true);
+    try {
+      const res = await Api.post("/add-cash-to-drawer", {
+        amount,
+        description: addCashDescription,
+        siteId: resolvedSiteId,
+        isWithdrawal: false,
+      });
+      toast.success(res.data?.response_message || "Cash added successfully!", { className: "dark-toast" });
+      setShowAddCashModal(false);
+      setAddCashAmount("");
+      setAddCashDescription("");
+      fetchEntries();
+    } catch (err) {
+      const msg = extractError(err, "Failed to add cash.");
+      toast.error(msg, { className: "dark-toast" });
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleWithdraw = async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(withdrawAmount.replace(/,/g, ""));
+    if (!amount || amount <= 0) {
+      toast.error("Please enter a valid positive amount.", { className: "dark-toast" });
+      return;
+    }
+    if (!withdrawDescription.trim()) {
+      toast.error("Please enter a description.", { className: "dark-toast" });
+      return;
+    }
+    setModalLoading(true);
+    try {
+      const res = await Api.post("/add-cash-to-drawer", {
+        amount,
+        description: withdrawDescription,
+        siteId: resolvedSiteId,
+        isWithdrawal: true,
+      });
+      toast.success(res.data?.response_message || "Withdrawal successful!", { className: "dark-toast" });
+      setShowWithdrawModal(false);
+      setWithdrawAmount("");
+      setWithdrawDescription("");
+      fetchEntries();
+    } catch (err) {
+      const msg = extractError(err, "Withdrawal failed.");
+      toast.error(msg, { className: "dark-toast" });
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const toggleSidebar = () => setShowSidebar((prev) => !prev);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  useEffect(() => {
-    fetchCashDrawerData(); // Initial fetch
-  }, []);
+  const handleTypeFilterChange = (type) => {
+    setTypeFilter(type);
+    setCurrentPage(0);
+  };
+
+  const handlePageChange = ({ selected }) => setCurrentPage(selected);
+
+  const resetFilters = () => {
+    setTypeFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setCurrentPage(0);
+  };
+
+  const displayedEntries = useMemo(() => {
+    const start = currentPage * itemsPerPage;
+    return entries.slice(start, start + itemsPerPage);
+  }, [entries, currentPage]);
 
   return (
     <section className={`${styles.body}`}>
@@ -200,164 +211,174 @@ const CashDrawer = () => {
 
         <section className={`${styles.content}`}>
           <main className={`${styles.create_form}`}>
-            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-5 gap-3 align-items-md-center">
+            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-3 gap-3 align-items-md-center">
               <h4 className="mb-3 mb-md-0">Cash Drawer</h4>
               <div className="d-flex flex-column justify-content-end align-items-center flex-md-row gap-2">
-                <div>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={handleDateChange}
-                    className="form-control"
-                    placeholder="Filter By Date"
-                  />
-                </div>
-                <div>
-                  <Button
-                    className={`border-0 btn-dark shadow py-2 px-4 my-2 fs-6 fw-semibold ${styles.submit}`}
-                    onClick={() => setShowAddCashModal(true)}
-                  >
-                    Add Cash
-                  </Button>
-                  <br />
-                  <Button
-                    className={`border-0 btn-dark shadow py-2 px-4 fs-6 fw-semibold ${styles.submit}`}
-                    onClick={() => setShowWithdrawModal(true)}
-                  >
-                    Withdraw
-                  </Button>
-                </div>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(0); }}
+                  className="form-control"
+                  placeholder="Start Date"
+                />
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => { setDateTo(e.target.value); setCurrentPage(0); }}
+                  className="form-control"
+                  placeholder="End Date"
+                />
+                <Button
+                  className={`border-0 btn-dark shadow py-2 px-3 fs-6 fw-semibold ${styles.submit}`}
+                  onClick={() => setShowAddCashModal(true)}
+                >
+                  Add Cash
+                </Button>
+                <Button
+                  className={`border-0 btn-dark shadow py-2 px-3 fs-6 fw-semibold ${styles.submit}`}
+                  onClick={() => setShowWithdrawModal(true)}
+                >
+                  Withdraw
+                </Button>
               </div>
             </div>
 
-            <div className="d-flex gap-5 mb-4 flex-wrap">
-              <h5
-                className={`fs-6 ${viewMode === "cash" ? styles.activeView : ""}`}
-                onClick={() => handleViewChange("cash")}
-                style={{ cursor: "pointer" }}
-              >
-                View Cash Drawer
-              </h5>
-              <h5
-                className={`fs-6 ${viewMode === "withdrawals" ? styles.activeView : ""}`}
-                onClick={() => handleViewChange("withdrawals")}
-                style={{ cursor: "pointer" }}
-              >
-                View Withdrawals
-              </h5>
+            <div className="d-flex gap-4 mb-4 flex-wrap align-items-center">
+              {[
+                { key: "all", label: "All" },
+                { key: "deposit", label: "Deposits" },
+                { key: "withdrawal", label: "Withdrawals" },
+              ].map(({ key, label }) => (
+                <h5
+                  key={key}
+                  className={`fs-6 ${typeFilter === key ? styles.activeView : ""}`}
+                  onClick={() => handleTypeFilterChange(key)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {label}
+                </h5>
+              ))}
+              {(dateFrom || dateTo) && (
+                <span
+                  className="text-muted"
+                  style={{ cursor: "pointer", fontSize: "0.85rem" }}
+                  onClick={resetFilters}
+                >
+                  Clear filters
+                </span>
+              )}
             </div>
 
-            {/* Cash Drawer View */}
-            {viewMode === "cash" && (
-              <>
-                {cashLoading && <SkeletonTable cols={5} rows={5} />}
-                {!cashLoading && cashError && (
-                  <Alert variant="danger" className="text-center w-75 py-5 mx-auto">
-                    <BsExclamationTriangleFill size={40} />{" "}
-                    <span className="fw-semibold">{cashError}</span>
-                  </Alert>
-                )}
-                {!cashLoading && !cashError && displayedCashData.length === 0 && (
-                  <Alert variant="info" className="text-center w-75 py-5 mx-auto">
-                    No available cash drawer data
-                  </Alert>
-                )}
-                {!cashLoading && !cashError && displayedCashData.length > 0 && (
-                  <>
-                    <DataTable
-                      className={`${styles.styled_table} ${styles.table_responsive}`}
-                      columns={[
-                        { key: 'date', label: 'DATE', render: (val) => formatDate(val) },
-                        { key: 'description', label: 'DESCRIPTION', render: (val) => (
-                          <span title={val} style={{ cursor: val?.length > 50 ? "pointer" : "normal" }}>
-                            {val?.slice(0, 50) + (val?.length > 50 ? "..." : "") || ""}
-                          </span>
-                        )},
-                        { key: 'credit', label: 'CREDIT(₦)', render: (val) => <span style={{ color: "green" }}>{val ? `₦${val.toLocaleString()}` : "-"}</span> },
-                        { key: 'debit', label: 'DEBIT(₦)', render: (val) => <span style={{ color: "red" }}>{val ? `₦${val.toLocaleString()}` : "-"}</span> },
-                        { key: 'balance', label: 'BALANCE(₦)', render: (val) => `₦${val.toLocaleString()}` },
-                      ]}
-                      data={displayedCashData}
-                    />
-                    <div className="d-flex justify-content-center mt-4">
-                      <ReactPaginate
-                        previousLabel={"< "}
-                        nextLabel={" >"}
-                        breakLabel={"..."}
-                        pageCount={Math.ceil(filteredCashData.length / itemsPerPage)}
-                        marginPagesDisplayed={2}
-                        pageRangeDisplayed={3}
-                        onPageChange={handleCashPageChange}
-                        containerClassName={"pagination"}
-                        pageClassName={"page-item"}
-                        pageLinkClassName={"page-link"}
-                        previousClassName={"page-item"}
-                        previousLinkClassName={"page-link"}
-                        nextClassName={"page-item"}
-                        nextLinkClassName={"page-link"}
-                        breakClassName={"page-item"}
-                        breakLinkClassName={"page-link"}
-                        activeClassName={"active"}
-                      />
-                    </div>
-                  </>
-                )}
-              </>
+            {loading && <SkeletonTable cols={6} rows={5} />}
+
+            {!loading && error && (
+              <Alert variant="danger" className="text-center w-75 py-5 mx-auto">
+                <BsExclamationTriangleFill size={40} />{" "}
+                <span className="fw-semibold">{error}</span>
+              </Alert>
             )}
 
-            {/* Withdrawals View */}
-            {viewMode === "withdrawals" && (
+            {!loading && !error && entries.length === 0 && (
+              <Alert variant="info" className="text-center w-75 py-5 mx-auto">
+                {dateFrom || dateTo || typeFilter !== "all"
+                  ? "No entries match the selected filters."
+                  : "No cash drawer entries found."}
+              </Alert>
+            )}
+
+            {!loading && !error && entries.length > 0 && (
               <>
-                {withdrawLoading && <SkeletonTable cols={3} rows={5} />}
-                {!withdrawLoading && withdrawError && (
-                  <Alert variant="danger" className="text-center w-75 py-5 mx-auto">
-                    <BsExclamationTriangleFill size={40} />{" "}
-                    <span className="fw-semibold">{withdrawError}</span>
-                  </Alert>
-                )}
-                {!withdrawLoading && !withdrawError && displayedWithdrawData.length === 0 && (
-                  <Alert variant="info" className="text-center w-75 py-5 mx-auto">
-                    No available withdrawal data
-                  </Alert>
-                )}
-                {!withdrawLoading && !withdrawError && displayedWithdrawData.length > 0 && (
-                  <>
-                    <DataTable
-                      className={`${styles.styled_table}`}
-                      columns={[
-                        { key: 'WithdrawalDate', label: 'DATE', render: (val) => formatDate(val) },
-                        { key: 'description', label: 'DESCRIPTION', render: (val) => (
-                          <span title={val} style={{ cursor: val?.length > 50 ? "pointer" : "normal" }}>
-                            {val?.slice(0, 50) + (val?.length > 50 ? "..." : "") || ""}
+                <DataTable
+                  className={`${styles.styled_table} ${styles.table_responsive}`}
+                  columns={[
+                    {
+                      key: "date",
+                      label: "DATE",
+                      render: (val) => formatDate(val),
+                    },
+                    {
+                      key: "isWithdrawal",
+                      label: "TYPE",
+                      render: (val) => (
+                        <span
+                          className={`badge ${val ? "bg-danger" : "bg-success"}`}
+                        >
+                          {val ? "Withdrawal" : "Deposit"}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "description",
+                      label: "DESCRIPTION",
+                      render: (val) =>
+                        val ? (
+                          <span
+                            title={val}
+                            style={{
+                              cursor: val.length > 50 ? "pointer" : "normal",
+                            }}
+                          >
+                            {val.slice(0, 50) + (val.length > 50 ? "..." : "")}
                           </span>
-                        )},
-                        { key: 'amountWithdraw', label: 'AMOUNT(₦)', render: (val) => <span style={{ color: "red" }}>{val ? `₦${val.toLocaleString()}` : "-"}</span> },
-                      ]}
-                      data={displayedWithdrawData}
-                    />
-                    <div className="d-flex justify-content-center mt-4">
-                      <ReactPaginate
-                        previousLabel={"< "}
-                        nextLabel={" >"}
-                        breakLabel={"..."}
-                        pageCount={Math.ceil(filteredWithdrawData.length / itemsPerPage)}
-                        marginPagesDisplayed={2}
-                        pageRangeDisplayed={3}
-                        onPageChange={handleWithdrawPageChange}
-                        containerClassName={"pagination"}
-                        pageClassName={"page-item"}
-                        pageLinkClassName={"page-link"}
-                        previousClassName={"page-item"}
-                        previousLinkClassName={"page-link"}
-                        nextClassName={"page-item"}
-                        nextLinkClassName={"page-link"}
-                        breakClassName={"page-item"}
-                        breakLinkClassName={"page-link"}
-                        activeClassName={"active"}
-                      />
-                    </div>
-                  </>
-                )}
+                        ) : (
+                          "-"
+                        ),
+                    },
+                    {
+                      key: "credit",
+                      label: "CREDIT (₦)",
+                      render: (val, row) =>
+                        row?.isWithdrawal || !val ? (
+                          "-"
+                        ) : (
+                          <span style={{ color: "green" }}>
+                            ₦{val.toLocaleString()}
+                          </span>
+                        ),
+                    },
+                    {
+                      key: "debit",
+                      label: "DEBIT (₦)",
+                      render: (val, row) =>
+                        !row?.isWithdrawal || !val ? (
+                          "-"
+                        ) : (
+                          <span style={{ color: "red" }}>
+                            ₦{val.toLocaleString()}
+                          </span>
+                        ),
+                    },
+                    {
+                      key: "balance",
+                      label: "BALANCE (₦)",
+                      render: (val) =>
+                        val != null ? `₦${val.toLocaleString()}` : "-",
+                    },
+                  ]}
+                  data={displayedEntries}
+                />
+                <div className="d-flex justify-content-center mt-4">
+                  <ReactPaginate
+                    previousLabel={"< "}
+                    nextLabel={" >"}
+                    breakLabel={"..."}
+                    pageCount={Math.max(1, Math.ceil(entries.length / itemsPerPage))}
+                    marginPagesDisplayed={2}
+                    pageRangeDisplayed={3}
+                    onPageChange={handlePageChange}
+                    forcePage={currentPage}
+                    containerClassName={"pagination"}
+                    pageClassName={"page-item"}
+                    pageLinkClassName={"page-link"}
+                    previousClassName={"page-item"}
+                    previousLinkClassName={"page-link"}
+                    nextClassName={"page-item"}
+                    nextLinkClassName={"page-link"}
+                    breakClassName={"page-item"}
+                    breakLinkClassName={"page-link"}
+                    activeClassName={"active"}
+                  />
+                </div>
               </>
             )}
           </main>
@@ -458,26 +479,7 @@ const CashDrawer = () => {
         </Modal.Body>
       </Modal>
 
-      {/* Toast Notification */}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          onClose={() => setToast({ ...toast, show: false })}
-          show={toast.show}
-          delay={3000}
-          autohide
-          bg={toast.variant === "success" ? "success" : "danger"}
-          style={{ backgroundColor: "white", color: "black" }}
-        >
-          <Toast.Header>
-            <strong className="me-auto">{toast.variant === "success" ? "Success" : "Error"}</strong>
-          </Toast.Header>
-          <Toast.Body>{toast.message}</Toast.Body>
-          <div
-            className="toast-progress"
-            style={{ height: "5px", backgroundColor: toast.variant === "success" ? "#28a745" : "#dc3545" }}
-          ></div>
-        </Toast>
-      </ToastContainer>
+      <ToastContainer position="top-end" className="p-3" />
     </section>
   );
 };

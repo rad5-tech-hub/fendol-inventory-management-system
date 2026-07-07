@@ -654,7 +654,6 @@ export default function PersonalLedger() {
         </Modal.Body>
       </Modal>
       <ReceiptModal receiptData={receiptData} onClose={() => setShowReceipt(false)} show={showReceipt} />
-      <ToastContainer />
     </section>
   );
 }
