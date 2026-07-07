@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -19,6 +20,15 @@ import ReceiptModal from "../../finance/add-sales/receipt";
 const formatCurrency = (value) => {
   if (value == null) return '₦0.00';
   return `₦${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+const extractError = (error, fallback) => {
+  const data = error?.response?.data;
+  if (data?.errors?.length) return data.errors.join('. ');
+  if (data?.response_message) return data.response_message;
+  if (data?.error?.message) return data.error.message;
+  if (data?.message) return data.message;
+  return fallback;
 };
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
@@ -41,6 +51,9 @@ export default function PersonalLedger() {
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const customerId = queryParams.get('id');
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const resolvedSiteId = activeSite?.id || user?.siteId;
 
   const [ledgerData, setLedgerData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,16 +73,10 @@ export default function PersonalLedger() {
   const [pendingSales, setPendingSales] = useState([]);
   const [pendingSalesLoading, setPendingSalesLoading] = useState(false);
   const [pendingSalesError, setPendingSalesError] = useState('');
-  const [selectedPendingSale, setSelectedPendingSale] = useState("");
   const [amountPaid, setAmountPaid] = useState("");
-  const [amountPaidB, setAmountPaidB] = useState("");
-  const [transactionId, setTransactionId] = useState("");
-  const [totalAmount, setTotalAmount] = useState(0);
   const [salesType, setSalesType] = useState("");
   const [description, setDescription] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [pendingSearch, setPendingSearch] = useState("");
-  const [showPendingDropdown, setShowPendingDropdown] = useState(false);
   const [loadingPayment, setLoadingPayment] = useState(false);
 
   useEffect(() => {
@@ -106,7 +113,7 @@ export default function PersonalLedger() {
       }
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+      setError(extractError(err, 'Failed to fetch ledger data.'));
     } finally {
       setLoading(false);
     }
@@ -121,7 +128,7 @@ export default function PersonalLedger() {
       setPendingSales(pending);
     } catch (err) {
       console.error('Error fetching pending sales:', err);
-      setPendingSalesError(err.response?.data?.message || 'Failed to fetch pending sales. Please try again.');
+      setPendingSalesError(extractError(err, 'Failed to fetch pending sales.'));
     } finally {
       setPendingSalesLoading(false);
     }
@@ -218,40 +225,18 @@ export default function PersonalLedger() {
   const handleAddMoney = () => {
     setShowModal(true);
     fetchPendingSales();
-    resetForm();
-  };
-
-  const handlePendingSearchChange = (e) => {
-    setPendingSearch(e.target.value);
-    setShowPendingDropdown(true);
-  };
-
-  const handlePendingSelect = (sale) => {
-    setSelectedPendingSale(sale.id || "");
-    setTransactionId(sale.transactionId || "");
-    setTotalAmount(sale.totalPrice - sale.totalPaid - (sale.discount || 0));
-    setAmountPaidB(sale.totalPaid || 0);
-    setSalesType(sale.paymentType || "");
-    setPendingSearch(`${sale.transactionId} - ${sale.salesCategory || 'Unknown Sales Type'} - ₦${(sale.totalPrice - (sale.discount || 0)).toLocaleString()}`);
-    setShowPendingDropdown(false);
     setAmountPaid("");
+    setSalesType("");
+    setDescription("");
   };
-
-  const filteredPendingSales = pendingSales.filter(sale => {
-    const searchTerm = pendingSearch.toLowerCase();
-    return (
-      sale.transactionId.toLowerCase().includes(searchTerm) ||
-      (sale.salesCategory && sale.salesCategory.toLowerCase().includes(searchTerm))
-    );
-  });
 
   const handleAmountChange = (e) => {
     const value = e.target.value.replace(/,/g, '');
     setAmountPaid(value ? Number(value) : "");
   };
 
-  const handleSalesTypeChange = (e) => {
-    setSalesType(e.target.value);
+  const handleSalesTypeChange = (val) => {
+    setSalesType(val);
   };
 
   const handleDescriptionChange = (e) => {
@@ -259,45 +244,39 @@ export default function PersonalLedger() {
   };
 
   const resetForm = () => {
-    setSelectedPendingSale("");
     setAmountPaid("");
     setSalesType("");
     setDescription("");
-    setPendingSearch("");
-    setTransactionId("");
-    setTotalAmount(0);
-    setAmountPaidB("");
-    setShowPendingDropdown(false);
   };
 
   const handleSubmitAmountPaid = async () => {
     if (!amountPaid) {
-      toast.error("Please enter an amount to pay.", { position: "top-center", autoClose: 3000 });
+      toast.error("Please enter an amount to pay.", { autoClose: 3000 });
       return;
     }
     if (!salesType) {
-      toast.error("Please select a payment type.", { position: "top-center", autoClose: 3000 });
+      toast.error("Please select a payment type.", { autoClose: 3000 });
       return;
     }
-    const loadingToastId = toast.loading("Processing payment...", { position: "top-center" });
+    const loadingToastId = toast.loading("Processing payment...");
     setLoadingPayment(true);
     try {
       const paymentData = {
         customerId,
-        salesId: selectedPendingSale || null,
-        amountPaid: parseFloat(amountPaid),
-        paymentType: salesType,
+        amountPaid: Number(amountPaid),
+        paymentType: salesType.toLowerCase(),
         description: description || "",
+        siteId: resolvedSiteId,
       };
-      const response = await Api.post("/add-payment", paymentData);
-      toast.update(loadingToastId, { render: "Payment added successfully!", type: "success", isLoading: false, position: "top-center", autoClose: 3000 });
+      await Api.post("/add-payment", paymentData);
+      toast.update(loadingToastId, { render: "Payment added successfully!", type: "success", isLoading: false, autoClose: 3000 });
       setShowModal(false);
       resetForm();
       fetchLedgerData();
       fetchPendingSales();
     } catch (error) {
       console.error("Error recording payment:", error);
-      toast.update(loadingToastId, { render: error.response?.data?.response_message || "Failed to add payment.", type: "error", isLoading: false, position: "top-center", autoClose: 3000 });
+      toast.update(loadingToastId, { render: extractError(error, "Failed to add payment."), type: "error", isLoading: false, autoClose: 6000 });
     } finally {
       setLoadingPayment(false);
     }
@@ -589,56 +568,47 @@ export default function PersonalLedger() {
         </Modal.Header>
         <Modal.Body>
           {pendingSalesLoading ? (
-            <div className="text-center">
+            <div className="text-center py-3">
               <Spinner animation="border" size="sm" role="status">
                 <span className="visually-hidden">Loading pending sales...</span>
               </Spinner>
-              <p className="mt-2">Loading pending sales...</p>
+              <p className="mt-2 mb-0">Loading pending sales...</p>
             </div>
           ) : pendingSalesError ? (
-            <p className="text-danger text-center">{pendingSalesError}</p>
+            <p className="text-danger text-center mb-3">{pendingSalesError}</p>
           ) : pendingSales.length > 0 ? (
-            <Form.Group className="mb-3">
-              <Form.Label>Select Pending Sales (Optional)</Form.Label>
-              <div style={{ position: "relative" }}>
-                <Form.Control
-                  type="text"
-                  placeholder="Search by Receipt Id or Sales Type..."
-                  value={pendingSearch}
-                  onChange={handlePendingSearchChange}
-                  onFocus={() => setShowPendingDropdown(true)}
-                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                />
-                {showPendingDropdown && (
-                  <div className={`${styles.suggestions_box}`} style={{ maxHeight: "200px", overflowY: "auto" }}>
-                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {filteredPendingSales.length > 0 ? (
-                        filteredPendingSales.map((sale, index) => (
-                          <li
-                            key={index}
-                            onClick={() => handlePendingSelect(sale)}
-                            style={{ cursor: "pointer", padding: "8px" }}
-                          >
-                            {`${sale.transactionId} - ${sale.salesCategory || "Unknown Sale Type"} - ₦${(sale.totalPrice - (sale.discount || 0)).toLocaleString()}`}
-                          </li>
-                        ))
-                      ) : (
-                        <li style={{ padding: "8px" }}>No pending sales found</li>
-                      )}
-                    </ul>
-                  </div>
-                )}
+            <div className="mb-4">
+              <p style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '8px' }}>
+                Pending Sales ({pendingSales.length})
+              </p>
+              <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {pendingSales.map((sale, i) => {
+                  const balance = (Number(sale.totalPrice) || 0) - (Number(sale.totalPaid) || 0) - (Number(sale.discount) || 0);
+                  return (
+                    <div key={i} style={{
+                      background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px',
+                      padding: '10px 14px', fontSize: '13px',
+                    }}>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span style={{ fontWeight: 600, color: '#374151' }}>{sale.transactionId || 'N/A'}</span>
+                        <span style={{ color: '#9CA3AF', fontSize: '12px' }}>{sale.salesCategory || 'Sale'}</span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center mt-1">
+                        <span style={{ color: '#6B7280' }}>Balance: <strong>{formatCurrency(balance)}</strong></span>
+                        <span style={{ fontSize: '12px', color: balance > 0 ? '#DC2626' : '#16A34A', fontWeight: 500 }}>
+                          {balance > 0 ? 'Partial' : balance < 0 ? 'Overpaid' : 'Paid'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </Form.Group>
-          ) : null}
-          {selectedPendingSale && (
-            <>
-              <p><strong>Amount Paid Before:</strong> ₦{amountPaidB.toLocaleString()}</p>
-              <p><strong>Balance:</strong> ₦{totalAmount.toLocaleString()}</p>
-            </>
+            </div>
+          ) : (
+            <p className="text-center text-muted mb-3" style={{ fontSize: '13px' }}>No pending sales.</p>
           )}
           <Form.Group className="mb-3">
-            <Form.Label>Amount Paid</Form.Label>
+            <Form.Label className="fw-semibold" style={{ fontSize: '14px', color: '#374151' }}>Amount Paid</Form.Label>
             <Form.Control
               type="text"
               className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
@@ -648,11 +618,11 @@ export default function PersonalLedger() {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Payment Type</Form.Label>
+            <Form.Label className="fw-semibold" style={{ fontSize: '14px', color: '#374151' }}>Payment Type</Form.Label>
             <CustomDropdown
               value={salesType}
               required
-              onChange={(val) => setSalesType(val)}
+              onChange={handleSalesTypeChange}
               options={[
                 { value: '', label: 'Select Payment Method' },
                 { value: 'Cash', label: 'Cash' },
@@ -662,7 +632,7 @@ export default function PersonalLedger() {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Description</Form.Label>
+            <Form.Label className="fw-semibold" style={{ fontSize: '14px', color: '#374151' }}>Description</Form.Label>
             <Form.Control
               as="textarea"
               rows={2}
@@ -678,7 +648,7 @@ export default function PersonalLedger() {
               onClick={handleSubmitAmountPaid}
               disabled={loadingPayment}
             >
-              Pay
+              {loadingPayment ? 'Processing...' : 'Pay'}
             </Button>
           </div>
         </Modal.Body>

@@ -54,7 +54,10 @@ const AddCustomer = () => {
 
       navigate('/customer/view-all');
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Error adding customer. Please try again.";
+      const data = error.response?.data;
+      const errorMessage = data?.errors?.length
+        ? data.errors.join('. ')
+        : data?.message || "Error adding customer. Please try again.";
       toast.update(loadingToast, {
         render: errorMessage,
         type: "error",
