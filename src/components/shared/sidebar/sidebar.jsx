@@ -266,11 +266,10 @@ export default function SideBar({ show, handleClose }) {
           })() && (
             <>
               <span className={styles.sectionLabel}>HATCHERY</span>
-              {renderDirectLink("Dashboard", "/hatchery/dashboard", <FaHouseUser size={25} className="me-1" />)}
               {renderCard("hatch_batches", "Hatch Batches", <GiCirclingFish size={25} className="me-1" />,
                 <>
+                  {renderNavItem("Hatchery Dashboard", "/hatchery/hatch-batches/view-all")}
                   {renderNavItem("Create Hatch Batch", "/hatchery/hatch-batches/create")}
-                  {renderNavItem("View all Batch", "/hatchery/hatch-batches/view-all")}
                 </>
               )}
               {hasPermission(userTypes, 'hatchery') && renderDirectLink("Broodstock Management", "/hatchery/broodstock", <GiCirclingFish size={25} className="me-1" />)}

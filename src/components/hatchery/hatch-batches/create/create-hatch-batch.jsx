@@ -42,7 +42,7 @@ export default function CreateHatchBatch() {
       } catch {}
       return {
         hatchbatchNo: generateBatchNo(),
-        site: activeSite?.name || '',
+        site: activeSite?.id || '',
         siteId: activeSite?.id || '',
         dateInjected: null,
         dateStripped: null,
@@ -52,15 +52,15 @@ export default function CreateHatchBatch() {
         numMales: '',
         avgWeightMale: '',
         eggWeight: '',
-        numberOfEggs: '',
-        hatchability: '',
+        fryProduced: '',
+        fryPerGramRate: '',
         notes: '',
       };
     }
     const e = editData;
     return {
       hatchbatchNo: e.hatchbatchNo || e.batchNo || generateBatchNo(),
-      site: e.site || '',
+      site: e.siteId || activeSite?.id || '',
       siteId: e.siteId || activeSite?.id || '',
       dateInjected: parseDate(e.dateInjected),
       dateStripped: parseDate(e.dateStripped),
@@ -70,60 +70,16 @@ export default function CreateHatchBatch() {
       numMales: e.maleBroodStock ?? e.males ?? '',
       avgWeightMale: e.avgWeightOfMaleBroodstock ?? e.avgWeightMale ?? '',
       eggWeight: e.weightOfEgg ?? e.eggWeight ?? '',
-      numberOfEggs: e.numberOfEggs ?? '',
-      hatchability: e.hatchabilityPercentage ?? e.hatchability ?? '',
+      fryProduced: e.fryProduced ?? '',
+      fryPerGramRate: e.estimatedFryCount && e.weightOfEgg ? Math.round(e.estimatedFryCount / e.weightOfEgg) : '',
       notes: e.comments ?? e.notes ?? '',
     };
   });
 
-  const [selectedFemales, setSelectedFemales] = useState([]);
-  const [selectedMales, setSelectedMales] = useState([]);
-  const [femaleInput, setFemaleInput] = useState('');
-  const [maleInput, setMaleInput] = useState('');
-
-  const addFemale = () => {
-    const val = femaleInput.trim();
-    if (val && !selectedFemales.includes(val)) {
-      setSelectedFemales([...selectedFemales, val]);
-      setFemaleInput('');
-    }
-  };
-
-  const removeFemale = (index) => {
-    setSelectedFemales(selectedFemales.filter((_, i) => i !== index));
-  };
-
-  const addMale = () => {
-    const val = maleInput.trim();
-    if (val && !selectedMales.includes(val)) {
-      setSelectedMales([...selectedMales, val]);
-      setMaleInput('');
-    }
-  };
-
-  const removeMale = (index) => {
-    setSelectedMales(selectedMales.filter((_, i) => i !== index));
-  };
-
-  const handleFemaleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addFemale();
-    }
-  };
-
-  const handleMaleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addMale();
-    }
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'site') {
-      const found = sites.find((s) => s.name === value);
-      setForm((prev) => ({ ...prev, site: value, siteId: found?.id || '' }));
+      setForm((prev) => ({ ...prev, site: value, siteId: value }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -133,11 +89,14 @@ export default function CreateHatchBatch() {
     setForm((prev) => ({ ...prev, [name]: date }));
   };
 
-  const estimatedFryCount = Math.round(Number(form.numberOfEggs) * (Number(form.hatchability) / 100));
+  const estimatedFryCount = Math.round(Number(form.eggWeight) * Number(form.fryPerGramRate));
+  const computedHatchability = Number(form.fryProduced) && estimatedFryCount > 0
+    ? ((Number(form.fryProduced) / estimatedFryCount) * 100).toFixed(2)
+    : '0.00';
   const notesLength = form.notes.length;
 
   const buildPayload = (status) => {
-    const resolvedSiteId = form.siteId || activeSite?.id || sites.find((s) => s.name === form.site)?.id || '';
+    const resolvedSiteId = form.siteId || activeSite?.id || form.site || '';
     const p = {
       hatchbatchNo: form.hatchbatchNo,
       dateInjected: formatDate(form.dateInjected),
@@ -148,9 +107,8 @@ export default function CreateHatchBatch() {
       maleBroodStock: Number(form.numMales),
       avgWeightOfMaleBroodstock: Number(form.avgWeightMale),
       weightOfEgg: Number(form.eggWeight),
-      numberOfEggs: Number(form.numberOfEggs) || 0,
-      hatchabilityPercentage: Number(form.hatchability),
-      fryProduced: estimatedFryCount,
+      fryProduced: Number(form.fryProduced) || 0,
+      estimatedFryCount: estimatedFryCount || 0,
       comments: form.notes || '',
     };
     if (!isEditing) p.siteId = resolvedSiteId;
@@ -187,12 +145,12 @@ export default function CreateHatchBatch() {
       toast.error('Please enter a valid egg weight.', { className: 'dark-toast' });
       return false;
     }
-    if (!form.numberOfEggs || Number(form.numberOfEggs) <= 0) {
-      toast.error('Please enter a valid number of eggs.', { className: 'dark-toast' });
+    if (!form.fryProduced || Number(form.fryProduced) <= 0) {
+      toast.error('Please enter a valid number of fry produced.', { className: 'dark-toast' });
       return false;
     }
-    if (!form.hatchability || Number(form.hatchability) <= 0) {
-      toast.error('Please enter a valid hatchability percentage.', { className: 'dark-toast' });
+    if (!form.fryPerGramRate || Number(form.fryPerGramRate) <= 0) {
+      toast.error('Please enter a valid fry per gram rate.', { className: 'dark-toast' });
       return false;
     }
     return true;
@@ -202,7 +160,7 @@ export default function CreateHatchBatch() {
     setLoading(true);
     const loadingToast = toast.loading('Saving draft...', { className: 'dark-toast' });
     try {
-      const data = { ...serializeForm(form), selectedFemales, selectedMales };
+      const data = { ...serializeForm(form) };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
       const payload = buildPayload(null);
       await ApiV2.post('/v2/hatch-batches', payload);
@@ -292,8 +250,6 @@ export default function CreateHatchBatch() {
         const saved = localStorage.getItem(DRAFT_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed.selectedFemales)) setSelectedFemales(parsed.selectedFemales);
-          if (Array.isArray(parsed.selectedMales)) setSelectedMales(parsed.selectedMales);
         }
       } catch {}
     }
@@ -367,7 +323,7 @@ export default function CreateHatchBatch() {
                   <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Site</Form.Label>
                     <CustomDropdown
-                      options={sitesLoaded ? sites.map(s => ({ value: s.name, label: s.name })) : []}
+                      options={sitesLoaded ? sites.map(s => ({ value: s.id, label: s.name })) : []}
                       value={form.site}
                       onChange={(val) => handleChange({ target: { name: 'site', value: val } })}
                       placeholder="Select site"
@@ -420,32 +376,15 @@ export default function CreateHatchBatch() {
               </div>
 
               {/* Section 2 - Broodstock Information */}
-              <div className={styles.sectionCard}>
-                <div className={styles.sectionHeader}>
-                  <span className={styles.sectionBadge}>2</span>
-                  <h5>Broodstock Information</h5>
-                </div>
-                <Row className="g-3">
+              <Row className="g-3" style={{ marginBottom: 24 }}>
                   <Col md={6}>
-                    <h6 style={{ fontSize: '0.88rem', fontWeight: 600, color: '#2E3135', marginBottom: 12 }}>Female</h6>
-                    <div style={{ marginBottom: 16 }}>
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Select Female(s)</Form.Label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', border: '1px solid #D1D5DB', borderRadius: 6, background: '#fff', minHeight: 38 }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, flex: 1 }}>
-                          {selectedFemales.map((item, i) => (
-                            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: '#E5E7EB', borderRadius: 6, fontSize: '0.8rem', color: '#1F2937' }}>
-                              {item}
-                              <IoClose size={13} style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => removeFemale(i)} />
-                            </span>
-                          ))}
-                          <input type="text" value={femaleInput} onChange={(e) => setFemaleInput(e.target.value)} onKeyDown={handleFemaleKeyDown} placeholder="Type..." style={{ border: 'none', outline: 'none', flex: 1, minWidth: 80, fontSize: '0.8rem', padding: '2px 0', background: 'transparent' }} />
-                        </div>
-                        <button type="button" onClick={addFemale} style={{ flexShrink: 0, fontSize: '0.8rem', padding: '4px 12px', background: 'none', border: '1px solid #D1D5DB', borderRadius: 6, color: '#6B7280', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          + Add More
-                        </button>
-                      </div>
+                  <div className={styles.sectionCard} style={{ height: '100%' }}>
+                    <div className={styles.sectionHeader}>
+                      <span className={styles.sectionBadge}>2</span>
+                      <h5>Broodstock Information</h5>
                     </div>
-                    <Row className="g-2">
+                    <h6 style={{ fontSize: '0.88rem', fontWeight: 600, color: '#2E3135', marginBottom: 12 }}>Female</h6>
+                    <Row className="g-2" style={{ marginTop: 16 }}>
                       <Col xs={6}>
                         <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Number of Females</Form.Label>
                         <Form.Control type="number" name="numFemales" value={form.numFemales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
@@ -455,27 +394,15 @@ export default function CreateHatchBatch() {
                         <Form.Control type="number" step="0.01" name="avgWeightFemale" value={form.avgWeightFemale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                     </Row>
-                  </Col>
-                  <Col md={6}>
-                    <h6 style={{ fontSize: '0.88rem', fontWeight: 600, color: '#2E3135', marginBottom: 12 }}>Male</h6>
-                    <div style={{ marginBottom: 16 }}>
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Select Male(s)</Form.Label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', border: '1px solid #D1D5DB', borderRadius: 6, background: '#fff', minHeight: 38 }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, flex: 1 }}>
-                          {selectedMales.map((item, i) => (
-                            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: '#E5E7EB', borderRadius: 6, fontSize: '0.8rem', color: '#1F2937' }}>
-                              {item}
-                              <IoClose size={13} style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => removeMale(i)} />
-                            </span>
-                          ))}
-                          <input type="text" value={maleInput} onChange={(e) => setMaleInput(e.target.value)} onKeyDown={handleMaleKeyDown} placeholder="Type..." style={{ border: 'none', outline: 'none', flex: 1, minWidth: 80, fontSize: '0.8rem', padding: '2px 0', background: 'transparent' }} />
-                        </div>
-                        <button type="button" onClick={addMale} style={{ flexShrink: 0, fontSize: '0.8rem', padding: '4px 12px', background: 'none', border: '1px solid #D1D5DB', borderRadius: 6, color: '#6B7280', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          + Add More
-                        </button>
-                      </div>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className={styles.sectionCard} style={{ height: '100%' }}>
+                    <div className={styles.sectionHeader}>
+                      <span className={styles.sectionBadge} style={{ visibility: 'hidden' }}>2</span>
+                      <h5>Male</h5>
                     </div>
-                    <Row className="g-2">
+                    <Row className="g-2" style={{ marginTop: 16 }}>
                       <Col xs={6}>
                         <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Number of Males</Form.Label>
                         <Form.Control type="number" name="numMales" value={form.numMales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
@@ -485,9 +412,9 @@ export default function CreateHatchBatch() {
                         <Form.Control type="number" step="0.01" name="avgWeightMale" value={form.avgWeightMale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                     </Row>
-                  </Col>
-                </Row>
-              </div>
+                  </div>
+                </Col>
+              </Row>
 
               {/* Section 3 - Egg Information */}
               <div className={styles.sectionCard}>
@@ -497,19 +424,19 @@ export default function CreateHatchBatch() {
                 </div>
                 <Row className="g-3">
                   <Col md>
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Weight of Eggs (kg)</Form.Label>
+                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Weight of Eggs (g)</Form.Label>
                     <Form.Control type="number" step="0.01" name="eggWeight" value={form.eggWeight} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                   </Col>
                   <Col md>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Hatchability Percentage (%)</Form.Label>
                     <div style={{ position: 'relative' }}>
-                      <Form.Control type="number" step="0.1" name="hatchability" value={form.hatchability} onChange={handleChange} onWheel={(e) => e.target.blur()} />
+                      <Form.Control type="number" step="0.1" value={computedHatchability} disabled />
                       <span style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 4, padding: '1px 8px', color: '#8C949B', fontSize: '0.8rem', fontWeight: 600, pointerEvents: 'none', lineHeight: '1.5' }}>%</span>
                     </div>
                   </Col>
                   <Col md>
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Number of Eggs</Form.Label>
-                    <Form.Control type="number" name="numberOfEggs" value={form.numberOfEggs} onChange={handleChange} onWheel={(e) => e.target.blur()} />
+                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Fry Produced</Form.Label>
+                    <Form.Control type="number" name="fryProduced" value={form.fryProduced} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                   </Col>
                 </Row>
               </div>
@@ -524,7 +451,11 @@ export default function CreateHatchBatch() {
                     </div>
                     <div className={styles.infoBanner}>
                       <IoInformationCircleOutline size={20} color="#28a745" style={{ flexShrink: 0, marginTop: 2 }} />
-                      <span>This is an auto-calculated estimate based on the number of eggs and hatchability percentage.</span>
+                      <span>Set the fry-per-gram conversion rate to estimate the total fry count from egg weight.</span>
+                    </div>
+                    <div style={{ marginBottom: 16 }}>
+                      <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Fry per Gram Rate</Form.Label>
+                      <Form.Control type="number" step="1" name="fryPerGramRate" value={form.fryPerGramRate} onChange={handleChange} onWheel={(e) => e.target.blur()} placeholder="e.g. 1000" />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
