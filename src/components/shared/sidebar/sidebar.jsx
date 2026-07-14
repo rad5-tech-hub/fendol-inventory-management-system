@@ -474,11 +474,11 @@ export default function SideBar({ show, handleClose }) {
       {user && (
         <div className={styles.userFooter}>
           <div className={styles.userAvatar}>
-            {(user.username || "A").charAt(0).toUpperCase()}
+            {(user.fullName || user.name || "A").charAt(0).toUpperCase()}
           </div>
           <div className="flex-grow-1">
-            <div className={styles.userName}>{user.username || "Admin User"}</div>
-            <div className={styles.userRole}>{user.role || "User"}</div>
+            <div className={styles.userName}>{user.fullName || user.name || "User"}</div>
+            <div className={styles.userRole}>{(user.userTypes?.[0] || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || "User"}</div>
           </div>
           <FaChevronDown size={13} color="#9A8070" />
         </div>
