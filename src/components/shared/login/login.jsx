@@ -80,7 +80,7 @@ export default function LogIn() {
                 } else if (userTypes.includes('finance')) {
                     navigate('/finance/add-sales');
                 } else if (userTypes.includes('sales_manager')) {
-                    navigate('/customer/view-all');
+                    navigate('/dashboard');
                 } else {
                     navigate('/dashboard');
                 }
