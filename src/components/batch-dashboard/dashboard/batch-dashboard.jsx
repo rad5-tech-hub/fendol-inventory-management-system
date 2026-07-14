@@ -59,12 +59,19 @@ export default function BatchDashboard() {
     setError('');
     try {
       const siteId = isSuperAdmin ? activeSite?.id : (user?.siteId || '');
-      const params = { limit: 1000 };
-      if (siteId) params.siteId = siteId;
-      const response = await ApiV2.get('/v2/batches', { params });
-      const body = response.data;
-      const list = Array.isArray(body.data) ? body.data : [];
-      setData(list);
+      let cursor = null;
+      const allData = [];
+      do {
+        const params = { limit: 50 };
+        if (siteId) params.siteId = siteId;
+        if (cursor) params.cursor = cursor;
+        const response = await ApiV2.get('/v2/batches', { params });
+        const body = response.data;
+        const list = Array.isArray(body.data) ? body.data : [];
+        allData.push(...list);
+        cursor = body.pagination?.hasMore ? body.pagination.nextCursor : null;
+      } while (cursor);
+      setData(allData);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch batches.');
     } finally {
