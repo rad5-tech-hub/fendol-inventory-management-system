@@ -57,7 +57,10 @@ const ViewAllStages = () => {
 
   const fetchStages = async () => {
     try {
-      const response = await Api.get(`/fish-stages?siteId=${siteIdFilter || 'all'}`);
+      const siteParam = isSuperAdmin
+        ? (siteIdFilter || 'all')
+        : (user?.siteId || '');
+      const response = await Api.get(`/fish-stages?siteId=${siteParam}`);
       if (Array.isArray(response.data.data)) {
         setStages(response.data.data);
       } else {
@@ -120,7 +123,7 @@ const ViewAllStages = () => {
       setShowEditPondModal(false);
     } catch (error) {
       toast.update(saveToast, {
-        render: 'Failed to update pond. Please try again.',
+        render: error.response?.data?.message || 'Failed to update pond. Please try again.',
         type: 'error',
         isLoading: false,
         autoClose: 3000,
@@ -141,8 +144,9 @@ const ViewAllStages = () => {
         throw new Error("Expected an array of notes");
       }
     } catch (err) {
-      console.error("Error fetching notes:", err);
-      setNoteError(err.response?.data?.message || "Failed to fetch notes. Please try again.");
+      const msg = err.response?.data?.message || 'Failed to fetch notes. Please try again.';
+      setNoteError(msg);
+      toast.error(msg, { autoClose: 4000 });
     } finally {
       setNoteLoader(false);
     }
@@ -158,7 +162,7 @@ const ViewAllStages = () => {
       fetchnote(selectedStage.id);
       if (selectedStage) fetchPondDetail(selectedStage.id);
     } catch (err) {
-      toast.update(noteToast, { render: 'Failed to add note. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
+      toast.update(noteToast, { render: err.response?.data?.message || 'Failed to add note. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
     }finally{
       setLoadingNote(false)
     }
@@ -175,8 +179,9 @@ const ViewAllStages = () => {
         throw new Error("Expected an array of sampling data");
       }
     } catch (err) {
-      console.error("Error fetching sampling data:", err);
-      setSamplingError(err.response?.data?.message || "Failed to fetch sampling. Please try again.");
+      const msg = err.response?.data?.message || 'Failed to fetch sampling data. Please try again.';
+      setSamplingError(msg);
+      toast.error(msg, { autoClose: 4000 });
     } finally {
       setSamplingLoader(false);
     }
@@ -187,8 +192,9 @@ const ViewAllStages = () => {
     try {
       const response = await Api.get(`/fish-stage/${stageId}`);
       setPondDetail(response.data);
-    } catch {
+    } catch (err) {
       setPondDetail(null);
+      toast.error(err.response?.data?.message || 'Failed to load pond details. Please try again.', { autoClose: 4000 });
     } finally {
       setPondDetailLoading(false);
     }
@@ -204,7 +210,7 @@ const ViewAllStages = () => {
       fetchSampling(selectedStage.id);
       if (selectedStage) fetchPondDetail(selectedStage.id);
     } catch (err) {
-      toast.update(samplingToast, { render: 'Failed to add sampling. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
+      toast.update(samplingToast, { render: err.response?.data?.message || 'Failed to add sampling. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });
     }finally{
       setLoadingSamp(false);
     }

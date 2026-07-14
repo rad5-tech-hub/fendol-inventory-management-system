@@ -73,7 +73,7 @@ export default function CreateStages() {
             }, 4000);
         } catch (error) {
             toast.update(loadingToast, {
-                render: error.response?.data?.message || "Error creating stage. Please try again.",
+                render: error.response?.data?.message || "Error creating pond. Please try again.",
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,
