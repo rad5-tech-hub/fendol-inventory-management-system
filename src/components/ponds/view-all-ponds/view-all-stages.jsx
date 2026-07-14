@@ -665,7 +665,7 @@ const ViewAllStages = () => {
                   {pondDetail.samplings.slice(0, 5).map((s, i) => (
                     <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', padding: '10px 14px', borderBottom: i < Math.min(pondDetail.samplings.length, 5) - 1 ? '1px solid #F5F5F5' : 'none', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.78rem', color: '#6C757D' }}>
-                        {formatDate(s.createdAt).slice(0, 5)}
+                        {formatDate(s.createdAt).slice(0, 10)}
                       </span>
                       <span style={{ fontSize: '0.78rem', color: '#2E3135', fontWeight: 500 }}>
                         {s.sample_labeling?.length > 12 ? `${s.sample_labeling.slice(0, 12)}…` : s.sample_labeling || '--'}
@@ -710,6 +710,41 @@ const ViewAllStages = () => {
                           </p>
                           <p style={{ margin: 0, fontSize: '0.7rem', color: '#AAB0B7' }}>
                             {n.performer?.fullName || n.fullName || 'System'} · {formatDate(n.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div style={{ paddingBottom: '8px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 800, color: '#8C949B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Notes
+              </p>
+              {pondDetailLoading ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#8C949B', fontSize: '0.8rem' }}>Loading…</div>
+              ) : !pondDetail?.notes?.length ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#B0B8C1', fontSize: '0.8rem', fontStyle: 'italic', background: '#FAFAFA', borderRadius: '10px', border: '1px solid #EFEFEF' }}>
+                  No notes yet
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                  {pondDetail.notes.slice(0, 4).map((n, i) => {
+                    const dotColors = ['#512728', '#6B3536', '#8C949B', '#AAB0B7'];
+                    return (
+                      <div key={n.id || i} style={{ display: 'flex', gap: '12px', padding: '10px 0', borderBottom: i < Math.min(pondDetail.notes.length, 4) - 1 ? '1px solid #F5F5F5' : 'none' }}>
+                        <div style={{ paddingTop: '4px', flexShrink: 0 }}>
+                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: dotColors[i % dotColors.length] }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: '0 0 2px 0', fontSize: '0.82rem', color: '#2E3135', fontWeight: 500, lineHeight: 1.4 }}>
+                            {n.note?.length > 50 ? `${n.note.substring(0, 50)}…` : n.note || '—'}
+                          </p>
+                          <p style={{ margin: 0, fontSize: '0.7rem', color: '#AAB0B7' }}>
+                            {n.fullName || 'Anonymous'} · {formatDate(n.createdAt)}
                           </p>
                         </div>
                       </div>
@@ -819,13 +854,13 @@ const ViewAllStages = () => {
           <div style={{ padding: '24px' }}>
             <Form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.target); handleAddSamplingSubmit({ sample_labeling: fd.get('sample_labeling') }); }}>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#2E3135', marginBottom: '6px' }}>Sample Count <span style={{ color: '#8C949B', fontWeight: 400 }}>(numbers only)</span></label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#2E3135', marginBottom: '6px' }}>Sample Count <span style={{ color: '#8C949B', fontWeight: 400 }}>(numbers & decimals)</span></label>
                 <input
                   type="text"
                   name="sample_labeling"
-                  placeholder="e.g. 53"
+                  placeholder="e.g. 3.34"
                   required
-                  onInput={e => { e.target.value = e.target.value.replace(/\D/g, ''); }}
+                  onInput={e => { e.target.value = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'); }}
                   style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '10px', fontSize: '0.875rem', outline: 'none', color: '#2E3135', transition: 'border 0.2s' }}
                   onFocus={e => e.target.style.borderColor = '#512728'}
                   onBlur={e => e.target.style.borderColor = '#E0E0E0'}
@@ -845,7 +880,7 @@ const ViewAllStages = () => {
       {/* ── ADD NOTE MODAL ── */}
       <Modal show={showAddNoteModal} onHide={() => setShowAddNoteModal(false)} centered>
         <div style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-          <div style={{ background: 'linear-gradient(135deg, #B06426 0%, #CC6E1A 100%)', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>📝</span>
               <div>
