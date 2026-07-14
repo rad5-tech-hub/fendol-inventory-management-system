@@ -478,7 +478,7 @@ export default function ViewAllCustomers() {
                 />
 
                 {/* ── Pagination ── */}
-                <div className="d-flex justify-content-between align-items-center mt-3">
+                <div className="d-flex justify-content-between align-items-center mt-3" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                   <div style={{ fontSize: '13px', color: '#8C949B' }}>
                     Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length}
                   </div>

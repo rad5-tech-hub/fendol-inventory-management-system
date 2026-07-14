@@ -593,7 +593,7 @@ export default function FeedProductionHistory() {
                       : `Showing ${(page - 1) * pageSize + 1} to ${Math.min(page * pageSize, totalFiltered)} of ${totalFiltered} batch${totalFiltered !== 1 ? 'es' : ''}`
                   }
                 </span>
-                <div className={styles.pagination}>
+                <div className={styles.pagination} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                   <button
                     className={styles.pageArrow}
                     disabled={page <= 1 || totalFiltered === 0}

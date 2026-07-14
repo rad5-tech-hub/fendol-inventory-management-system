@@ -247,7 +247,7 @@ export default function BatchDashboard() {
                 />
 
                 {filteredData.length > itemsPerPage && (
-                  <div className={styles.paginationRow}>
+                  <div className={styles.paginationRow} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                     <span className={styles.paginationInfo}>
                       Showing {Math.min(itemsPerPage, filteredData.length - (currentPage - 1) * itemsPerPage)} of {filteredData.length} batches
                     </span>

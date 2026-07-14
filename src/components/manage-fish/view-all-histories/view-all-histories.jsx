@@ -269,7 +269,7 @@ export default function ViewAllHistory() {
             )}
 
             {filteredData.length > 0 && pagination[activeTab].totalPages > 1 && (
-              <div className="mt-4">
+              <div className="mt-4" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                 <ReactPaginate
                   previousLabel={"<"}
                   nextLabel={">"}

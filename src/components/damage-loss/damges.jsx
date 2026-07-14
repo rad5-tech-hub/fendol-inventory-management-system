@@ -117,6 +117,7 @@ export default function DamageLoss() {
                   emptyMessage="No available Damage or loss."
                   className={styles.styled_table}
                 />
+                <div style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                 {/* Pagination */}
                 <ReactPaginate
                   previousLabel={"<"}
@@ -134,6 +135,7 @@ export default function DamageLoss() {
                   breakLinkClassName={"page-link"}
                   activeClassName={"active"}
                 />
+                </div>
               </>
             )}
           </main>

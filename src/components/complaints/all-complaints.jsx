@@ -315,7 +315,7 @@ export default function AllComplaints() {
             )}
 
             {pageCount > 1 && (
-              <div className={styles.paginationWrapper}>
+              <div className={styles.paginationWrapper} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                 <ReactPaginate
                   previousLabel={<><FiChevronLeft size={16} style={{ marginRight: 4 }} /> Prev</>}
                   nextLabel={<>Next <FiChevronRight size={16} style={{ marginLeft: 4 }} /></>}

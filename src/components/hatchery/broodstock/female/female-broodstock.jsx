@@ -154,7 +154,7 @@ export default function FemaleBroodstock() {
               )}
             />
 
-            <div className={styles.paginationRow}>
+            <div className={styles.paginationRow} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
               <span className={styles.paginationInfo}>Showing 1 to 8 of 38 females</span>
               <div className="d-flex align-items-center gap-3">
                 <Pagination>

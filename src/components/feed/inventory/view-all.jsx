@@ -283,7 +283,7 @@ export default function FeedInventoryViewAll() {
                   />
                 </div>
 
-                <div className="d-flex justify-content-center mt-4">
+                <div className="d-flex justify-content-center mt-4" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                   <ReactPaginate
                     previousLabel={"< "}
                     nextLabel={" >"}

@@ -211,7 +211,7 @@ export default function ViewAll() {
                   actions={renderActions}
                 />
 
-                <div className={styles.tableFooter}>
+                <div className={styles.tableFooter} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                   <small className="text-muted">
                     Showing {offset + 1} to {Math.min(offset + adminsPerPage, filteredAdmins.length)} of {filteredAdmins.length} admins
                   </small>

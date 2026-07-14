@@ -440,11 +440,11 @@ const ViewAllStages = () => {
                 </div>
 
                 {/* Pagination row */}
-                <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-                  <span style={{ fontSize: '0.875rem', color: '#8C949B' }}>
-                    Showing {startIndex + 1}–{Math.min(endIndex, filteredStages.length)} of {filteredStages.length} ponds
-                  </span>
-                  <ReactPaginate
+<div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
+                   <span style={{ fontSize: '0.875rem', color: '#8C949B' }}>
+                     Showing {startIndex + 1}–{Math.min(endIndex, filteredStages.length)} of {filteredStages.length} ponds
+                   </span>
+                   <ReactPaginate
                     previousLabel={"< "}
                     nextLabel={" >"}
                     breakLabel={"..."}

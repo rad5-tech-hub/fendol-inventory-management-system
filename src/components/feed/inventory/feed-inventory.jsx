@@ -569,7 +569,7 @@ export default function FeedInventory() {
                     {Math.min((currentPage + 1) * itemsPerPage, filteredRows.length)} of {filteredRows.length}
                     {searchQuery || selectedFeedType || selectedSiteId ? ` (filtered from ${feedRows.length})` : ''} feed types
                   </span>
-                  <div className={styles.pagination}>
+                  <div className={styles.pagination} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                     <button
                       className={styles.pageArrow}
                       onClick={() => handlePageChange({ selected: currentPage - 1 })}

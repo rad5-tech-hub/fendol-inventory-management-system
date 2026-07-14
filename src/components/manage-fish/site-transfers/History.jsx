@@ -354,7 +354,7 @@ export default function History() {
                         <small className={styles.paginationInfo}>
                           Showing {offset + 1}&ndash;{Math.min(offset + ITEMS_PER_PAGE, filtered.length)} of {filtered.length} records
                         </small>
-                        <div className={styles.pagination}>
+                        <div className={styles.pagination} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                           <ReactPaginate
                             previousLabel={"< "}
                             nextLabel={" >"}

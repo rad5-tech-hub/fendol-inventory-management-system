@@ -390,7 +390,7 @@ export default function StaffDirectory() {
                 <div className={styles.tableWrapper}>
                   {renderTable(currentItems)}
                 </div>
-                <div className={styles.tableFooter}>
+                <div className={styles.tableFooter} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                   <span>Showing {currentPage * itemsPerPage + 1} to {Math.min((currentPage + 1) * itemsPerPage, flatList.length)} of {flatList.length} staff</span>
                   <Pagination>
                     <Pagination.First onClick={() => setCurrentPage(0)} disabled={currentPage === 0} />

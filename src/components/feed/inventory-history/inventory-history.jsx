@@ -261,7 +261,7 @@ export default function InventoryHistory() {
                       <span className={styles.footerInfo}>
                         Showing {offset + 1} to {Math.min(offset + itemsPerPage, filteredData.length)} of {filteredData.length} records
                       </span>
-                      <div className={styles.pagination}>
+                      <div className={styles.pagination} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                         <ReactPaginate
                           previousLabel={<FiChevronLeft size={15} />}
                           nextLabel={<FiChevronRight size={15} />}

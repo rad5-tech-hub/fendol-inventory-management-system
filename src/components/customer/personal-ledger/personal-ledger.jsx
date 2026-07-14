@@ -521,7 +521,7 @@ export default function PersonalLedger() {
                       />
 
                       {/* ── Pagination ── */}
-                      <div className="d-flex justify-content-between align-items-center px-4 py-3 border-top" style={{ borderColor: '#e5e7eb' }}>
+                      <div className="d-flex justify-content-between align-items-center px-4 py-3 border-top" style={{ borderColor: '#e5e7eb', position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                         <div style={{ fontSize: '13px', color: '#8C949B' }}>
                           Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredLedgerData.length)} of {filteredLedgerData.length} records
                         </div>

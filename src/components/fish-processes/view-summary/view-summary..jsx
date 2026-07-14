@@ -937,7 +937,7 @@ export default function ViewSummary() {
                 {/* ── table footer / pagination ─────────────────────────── */}
                 <div style={s.tableFooter}>
                   <span>Showing {Math.min(itemsPerPage, filteredData.length - offset)} of {filteredData.length} processes</span>
-                  <div style={s.paginationWrap}>
+                  <div style={{ ...s.paginationWrap, position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
                     <button
                       style={{ ...s.pageBtn(false), width: '32px' }}
                       onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
