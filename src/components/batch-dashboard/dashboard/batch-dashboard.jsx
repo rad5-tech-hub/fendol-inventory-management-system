@@ -51,23 +51,20 @@ export default function BatchDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [cursor, setCursor] = useState(null);
-  const [hasMore, setHasMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 35;
 
-  const fetchBatches = useCallback(async (cursorVal = null) => {
+  const fetchBatches = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const siteId = isSuperAdmin ? activeSite?.id : (user?.siteId || '');
-      const params = {};
+      const params = { limit: 1000 };
       if (siteId) params.siteId = siteId;
-      if (cursorVal) params.cursor = cursorVal;
       const response = await ApiV2.get('/v2/batches', { params });
       const body = response.data;
       const list = Array.isArray(body.data) ? body.data : [];
-      setData(prev => cursorVal ? [...prev, ...list] : list);
-      setHasMore(body.pagination?.hasMore || false);
-      setCursor(body.pagination?.nextCursor || null);
+      setData(list);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch batches.');
     } finally {
@@ -78,10 +75,6 @@ export default function BatchDashboard() {
   useEffect(() => {
     fetchBatches();
   }, [fetchBatches]);
-
-  const handleLoadMore = () => {
-    if (cursor && hasMore) fetchBatches(cursor);
-  };
 
   const filteredData = data.filter((batch) => {
     const term = searchTerm.toLowerCase();
@@ -94,6 +87,11 @@ export default function BatchDashboard() {
     if (statusFilter === 'Completed' && !isCompleted) return false;
     return true;
   });
+
+  const pageCount = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+  const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handlePageChange = (page) => setCurrentPage(page);
 
   const totalFish = (stocks) => (stocks || []).reduce((s, x) => s + (Number(x.quantity) || 0), 0);
   const totalProcessed = (processes) => (processes || []).reduce((s, x) => s + (Number(x.wholeFishQuantity) || 0) + (Number(x.brokenFishQuantity) || 0) + (Number(x.damageOrLoss) || 0), 0);
@@ -227,7 +225,7 @@ export default function BatchDashboard() {
                     { key: 'fishStocks', label: 'Fish Stocks', align: 'right', render: (value) => f(totalFish(value)) },
                     { key: 'endDate', label: 'Status', render: (value) => <StatusBadge completed={!!value} /> },
                   ]}
-                  data={filteredData}
+                  data={paginatedData}
                   emptyMessage="No batches found."
                   actions={(row) => (
                     <PortalDropdown
@@ -241,23 +239,32 @@ export default function BatchDashboard() {
                   )}
                 />
 
-                {hasMore && (
-                  <div className="text-center mt-3">
-                    <button
-                      className={styles.viewBtn}
-                      onClick={handleLoadMore}
-                      disabled={loading}
-                    >
-                      {loading ? 'Loading...' : 'Load More'}
-                    </button>
+                {filteredData.length > itemsPerPage && (
+                  <div className={styles.paginationRow}>
+                    <span className={styles.paginationInfo}>
+                      Showing {Math.min(itemsPerPage, filteredData.length - (currentPage - 1) * itemsPerPage)} of {filteredData.length} batches
+                    </span>
+                    <Pagination className="mb-0">
+                      <Pagination.Prev
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      />
+                      {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
+                        <Pagination.Item
+                          key={page}
+                          active={page === currentPage}
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </Pagination.Item>
+                      ))}
+                      <Pagination.Next
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === pageCount}
+                      />
+                    </Pagination>
                   </div>
                 )}
-
-                <div className={styles.paginationRow}>
-                  <span className={styles.paginationInfo}>
-                    Showing {filteredData.length} of {data.length} batches
-                  </span>
-                </div>
               </>
             )}
           </main>
