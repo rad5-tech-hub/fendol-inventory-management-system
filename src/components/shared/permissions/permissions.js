@@ -27,7 +27,7 @@ const ACCESS = {
 	hatchery: ['super_admin', 'farm_manager'],
 
 	// ── Batch Dashboard ──
-	'batch-dashboard': ['super_admin', 'farm_manager'],
+	'batch-dashboard': ['super_admin'],
 
 	// ── Admin ──
 	admin: ['super_admin'],
