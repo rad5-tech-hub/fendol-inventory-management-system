@@ -630,21 +630,6 @@ const ViewAllStages = () => {
                 <div style={{ padding: '16px', textAlign: 'center', color: '#8C949B', fontSize: '0.8rem' }}>Loading…</div>
               ) : (
                 <>
-                  <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                    <div style={{ flex: 1, background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
-                      <p style={{ margin: '0 0 6px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>Incoming</p>
-                      <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#2E7D32' }}>
-                        {pondDetail?.incomingMovements?.length ? `${new Intl.NumberFormat().format(pondDetail.incomingMovements.reduce((s, m) => s + (Number(m.actual_quantity) || 0), 0))} pcs` : '0 pcs'}
-                      </p>
-                    </div>
-                    <div style={{ flex: 1, background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
-                      <p style={{ margin: '0 0 6px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>Outgoing</p>
-                      <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#C0392B' }}>
-                        {pondDetail?.outgoingMovements?.length ? `${new Intl.NumberFormat().format(pondDetail.outgoingMovements.reduce((s, m) => s + (Number(m.actual_quantity) || 0), 0))} pcs` : '0 pcs'}
-                      </p>
-                    </div>
-                  </div>
-
                   {pondDetail?.outgoingMovements?.length > 0 && (
                     <div style={{ border: '1px solid #EFEFEF', borderRadius: '12px', overflow: 'hidden', marginBottom: '10px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', padding: '8px 14px', background: '#F7F8F9', borderBottom: '1px solid #EFEFEF' }}>
