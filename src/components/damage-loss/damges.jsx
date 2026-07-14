@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate"; // Import React Paginate
+import { useSelector } from 'react-redux';
 import SideBar from "../shared/sidebar/sidebar";
 import Header from "../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -11,6 +12,10 @@ import Api from '../shared/api/apiLink';
 import { SkeletonTable } from "../shared/skeleton/Skeleton";
 
 export default function DamageLoss() {
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = user?.userTypes || [];
+  const isSuperAdmin = userTypes.includes('super_admin');
   const [moveFishHistory, setMoveFishHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -21,7 +26,8 @@ export default function DamageLoss() {
   useEffect(() => {
     const fetchMoveFishHistory = async () => {
       try {
-        const response = await Api.get('/damage-loss');
+        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+        const response = await Api.get(`/damage-loss?siteId=${siteId}`);
         setMoveFishHistory(response.data.data); // Assuming the response contains an array of history data
       } catch (error) {
         setError("Error fetching move fish history. Please try again.");
@@ -30,7 +36,7 @@ export default function DamageLoss() {
       }
     };
     fetchMoveFishHistory();
-  }, []);
+  }, [activeSite?.id, isSuperAdmin, user?.siteId]);
 
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
