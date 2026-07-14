@@ -115,18 +115,12 @@ export default function CreateStages() {
                                 onChange={handleInputChange}
                                 required
                             />
-                            <Form.Label className="fw-semibold mt-4">Site</Form.Label>
-                            {isSuperAdmin ? (
+                            {isSuperAdmin && (
                                 <>
+                                    <Form.Label className="fw-semibold mt-4">Site</Form.Label>
                                     <SiteSelector value={formData.siteId} onChange={(id) => setFormData({ ...formData, siteId: id || '' })} />
                                     <div className="text-muted small mt-1">Select the operational site where this pond belongs.</div>
                                 </>
-                            ) : (
-                                <Form.Control
-                                    value={profileSiteId}
-                                    disabled
-                                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                />
                             )}
                             <Form.Label className="fw-semibold fs-6 mt-4">Description</Form.Label>
                             <Form.Control
