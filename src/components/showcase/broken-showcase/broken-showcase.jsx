@@ -5,7 +5,7 @@ import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../showcase.module.scss";
 import { Alert } from "react-bootstrap";
-import { FaExclamationTriangle, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaExclamationTriangle, FaChevronLeft, FaChevronRight, FaWeightHanging } from "react-icons/fa";
 import { FiX, FiArrowRight } from "react-icons/fi";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
@@ -34,6 +34,14 @@ export default function ViewBrokenHistory() {
   const [damageFishQuantity, setDamageFishQuantity] = useState("");
   const [remarks, setRemarks] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
+
+  const [showKgModal, setShowKgModal] = useState(false);
+  const [kgModalVisible, setKgModalVisible] = useState(false);
+  const kgModalMounted = useRef(false);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [kgQuantity, setKgQuantity] = useState("");
+  const [kgWeight, setKgWeight] = useState("");
+  const [kgSubmitting, setKgSubmitting] = useState(false);
 
   const itemsPerPage = 65;
 
@@ -86,6 +94,55 @@ export default function ViewBrokenHistory() {
 
   const handleCloseModal = () => {
     setShowModal(false);
+  };
+
+  const isFromProcess = (row) => row && (row.batchNumber || row.pondId || row.siteId);
+
+  const handleKgModal = (row) => {
+    setSelectedRow(row);
+    setKgQuantity(row.quantity || 0);
+    setKgWeight("");
+    setShowKgModal(true);
+  };
+
+  const handleCloseKgModal = () => {
+    setKgModalVisible(false);
+    setTimeout(() => {
+      setShowKgModal(false);
+      setSelectedRow(null);
+    }, 200);
+  };
+
+  const handleKgSubmit = async () => {
+    if (!kgQuantity || kgQuantity <= 0 || !kgWeight || kgWeight <= 0) {
+      toast.error("Please enter valid quantity and weight values.");
+      return;
+    }
+    setKgSubmitting(true);
+    const loadingToast = toast.loading("Converting...");
+    try {
+      await Api.post("/convert-broken-to-kg", {
+        historyId: selectedRow?.id,
+        quantity: Number(kgQuantity),
+        weightInKg: Number(kgWeight),
+      });
+      toast.update(loadingToast, {
+        render: "Conversion successful!",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
+      handleCloseKgModal();
+    } catch (error) {
+      toast.update(loadingToast, {
+        render: error.response?.data?.message || "Conversion failed. Please try again.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
+    } finally {
+      setKgSubmitting(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -190,6 +247,24 @@ export default function ViewBrokenHistory() {
     return () => window.removeEventListener('keydown', handler);
   }, [showModal]);
 
+  useEffect(() => {
+    if (showKgModal) {
+      kgModalMounted.current = true;
+      requestAnimationFrame(() => setKgModalVisible(true));
+    } else {
+      setKgModalVisible(false);
+    }
+  }, [showKgModal]);
+
+  useEffect(() => {
+    if (!showKgModal) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') handleCloseKgModal();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showKgModal]);
+
   const columns = [
     {
       key: 'createdAt', label: 'Date',
@@ -234,6 +309,32 @@ export default function ViewBrokenHistory() {
           {value != null ? new Intl.NumberFormat().format(value) : '—'}
         </span>
       ),
+    },
+    {
+      key: '_actions', label: '', width: '100px',
+      render: (_value, row) => {
+        if (!isFromProcess(row)) return null;
+        return (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleKgModal(row); }}
+            title="Convert to kilograms"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '5px',
+              padding: '5px 10px', borderRadius: '6px',
+              border: `1px solid ${BORDER}`,
+              backgroundColor: '#F9FAFB', color: TEXT_MAIN,
+              fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+              whiteSpace: 'nowrap', transition: 'all 0.15s ease',
+              fontFamily: 'inherit',
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = '#EEF0F4'; e.currentTarget.style.borderColor = '#D1D5DB'; }}
+            onMouseOut={e => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = BORDER; }}
+          >
+            <FaWeightHanging size={11} color="#6B7280" />
+            Convert to kg
+          </button>
+        );
+      },
     },
   ];
 
@@ -410,7 +511,7 @@ export default function ViewBrokenHistory() {
 
             {/* ── History Table ── */}
             {loadingTable ? (
-              <SkeletonTable cols={5} rows={8} />
+              <SkeletonTable cols={6} rows={8} />
             ) : errorTable ? (
               <div className="d-flex justify-content-center">
                 <Alert variant="danger" className="text-center w-50 py-5">
@@ -423,7 +524,7 @@ export default function ViewBrokenHistory() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{
                     width: '100%', borderCollapse: 'collapse', fontSize: '12.5px',
-                    minWidth: '700px',
+                    minWidth: '850px',
                   }}>
                     <thead style={{ backgroundColor: '#F9FAFB' }}>
                       <tr>
@@ -681,6 +782,197 @@ export default function ViewBrokenHistory() {
                   <>
                     <FiArrowRight size={15} />
                     Move to Damage
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Convert to Kg Modal ── */}
+      {kgModalMounted.current && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10000, padding: '20px',
+            opacity: kgModalVisible ? 1 : 0, transition: 'opacity 0.2s ease',
+          }}
+          onClick={handleCloseKgModal}
+        >
+          <div
+            style={{
+              background: '#FFFFFF', borderRadius: '16px',
+              width: '100%', maxWidth: '440px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.15)', overflow: 'hidden',
+              opacity: kgModalVisible ? 1 : 0,
+              ...(kgModalVisible ? {} : { transform: 'translateY(24px) scale(0.97)' }),
+              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '24px 28px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                <div style={{
+                  width: '44px', height: '44px', borderRadius: '12px',
+                  background: '#EDF4FE',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <FaWeightHanging size={20} color="#1A5276" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', margin: 0, lineHeight: '1.3' }}>
+                    Convert to Kilograms
+                  </h2>
+                  <p style={{ fontSize: '13px', color: '#6B7280', fontWeight: 400, margin: '4px 0 0 0', lineHeight: '1.4' }}>
+                    Record the kg equivalent for <strong>#{selectedRow?.id?.slice(0, 8) || '—'}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseKgModal}
+                style={{
+                  width: '32px', height: '32px', border: 'none',
+                  background: '#F3F4F6', borderRadius: '8px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: '#6B7280', flexShrink: 0,
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseOver={e => { e.currentTarget.style.background = '#E5E7EB'; e.currentTarget.style.color = '#374151'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#6B7280'; }}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '20px 28px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Conversion info banner */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '12px 14px', borderRadius: '10px',
+                background: '#F0F7FF', border: '1px solid #D6E8FB',
+                fontSize: '12px', color: '#1A5276', lineHeight: '1.5',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10" stroke="#1A5276" strokeWidth="1.5"/>
+                  <path d="M12 8v4M12 16h.01" stroke="#1A5276" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <span>
+                  Enter the quantity of fish pieces and their equivalent weight in kilograms for this record.
+                </span>
+              </div>
+
+              {/* Quantity (pieces) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Quantity (pieces) <span style={{ color: '#DC2626' }}>*</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step="1"
+                  placeholder="Enter number of pieces"
+                  value={kgQuantity}
+                  onChange={(e) => setKgQuantity(e.target.value)}
+                  style={{
+                    width: '100%', height: '44px', padding: '0 14px',
+                    border: '1.5px solid #E5E7EB', borderRadius: '10px',
+                    fontSize: '14px', color: '#111827', fontWeight: 500,
+                    outline: 'none', background: '#FFFFFF',
+                    transition: 'border-color 0.15s ease', fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#512728'}
+                  onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+                  autoComplete="off"
+                />
+              </div>
+
+              {/* Quantity in kg */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Quantity in kg <span style={{ color: '#DC2626' }}>*</span>
+                </label>
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="0.00"
+                    value={kgWeight}
+                    onChange={(e) => setKgWeight(e.target.value)}
+                    style={{
+                      width: '100%', height: '44px', padding: '0 52px 0 14px',
+                      border: '1.5px solid #E5E7EB', borderRadius: '10px',
+                      fontSize: '14px', color: '#111827', fontWeight: 500,
+                      outline: 'none', background: '#FFFFFF',
+                      transition: 'border-color 0.15s ease', fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#512728'}
+                    onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+                    autoComplete="off"
+                  />
+                  <span style={{
+                    position: 'absolute', right: '14px', top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: '13px', fontWeight: 700, color: '#9CA3AF',
+                    pointerEvents: 'none', userSelect: 'none',
+                  }}>
+                    kg
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '20px 28px 24px' }}>
+              <button
+                type="button"
+                onClick={handleCloseKgModal}
+                disabled={kgSubmitting}
+                style={{
+                  height: '42px', padding: '0 20px',
+                  border: '1px solid #E5E7EB', borderRadius: '10px',
+                  background: '#FFFFFF', color: '#374151',
+                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                  transition: 'all 0.15s ease', fontFamily: 'inherit',
+                }}
+                onMouseOver={e => { if (!kgSubmitting) { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB'; }}}
+                onMouseOut={e => { if (!kgSubmitting) { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.borderColor = '#E5E7EB'; }}}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleKgSubmit}
+                disabled={kgSubmitting}
+                style={{
+                  height: '42px', padding: '0 24px', border: 'none', borderRadius: '10px',
+                  background: kgSubmitting ? '#9CA3AF' : '#1A5276', color: '#FFFFFF',
+                  fontSize: '13px', fontWeight: 600, cursor: kgSubmitting ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  transition: 'all 0.15s ease', fontFamily: 'inherit',
+                }}
+                onMouseOver={e => { if (!kgSubmitting) e.currentTarget.style.background = '#154360'; }}
+                onMouseOut={e => { if (!kgSubmitting) e.currentTarget.style.background = '#1A5276'; }}
+              >
+                {kgSubmitting ? (
+                  <>
+                    <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.5s linear infinite' }} />
+                    Converting...
+                  </>
+                ) : (
+                  <>
+                    <FaWeightHanging size={13} />
+                    Convert
                   </>
                 )}
               </button>
