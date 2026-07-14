@@ -56,7 +56,7 @@ export default function MoveFish() {
           throw new Error('Expected an array of stages');
         }
       } catch (err) {
-        console.error(err.response?.data?.message || 'Failed to fetch stages');
+        toast.error(err.response?.data?.message || 'Failed to fetch stages. Check your connection and try again.', { autoClose: 4000 });
       }
     };
     fetchStages();
@@ -103,7 +103,9 @@ export default function MoveFish() {
         setSelectedQuantityFrom('0');
         setSelectedQuantityTo('0');
       } else {
-        console.error('Failed to fetch quantity:', error);
+        const msg = error.response?.data?.message || 'Failed to fetch pond quantity.';
+        console.error(msg, error);
+        toast.error(msg, { autoClose: 4000 });
         if (type === 'from') setSelectedQuantityFrom('Error fetching quantity');
         if (type === 'to') setSelectedQuantityTo('Error fetching quantity');
       }
