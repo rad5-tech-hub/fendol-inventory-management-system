@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
@@ -78,10 +78,6 @@ export default function ViewBrokenHistory() {
     fetchData();
   }, []);
 
-  const handlePageChange = ({ selected }) => {
-    setCurrentPage(selected);
-  };
-
   const handleShowModal = () => {
     setDamageFishQuantity("");
     setRemarks("");
@@ -155,7 +151,19 @@ export default function ViewBrokenHistory() {
     return { d, t };
   };
 
-  const paginatedData = tableData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const enrichedData = useMemo(() => {
+    let running = 0;
+    const sorted = [...tableData].sort((a, b) => new Date(a.createdAt || a.date) - new Date(b.createdAt || b.date));
+    return sorted.map(row => {
+      const isRemoval = /damage|moved to|removed/i.test(row.description || '');
+      const added = isRemoval ? 0 : (row.quantity || 0);
+      const removed = isRemoval ? (row.quantity || 0) : 0;
+      running += added - removed;
+      return { ...row, _added: added, _removed: removed, _cumulative: running };
+    });
+  }, [tableData]);
+
+  const paginatedData = enrichedData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
@@ -185,12 +193,12 @@ export default function ViewBrokenHistory() {
   const columns = [
     {
       key: 'createdAt', label: 'Date',
-      render: (value) => {
-        const { d, t } = formatDateTime(value);
+      render: (value, row) => {
+        const dt = formatDateTime(value || row.date);
         return (
           <div>
-            <div style={{ fontWeight: 600, color: TEXT_MAIN, fontSize: '13px' }}>{d}</div>
-            <div style={{ color: TEXT_MUTED, fontSize: '11px' }}>{t}</div>
+            <div style={{ fontWeight: 600, color: TEXT_MAIN, fontSize: '13px' }}>{dt.d}</div>
+            <div style={{ color: TEXT_MUTED, fontSize: '11px' }}>{dt.t}</div>
           </div>
         );
       },
@@ -198,15 +206,31 @@ export default function ViewBrokenHistory() {
     {
       key: 'description', label: 'Description',
       render: (value) => (
-        <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={value}>
+        <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={value}>
           {value || '—'}
         </span>
       ),
     },
     {
-      key: 'quantity', label: 'Quantity', align: 'right',
+      key: '_added', label: 'Added', align: 'right',
       render: (value) => (
-        <span style={{ fontWeight: 700, color: '#E07B00', fontSize: '13px' }}>
+        <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
+          {value != null && value > 0 ? new Intl.NumberFormat().format(value) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: '_removed', label: 'Removed', align: 'right',
+      render: (value) => (
+        <span style={{ fontWeight: 700, color: '#dc3545', fontSize: '13px' }}>
+          {value != null && value > 0 ? new Intl.NumberFormat().format(value) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: '_cumulative', label: 'Cumulative Added', align: 'right',
+      render: (value) => (
+        <span style={{ fontWeight: 700, color: TEXT_MAIN, fontSize: '13px' }}>
           {value != null ? new Intl.NumberFormat().format(value) : '—'}
         </span>
       ),
@@ -386,7 +410,7 @@ export default function ViewBrokenHistory() {
 
             {/* ── History Table ── */}
             {loadingTable ? (
-              <SkeletonTable cols={3} rows={8} />
+              <SkeletonTable cols={5} rows={8} />
             ) : errorTable ? (
               <div className="d-flex justify-content-center">
                 <Alert variant="danger" className="text-center w-50 py-5">
@@ -399,7 +423,7 @@ export default function ViewBrokenHistory() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{
                     width: '100%', borderCollapse: 'collapse', fontSize: '12.5px',
-                    minWidth: '600px',
+                    minWidth: '700px',
                   }}>
                     <thead style={{ backgroundColor: '#F9FAFB' }}>
                       <tr>

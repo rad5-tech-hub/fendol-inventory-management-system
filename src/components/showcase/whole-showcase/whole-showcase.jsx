@@ -6,9 +6,8 @@ import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../showcase.module.scss";
 import { Alert } from "react-bootstrap";
-import { FaExclamationTriangle, FaEllipsisV, FaChevronLeft, FaChevronRight, FaFish, FaExchangeAlt } from "react-icons/fa";
-import { FiX, FiAlertTriangle, FiArrowRight } from "react-icons/fi";
-import ReactPaginate from "react-paginate";
+import { FaExclamationTriangle, FaEllipsisV, FaChevronLeft, FaChevronRight, FaExchangeAlt } from "react-icons/fa";
+import { FiX, FiArrowRight } from "react-icons/fi";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -91,10 +90,6 @@ export default function ViewWholeHistory() {
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, []);
-
-  const handlePageChange = ({ selected }) => {
-    setCurrentPage(selected);
-  };
 
   const handleShowModal = (type) => {
     setModalType(type);
@@ -200,7 +195,15 @@ export default function ViewWholeHistory() {
       },
     },
     {
-      key: 'wholeFishAdded', label: 'Whole Added',
+      key: 'remarks', label: 'Description',
+      render: (value) => (
+        <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={value}>
+          {value || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'wholeFishAdded', label: 'Added',
       align: 'right',
       render: (value) => (
         <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
@@ -209,28 +212,20 @@ export default function ViewWholeHistory() {
       ),
     },
     {
-      key: 'wholeFishCumulative', label: 'Cumulative Whole',
+      key: 'brokenFishAdded', label: 'Removed',
+      align: 'right',
+      render: (value) => (
+        <span style={{ fontWeight: 700, color: '#dc3545', fontSize: '13px' }}>
+          {value != null ? new Intl.NumberFormat().format(value) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'wholeFishCumulative', label: 'Cumulative Added',
       align: 'right',
       render: (value) => (
         <span style={{ fontWeight: 700, color: TEXT_MAIN, fontSize: '13px' }}>
           {value != null ? new Intl.NumberFormat().format(value) : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'brokenFishAdded', label: 'Broken Added',
-      align: 'right',
-      render: (value) => (
-        <span style={{ fontWeight: 700, color: '#E07B00', fontSize: '13px' }}>
-          {value != null ? new Intl.NumberFormat().format(value) : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'remarks', label: 'Description',
-      render: (value) => (
-        <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={value}>
-          {value || '—'}
         </span>
       ),
     },
