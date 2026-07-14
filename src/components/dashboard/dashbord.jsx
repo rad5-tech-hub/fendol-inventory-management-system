@@ -64,6 +64,10 @@ const Dashboard = () => {
   const effectiveSiteId = activeSite?.id || siteId;
 
   const fetchDashboardData = useCallback(async () => {
+    if (!isSuperAdmin) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const params = effectiveSiteId ? { siteId: effectiveSiteId } : {};
@@ -74,7 +78,7 @@ const Dashboard = () => {
       setError(err.response?.data?.message || 'Failed to fetch dashboard data.');
       setLoading(false);
     }
-  }, [effectiveSiteId]);
+  }, [effectiveSiteId, isSuperAdmin]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -96,7 +100,7 @@ const Dashboard = () => {
     };
   }, [activeTooltip]);
 
-  if (loading) {
+  if (loading && isSuperAdmin) {
     return (
       <section className={`${styles.body} ${styles.dashBody}`}>
         <div className="sticky-top">
@@ -125,7 +129,7 @@ const Dashboard = () => {
     );
   }
 
-  if (error) {
+  if (error && isSuperAdmin) {
     return (
       <section className={`${styles.body} ${styles.dashBody}`}>
         <div className="sticky-top">
