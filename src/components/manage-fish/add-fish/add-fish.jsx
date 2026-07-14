@@ -165,7 +165,7 @@ const AddFish = () => {
 
               <Row>
                 <Col md={12} lg={6} className="mb-4">
-                  <Form.Label className="fw-semibold">Pond From</Form.Label>
+                  <Form.Label className="fw-semibold">Pond To</Form.Label>
                   <div style={{ position: 'relative' }}>
                     <Form.Control
                       type="text"
