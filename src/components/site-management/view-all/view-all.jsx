@@ -61,7 +61,7 @@ const ViewAllSites = () => {
     navigate('/site-management/create', { state: { editData: site } });
   };
 
-  const handleRowClick = (site) => {
+  const handleView = (site) => {
     setSelectedSite(site);
     setShowModal(true);
   };
@@ -178,13 +178,13 @@ const ViewAllSites = () => {
                     )},
                   ]}
                   data={displayedSites}
-                  onRowClick={handleRowClick}
                   actions={(site) => (
                     <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'center' }}>
                       <PortalDropdown
                         btnClass={styles.threeDotBtn}
                         stopPropagation
                         items={[
+                          { label: 'View', onClick: () => handleView(site) },
                           { label: 'Edit', onClick: () => handleEdit(site) },
                         ]}
                       />
