@@ -157,6 +157,7 @@ export default function NewBatchFish() {
             }));
             setCumulativeBrokenFishQuantity(data.cumulativeBrokenQuantity || data.brokenFishQuantity || 0);
             setCumulativeDamageOrLoss(data.cumulativeDamageOrLoss || data.damageOrLoss || 0);
+            setShowSuccessOverlay(true);
           }
         } catch (err) {
           if (err.response?.status === 404) {

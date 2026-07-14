@@ -547,7 +547,19 @@ export default function ViewSummary() {
   ];
 
   const tableColumns = [
-    { key: 'createdAt', label: 'Date Created', render: (value) => formatDate(value) },
+    {
+      key: 'createdAt', label: 'Date Created',
+      render: (value) => {
+        const dateStr = formatDate(value);
+        const [datePart, timePart] = dateStr.split(' ');
+        return (
+          <div style={{ fontSize: '12px', color: TEXT_MAIN, lineHeight: '1.4', whiteSpace: 'nowrap' }}>
+            <div>{datePart}</div>
+            <div style={{ color: TEXT_MUTED }}>{timePart}</div>
+          </div>
+        );
+      },
+    },
     {
       key: 'batchNumber', label: 'Batch Number',
       render: (value, row) => {
@@ -555,7 +567,7 @@ export default function ViewSummary() {
         return <span style={s.batchLink}>{batchNum}</span>;
       },
     },
-    { key: 'site', label: 'Site', render: (value, row) => deriveSite(row) },
+
     {
       key: 'wholeFishQuantity', label: 'Qty Before',
       render: (value) => `${new Intl.NumberFormat().format(value || 0)} Units`,
@@ -618,36 +630,7 @@ export default function ViewSummary() {
         );
       },
     },
-    {
-      key: 'processingTeam', label: 'Processing Team',
-      render: (value, row) => (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          {(() => {
-            const team = value || row.team || [];
-            const dummyColors = ['#512728', '#8C949B', '#c4c4c4'];
-            const dummyInits = ['FT', 'JA', 'MK'];
-            const count = Math.max(team.length, 3);
-            return Array.from({ length: Math.min(count, 3) }, (_, i) => {
-              const member = team[i];
-              return (
-                <div key={i} style={{
-                  width: '28px', height: '28px', borderRadius: '50%',
-                  backgroundColor: member ? '#c4c4c4' : dummyColors[i],
-                  border: '2px solid #fff', marginLeft: i > 0 ? '-8px' : '0',
-                  flexShrink: 0, display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', fontSize: '10px', fontWeight: 700,
-                  color: member ? 'transparent' : '#fff',
-                  backgroundImage: member?.avatar ? `url(${member.avatar})` : 'none',
-                  backgroundSize: 'cover', backgroundPosition: 'center',
-                }}>
-                  {!member && dummyInits[i]}
-                </div>
-              );
-            });
-          })()}
-        </div>
-      ),
-    },
+
     {
       key: '_status', label: 'Status',
       render: (_value, row) => {
