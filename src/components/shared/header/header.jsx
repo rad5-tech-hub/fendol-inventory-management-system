@@ -102,27 +102,10 @@ export default function Header({ toggleSidebar }) {
     };
   }, []);
 
-  // Fetch notifications when component mounts
+  // Notifications muted — API call disabled
   useEffect(() => {
-    const fetchNotifications = async () => {
-      setLoading(true);
-      try {
-        const response = await Api.get('/notifications'); // Adjust endpoint as needed
-        if (Array.isArray(response.data.data)) {
-          setNotifications(response.data.data);
-        } else {
-          console.error("Expected an array of notifications");
-          setNotifications([]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error);
-        setNotifications([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNotifications();
+    setNotifications([]);
+    setLoading(false);
   }, []);
 
   // Handle click outside to close notification dropdown
