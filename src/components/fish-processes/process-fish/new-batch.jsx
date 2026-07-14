@@ -96,7 +96,7 @@ export default function NewBatchFish() {
         setMoveFishData(prev => ({
           ...prev,
           stageId_to: washingStage ? washingStage.id : '',
-          remarks: prev.actual_quantity ? `Process started with ${prev.actual_quantity}` : ''
+          remarks: prev.actual_quantity ? `Process started with ${Number(prev.actual_quantity).toLocaleString()}` : ''
         }));
       } else {
         throw new Error('Expected an array of stages for Washing');
@@ -237,7 +237,7 @@ export default function NewBatchFish() {
     setMoveFishData(prev => ({
       ...prev,
       [name]: name === 'actual_quantity' ? parseFloat(value) || 0 : value,
-      remarks: name === 'actual_quantity' ? `Process started with ${value} Fishes` : prev.remarks
+      remarks: name === 'actual_quantity' ? `Process started with ${Number(value).toLocaleString()} Fishes` : prev.remarks
     }));
   };
 

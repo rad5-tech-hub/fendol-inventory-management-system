@@ -111,7 +111,7 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
         ...prevData,
         pondId: pond.id,
       }));
-      const displayText = `${pond.title || "No Data Yet"} - (${pond.quantity !== undefined ? pond.quantity : "0"})`;
+      const displayText = `${pond.title || "No Data Yet"} - (${pond.quantity !== undefined ? Number(pond.quantity).toLocaleString() : "0"})`;
       setPondSearch(displayText);
       setShowPondDropdown(false);
     } else {
@@ -345,7 +345,7 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
                           style={{ cursor: "pointer", padding: "8px", borderBottom: "1px solid #ddd" }}
                         >
                           {pond.title || "No Data Yet"} - (
-                          {pond.quantity !== undefined ? pond.quantity : "0"})
+                          {pond.quantity !== undefined ? Number(pond.quantity).toLocaleString() : "0"})
                         </li>
                       ))
                     ) : (

@@ -60,7 +60,7 @@ export default function DamageLoss() {
     { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
     { key: 'process_from', label: 'POND FROM', render: (value, row) => row.process_from === null ? row.stageTitle_from : '-' },
     { key: 'stageId_from', label: 'PROCESS FROM', render: (value, row) => row.stageId_from === null ? row.stageTitle_from : '-' },
-    { key: 'quantity', label: 'QUANTITY' },
+    { key: 'quantity', label: 'QUANTITY', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
     {
       key: 'description', label: 'REMARK',
       render: (value, row) => {

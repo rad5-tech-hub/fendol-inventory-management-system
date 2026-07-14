@@ -224,8 +224,8 @@ export default function UpdateStoreInventory() {
                     { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
                     { key: 'name', label: 'NAME' },
                     { key: 'unit', label: 'UNIT' },
-                    { key: 'quantity', label: 'QUANTITY' },
-                    { key: 'threshold', label: 'THRESHOLD VALUE' },
+                    { key: 'quantity', label: 'QUANTITY', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
+                    { key: 'threshold', label: 'THRESHOLD VALUE', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
                     { key: 'status', label: 'STATUS', render: (value) => (
                       <span className={
                         value === 'in stock'

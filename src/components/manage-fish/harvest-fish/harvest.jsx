@@ -85,7 +85,7 @@ const HarvestFish = () => {
 
   const handlePondSelect = (pond) => {
     setFormData({ ...formData, stageId_from: pond.id });
-    setPondSearch(`${pond.title} - (${pond.quantity})`);
+    setPondSearch(`${pond.title} - (${Number(pond.quantity).toLocaleString()})`);
     setShowPondDropdown(false);
   };
 
@@ -184,7 +184,7 @@ const HarvestFish = () => {
                                 onClick={() => handlePondSelect(pond)}
                                 style={{ cursor: 'pointer', padding: '8px' }}
                               >
-                                {pond.title} - ({pond.quantity})
+                                {pond.title} - ({Number(pond.quantity).toLocaleString()})
                               </li>
                             ))
                           ) : (

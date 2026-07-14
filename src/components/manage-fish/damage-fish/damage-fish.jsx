@@ -70,7 +70,7 @@ const DamageFish = () => {
   // Handle pond selection from dropdown
   const handlePondSelect = (pond) => {
     setFormData({ ...formData, stageId_from: pond.id });
-    setPondSearch(`${pond.title} - (${pond.quantity || '0'})`);
+    setPondSearch(`${pond.title} - (${Number(pond.quantity || 0).toLocaleString()})`);
     setShowPondDropdown(false);
     getQuantity(pond.id); // Fetch fish type and quantity
   };
@@ -197,7 +197,7 @@ const DamageFish = () => {
                                 onClick={() => handlePondSelect(pond)}
                                 style={{ cursor: 'pointer', padding: '8px' }}
                               >
-                                {pond.title} - ({pond.quantity || '0'})
+                                {pond.title} - ({Number(pond.quantity || 0).toLocaleString()})
                               </li>
                             ))
                           ) : (

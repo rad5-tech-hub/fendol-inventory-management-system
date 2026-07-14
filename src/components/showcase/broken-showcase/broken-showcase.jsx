@@ -164,7 +164,7 @@ export default function ViewBrokenHistory() {
   const columns = [
     { key: 'createdAt', label: 'DATE & TIME', render: (value) => formatDate(value) },
     { key: 'description', label: 'DESCRIPTION', render: (value) => <span title={value}>{value}</span> },
-    { key: 'quantity', label: 'QUANTITY', align: 'right' },
+    { key: 'quantity', label: 'QUANTITY', align: 'right', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
   ];
 
   return (
@@ -210,7 +210,7 @@ export default function ViewBrokenHistory() {
                       Total Quantity
                     </p>
                     <div className="d-flex pb-3">
-                      <h1>{brokenQuantity !== null ? brokenQuantity : "N/A"}</h1>
+                      <h1>{brokenQuantity !== null ? Number(brokenQuantity).toLocaleString() : "N/A"}</h1>
                       <p className="mt-3 fw-semibold" style={{ fontSize: "12px" }}>
                         pieces
                       </p>
@@ -273,7 +273,7 @@ export default function ViewBrokenHistory() {
           <Modal.Body className="border-0">
             <h5 className="text-end fw-semibold">
               <span className="fs-6 fw-semibold">Total Quantity: </span>
-              {brokenQuantity !== null ? brokenQuantity : "N/A"}
+              {brokenQuantity !== null ? Number(brokenQuantity).toLocaleString() : "N/A"}
             </h5>
             <Form>
               <Form.Group className="mb-3">

@@ -157,7 +157,7 @@ export default function ViewWholeHistory() {
   const columns = [
     { key: 'date', label: 'DATE CREATED', render: (value) => formatDate(value) },
     { key: 'description', label: 'DESCRIPTION', render: (value) => <span title={value}>{value}</span> },
-    { key: 'quantity', label: 'QUANTITY', align: 'right' },
+    { key: 'quantity', label: 'QUANTITY', align: 'right', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
   ];
 
   return (
@@ -276,7 +276,7 @@ export default function ViewWholeHistory() {
           <Modal.Body className="border-0">
             <h5 className="text-end fw-semibold">
               <span className="fs-6 fw-semibold">Total Quantity: </span>
-              {wholeQuantity !== null ? wholeQuantity : "N/A"}
+              {wholeQuantity !== null ? Number(wholeQuantity).toLocaleString() : "N/A"}
             </h5>
             <Form>
               <Form.Group className="mb-3">

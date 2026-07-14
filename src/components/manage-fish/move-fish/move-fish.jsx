@@ -123,14 +123,14 @@ export default function MoveFish() {
 
   const handlePondFromSelect = (pond) => {
     setMoveFishData({ ...moveFishData, stageId_from: pond.id });
-    setPondFromSearch(`${pond.title} - (${pond.quantity || '0'})`);
+    setPondFromSearch(`${pond.title} - (${Number(pond.quantity || 0).toLocaleString()})`);
     setShowFromDropdown(false);
     getQuantity(pond.id, 'from');
   };
 
   const handlePondToSelect = (pond) => {
     setMoveFishData({ ...moveFishData, stageId_to: pond.id });
-    setPondToSearch(`${pond.title} - (${pond.quantity || '0'})`);
+    setPondToSearch(`${pond.title} - (${Number(pond.quantity || 0).toLocaleString()})`);
     setSelectedTitle(pond.title);
     setShowToDropdown(false);
     getQuantity(pond.id, 'to');
@@ -165,7 +165,7 @@ export default function MoveFish() {
   const handleMoveFishes = async (e) => {
     e.preventDefault();
 
-    const ok = await confirm({ message: `Are you sure you want to move ${moveFishData.actual_quantity} fish from ${selectedStageNames} to ${selectedTitle}?`, title: "Move Fish", variant: "danger" });
+    const ok = await confirm({ message: `Are you sure you want to move ${Number(moveFishData.actual_quantity).toLocaleString()} fish from ${selectedStageNames} to ${selectedTitle}?`, title: "Move Fish", variant: "danger" });
     if (!ok) return;
 
     setLoader(true);
@@ -247,7 +247,7 @@ export default function MoveFish() {
                                 onClick={() => handlePondFromSelect(pond)}
                                 style={{ cursor: 'pointer', padding: '8px' }}
                               >
-                                {pond.title} - ({pond.quantity || '0'})
+                                {pond.title} - ({Number(pond.quantity || 0).toLocaleString()})
                               </li>
                             ))
                           ) : (
@@ -305,7 +305,7 @@ export default function MoveFish() {
                                 onClick={() => handlePondToSelect(pond)}
                                 style={{ cursor: 'pointer', padding: '8px' }}
                               >
-                                {pond.title} - ({pond.quantity || '0'})
+                                {pond.title} - ({Number(pond.quantity || 0).toLocaleString()})
                               </li>
                             ))
                           ) : (

@@ -108,7 +108,7 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
         ...prevData,
         pondId: pond.id,
       }));
-      setPondSearch(`${pond.title || "No Data Yet"} - (${pond.quantity || "0"})`);
+      setPondSearch(`${pond.title || "No Data Yet"} - (${Number(pond.quantity || 0).toLocaleString()})`);
       setShowPondDropdown(false);
     } else {
       console.log("Pond not selected: Quantity less than 0 or invalid pond", pond);
@@ -341,7 +341,7 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
                           onClick={() => handlePondSelect(pond)}
                           style={{ cursor: "pointer", padding: "8px" }}
                         >
-                          {pond.title || "No Data Yet"} - ({pond.quantity || "0"})
+                          {pond.title || "No Data Yet"} - ({Number(pond.quantity || 0).toLocaleString()})
                         </li>
                       ))
                     ) : (
