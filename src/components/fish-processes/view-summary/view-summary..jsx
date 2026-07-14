@@ -12,6 +12,8 @@ import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from "react-paginate";
 import Api, { ApiV2 } from '../../shared/api/apiLink';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import ProcessingTeamModal from './ProcessingTeamModal';
 
 
@@ -496,6 +498,24 @@ export default function ViewSummary() {
         setSites(Array.isArray(sitesRes.data?.data) ? sitesRes.data.data : []);
         setPonds(Array.isArray(pondsRes.data?.data) ? pondsRes.data.data : []);
       } catch (error) {
+        const errMsg = error.response?.data?.message || error.message || 'Unknown error';
+        const status = error.response?.status || 'N/A';
+        const statusText = error.response?.statusText || '';
+        const endpoint = error.config?.url || '/latest-completed, /v2/all-site, /fish-stages?siteId=all';
+        const method = error.config?.method || 'GET';
+        console.error(`[${method}] ${endpoint} → ${status} ${statusText}: ${errMsg}`, error.response?.data || error);
+        toast.error(
+          <div>
+            <strong>Failed to load processing records</strong>
+            <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>
+              {errMsg}
+            </div>
+            <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+              {method.toUpperCase()} {endpoint} · HTTP {status}{statusText ? ` ${statusText}` : ''}
+            </div>
+          </div>,
+          { autoClose: 8000 }
+        );
         setError("Error fetching move fish history. Please try again.");
         setFilteredData([]);
       } finally {
@@ -1344,13 +1364,43 @@ export default function ViewSummary() {
         </>
       )}
 
+      <ToastContainer position="top-right" newestOnTop closeOnClick pauseOnHover={false} theme="light" />
+
       <ProcessingTeamModal
         show={!!teamModalProcess}
         processId={teamModalProcess?.id || teamModalProcess?._id}
         existingTeam={teamModalProcess?.processingTeam || teamModalProcess?.team}
         onClose={() => setTeamModalProcess(null)}
         onSuccess={(members, error) => {
+          if (error) {
+            const errMsg = error.response?.data?.message || error.message || 'Unknown error';
+            const status = error.response?.status || 'N/A';
+            const statusText = error.response?.statusText || '';
+            const endpoint = error.config?.url || `/fish-process/${teamModalProcess?.id || teamModalProcess?._id}`;
+            const method = error.config?.method || 'PATCH';
+            console.error(`[${method}] ${endpoint} → ${status} ${statusText}: ${errMsg}`, error.response?.data || error);
+            toast.error(
+              <div>
+                <strong>Failed to update processing team</strong>
+                <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
+                <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+                  {method.toUpperCase()} {endpoint} · HTTP {status}{statusText ? ` ${statusText}` : ''}
+                </div>
+              </div>,
+              { autoClose: 8000 }
+            );
+            return;
+          }
           if (members) {
+            toast.success(
+              <div>
+                <strong>Processing team updated</strong>
+                <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>
+                  {members.length} member{members.length !== 1 ? 's' : ''} assigned
+                </div>
+              </div>,
+              { autoClose: 3000 }
+            );
             setMoveFishHistory(prev =>
               prev.map(h =>
                 (h.id === teamModalProcess?.id || h._id === teamModalProcess?._id)
