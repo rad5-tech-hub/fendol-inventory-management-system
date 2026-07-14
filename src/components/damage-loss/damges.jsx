@@ -9,7 +9,6 @@ import { Alert } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
 import Api from '../shared/api/apiLink';
 import { SkeletonTable } from "../shared/skeleton/Skeleton";
-import DataTable from "../shared/data-table/DataTable";
 
 export default function DamageLoss() {
   const [moveFishHistory, setMoveFishHistory] = useState([]);
@@ -17,7 +16,7 @@ export default function DamageLoss() {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0); // Current page
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
-  const itemsPerPage = 45; // Number of items per page
+  const itemsPerPage = 10; // Number of items per page
 
   useEffect(() => {
     const fetchMoveFishHistory = async () => {
@@ -56,26 +55,6 @@ export default function DamageLoss() {
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  const columns = [
-    { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
-    { key: 'process_from', label: 'POND FROM', render: (value, row) => row.process_from === null ? row.stageTitle_from : '-' },
-    { key: 'stageId_from', label: 'PROCESS FROM', render: (value, row) => row.stageId_from === null ? row.stageTitle_from : '-' },
-    { key: 'quantity', label: 'QUANTITY', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
-    {
-      key: 'description', label: 'REMARK',
-      render: (value, row) => {
-        const displayText = row.stageId_from === null
-          ? (value || '').replace('Damage or loss recorded during movement from stage', '').trim()
-          : value;
-        return (
-          <span title={value && value.length > 40 ? value : undefined}>
-            {displayText}
-          </span>
-        );
-      },
-    },
-  ];
-
   return (
     <section className={`${styles.body}`}>
       <div className="sticky-top">
@@ -111,13 +90,48 @@ export default function DamageLoss() {
               </div>
             ) : (
               <>
-                <DataTable
-                  columns={columns}
-                  data={currentItems}
-                  emptyMessage="No available Damage or loss."
-                  className={styles.styled_table}
-                />
-                <div style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
+                <div className={styles.tableWrapper}>
+                  <table className={styles.styled_table}>
+                    <thead>
+                      <tr>
+                        <th>DATE CREATED</th>
+                        <th>POND FROM</th>
+                        <th>PROCESS FROM</th>
+                        <th>QUANTITY</th>
+                        <th>REMARK</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentItems.map((history, index) => {
+                        const formattedDate = formatDate(history.createdAt);
+                        return (
+                          <tr key={index}>
+                            <td>{formattedDate}</td>
+                            <td>{history.process_from === null ? history.stageTitle_from : '-'}</td>
+                            <td>{history.stageId_from === null ? history.stageTitle_from : '-'}</td>
+                            <td>{history.quantity}</td>
+                            <td
+                              title={history.description}
+                              style={{
+                                cursor:
+                                  history.description && history.description.length > 40
+                                    ? "pointer"
+                                    : "normal",
+                              }}
+                            >
+                              {history.stageId_from === null
+                                ? history.description.replace(
+                                    'Damage or loss recorded during movement from stage',
+                                    ''
+                                  ).trim()
+                                : history.description}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
                 {/* Pagination */}
                 <ReactPaginate
                   previousLabel={"<"}
@@ -133,9 +147,8 @@ export default function DamageLoss() {
                   nextLinkClassName={"page-link"}
                   breakClassName={"page-item"}
                   breakLinkClassName={"page-link"}
-                  activeClassName={"active"}
+                  activeClassName={"active-light"}
                 />
-                </div>
               </>
             )}
           </main>
