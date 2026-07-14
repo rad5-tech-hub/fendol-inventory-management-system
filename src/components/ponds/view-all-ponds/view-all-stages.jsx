@@ -626,20 +626,76 @@ const ViewAllStages = () => {
               <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 800, color: '#8C949B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                 Movement Stats
               </p>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1, background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
-                  <p style={{ margin: '0 0 6px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>Fish Added</p>
-                  <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#2E3135' }}>
-                    {selectedStage?.fishAdded != null ? `${new Intl.NumberFormat().format(selectedStage.fishAdded)} pcs` : '--'}
-                  </p>
-                </div>
-                <div style={{ flex: 1, background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
-                  <p style={{ margin: '0 0 6px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>Fish Moved</p>
-                  <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#2E3135' }}>
-                    {selectedStage?.fishMoved != null ? `${new Intl.NumberFormat().format(selectedStage.fishMoved)} pcs` : '--'}
-                  </p>
-                </div>
-              </div>
+              {pondDetailLoading ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#8C949B', fontSize: '0.8rem' }}>Loading…</div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ flex: 1, background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
+                      <p style={{ margin: '0 0 6px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>Incoming</p>
+                      <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#2E7D32' }}>
+                        {pondDetail?.incomingMovements?.length ? `${new Intl.NumberFormat().format(pondDetail.incomingMovements.reduce((s, m) => s + (Number(m.actual_quantity) || 0), 0))} pcs` : '0 pcs'}
+                      </p>
+                    </div>
+                    <div style={{ flex: 1, background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
+                      <p style={{ margin: '0 0 6px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>Outgoing</p>
+                      <p style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#C0392B' }}>
+                        {pondDetail?.outgoingMovements?.length ? `${new Intl.NumberFormat().format(pondDetail.outgoingMovements.reduce((s, m) => s + (Number(m.actual_quantity) || 0), 0))} pcs` : '0 pcs'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {pondDetail?.outgoingMovements?.length > 0 && (
+                    <div style={{ border: '1px solid #EFEFEF', borderRadius: '12px', overflow: 'hidden', marginBottom: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', padding: '8px 14px', background: '#F7F8F9', borderBottom: '1px solid #EFEFEF' }}>
+                        {['Date', 'Qty', 'Reason'].map(h => (
+                          <span key={h} style={{ fontSize: '0.68rem', fontWeight: 700, color: '#9AA0A6', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</span>
+                        ))}
+                      </div>
+                      {pondDetail.outgoingMovements.slice(0, 5).map((m, i) => (
+                        <div key={m.id || i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', padding: '10px 14px', borderBottom: i < Math.min(pondDetail.outgoingMovements.length, 5) - 1 ? '1px solid #F5F5F5' : 'none', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.78rem', color: '#6C757D' }}>{formatDate(m.createdAt).slice(0, 10)}</span>
+                          <span style={{ fontSize: '0.78rem', color: '#C0392B', fontWeight: 600 }}>{new Intl.NumberFormat().format(m.actual_quantity || 0)}</span>
+                          <span style={{ fontSize: '0.78rem', color: '#2E3135' }}>{m.reason || m.remarks || '—'}</span>
+                        </div>
+                      ))}
+                      {pondDetail.outgoingMovements.length > 5 && (
+                        <div style={{ padding: '8px 14px', textAlign: 'center', fontSize: '0.75rem', color: '#8C949B', borderTop: '1px solid #F5F5F5' }}>
+                          +{pondDetail.outgoingMovements.length - 5} more
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {pondDetail?.incomingMovements?.length > 0 && (
+                    <div style={{ border: '1px solid #EFEFEF', borderRadius: '12px', overflow: 'hidden' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', padding: '8px 14px', background: '#F7F8F9', borderBottom: '1px solid #EFEFEF' }}>
+                        {['Date', 'Qty', 'Reason'].map(h => (
+                          <span key={h} style={{ fontSize: '0.68rem', fontWeight: 700, color: '#9AA0A6', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</span>
+                        ))}
+                      </div>
+                      {pondDetail.incomingMovements.slice(0, 5).map((m, i) => (
+                        <div key={m.id || i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', padding: '10px 14px', borderBottom: i < Math.min(pondDetail.incomingMovements.length, 5) - 1 ? '1px solid #F5F5F5' : 'none', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.78rem', color: '#6C757D' }}>{formatDate(m.createdAt).slice(0, 10)}</span>
+                          <span style={{ fontSize: '0.78rem', color: '#2E7D32', fontWeight: 600 }}>{new Intl.NumberFormat().format(m.actual_quantity || 0)}</span>
+                          <span style={{ fontSize: '0.78rem', color: '#2E3135' }}>{m.reason || m.remarks || '—'}</span>
+                        </div>
+                      ))}
+                      {pondDetail.incomingMovements.length > 5 && (
+                        <div style={{ padding: '8px 14px', textAlign: 'center', fontSize: '0.75rem', color: '#8C949B', borderTop: '1px solid #F5F5F5' }}>
+                          +{pondDetail.incomingMovements.length - 5} more
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {!pondDetail?.incomingMovements?.length && !pondDetail?.outgoingMovements?.length && (
+                    <div style={{ padding: '16px', textAlign: 'center', color: '#B0B8C1', fontSize: '0.8rem', fontStyle: 'italic', background: '#FAFAFA', borderRadius: '10px', border: '1px solid #EFEFEF' }}>
+                      No movements recorded yet
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Sampling History */}
