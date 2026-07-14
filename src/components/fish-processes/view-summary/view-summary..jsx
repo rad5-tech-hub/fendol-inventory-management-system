@@ -7,11 +7,12 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../process.module.scss';
 import { Alert, OverlayTrigger, Popover } from "react-bootstrap";
 import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
-import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight, FaUsers } from "react-icons/fa";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from "react-paginate";
 import Api, { ApiV2 } from '../../shared/api/apiLink';
+import ProcessingTeamModal from './ProcessingTeamModal';
 
 
 // ─── inline style tokens (no changes to process.module.scss) ────────────────
@@ -414,6 +415,40 @@ function deriveSite(history) {
   return str(pick(history, 'site', 'location', 'siteId'));
 }
 
+const STAGE_LABELS = { Washing: 'Washing Stage', Smoking: 'Smoking Stage', Drying: 'Drying Stage' };
+const STAGE_ORDER = ['Washing', 'Smoking', 'Drying'];
+const STAGE_COLORS = { Washing: '#4A90D9', Smoking: '#E8A020', Drying: '#28a745' };
+
+function extractStageFromRemark(remark) {
+  if (!remark) return null;
+  const m = remark.match(/from (\w+)/);
+  return m ? m[1] : null;
+}
+
+function buildStageBreakdown(histories, data) {
+  const items = [];
+  if (Array.isArray(histories) && histories.length > 0) {
+    const sorted = [...histories].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    sorted.forEach((h, i) => {
+      const stageName = extractStageFromRemark(h.remarks) || STAGE_ORDER[i] || `Step ${i + 1}`;
+      items.push({ ...h, stageName });
+    });
+  }
+  if (data) {
+    items.push({
+      id: 'drying-final',
+      stageName: 'Drying',
+      wholeQuantity: data.wholeFishQuantity || 0,
+      brokenQuantity: data.brokenFishQuantity || 0,
+      damageLoss: data.damageOrLoss || 0,
+      createdAt: data.updatedAt || data.createdAt,
+      creator: null,
+      remarks: 'Final Drying output',
+    });
+  }
+  return items;
+}
+
 // ─── component ───────────────────────────────────────────────────────────────
 export default function ViewSummary() {
   const navigate = useNavigate();
@@ -434,6 +469,7 @@ export default function ViewSummary() {
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [detailsPanel, setDetailsPanel] = useState(null);
   const [panelVisible, setPanelVisible] = useState(false);
+  const [teamModalProcess, setTeamModalProcess] = useState(null);
   const actionBtnRefs = useRef({});
 
   const openDetails = (history) => {
@@ -561,14 +597,6 @@ export default function ViewSummary() {
       },
     },
     {
-      key: 'batchNumber', label: 'Batch Number',
-      render: (value, row) => {
-        const batchNum = str(pick(row, 'batchNumber', 'batch')) || `#${(row.id || '').slice(0, 8).toUpperCase()}`;
-        return <span style={s.batchLink}>{batchNum}</span>;
-      },
-    },
-
-    {
       key: 'wholeFishQuantity', label: 'Qty Before',
       render: (value) => `${new Intl.NumberFormat().format(value || 0)} Units`,
     },
@@ -599,8 +627,8 @@ export default function ViewSummary() {
       },
     },
     {
-      key: 'brokenFishQuantity', label: 'Broken (B)',
-      render: (value, row) => {
+      key: 'cumulativeBrokenQuantity', label: 'Broken (B)',
+      render: (_value, row) => {
         const status = deriveStatus(row);
         if (status === 'In Progress' || status === 'Saved Draft') return <span style={{ color: TEXT_MUTED }}>—</span>;
         return (
@@ -609,14 +637,14 @@ export default function ViewSummary() {
             fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap',
             backgroundColor: '#fff3e0', color: '#e07b00',
           }}>
-            {new Intl.NumberFormat().format(value || 0)}
+            {new Intl.NumberFormat().format(row.cumulativeBrokenQuantity || 0)}
           </span>
         );
       },
     },
     {
-      key: 'damageOrLoss', label: 'Damaged (D)',
-      render: (value, row) => {
+      key: 'cumulativeDamageOrLoss', label: 'Damaged (D)',
+      render: (_value, row) => {
         const status = deriveStatus(row);
         if (status === 'In Progress' || status === 'Saved Draft') return <span style={{ color: TEXT_MUTED }}>—</span>;
         return (
@@ -625,7 +653,7 @@ export default function ViewSummary() {
             fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap',
             backgroundColor: '#fdecea', color: '#dc3545',
           }}>
-            {new Intl.NumberFormat().format(value || 0)}
+            {new Intl.NumberFormat().format(row.cumulativeDamageOrLoss || 0)}
           </span>
         );
       },
@@ -691,15 +719,11 @@ export default function ViewSummary() {
                 boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
                 minWidth: '180px', padding: '6px 0',
               }}>
-                {status === 'Completed' ? (
+                <>
                   <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(row); }}>
                     <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
                   </button>
-                ) : (
-                  <>
-                    <button style={menuItemStyle} onClick={() => { setOpenActionMenu(null); openDetails(row); }}>
-                      <FaSearch style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> View Details
-                    </button>
+                  {status !== 'Completed' && (
                     <button style={menuItemStyle} onClick={() => {
                       setOpenActionMenu(null);
                       sessionStorage.setItem('batchProcessId', JSON.stringify(row.id));
@@ -707,8 +731,15 @@ export default function ViewSummary() {
                     }}>
                       <span style={{ marginRight: '8px', fontSize: '12px' }}>▶</span> Continue Progress
                     </button>
-                  </>
-                )}
+                  )}
+                  <div style={{ height: '1px', backgroundColor: BORDER, margin: '4px 12px' }} />
+                  <button style={menuItemStyle} onClick={() => {
+                    setOpenActionMenu(null);
+                    setTeamModalProcess(row);
+                  }}>
+                    <FaUsers style={{ marginRight: '8px', fontSize: '12px', color: TEXT_MUTED }} /> Add Processing Team
+                  </button>
+                </>
               </div>,
               document.body
             )}
@@ -723,7 +754,7 @@ export default function ViewSummary() {
   const inProgress = moveFishHistory.filter(h => deriveStatus(h) === 'In Progress').length;
   const completed   = moveFishHistory.filter(h => deriveStatus(h) === 'Completed').length;
   const totalQty    = moveFishHistory.reduce((sum, h) => sum + (h.wholeFishQuantity || 0), 0);
-  const totalDamage = moveFishHistory.reduce((sum, h) => sum + (h.damageOrLoss || 0), 0);
+  const totalDamage = moveFishHistory.reduce((sum, h) => sum + (h.cumulativeDamageOrLoss || 0), 0);
   const lossRate    = totalQty > 0 ? ((totalDamage / totalQty) * 100).toFixed(2) : '0.00';
 
   const formatBig = (n) => {
@@ -1056,9 +1087,7 @@ export default function ViewSummary() {
                         Batch Information
                       </div>
                       {[
-                        { label: 'Batch Number', value: str(pick(detailsPanel, 'batchNumber', 'batch')) || `#${(detailsPanel.id || '').slice(0, 8).toUpperCase()}` },
                         { label: 'Source Pond', value: pondName },
-                        { label: 'Fish Type', value: str(pick(detailsPanel, 'fishType', 'species')) },
                         { label: 'Site', value: siteName },
                         { label: 'Date Created', value: detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '——' },
                         { label: 'Completed On', value: detailsPanel.completedAt ? formatDate(detailsPanel.completedAt) : detailsPanel.updatedAt ? formatDate(detailsPanel.updatedAt) : '——' },
@@ -1077,51 +1106,61 @@ export default function ViewSummary() {
               );
             })()}
 
-              {/* Section 2 — Quantity Summary */}
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
-                  Quantity Summary
-                </div>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '6px 0',
-                  borderBottom: '1px solid #F3F4F6',
-                }}>
-                  <span style={{ fontSize: '13px', color: TEXT_MUTED }}>Quantity Before</span>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN }}>
-                    {new Intl.NumberFormat().format(detailsPanel.wholeFishQuantity || 0)}
-                  </span>
-                </div>
-                {[
-                  { label: 'Whole (W)', value: new Intl.NumberFormat().format(detailsPanel.wholeFishQuantity || 0), bg: '#E6F9EE', color: '#28a745' },
-                  { label: 'Broken (B)', value: new Intl.NumberFormat().format(detailsPanel.brokenFishQuantity || 0), bg: '#FFF3E0', color: '#E07B00' },
-                  { label: 'Damaged (D)', value: new Intl.NumberFormat().format(detailsPanel.damageOrLoss || 0), bg: '#FDECEA', color: '#dc3545' },
-                ].map((row, i, arr) => (
-                  <div key={row.label} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '6px 0',
-                    borderBottom: i < arr.length - 1 ? '1px solid #F3F4F6' : 'none',
-                  }}>
-                    <span style={{ fontSize: '13px', color: TEXT_MUTED }}>{row.label}</span>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '3px 10px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      backgroundColor: row.bg,
-                      color: row.color,
-                    }}>
-                      {row.value}
-                    </span>
+              {/* Section 2 — Stage Breakdown */}
+              {(() => {
+                const stages = buildStageBreakdown(detailsPanel.histories, detailsPanel);
+                if (stages.length === 0) return null;
+                return (
+                  <div style={{ marginBottom: '24px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '14px' }}>
+                      Stage Breakdown
+                    </div>
+                    <div style={{ position: 'relative', paddingLeft: '18px' }}>
+                      <div style={{ position: 'absolute', left: '7px', top: '18px', bottom: '18px', width: '2px', background: '#E5E7EB' }} />
+                      {stages.map((stage, idx) => {
+                        const color = STAGE_COLORS[stage.stageName] || '#8C949B';
+                        const isLast = idx === stages.length - 1;
+                        return (
+                          <div key={stage.id || idx} style={{ position: 'relative', paddingBottom: isLast ? 0 : '18px' }}>
+                            <div style={{
+                              position: 'absolute', left: '-13px', top: '3px',
+                              width: '14px', height: '14px', borderRadius: '50%',
+                              backgroundColor: color, border: '2px solid #fff',
+                              boxShadow: '0 0 0 2px #E5E7EB', zIndex: 1,
+                            }} />
+                            <div style={{
+                              background: '#F9FAFB', borderRadius: '10px',
+                              padding: '12px 14px', border: '1px solid #F3F4F6',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: 700, color }}>{STAGE_LABELS[stage.stageName] || stage.stageName}</span>
+                                <span style={{ fontSize: '11px', color: TEXT_MUTED }}>
+                                  {stage.createdAt ? (() => {
+                                    const d = new Date(stage.createdAt);
+                                    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                                  })() : ''}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '12px', color: '#28a745', fontWeight: 700 }}>W: {new Intl.NumberFormat().format(stage.wholeQuantity || 0)}</span>
+                                <span style={{ fontSize: '12px', color: '#e07b00', fontWeight: 700 }}>B: {new Intl.NumberFormat().format(stage.brokenQuantity || 0)}</span>
+                                <span style={{ fontSize: '12px', color: '#dc3545', fontWeight: 700 }}>D: {new Intl.NumberFormat().format(stage.damageLoss || 0)}</span>
+                              </div>
+                              {stage.creator?.fullName && (
+                                <div style={{ fontSize: '11px', color: TEXT_MUTED, marginTop: '6px' }}>
+                                  by {stage.creator.fullName}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })()}
 
-              {/* Section 3 — Processing Team */}
+              {/* Section 4 — Processing Team */}
               <div style={{ marginBottom: '24px' }}>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
                   Processing Team
@@ -1182,7 +1221,7 @@ export default function ViewSummary() {
                 })()}
               </div>
 
-              {/* Section 4 — Remarks */}
+              {/* Section 5 — Remarks */}
               <div style={{ marginBottom: '24px' }}>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
                   Remarks
@@ -1205,35 +1244,28 @@ export default function ViewSummary() {
 
             </div>
 
-            {/* ── Bottom Action Bar ── */}
-            <div style={{
-              borderTop: '1px solid #E5E7EB',
-              padding: '16px 22px',
-              background: '#fff',
-              display: 'flex',
-              gap: '10px',
-              flexShrink: 0,
-            }}>
-              <button
-                style={{
-                  border: '1px solid #512728',
-                  color: '#512728',
-                  background: 'transparent',
-                  borderRadius: '8px',
-                  padding: '9px 18px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  flex: 1,
-                  cursor: 'pointer',
-                }}
-                onClick={() => {}}
-              >
-                View Batch History
-              </button>
-            </div>
+
           </div>
         </>
       )}
+
+      <ProcessingTeamModal
+        show={!!teamModalProcess}
+        processId={teamModalProcess?.id || teamModalProcess?._id}
+        existingTeam={teamModalProcess?.processingTeam || teamModalProcess?.team}
+        onClose={() => setTeamModalProcess(null)}
+        onSuccess={(members, error) => {
+          if (members) {
+            setMoveFishHistory(prev =>
+              prev.map(h =>
+                (h.id === teamModalProcess?.id || h._id === teamModalProcess?._id)
+                  ? { ...h, processingTeam: members }
+                  : h
+              )
+            );
+          }
+        }}
+      />
     </section>
   );
 }
