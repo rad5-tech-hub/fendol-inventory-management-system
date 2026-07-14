@@ -1,17 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../showcase.module.scss";
-import { Alert, Button, Modal, Form } from "react-bootstrap";
-import { FaExclamationTriangle } from "react-icons/fa";
-import ReactPaginate from "react-paginate";
-import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
-import DataTable from "../../shared/data-table/DataTable";
+import { Alert } from "react-bootstrap";
+import { FaExclamationTriangle, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FiX, FiArrowRight } from "react-icons/fi";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+
+const PRIMARY = '#512728';
+const PRIMARY_HV = '#714445';
+const BG_PAGE = '#f5f6fa';
+const BG_CARD = '#ffffff';
+const TEXT_MAIN = '#2E3135';
+const TEXT_MUTED = '#8C949B';
+const BORDER = '#e8eaed';
 
 export default function ViewBrokenHistory() {
   const [brokenQuantity, setBrokenQuantity] = useState(null);
@@ -28,20 +35,15 @@ export default function ViewBrokenHistory() {
   const [remarks, setRemarks] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
 
-  const itemsPerPage = 45;
+  const itemsPerPage = 65;
 
-  const handlePageChange = (selectedPage) => {
-    setCurrentPage(selectedPage.selected);
-  };
-
-  // Fetch current stock data for broken fish
   const fetchTableData = async () => {
     setLoadingStages(true);
     setErrorStages("");
     try {
       const response = await Api.get("/show-glass/broken");
       if (response.data?.success && response.data.data) {
-        setBrokenQuantity(response.data.data.brokenFishQuantity|| 0); // Use wholeFishQuantity
+        setBrokenQuantity(response.data.data.brokenFishQuantity || 0);
       } else {
         throw new Error("Invalid data structure");
       }
@@ -52,7 +54,6 @@ export default function ViewBrokenHistory() {
     }
   };
 
-  // Fetch history data for the table
   const fetchData = async () => {
     setLoadingTable(true);
     setErrorTable("");
@@ -77,6 +78,10 @@ export default function ViewBrokenHistory() {
     fetchData();
   }, []);
 
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+
   const handleShowModal = () => {
     setDamageFishQuantity("");
     setRemarks("");
@@ -98,7 +103,6 @@ export default function ViewBrokenHistory() {
         type: "error",
         isLoading: false,
         autoClose: 3000,
-        className: "dark-toast",
       });
       setLoading(false);
       return;
@@ -110,7 +114,6 @@ export default function ViewBrokenHistory() {
         type: "error",
         isLoading: false,
         autoClose: 3000,
-        className: "dark-toast",
       });
       setLoading(false);
       return;
@@ -122,11 +125,10 @@ export default function ViewBrokenHistory() {
 
       await Api.post(endpoint, payload);
       toast.update(loadingToast, {
-        render: "OPERATION SUCCESSFUL!",
+        render: "Operation Successful!",
         type: "success",
         isLoading: false,
         autoClose: 3000,
-        className: "dark-toast",
       });
 
       setDamageFishQuantity("");
@@ -139,90 +141,252 @@ export default function ViewBrokenHistory() {
         type: "error",
         isLoading: false,
         autoClose: 3000,
-        className: "dark-toast",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (isoDate) => {
+  const formatDateTime = (isoDate) => {
+    if (!isoDate) return { d: '—', t: '' };
     const date = new Date(isoDate);
-    const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${date.getFullYear()}`;
-    const formattedTime = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
-    return `${formattedDate} ${formattedTime}`;
+    const d = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`;
+    const t = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+    return { d, t };
   };
 
   const paginatedData = tableData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
+  const modalMounted = useRef(false);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (showModal) {
+      modalMounted.current = true;
+      requestAnimationFrame(() => setModalVisible(true));
+    } else {
+      setModalVisible(false);
+      const timer = setTimeout(() => { modalMounted.current = false; }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [showModal]);
+
+  useEffect(() => {
+    if (!showModal) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') handleCloseModal();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showModal]);
+
   const columns = [
-    { key: 'createdAt', label: 'DATE & TIME', render: (value) => formatDate(value) },
-    { key: 'description', label: 'DESCRIPTION', render: (value) => <span title={value}>{value}</span> },
-    { key: 'quantity', label: 'QUANTITY', align: 'right', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
+    {
+      key: 'createdAt', label: 'Date',
+      render: (value) => {
+        const { d, t } = formatDateTime(value);
+        return (
+          <div>
+            <div style={{ fontWeight: 600, color: TEXT_MAIN, fontSize: '13px' }}>{d}</div>
+            <div style={{ color: TEXT_MUTED, fontSize: '11px' }}>{t}</div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'description', label: 'Description',
+      render: (value) => (
+        <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={value}>
+          {value || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'quantity', label: 'Quantity', align: 'right',
+      render: (value) => (
+        <span style={{ fontWeight: 700, color: '#E07B00', fontSize: '13px' }}>
+          {value != null ? new Intl.NumberFormat().format(value) : '—'}
+        </span>
+      ),
+    },
   ];
 
+  const s = {
+    pageWrap: {
+      minHeight: '100vh',
+      backgroundColor: BG_PAGE,
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      color: TEXT_MAIN,
+    },
+    contentWrap: {
+      padding: '32px 36px',
+      maxWidth: '1300px',
+      margin: '0 auto',
+    },
+    pageHeaderRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: '28px',
+    },
+    pageTitle: {
+      fontSize: '26px',
+      fontWeight: 700,
+      color: TEXT_MAIN,
+      margin: 0,
+      lineHeight: 1.2,
+    },
+    pageSubtitle: {
+      fontSize: '13.5px',
+      color: TEXT_MUTED,
+      marginTop: '4px',
+    },
+    statCard: {
+      backgroundColor: BG_CARD,
+      borderRadius: '12px',
+      padding: '24px 28px',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: '24px',
+    },
+    statLabel: {
+      fontSize: '10.5px',
+      fontWeight: 700,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+      color: TEXT_MUTED,
+      marginBottom: '6px',
+    },
+    statValue: {
+      fontSize: '38px',
+      fontWeight: 800,
+      color: '#E07B00',
+      lineHeight: 1,
+    },
+    statUnit: {
+      fontSize: '14px',
+      fontWeight: 500,
+      color: '#AAB0B7',
+      marginLeft: '6px',
+    },
+    statSub: {
+      fontSize: '11.5px',
+      color: TEXT_MUTED,
+      marginTop: '6px',
+    },
+    tablePanel: {
+      backgroundColor: BG_CARD,
+      borderRadius: '12px',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+      overflow: 'hidden',
+    },
+    tableFooter: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '14px 20px',
+      fontSize: '13px',
+      color: TEXT_MUTED,
+      borderTop: `1px solid ${BORDER}`,
+    },
+    paginationWrap: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+    },
+    pageBtn: (active) => ({
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '32px',
+      height: '32px',
+      borderRadius: '6px',
+      border: `1px solid ${active ? PRIMARY : BORDER}`,
+      backgroundColor: active ? PRIMARY : BG_CARD,
+      color: active ? '#fff' : TEXT_MAIN,
+      fontSize: '13px',
+      fontWeight: active ? 600 : 400,
+      cursor: 'pointer',
+      transition: 'all 0.15s ease',
+    }),
+    pageDots: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '32px',
+      height: '32px',
+      fontSize: '13px',
+      color: TEXT_MUTED,
+    },
+  };
+
   return (
-    <section className={`${styles.body}`}>
+    <section className={styles.body}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
       <div className="d-flex gap-2">
-        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? "d-block" : "d-none"}`}>
+        <div className={styles.sidebar}>
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
-            <h4 className="mt-3 mb-5">Broken Fish</h4>
 
-            {/* Stock Card */}
-            <div className="d-flex mb-5">
-              {loadingStages ? (
-                <div className="text-start w-25 shadow py-5 px-3">
-                  <span className="text-muted">Loading...</span>
-                </div>
-              ) : errorStages ? (
-                <div className="w-100">
-                  <Alert variant="danger" className="text-center py-5">
-                    <FaExclamationTriangle size={40} />
-                    <span className="fw-semibold">{errorStages}</span>
-                  </Alert>
-                </div>
-              ) : (
-                <div className="w-50">
-                  <div className="shadow w-50 px-3">
-                    <div className="d-flex justify-content-between pt-2">
-                      <p className="text-muted fw-semibold" style={{ fontSize: "12px" }}>
-                        In Stock
-                      </p>
-                      <PortalDropdown
-                        items={[
-                          { label: 'Move to Damage', onClick: handleShowModal },
-                        ]}
-                      />
-                    </div>
-                    <p className="text-start text-muted fw-semibold" style={{ fontSize: "14px" }}>
-                      Total Quantity
-                    </p>
-                    <div className="d-flex pb-3">
-                      <h1>{brokenQuantity !== null ? Number(brokenQuantity).toLocaleString() : "N/A"}</h1>
-                      <p className="mt-3 fw-semibold" style={{ fontSize: "12px" }}>
-                        pieces
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+        <section className={`${styles.content} flex-grow-1`} style={s.pageWrap}>
+          <div style={s.contentWrap}>
+            {/* ── Page Header ── */}
+            <div style={s.pageHeaderRow}>
+              <div>
+                <h1 style={s.pageTitle}>Broken Fish Showcase</h1>
+                <p style={s.pageSubtitle}>Track broken fish inventory and movement records in the showcase.</p>
+              </div>
             </div>
 
-            {/* History Table */}
+            {/* ── Current Stock Card ── */}
+            {loadingStages ? (
+              <div style={{ ...s.statCard, padding: '20px' }}>
+                <div style={{ width: '100%' }}>
+                  <div style={{ height: '12px', width: '80px', background: '#f0f0f0', borderRadius: '4px', marginBottom: '12px' }} />
+                  <div style={{ height: '32px', width: '120px', background: '#f0f0f0', borderRadius: '4px' }} />
+                </div>
+              </div>
+            ) : errorStages ? (
+              <Alert variant="danger" className="text-center py-4">
+                <FaExclamationTriangle size={24} />
+                <span className="fw-semibold ms-2">{errorStages}</span>
+              </Alert>
+            ) : (
+              <div style={s.statCard}>
+                <div>
+                  <div style={s.statLabel}>In Stock — Broken Fish</div>
+                  <div>
+                    <span style={s.statValue}>{brokenQuantity !== null ? new Intl.NumberFormat().format(brokenQuantity) : 'N/A'}</span>
+                    <span style={s.statUnit}>pieces</span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleShowModal}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    backgroundColor: PRIMARY, color: '#fff', border: 'none',
+                    borderRadius: '8px', padding: '10px 18px',
+                    fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                    whiteSpace: 'nowrap', transition: 'background 0.15s',
+                  }}
+                  onMouseOver={e => e.currentTarget.style.backgroundColor = PRIMARY_HV}
+                  onMouseOut={e => e.currentTarget.style.backgroundColor = PRIMARY}
+                >
+                  <FiArrowRight size={14} />
+                  Move to Damage
+                </button>
+              </div>
+            )}
+
+            {/* ── History Table ── */}
             {loadingTable ? (
-              <SkeletonTable cols={3} rows={5} />
+              <SkeletonTable cols={3} rows={8} />
             ) : errorTable ? (
               <div className="d-flex justify-content-center">
                 <Alert variant="danger" className="text-center w-50 py-5">
@@ -231,84 +395,281 @@ export default function ViewBrokenHistory() {
                 </Alert>
               </div>
             ) : (
-              <>
-                <DataTable
-                  columns={columns}
-                  data={paginatedData}
-                  emptyMessage="No broken history available"
-                  className={`${styles.styled_table} table table-striped w-100`}
-                />
-
-<div className="d-flex justify-content-center mt-4" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                   <ReactPaginate
-                    previousLabel={"<"}
-                    nextLabel={">"}
-                    breakLabel={"..."}
-                    pageCount={pageCount}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    containerClassName={"pagination justify-content-center"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item disabled"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
+              <div style={s.tablePanel}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{
+                    width: '100%', borderCollapse: 'collapse', fontSize: '12.5px',
+                    minWidth: '600px',
+                  }}>
+                    <thead style={{ backgroundColor: '#F9FAFB' }}>
+                      <tr>
+                        {columns.map(col => (
+                          <th key={col.key} style={{
+                            padding: '12px 16px', textAlign: col.align === 'right' ? 'right' : 'left',
+                            fontSize: '11px', fontWeight: 700, letterSpacing: '0.07em',
+                            textTransform: 'uppercase', color: TEXT_MUTED, whiteSpace: 'nowrap',
+                            borderBottom: `1px solid ${BORDER}`,
+                          }}>
+                            {col.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedData.length === 0 ? (
+                        <tr>
+                          <td colSpan={columns.length} style={{ textAlign: 'center', padding: '40px 16px', color: TEXT_MUTED }}>
+                            No broken history available.
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedData.map((row, idx) => (
+                          <tr key={row.id || idx} style={{ transition: 'background 0.1s' }}
+                            onMouseOver={e => e.currentTarget.style.background = '#FAFBFC'}
+                            onMouseOut={e => e.currentTarget.style.background = 'none'}
+                          >
+                            {columns.map(col => (
+                              <td key={col.key} style={{
+                                padding: '14px 16px',
+                                borderBottom: `1px solid ${BORDER}`,
+                                textAlign: col.align === 'right' ? 'right' : 'left',
+                                whiteSpace: 'nowrap',
+                              }}>
+                                {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              </>
-            )}
-          </main>
-        </section>
 
-        <Modal show={showModal} onHide={handleCloseModal}>
-          <ToastContainer />
-          <Modal.Header closeButton className="border-0">
-            <Modal.Title>Move to Damage</Modal.Title>
-          </Modal.Header>
-          <Modal.Body className="border-0">
-            <h5 className="text-end fw-semibold">
-              <span className="fs-6 fw-semibold">Total Quantity: </span>
-              {brokenQuantity !== null ? Number(brokenQuantity).toLocaleString() : "N/A"}
-            </h5>
-            <Form>
-              <Form.Group className="mb-3">
-                <Form.Label>Quantity</Form.Label>
-                <Form.Control
+                {/* ── Pagination ── */}
+                <div style={{
+                  ...s.tableFooter, flexDirection: 'row', gap: '10px',
+                  position: 'sticky', bottom: 0, zIndex: 10, background: '#fff',
+                }}>
+                  <span>
+                    Showing {Math.min(itemsPerPage, tableData.length - currentPage * itemsPerPage)} of {tableData.length} records
+                  </span>
+                  {pageCount > 1 && (
+                    <div style={s.paginationWrap}>
+                      <button
+                        style={{ ...s.pageBtn(false), width: '32px' }}
+                        onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                        disabled={currentPage === 0}
+                      >
+                        <FaChevronLeft size={11} />
+                      </button>
+                      {(() => {
+                        const pages = [];
+                        const maxVisible = 5;
+                        let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+                        let end = Math.min(pageCount, start + maxVisible);
+                        if (end - start < maxVisible) start = Math.max(0, end - maxVisible);
+                        if (start > 0) {
+                          pages.push(
+                            <button key={0} style={s.pageBtn(false)} onClick={() => setCurrentPage(0)}>1</button>
+                          );
+                          if (start > 1) pages.push(<span key="sl" style={s.pageDots}>...</span>);
+                        }
+                        for (let i = start; i < end; i++) {
+                          pages.push(
+                            <button key={i} style={s.pageBtn(currentPage === i)} onClick={() => setCurrentPage(i)}>
+                              {i + 1}
+                            </button>
+                          );
+                        }
+                        if (end < pageCount) {
+                          if (end < pageCount - 1) pages.push(<span key="sr" style={s.pageDots}>...</span>);
+                          pages.push(
+                            <button key={pageCount - 1} style={s.pageBtn(false)} onClick={() => setCurrentPage(pageCount - 1)}>
+                              {pageCount}
+                            </button>
+                          );
+                        }
+                        return pages;
+                      })()}
+                      <button
+                        style={{ ...s.pageBtn(false), width: '32px' }}
+                        onClick={() => setCurrentPage(p => Math.min(pageCount - 1, p + 1))}
+                        disabled={currentPage >= pageCount - 1}
+                      >
+                        <FaChevronRight size={11} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* ── Move to Damage Modal ── */}
+      {modalMounted.current && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10000, padding: '20px',
+            opacity: modalVisible ? 1 : 0, transition: 'opacity 0.2s ease',
+          }}
+          onClick={handleCloseModal}
+        >
+          <div
+            style={{
+              background: '#FFFFFF', borderRadius: '16px',
+              width: '100%', maxWidth: '440px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.15)', overflow: 'hidden',
+              opacity: modalVisible ? 1 : 0,
+              ...(modalVisible ? {} : { transform: 'translateY(24px) scale(0.97)' }),
+              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '24px 28px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                <div style={{
+                  width: '44px', height: '44px', borderRadius: '12px',
+                  background: '#FDECEA',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <FiArrowRight size={22} color="#dc3545" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', margin: 0, lineHeight: '1.3' }}>
+                    Move to Damage
+                  </h2>
+                  <p style={{ fontSize: '13px', color: '#6B7280', fontWeight: 400, margin: '4px 0 0 0', lineHeight: '1.4' }}>
+                    Current stock: <strong>{brokenQuantity !== null ? new Intl.NumberFormat().format(brokenQuantity) : 'N/A'}</strong> pieces
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseModal}
+                style={{
+                  width: '32px', height: '32px', border: 'none',
+                  background: '#F3F4F6', borderRadius: '8px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: '#6B7280', flexShrink: 0,
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseOver={e => { e.currentTarget.style.background = '#E5E7EB'; e.currentTarget.style.color = '#374151'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#6B7280'; }}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '20px 28px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Quantity <span style={{ color: '#DC2626' }}>*</span>
+                </label>
+                <input
                   type="number"
+                  min={0}
+                  placeholder="Enter quantity to move"
                   value={damageFishQuantity}
                   onChange={(e) => setDamageFishQuantity(e.target.value)}
-                  className="py-2 shadow-none border-secondary-subtle border-1"
+                  style={{
+                    width: '100%', height: '44px', padding: '0 14px',
+                    border: '1.5px solid #E5E7EB', borderRadius: '10px',
+                    fontSize: '14px', color: '#111827', fontWeight: 500,
+                    outline: 'none', background: '#FFFFFF',
+                    transition: 'border-color 0.15s ease', fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#512728'}
+                  onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+                  autoComplete="off"
                 />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Remarks</Form.Label>
-                <Form.Control
-                  as="textarea"
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Remarks <span style={{ color: '#DC2626' }}>*</span>
+                </label>
+                <textarea
                   rows={3}
+                  placeholder="Add a remark..."
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  className="py-2 shadow-none border-secondary-subtle border-1"
+                  style={{
+                    width: '100%', padding: '10px 14px',
+                    border: '1.5px solid #E5E7EB', borderRadius: '10px',
+                    fontSize: '14px', color: '#111827', fontWeight: 500,
+                    outline: 'none', background: '#FFFFFF', resize: 'vertical',
+                    transition: 'border-color 0.15s ease', fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#512728'}
+                  onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+                  autoComplete="off"
                 />
-              </Form.Group>
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="dark"
-              className={`border-0 btn-dark shadow py-2 px-3 fs-6 fw-semibold ${styles.submit}`}
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              Move
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '20px 28px 24px' }}>
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                disabled={loading}
+                style={{
+                  height: '42px', padding: '0 20px',
+                  border: '1px solid #E5E7EB', borderRadius: '10px',
+                  background: '#FFFFFF', color: '#374151',
+                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                  transition: 'all 0.15s ease', fontFamily: 'inherit',
+                }}
+                onMouseOver={e => { if (!loading) { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB'; }}}
+                onMouseOut={e => { if (!loading) { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.borderColor = '#E5E7EB'; }}}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                style={{
+                  height: '42px', padding: '0 24px', border: 'none', borderRadius: '10px',
+                  background: loading ? '#9CA3AF' : PRIMARY, color: '#FFFFFF',
+                  fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  transition: 'all 0.15s ease', fontFamily: 'inherit',
+                }}
+                onMouseOver={e => { if (!loading) e.currentTarget.style.background = PRIMARY_HV; }}
+                onMouseOut={e => { if (!loading) e.currentTarget.style.background = PRIMARY; }}
+              >
+                {loading ? (
+                  <>
+                    <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.5s linear infinite' }} />
+                    Moving...
+                  </>
+                ) : (
+                  <>
+                    <FiArrowRight size={15} />
+                    Move to Damage
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      <ToastContainer />
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </section>
   );
 }

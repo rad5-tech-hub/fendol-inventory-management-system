@@ -7,7 +7,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../process.module.scss';
 import { Alert, OverlayTrigger, Popover } from "react-bootstrap";
 import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
-import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight, FaUsers } from "react-icons/fa";
+import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight, FaUsers, FaCogs } from "react-icons/fa";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from "react-paginate";
@@ -459,7 +459,7 @@ export default function ViewSummary() {
   const [sites, setSites] = useState([]);
   const [ponds, setPonds] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage] = useState(45);
+  const [itemsPerPage] = useState(65);
   const [selectedDate, setSelectedDate] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -949,34 +949,56 @@ export default function ViewSummary() {
                 />
 
                 {/* ── table footer / pagination ─────────────────────────── */}
-                <div style={s.tableFooter}>
+                <div style={{ ...s.tableFooter, flexDirection: 'column', gap: '10px', position: 'sticky', bottom: 0, zIndex: 10, background: '#fff' }}>
                   <span>Showing {Math.min(itemsPerPage, filteredData.length - offset)} of {filteredData.length} processes</span>
-                  <div style={{ ...s.paginationWrap, position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                    <button
-                      style={{ ...s.pageBtn(false), width: '32px' }}
-                      onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                      disabled={currentPage === 0}
-                    >
-                      <FaChevronLeft size={11} />
-                    </button>
-                    {Array.from({ length: Math.min(3, pageCount) }, (_, i) => i).map(i => (
+                  {pageCount > 1 && (
+                    <div style={{ ...s.paginationWrap }}>
                       <button
-                        key={i}
-                        style={s.pageBtn(currentPage === i)}
-                        onClick={() => setCurrentPage(i)}
+                        style={{ ...s.pageBtn(false), width: '32px' }}
+                        onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                        disabled={currentPage === 0}
                       >
-                        {i + 1}
+                        <FaChevronLeft size={11} />
                       </button>
-                    ))}
-                    {pageCount > 3 && <span style={s.pageDots}>...</span>}
-                    <button
-                      style={{ ...s.pageBtn(false), width: '32px' }}
-                      onClick={() => setCurrentPage(p => Math.min(pageCount - 1, p + 1))}
-                      disabled={currentPage >= pageCount - 1}
-                    >
-                      <FaChevronRight size={11} />
-                    </button>
-                  </div>
+                      {(() => {
+                        const pages = [];
+                        const maxVisible = 5;
+                        let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+                        let end = Math.min(pageCount, start + maxVisible);
+                        if (end - start < maxVisible) start = Math.max(0, end - maxVisible);
+
+                        if (start > 0) {
+                          pages.push(
+                            <button key={0} style={s.pageBtn(false)} onClick={() => setCurrentPage(0)}>1</button>
+                          );
+                          if (start > 1) pages.push(<span key="sl" style={s.pageDots}>...</span>);
+                        }
+                        for (let i = start; i < end; i++) {
+                          pages.push(
+                            <button key={i} style={s.pageBtn(currentPage === i)} onClick={() => setCurrentPage(i)}>
+                              {i + 1}
+                            </button>
+                          );
+                        }
+                        if (end < pageCount) {
+                          if (end < pageCount - 1) pages.push(<span key="sr" style={s.pageDots}>...</span>);
+                          pages.push(
+                            <button key={pageCount - 1} style={s.pageBtn(false)} onClick={() => setCurrentPage(pageCount - 1)}>
+                              {pageCount}
+                            </button>
+                          );
+                        }
+                        return pages;
+                      })()}
+                      <button
+                        style={{ ...s.pageBtn(false), width: '32px' }}
+                        onClick={() => setCurrentPage(p => Math.min(pageCount - 1, p + 1))}
+                        disabled={currentPage >= pageCount - 1}
+                      >
+                        <FaChevronRight size={11} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1002,249 +1024,322 @@ export default function ViewSummary() {
 
           {/* Panel */}
           <div
-            className="fdl-drawer-panel"
             style={{
               position: 'fixed',
               top: 0,
               right: 0,
-              width: '380px',
-              maxWidth: '95vw',
+              width: '420px',
+              maxWidth: '100vw',
               height: '100vh',
               backgroundColor: '#fff',
               zIndex: 1000,
               overflowY: 'auto',
-              boxShadow: '-8px 0 40px rgba(0,0,0,0.18)',
-              animation: `${panelVisible ? 'fdl-slide-in' : 'fdl-slide-out'} 0.42s cubic-bezier(0.32,0.72,0.37,1.05) forwards`,
+              overflowX: 'hidden',
+              boxShadow: '-8px 0 48px rgba(0,0,0,0.18)',
+              transform: panelVisible ? 'translateX(0)' : 'translateX(100%)',
+              transition: 'transform 0.38s cubic-bezier(0.16, 1, 0.3, 1)',
               display: 'flex',
               flexDirection: 'column',
             }}
           >
-
-            {/* ── Header ── */}
             {(() => {
               const drawerStatus = deriveStatus(detailsPanel);
-              const isCompleted = drawerStatus === 'Completed';
-              const statusColor = isCompleted ? '#2E7D32' : (s.statusText(drawerStatus)?.color || TEXT_MUTED);
-              const statusBg = isCompleted ? '#E8F5E9' : `${statusColor}18`;
               return (
-                <div style={{
-                  padding: '22px 22px 18px',
-                  borderBottom: '1px solid #E5E7EB',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexShrink: 0,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      backgroundColor: statusBg,
-                      color: statusColor,
-                    }}>
-                      <span style={s.statusDot(drawerStatus)} />
-                      {drawerStatus}
-                    </span>
-                    <span style={{ fontSize: '12px', color: TEXT_MUTED }}>
-                      ID: {detailsPanel.id || detailsPanel._id || '——'}
-                    </span>
-                  </div>
-                  <button
-                    onClick={closeDetails}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '20px',
-                      color: TEXT_MUTED,
-                      lineHeight: 1,
-                      padding: '2px 6px',
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              );
-            })()}
-
-            {/* ── Body ── */}
-            <div style={{ padding: '20px 22px', flexGrow: 1, overflowY: 'auto' }}>
-
-              {/* Section 1 — Batch Information */}
-                {(() => {
-                  const pondId = pick(detailsPanel, 'pondId', 'sourcePond', 'pond');
-                  const siteId = pick(detailsPanel, 'siteId', 'site', 'location');
-                  const pondName = ponds.find(p => p.id === pondId)?.title || pondId || '—';
-                  const siteName = sites.find(s => s.id === siteId)?.name || siteId || '—';
-                  return (
-                    <div style={{ marginBottom: '24px' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
-                        Batch Information
-                      </div>
-                      {[
-                        { label: 'Source Pond', value: pondName },
-                        { label: 'Site', value: siteName },
-                        { label: 'Date Created', value: detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '——' },
-                        { label: 'Completed On', value: detailsPanel.completedAt ? formatDate(detailsPanel.completedAt) : detailsPanel.updatedAt ? formatDate(detailsPanel.updatedAt) : '——' },
-                      ].map((row, i, arr) => (
-                  <div key={row.label} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    padding: '6px 0',
-                    borderBottom: i < arr.length - 1 ? '1px solid #F3F4F6' : 'none',
+                <>
+                  {/* ── Header ── */}
+                  <div style={{
+                    padding: '22px 24px 16px',
+                    borderBottom: '1px solid #F0F0F0',
+                    position: 'relative',
+                    flexShrink: 0,
                   }}>
-                    <span style={{ fontSize: '13px', color: TEXT_MUTED }}>{row.label}</span>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: TEXT_MAIN }}>{row.value}</span>
+                    <p style={{ margin: '0 0 2px 0', fontSize: '0.7rem', fontWeight: 700, color: '#B06426', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                      Process Details
+                    </p>
+                    <h2 style={{ margin: '0 0 4px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1C1C1C', paddingRight: '36px', lineHeight: 1.25 }}>
+                      {str(pick(detailsPanel, 'batchNumber', 'batch')) || `#${(detailsPanel.id || detailsPanel._id || '').slice(0, 8).toUpperCase()}`}
+                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '2px 8px',
+                        borderRadius: '100px',
+                        fontSize: '0.65rem',
+                        fontWeight: 800,
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                        backgroundColor: drawerStatus === 'Completed' ? '#E8F5E9' : '#FFF8E1',
+                        color: drawerStatus === 'Completed' ? '#2E7D32' : '#F9A825',
+                      }}>
+                        {drawerStatus}
+                      </span>
+                      <span style={{ fontSize: '0.72rem', color: '#B0B8C1' }}>
+                        ID: {(detailsPanel.id || detailsPanel._id || '').slice(0, 8)}...
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#B0B8C1' }}>
+                      Created: {detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '—'}
+                    </p>
+                    <button
+                      onClick={closeDetails}
+                      style={{
+                        position: 'absolute',
+                        top: '20px',
+                        right: '20px',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        border: '1px solid #EBEBEB',
+                        background: '#F7F7F7',
+                        color: '#555',
+                        fontSize: '1rem',
+                        lineHeight: 1,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseOver={e => { e.currentTarget.style.background = '#EDEDED'; }}
+                      onMouseOut={e => { e.currentTarget.style.background = '#F7F7F7'; }}
+                    >
+                      ×
+                    </button>
                   </div>
-                ))}
-                </div>
+
+                  {/* ── Hero Gradient Area ── */}
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '130px',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    background: 'linear-gradient(160deg, #512728 0%, #6B3536 40%, #7A4040 70%, #512728 100%)',
+                  }}>
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      backgroundImage: `
+                        radial-gradient(ellipse 100% 50% at 50% 100%, rgba(255,255,255,0.08) 0%, transparent 70%),
+                        radial-gradient(ellipse 60% 30% at 20% 40%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                        radial-gradient(ellipse 50% 25% at 80% 60%, rgba(255,255,255,0.03) 0%, transparent 50%)
+                      `,
+                      zIndex: 1,
+                    }} />
+                    <div style={{
+                      position: 'absolute',
+                      top: '50%', left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '80px', height: '80px',
+                      borderRadius: '50%',
+                      border: '2px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(255,255,255,0.06)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      zIndex: 2, fontSize: '2rem', color: 'rgba(255,255,255,0.4)',
+                    }}>
+                      <FaCogs />
+                    </div>
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 40%, rgba(0,0,0,0.2) 100%)',
+                      zIndex: 3,
+                    }} />
+                  </div>
+
+                  {/* ── Body ── */}
+                  <div style={{ flex: 1, padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* 2×2 Stat Grid */}
+                    {(() => {
+                      const total = (detailsPanel.cumulativeBrokenQuantity || 0) + (detailsPanel.cumulativeDamageOrLoss || 0) + (detailsPanel.wholeFishQuantity || 0);
+                      return (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          {[
+                            { label: 'Total Processed', value: new Intl.NumberFormat().format(total), suffix: 'units', valueColor: '#1A5276' },
+                            { label: 'Whole Fish', value: new Intl.NumberFormat().format(detailsPanel.wholeFishQuantity || 0), suffix: 'units', valueColor: '#2E7D32' },
+                            { label: 'Broken', value: new Intl.NumberFormat().format(detailsPanel.cumulativeBrokenQuantity || 0), suffix: 'units', valueColor: '#E07B00' },
+                            { label: 'Damaged', value: new Intl.NumberFormat().format(detailsPanel.cumulativeDamageOrLoss || 0), suffix: 'units', valueColor: '#C0392B' },
+                          ].map((stat, i) => (
+                            <div key={i} style={{
+                              background: '#FAFAFA',
+                              border: '1px solid #EFEFEF',
+                              borderRadius: '12px',
+                              padding: '14px 16px',
+                            }}>
+                              <p style={{ margin: '0 0 8px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>{stat.label}</p>
+                              <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: stat.valueColor, lineHeight: 1.1 }}>
+                                {stat.value}
+                                <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#AAB0B7', marginLeft: '4px' }}>{stat.suffix}</span>
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Batch Information */}
+                    {(() => {
+                      const pondId = pick(detailsPanel, 'pondId', 'sourcePond', 'pond');
+                      const siteId = pick(detailsPanel, 'siteId', 'site', 'location');
+                      const pondName = ponds.find(p => p.id === pondId)?.title || pondId || '—';
+                      const siteName = sites.find(s => s.id === siteId)?.name || siteId || '—';
+                      return (
+                        <div>
+                          <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 800, color: '#8C949B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                            Batch Information
+                          </p>
+                          <div style={{ background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
+                            {[
+                              { label: 'Source Pond', value: pondName },
+                              { label: 'Site', value: siteName },
+                              { label: 'Date Created', value: detailsPanel.createdAt ? formatDate(detailsPanel.createdAt) : '—' },
+                              { label: 'Completed On', value: detailsPanel.completedAt ? formatDate(detailsPanel.completedAt) : detailsPanel.updatedAt ? formatDate(detailsPanel.updatedAt) : '—' },
+                            ].map((row, i, arr) => (
+                              <div key={row.label} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                padding: '6px 0',
+                                borderBottom: i < arr.length - 1 ? '1px solid #EFEFEF' : 'none',
+                              }}>
+                                <span style={{ fontSize: '0.78rem', color: '#8C949B' }}>{row.label}</span>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1C1C1C' }}>{row.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Stage Breakdown */}
+                    {(() => {
+                      const stages = buildStageBreakdown(detailsPanel.histories, detailsPanel);
+                      if (stages.length === 0) return null;
+                      return (
+                        <div>
+                          <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 800, color: '#8C949B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                            Stage Breakdown
+                          </p>
+                          <div style={{ position: 'relative', paddingLeft: '18px' }}>
+                            <div style={{ position: 'absolute', left: '7px', top: '18px', bottom: '18px', width: '2px', background: '#E5E7EB' }} />
+                            {stages.map((stage, idx) => {
+                              const color = STAGE_COLORS[stage.stageName] || '#8C949B';
+                              const isLast = idx === stages.length - 1;
+                              return (
+                                <div key={stage.id || idx} style={{ position: 'relative', paddingBottom: isLast ? 0 : '14px' }}>
+                                  <div style={{
+                                    position: 'absolute', left: '-13px', top: '3px',
+                                    width: '14px', height: '14px', borderRadius: '50%',
+                                    backgroundColor: color, border: '2px solid #fff',
+                                    boxShadow: '0 0 0 2px #E5E7EB', zIndex: 1,
+                                  }} />
+                                  <div style={{
+                                    background: '#FAFAFA', borderRadius: '12px',
+                                    padding: '12px 14px', border: '1px solid #EFEFEF',
+                                  }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color }}>{STAGE_LABELS[stage.stageName] || stage.stageName}</span>
+                                      <span style={{ fontSize: '0.7rem', color: '#B0B8C1' }}>
+                                        {stage.createdAt ? (() => {
+                                          const d = new Date(stage.createdAt);
+                                          return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+                                        })() : ''}
+                                      </span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                      <span style={{ fontSize: '0.75rem', color: '#2E7D32', fontWeight: 700 }}>W: {new Intl.NumberFormat().format(stage.wholeQuantity || 0)}</span>
+                                      <span style={{ fontSize: '0.75rem', color: '#E07B00', fontWeight: 700 }}>B: {new Intl.NumberFormat().format(stage.brokenQuantity || 0)}</span>
+                                      <span style={{ fontSize: '0.75rem', color: '#C0392B', fontWeight: 700 }}>D: {new Intl.NumberFormat().format(stage.damageLoss || 0)}</span>
+                                    </div>
+
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Processing Team */}
+                    <div>
+                      <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 800, color: '#8C949B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        Processing Team
+                      </p>
+                      <div style={{ background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
+                        {(() => {
+                          const team = detailsPanel.processingTeam || detailsPanel.team || [];
+                          if (team.length === 0) {
+                            return <p style={{ margin: 0, fontSize: '0.78rem', color: '#B0B8C1', fontStyle: 'italic' }}>No team assigned</p>;
+                          }
+                          const visible = team.slice(0, 4);
+                          return (
+                            <>
+                              {visible.map((member, i) => (
+                                <div key={i} style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  padding: '8px 0',
+                                  borderBottom: i < visible.length - 1 ? '1px solid #EFEFEF' : 'none',
+                                }}>
+                                  <div style={{
+                                    width: '34px', height: '34px', borderRadius: '50%',
+                                    backgroundColor: '#c4c4c4',
+                                    backgroundImage: member?.avatar ? `url(${member.avatar})` : 'none',
+                                    backgroundSize: 'cover', backgroundPosition: 'center',
+                                    flexShrink: 0, display: 'flex', alignItems: 'center',
+                                    justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#fff',
+                                  }}>
+                                    {!member?.avatar && (member?.name ? member.name.charAt(0).toUpperCase() : '?')}
+                                  </div>
+                                  <div>
+                                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1C1C1C' }}>
+                                      {member?.name || '——'}
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: '#B0B8C1' }}>
+                                      {member?.role || member?.position || '——'}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              {team.length > 4 && (
+                                <p style={{ margin: '8px 0 0 0', fontSize: '0.72rem', color: '#B0B8C1', fontStyle: 'italic' }}>
+                                  +{team.length - 4} More Members
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Remarks */}
+                    <div style={{ paddingBottom: '8px' }}>
+                      <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 800, color: '#8C949B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        Remarks
+                      </p>
+                      <div style={{ background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: '12px', padding: '14px 16px' }}>
+                        {(() => {
+                          const historyRemarks = detailsPanel.histories?.map(h => h.remarks).filter(Boolean).join('\n');
+                          const remark = historyRemarks || detailsPanel.remark || detailsPanel.remarks || detailsPanel.note || '—';
+                          return (
+                            <p style={{
+                              margin: 0,
+                              fontSize: '0.78rem',
+                              lineHeight: 1.6,
+                              color: remark === '—' ? '#B0B8C1' : '#2E3135',
+                              fontStyle: remark === '—' ? 'italic' : 'normal',
+                              whiteSpace: 'pre-wrap',
+                            }}>
+                              {remark}
+                            </p>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </>
               );
             })()}
-
-              {/* Section 2 — Stage Breakdown */}
-              {(() => {
-                const stages = buildStageBreakdown(detailsPanel.histories, detailsPanel);
-                if (stages.length === 0) return null;
-                return (
-                  <div style={{ marginBottom: '24px' }}>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '14px' }}>
-                      Stage Breakdown
-                    </div>
-                    <div style={{ position: 'relative', paddingLeft: '18px' }}>
-                      <div style={{ position: 'absolute', left: '7px', top: '18px', bottom: '18px', width: '2px', background: '#E5E7EB' }} />
-                      {stages.map((stage, idx) => {
-                        const color = STAGE_COLORS[stage.stageName] || '#8C949B';
-                        const isLast = idx === stages.length - 1;
-                        return (
-                          <div key={stage.id || idx} style={{ position: 'relative', paddingBottom: isLast ? 0 : '18px' }}>
-                            <div style={{
-                              position: 'absolute', left: '-13px', top: '3px',
-                              width: '14px', height: '14px', borderRadius: '50%',
-                              backgroundColor: color, border: '2px solid #fff',
-                              boxShadow: '0 0 0 2px #E5E7EB', zIndex: 1,
-                            }} />
-                            <div style={{
-                              background: '#F9FAFB', borderRadius: '10px',
-                              padding: '12px 14px', border: '1px solid #F3F4F6',
-                            }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 700, color }}>{STAGE_LABELS[stage.stageName] || stage.stageName}</span>
-                                <span style={{ fontSize: '11px', color: TEXT_MUTED }}>
-                                  {stage.createdAt ? (() => {
-                                    const d = new Date(stage.createdAt);
-                                    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-                                  })() : ''}
-                                </span>
-                              </div>
-                              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: '12px', color: '#28a745', fontWeight: 700 }}>W: {new Intl.NumberFormat().format(stage.wholeQuantity || 0)}</span>
-                                <span style={{ fontSize: '12px', color: '#e07b00', fontWeight: 700 }}>B: {new Intl.NumberFormat().format(stage.brokenQuantity || 0)}</span>
-                                <span style={{ fontSize: '12px', color: '#dc3545', fontWeight: 700 }}>D: {new Intl.NumberFormat().format(stage.damageLoss || 0)}</span>
-                              </div>
-                              {stage.creator?.fullName && (
-                                <div style={{ fontSize: '11px', color: TEXT_MUTED, marginTop: '6px' }}>
-                                  by {stage.creator.fullName}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Section 4 — Processing Team */}
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
-                  Processing Team
-                </div>
-                {(() => {
-                  const team = detailsPanel.processingTeam || detailsPanel.team || [];
-                  if (team.length === 0) {
-                    return (
-                      <div style={{ fontSize: '13px', color: TEXT_MUTED, fontStyle: 'italic' }}>——</div>
-                    );
-                  }
-                  const visible = team.slice(0, 4);
-                  return (
-                    <>
-                      {visible.map((member, i) => (
-                        <div key={i} style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          padding: '8px 0',
-                          borderBottom: i < visible.length - 1 ? '1px solid #F1F3F4' : 'none',
-                        }}>
-                          <div style={{
-                            width: '38px',
-                            height: '38px',
-                            borderRadius: '50%',
-                            backgroundColor: '#c4c4c4',
-                            backgroundImage: member?.avatar ? `url(${member.avatar})` : 'none',
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            color: '#fff',
-                          }}>
-                            {!member?.avatar && (member?.name ? member.name.charAt(0).toUpperCase() : '?')}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '13.5px', fontWeight: 600, color: TEXT_MAIN }}>
-                              {member?.name || '——'}
-                            </div>
-                            <div style={{ fontSize: '12px', color: TEXT_MUTED }}>
-                              {member?.role || member?.position || '——'}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {team.length > 4 && (
-                        <div style={{ fontSize: '12px', color: TEXT_MUTED, fontStyle: 'italic', marginTop: '8px' }}>
-                          +{team.length - 4} More Members
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-
-              {/* Section 5 — Remarks */}
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_MAIN, marginBottom: '12px' }}>
-                  Remarks
-                </div>
-                {(() => {
-                  const historyRemarks = detailsPanel.histories?.map(h => h.remarks).filter(Boolean).join('\n');
-                  const remark = historyRemarks || detailsPanel.remark || detailsPanel.remarks || detailsPanel.note || '——';
-                  return (
-                    <div style={{
-                      fontSize: '13px',
-                      color: remark === '——' ? TEXT_MUTED : TEXT_MAIN,
-                      fontStyle: remark === '——' ? 'italic' : 'normal',
-                      lineHeight: 1.6,
-                    }}>
-                      {remark}
-                    </div>
-                  );
-                })()}
-              </div>
-
-            </div>
-
-
           </div>
         </>
       )}

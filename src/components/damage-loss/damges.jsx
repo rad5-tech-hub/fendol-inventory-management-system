@@ -27,7 +27,7 @@ export default function DamageLoss() {
     const fetchMoveFishHistory = async () => {
       try {
         const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
-        const response = await Api.get(`/damage-loss?siteId=${siteId}`);
+        const response = await Api.get(`/damaged-fish?siteId=${siteId}`);
         setMoveFishHistory(response.data.data); // Assuming the response contains an array of history data
       } catch (error) {
         setError("Error fetching move fish history. Please try again.");
