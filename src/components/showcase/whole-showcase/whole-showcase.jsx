@@ -264,7 +264,7 @@ export default function ViewWholeHistory() {
     {
       key: 'remarks', label: 'Description',
       render: (value) => (
-        <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={value}>
+        <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block' }} title={value}>
           {value || '—'}
         </span>
       ),
