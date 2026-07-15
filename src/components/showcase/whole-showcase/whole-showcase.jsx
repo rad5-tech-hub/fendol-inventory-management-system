@@ -40,6 +40,7 @@ export default function ViewWholeHistory() {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("");
   const [brokenFishQuantity, setBrokenFishQuantity] = useState("");
+  const [brokenFishWeightKg, setBrokenFishWeightKg] = useState("");
   const [damageFishQuantity, setDamageFishQuantity] = useState("");
   const [remarks, setRemarks] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
@@ -94,6 +95,7 @@ export default function ViewWholeHistory() {
   const handleShowModal = (type) => {
     setModalType(type);
     setBrokenFishQuantity("");
+    setBrokenFishWeightKg("");
     setDamageFishQuantity("");
     setRemarks("");
     setOpenActions(false);
@@ -109,9 +111,29 @@ export default function ViewWholeHistory() {
     const loadingToast = toast.loading("Moving...");
 
     const quantity = modalType === "damage" ? damageFishQuantity : brokenFishQuantity;
-    if (!quantity || !remarks) {
+    if (!quantity || Number(quantity) <= 0) {
       toast.update(loadingToast, {
-        render: "Please fill in all fields.",
+        render: modalType === "damage" ? "Damaged fish quantity must be greater than 0." : "Broken fish quantity must be greater than 0.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+    if (modalType === "broken" && (!brokenFishWeightKg || Number(brokenFishWeightKg) <= 0)) {
+      toast.update(loadingToast, {
+        render: "Weight in kg must be greater than 0 for broken fish.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+    if (!remarks || !remarks.trim()) {
+      toast.update(loadingToast, {
+        render: "Please provide a remark for this movement.",
         type: "error",
         isLoading: false,
         autoClose: 3000,
@@ -120,12 +142,27 @@ export default function ViewWholeHistory() {
       return;
     }
 
+    const siteId = isSuperAdmin
+      ? (activeSite?.id || 'all')
+      : (user?.siteId || 'all');
+
     try {
-      const endpoint = modalType === "damage" ? "/move-to-damage" : "/move-to-broken";
-      const payload =
-        modalType === "damage"
-          ? { damagedFishQuantity: Number(damageFishQuantity), remarks }
-          : { brokenFishQuantity: Number(brokenFishQuantity), remarks };
+      let endpoint, payload;
+      if (modalType === "damage") {
+        endpoint = "/move-to-damage";
+        payload = {
+          damagedFishQuantity: Number(damageFishQuantity),
+          remarks: remarks.trim(),
+          siteId,
+        };
+      } else {
+        endpoint = "/move-to-broken";
+        payload = {
+          brokenFishQuantity: Number(brokenFishQuantity),
+          brokenFishWeightKg: Number(brokenFishWeightKg),
+          remarks: remarks.trim(),
+        };
+      }
 
       await Api.post(endpoint, payload);
       toast.update(loadingToast, {
@@ -137,15 +174,30 @@ export default function ViewWholeHistory() {
 
       setDamageFishQuantity("");
       setBrokenFishQuantity("");
+      setBrokenFishWeightKg("");
       setRemarks("");
       handleCloseModal();
       await fetchTableData();
     } catch (error) {
+      const serverMsg = error.response?.data?.message;
+      const status = error.response?.status;
+      let msg;
+      if (!error.response) {
+        msg = "Network error — server is unreachable.";
+      } else if (status === 400) {
+        msg = serverMsg || "Invalid request. Check the quantity and site.";
+      } else if (status === 404) {
+        msg = serverMsg || "The destination resource was not found.";
+      } else if (status >= 500) {
+        msg = `Server error (${status}). Please try again later.`;
+      } else {
+        msg = serverMsg || `Unexpected error (${status}).`;
+      }
       toast.update(loadingToast, {
-        render: error.response?.data?.message || "An error occurred while performing the action.",
+        render: msg,
         type: "error",
         isLoading: false,
-        autoClose: 3000,
+        autoClose: 6000,
       });
     } finally {
       setLoading(false);
@@ -691,6 +743,42 @@ export default function ViewWholeHistory() {
                   autoComplete="off"
                 />
               </div>
+              {modalType === "broken" && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Weight in kg <span style={{ color: '#DC2626' }}>*</span>
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="0.00"
+                      value={brokenFishWeightKg}
+                      onChange={(e) => setBrokenFishWeightKg(e.target.value)}
+                      style={{
+                        width: '100%', height: '44px', padding: '0 52px 0 14px',
+                        border: '1.5px solid #E5E7EB', borderRadius: '10px',
+                        fontSize: '14px', color: '#111827', fontWeight: 500,
+                        outline: 'none', background: '#FFFFFF',
+                        transition: 'border-color 0.15s ease', fontFamily: 'inherit',
+                        boxSizing: 'border-box',
+                      }}
+                      onFocus={e => e.target.style.borderColor = '#512728'}
+                      onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+                      autoComplete="off"
+                    />
+                    <span style={{
+                      position: 'absolute', right: '14px', top: '50%',
+                      transform: 'translateY(-50%)',
+                      fontSize: '13px', fontWeight: 700, color: '#9CA3AF',
+                      pointerEvents: 'none', userSelect: 'none',
+                    }}>
+                      kg
+                    </span>
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   Remarks <span style={{ color: '#DC2626' }}>*</span>
