@@ -127,7 +127,7 @@ const FinanceLedger = () => {
                 columns={[
                   { key: 'date', label: 'DATE', render: (val) => formatDate(val) },
                   { key: 'productName', label: 'PRODUCT', render: (val) => (
-                    <span title={val} style={{ cursor: val && val.length > 80 ? "pointer" : "normal" }}>
+                    <span title={val || ""} style={{ cursor: 'pointer', display: 'inline-block', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
                       {val || "-"}
                     </span>
                   )},
