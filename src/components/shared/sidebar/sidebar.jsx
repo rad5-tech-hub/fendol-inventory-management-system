@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef } from "react";
+import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import { Nav, Card, Collapse, Tooltip, OverlayTrigger, Offcanvas } from "react-bootstrap";
@@ -28,6 +28,7 @@ const computeOpenFromPath = (path) => {
   if (path.includes("/showcase")) open.showcase = true;
   if (path.includes("/finance")) {
     open.finance = true;
+    open.sales = true;
     if (path.includes('/finance/supplier')) open.supplier = true;
     if (path.includes('/finance/staff')) open.staff = true;
   }
@@ -98,6 +99,7 @@ export default function SideBar({ show, handleClose }) {
     if (path.includes("/showcase")) updates.showcase = true;
     if (path.includes("/finance")) {
       updates.finance = true;
+      updates.sales = true;
       if (path.includes('/finance/supplier')) updates.supplier = true;
       if (path.includes('/finance/staff')) updates.staff = true;
     }
@@ -127,6 +129,13 @@ export default function SideBar({ show, handleClose }) {
       scrollToActive();
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    const section = sidebarRef.current;
+    if (!section) return;
+    const navsEl = section.querySelector(`.${styles.navs}`);
+    scrollActiveIntoView(navsEl);
+  }, [location.pathname, userTypes, activeSite]);
 
   const handleToggle = (key) => {
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
