@@ -736,7 +736,9 @@ export default function NewBatchFish() {
                     disabled={loader|| moveFishData.actual_quantity === 0}
                     type="submit"
                   >
-                    {loader ? 'Processing' : "Process"}
+                    {loader ? (
+                      <><span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.5s linear infinite', marginRight: '8px' }} />Processing</>
+                    ) : "Process"}
                   </Button>
                 </div>
               </Form>
@@ -1051,8 +1053,13 @@ export default function NewBatchFish() {
                               transition: 'background-color 0.15s ease',
                             }}
                           >
-                            {stagesLoading || !currentStage ? 'Loading...' : currentStage?.title !== 'Drying' ? `Proceed to ${nextStage?.title || 'Next'}` : 'Move To Showcase'}
-                            <BsArrowRight size={15} />
+                            {loading ? (
+                              <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.5s linear infinite' }} />
+                            ) : stagesLoading || !currentStage ? (
+                              <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.5s linear infinite' }} />
+                            ) : null}
+                            {loading ? 'Processing...' : stagesLoading || !currentStage ? 'Loading...' : currentStage?.title !== 'Drying' ? `Proceed to ${nextStage?.title || 'Next'}` : 'Move To Showcase'}
+                            {!loading && !stagesLoading && currentStage && <BsArrowRight size={15} />}
                           </button>
                         </div>
                       </div>
