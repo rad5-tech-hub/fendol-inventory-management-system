@@ -6,7 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../showcase.module.scss";
 import { FaChevronLeft, FaChevronRight, FaWeightHanging } from "react-icons/fa";
 import ErrorState from "../../shared/error-state/ErrorState";
-import { FiX, FiArrowRight } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -28,12 +28,8 @@ export default function ViewBrokenHistory() {
   const [pageCount, setPageCount] = useState(0);
   const [loadingStages, setLoadingStages] = useState(true);
   const [loadingTable, setLoadingTable] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [errorStages, setErrorStages] = useState("");
   const [errorTable, setErrorTable] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [damageFishQuantity, setDamageFishQuantity] = useState("");
-  const [remarks, setRemarks] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
 
   const [showKgModal, setShowKgModal] = useState(false);
@@ -87,16 +83,6 @@ export default function ViewBrokenHistory() {
     fetchTableData();
     fetchData();
   }, []);
-
-  const handleShowModal = () => {
-    setDamageFishQuantity("");
-    setRemarks("");
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
 
   const handleKgModal = (row) => {
     setSelectedRow(row);
@@ -163,61 +149,6 @@ export default function ViewBrokenHistory() {
     }
   };
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    const loadingToast = toast.loading("Moving...");
-
-    const quantity = damageFishQuantity;
-    if (!quantity || !remarks) {
-      toast.update(loadingToast, {
-        render: "Please fill in all fields.",
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-      });
-      setLoading(false);
-      return;
-    }
-
-    if (Number(damageFishQuantity) > Number(brokenQuantity)) {
-      toast.update(loadingToast, {
-        render: "Quantity cannot exceed available stock.",
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-      });
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const endpoint = "/move-broken-to-damage";
-      const payload = { damagedFishQuantity: Number(damageFishQuantity), remarks };
-
-      await Api.post(endpoint, payload);
-      toast.update(loadingToast, {
-        render: "Operation Successful!",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000,
-      });
-
-      setDamageFishQuantity("");
-      setRemarks("");
-      await Promise.all([fetchTableData(), fetchData()]);
-      handleCloseModal();
-    } catch (error) {
-      toast.update(loadingToast, {
-        render: error.response?.data?.message || "An error occurred while performing the action.",
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatDateTime = (isoDate) => {
     if (!isoDate) return { d: '—', t: '' };
     const date = new Date(isoDate);
@@ -230,29 +161,6 @@ export default function ViewBrokenHistory() {
   const paginatedData = sortedData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
-
-  const modalMounted = useRef(false);
-  const [modalVisible, setModalVisible] = useState(false);
-
-  useEffect(() => {
-    if (showModal) {
-      modalMounted.current = true;
-      requestAnimationFrame(() => setModalVisible(true));
-    } else {
-      setModalVisible(false);
-      const timer = setTimeout(() => { modalMounted.current = false; }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [showModal]);
-
-  useEffect(() => {
-    if (!showModal) return;
-    const handler = (e) => {
-      if (e.key === 'Escape') handleCloseModal();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [showModal]);
 
   useEffect(() => {
     if (showKgModal) {
@@ -482,21 +390,6 @@ export default function ViewBrokenHistory() {
                     <span style={s.statUnit}>kg</span>
                   </div>
                 </div>
-                <button
-                  onClick={handleShowModal}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '8px',
-                    backgroundColor: PRIMARY, color: '#fff', border: 'none',
-                    borderRadius: '8px', padding: '10px 18px',
-                    fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                    whiteSpace: 'nowrap', transition: 'background 0.15s',
-                  }}
-                  onMouseOver={e => e.currentTarget.style.backgroundColor = PRIMARY_HV}
-                  onMouseOut={e => e.currentTarget.style.backgroundColor = PRIMARY}
-                >
-                  <FiArrowRight size={14} />
-                  Move to Damage
-                </button>
               </div>
             )}
 
@@ -617,165 +510,6 @@ export default function ViewBrokenHistory() {
           </div>
         </section>
       </div>
-
-      {/* ── Move to Damage Modal ── */}
-      {modalMounted.current && createPortal(
-        <div
-          style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 10000, padding: '20px',
-            opacity: modalVisible ? 1 : 0, transition: 'opacity 0.2s ease',
-          }}
-          onClick={handleCloseModal}
-        >
-          <div
-            style={{
-              background: '#FFFFFF', borderRadius: '16px',
-              width: '100%', maxWidth: '440px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.15)', overflow: 'hidden',
-              opacity: modalVisible ? 1 : 0,
-              ...(modalVisible ? {} : { transform: 'translateY(24px) scale(0.97)' }),
-              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '24px 28px 0' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-                <div style={{
-                  width: '44px', height: '44px', borderRadius: '12px',
-                  background: '#FDECEA',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  <FiArrowRight size={22} color="#dc3545" />
-                </div>
-                <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', margin: 0, lineHeight: '1.3' }}>
-                    Move to Damage
-                  </h2>
-                  <p style={{ fontSize: '13px', color: '#6B7280', fontWeight: 400, margin: '4px 0 0 0', lineHeight: '1.4' }}>
-                    Current stock: <strong>{brokenQuantity !== null ? new Intl.NumberFormat().format(brokenQuantity) : 'N/A'}</strong> pieces
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={handleCloseModal}
-                style={{
-                  width: '32px', height: '32px', border: 'none',
-                  background: '#F3F4F6', borderRadius: '8px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', color: '#6B7280', flexShrink: 0,
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseOver={e => { e.currentTarget.style.background = '#E5E7EB'; e.currentTarget.style.color = '#374151'; }}
-                onMouseOut={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#6B7280'; }}
-              >
-                <FiX size={18} />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div style={{ padding: '20px 28px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  Quantity <span style={{ color: '#DC2626' }}>*</span>
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="Enter quantity to move"
-                  value={damageFishQuantity}
-                  onChange={(e) => setDamageFishQuantity(e.target.value)}
-                  style={{
-                    width: '100%', height: '44px', padding: '0 14px',
-                    border: '1.5px solid #E5E7EB', borderRadius: '10px',
-                    fontSize: '14px', color: '#111827', fontWeight: 500,
-                    outline: 'none', background: '#FFFFFF',
-                    transition: 'border-color 0.15s ease', fontFamily: 'inherit',
-                    boxSizing: 'border-box',
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#512728'}
-                  onBlur={e => e.target.style.borderColor = '#E5E7EB'}
-                  autoComplete="off"
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  Remarks <span style={{ color: '#DC2626' }}>*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Add a remark..."
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  style={{
-                    width: '100%', padding: '10px 14px',
-                    border: '1.5px solid #E5E7EB', borderRadius: '10px',
-                    fontSize: '14px', color: '#111827', fontWeight: 500,
-                    outline: 'none', background: '#FFFFFF', resize: 'vertical',
-                    transition: 'border-color 0.15s ease', fontFamily: 'inherit',
-                    boxSizing: 'border-box',
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#512728'}
-                  onBlur={e => e.target.style.borderColor = '#E5E7EB'}
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '20px 28px 24px' }}>
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                disabled={loading}
-                style={{
-                  height: '42px', padding: '0 20px',
-                  border: '1px solid #E5E7EB', borderRadius: '10px',
-                  background: '#FFFFFF', color: '#374151',
-                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                  transition: 'all 0.15s ease', fontFamily: 'inherit',
-                }}
-                onMouseOver={e => { if (!loading) { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB'; }}}
-                onMouseOut={e => { if (!loading) { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.borderColor = '#E5E7EB'; }}}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading}
-                style={{
-                  height: '42px', padding: '0 24px', border: 'none', borderRadius: '10px',
-                  background: loading ? '#9CA3AF' : PRIMARY, color: '#FFFFFF',
-                  fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  transition: 'all 0.15s ease', fontFamily: 'inherit',
-                }}
-                onMouseOver={e => { if (!loading) e.currentTarget.style.background = PRIMARY_HV; }}
-                onMouseOut={e => { if (!loading) e.currentTarget.style.background = PRIMARY; }}
-              >
-                {loading ? (
-                  <>
-                    <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.5s linear infinite' }} />
-                    Moving...
-                  </>
-                ) : (
-                  <>
-                    <FiArrowRight size={15} />
-                    Move to Damage
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {/* ── Convert to Kg Modal ── */}
       {kgModalMounted.current && createPortal(
