@@ -80,6 +80,12 @@ export default function PersonalLedger() {
   const [description, setDescription] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [loadingPayment, setLoadingPayment] = useState(false);
+  const [selectedPendingSale, setSelectedPendingSale] = useState("");
+  const [pendingSearch, setPendingSearch] = useState("");
+  const [showPendingDropdown, setShowPendingDropdown] = useState(false);
+  const [transactionId, setTransactionId] = useState("");
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [amountPaidB, setAmountPaidB] = useState("");
 
   useEffect(() => {
     if (customerId) {
@@ -249,10 +255,40 @@ export default function PersonalLedger() {
     setDescription(e.target.value);
   };
 
+  const handlePendingSearchChange = (e) => {
+    setPendingSearch(e.target.value);
+    setShowPendingDropdown(true);
+  };
+
+  const handlePendingSelect = (sale) => {
+    setSelectedPendingSale(sale.id || "");
+    setTransactionId(sale.transactionId || "");
+    setTotalAmount((Number(sale.totalPrice) || 0) - (Number(sale.totalPaid) || 0) - (Number(sale.discount) || 0));
+    setAmountPaidB(sale.totalPaid || 0);
+    setSalesType(sale.paymentType || "");
+    setPendingSearch(`${sale.transactionId} - ${sale.salesCategory || 'Unknown'} - ₦${((Number(sale.totalPrice) || 0) - (Number(sale.discount) || 0)).toLocaleString()}`);
+    setShowPendingDropdown(false);
+    setAmountPaid("");
+  };
+
+  const filteredPendingSales = useMemo(() => {
+    const term = pendingSearch.toLowerCase();
+    return pendingSales.filter(sale =>
+      sale.transactionId?.toLowerCase().includes(term) ||
+      sale.salesCategory?.toLowerCase().includes(term)
+    );
+  }, [pendingSales, pendingSearch]);
+
   const resetForm = () => {
+    setSelectedPendingSale("");
     setAmountPaid("");
     setSalesType("");
     setDescription("");
+    setPendingSearch("");
+    setTransactionId("");
+    setTotalAmount(0);
+    setAmountPaidB("");
+    setShowPendingDropdown(false);
   };
 
   const handleSubmitAmountPaid = async () => {
@@ -269,6 +305,7 @@ export default function PersonalLedger() {
     try {
       const paymentData = {
         customerId,
+        salesId: selectedPendingSale || null,
         amountPaid: Number(amountPaid),
         paymentType: salesType.toLowerCase(),
         description: description || "",
@@ -574,42 +611,57 @@ export default function PersonalLedger() {
           ) : pendingSalesError ? (
             <p className="text-danger text-center mb-3">{pendingSalesError}</p>
           ) : pendingSales.length > 0 ? (
-            <div className="mb-4">
-              <p style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '8px' }}>
-                Pending Sales ({pendingSales.length})
-              </p>
-              <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {pendingSales.map((sale, i) => {
-                  const balance = (Number(sale.totalPrice) || 0) - (Number(sale.totalPaid) || 0) - (Number(sale.discount) || 0);
-                  return (
-                    <div key={i} style={{
-                      background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px',
-                      padding: '10px 14px', fontSize: '13px',
-                    }}>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span style={{ fontWeight: 600, color: '#374151' }}>{sale.transactionId || 'N/A'}</span>
-                        <span style={{ color: '#9CA3AF', fontSize: '12px' }}>{sale.salesCategory || 'Sale'}</span>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center mt-1">
-                        <span style={{ color: '#6B7280' }}>Balance: <strong>{formatCurrency(balance)}</strong></span>
-                        <div className="d-flex flex-column align-items-end" style={{ gap: '1px' }}>
-                          <span style={{ fontSize: '12px', color: balance > 0 ? '#DC2626' : '#16A34A', fontWeight: 500 }}>
-                            {balance > 0 ? 'Partial' : balance < 0 ? 'Overpaid' : 'Paid'}
-                          </span>
-                          {balance !== 0 && (
-                            <span style={{ fontSize: '10px', color: balance < 0 ? '#DC2626' : '#16A34A', opacity: 0.7 }}>
-                              {balance < 0 ? 'owes us' : 'we owe'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-semibold" style={{ fontSize: '14px', color: '#374151' }}>
+                Select Pending Sale <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(optional)</span>
+              </Form.Label>
+              <div style={{ position: 'relative' }}>
+                <Form.Control
+                  type="text"
+                  placeholder="Search by receipt ID or sales type..."
+                  value={pendingSearch}
+                  onChange={handlePendingSearchChange}
+                  onFocus={() => setShowPendingDropdown(true)}
+                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                />
+                {showPendingDropdown && (
+                  <div className={styles.suggestions_box} style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {filteredPendingSales.length > 0 ? (
+                      <ul>
+                        {filteredPendingSales.map((sale, i) => (
+                          <li key={i} onClick={() => handlePendingSelect(sale)}>
+                            <div style={{ fontWeight: 500, color: '#2E3135' }}>{sale.transactionId}</div>
+                            <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                              {sale.salesCategory || 'Sale'} — Balance: {formatCurrency((Number(sale.totalPrice) || 0) - (Number(sale.totalPaid) || 0) - (Number(sale.discount) || 0))}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <ul><li style={{ color: '#9CA3AF', cursor: 'default' }}>No matching sales</li></ul>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
+            </Form.Group>
           ) : (
             <p className="text-center text-muted mb-3" style={{ fontSize: '13px' }}>No pending sales.</p>
+          )}
+          {selectedPendingSale && (
+            <div className="d-flex gap-3 mb-3 p-3" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '13px' }}>
+              <div style={{ flex: 1 }}>
+                <span style={{ color: '#6B7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Transaction</span>
+                <div style={{ fontWeight: 600, color: '#2E3135', marginTop: '2px' }}>{transactionId || 'N/A'}</div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ color: '#6B7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Amount Paid Before</span>
+                <div style={{ fontWeight: 600, color: '#2E3135', marginTop: '2px' }}>{formatCurrency(amountPaidB)}</div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ color: '#6B7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Balance</span>
+                <div style={{ fontWeight: 600, color: '#DC2626', marginTop: '2px' }}>{formatCurrency(totalAmount)}</div>
+              </div>
+            </div>
           )}
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold" style={{ fontSize: '14px', color: '#374151' }}>Amount Paid</Form.Label>
