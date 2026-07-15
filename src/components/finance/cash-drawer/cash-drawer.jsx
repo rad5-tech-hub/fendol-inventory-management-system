@@ -56,7 +56,7 @@ const CashDrawer = () => {
     setLoading(true);
     setError("");
     try {
-      const params = { siteId: isSuperAdmin ? (activeSite?.id || "all") : resolvedSiteId };
+      const params = { siteId: isSuperAdmin ? (activeSite?.id || "all") : (user?.siteId || "all") };
       if (typeFilter !== "all") params.type = typeFilter;
       if (dateFrom) params.startDate = dateFrom;
       if (dateTo) params.endDate = dateTo;
