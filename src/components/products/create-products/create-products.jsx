@@ -263,23 +263,17 @@ export default function CreateProducts() {
                                         onChange={handleInputChange}
                                     />
                                 </Col>
+                                {isSuperAdmin && (
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Assign to Site</Form.Label>
-                                    {isSuperAdmin ? (
-                                        <CustomDropdown
-                                            options={siteTypes.map(type => ({ value: type.id, label: type.name }))}
-                                            value={formData.siteId}
-                                            onChange={(val) => handleInputChange({ target: { name: 'siteId', value: val } })}
-                                            placeholder="Select Site Type"
-                                        />
-                                    ) : (
-                                        <Form.Control
-                                            value={profileSiteId}
-                                            disabled
-                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                        />
-                                    )}
+                                    <CustomDropdown
+                                        options={siteTypes.map(type => ({ value: type.id, label: type.name }))}
+                                        value={formData.siteId}
+                                        onChange={(val) => handleInputChange({ target: { name: 'siteId', value: val } })}
+                                        placeholder="Select Site Type"
+                                    />
                                 </Col>
+                                )}
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Category</Form.Label>
                                     <div ref={categoryRef} className="position-relative">

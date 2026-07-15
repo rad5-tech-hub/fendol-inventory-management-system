@@ -821,10 +821,10 @@ export default function ViewBrokenHistory() {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
                 <div style={{
                   width: '44px', height: '44px', borderRadius: '12px',
-                  background: '#EDF4FE',
+                  background: '#FDF5F5',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
-                  <FaWeightHanging size={20} color="#1A5276" />
+                  <FaWeightHanging size={20} color="#512728" />
                 </div>
                 <div>
                   <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', margin: 0, lineHeight: '1.3' }}>
@@ -857,12 +857,12 @@ export default function ViewBrokenHistory() {
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '12px 14px', borderRadius: '10px',
-                background: '#F0F7FF', border: '1px solid #D6E8FB',
-                fontSize: '12px', color: '#1A5276', lineHeight: '1.5',
+                background: '#FDF5F5', border: '1px solid #E8C8C8',
+                fontSize: '12px', color: '#512728', lineHeight: '1.5',
               }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-                  <circle cx="12" cy="12" r="10" stroke="#1A5276" strokeWidth="1.5"/>
-                  <path d="M12 8v4M12 16h.01" stroke="#1A5276" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="12" cy="12" r="10" stroke="#512728" strokeWidth="1.5"/>
+                  <path d="M12 8v4M12 16h.01" stroke="#512728" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
                 <span>
                   Enter the quantity of fish pieces and their equivalent weight in kilograms for this record.
@@ -878,19 +878,16 @@ export default function ViewBrokenHistory() {
                   type="number"
                   min={0}
                   step="1"
-                  placeholder="Enter number of pieces"
                   value={kgQuantity}
-                  onChange={(e) => setKgQuantity(e.target.value)}
+                  readOnly
                   style={{
                     width: '100%', height: '44px', padding: '0 14px',
                     border: '1.5px solid #E5E7EB', borderRadius: '10px',
                     fontSize: '14px', color: '#111827', fontWeight: 500,
-                    outline: 'none', background: '#FFFFFF',
-                    transition: 'border-color 0.15s ease', fontFamily: 'inherit',
-                    boxSizing: 'border-box',
+                    outline: 'none', background: '#F9FAFB',
+                    fontFamily: 'inherit',
+                    boxSizing: 'border-box', cursor: 'not-allowed',
                   }}
-                  onFocus={e => e.target.style.borderColor = '#512728'}
-                  onBlur={e => e.target.style.borderColor = '#E5E7EB'}
                   autoComplete="off"
                 />
               </div>
@@ -956,13 +953,13 @@ export default function ViewBrokenHistory() {
                 disabled={kgSubmitting}
                 style={{
                   height: '42px', padding: '0 24px', border: 'none', borderRadius: '10px',
-                  background: kgSubmitting ? '#9CA3AF' : '#1A5276', color: '#FFFFFF',
+                  background: kgSubmitting ? '#9CA3AF' : '#512728', color: '#FFFFFF',
                   fontSize: '13px', fontWeight: 600, cursor: kgSubmitting ? 'not-allowed' : 'pointer',
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
                   transition: 'all 0.15s ease', fontFamily: 'inherit',
                 }}
-                onMouseOver={e => { if (!kgSubmitting) e.currentTarget.style.background = '#154360'; }}
-                onMouseOut={e => { if (!kgSubmitting) e.currentTarget.style.background = '#1A5276'; }}
+                onMouseOver={e => { if (!kgSubmitting) e.currentTarget.style.background = '#3D1D1E'; }}
+                onMouseOut={e => { if (!kgSubmitting) e.currentTarget.style.background = '#512728'; }}
               >
                 {kgSubmitting ? (
                   <>
