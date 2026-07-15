@@ -22,6 +22,7 @@ const BORDER = '#e8eaed';
 
 export default function ViewBrokenHistory() {
   const [brokenQuantity, setBrokenQuantity] = useState(null);
+  const [brokenCumulativeKg, setBrokenCumulativeKg] = useState(null);
   const [tableData, setTableData] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageCount, setPageCount] = useState(0);
@@ -49,11 +50,17 @@ export default function ViewBrokenHistory() {
     setLoadingStages(true);
     setErrorStages("");
     try {
-      const response = await Api.get("/show-glass/broken");
-      if (response.data?.success && response.data.data) {
-        setBrokenQuantity(response.data.data.brokenFishQuantity || 0);
+      const [stockRes, latestRes] = await Promise.all([
+        Api.get("/show-glass/broken"),
+        Api.get("/latest-showcase"),
+      ]);
+      if (stockRes.data?.success && stockRes.data.data) {
+        setBrokenQuantity(stockRes.data.data.brokenFishQuantity || 0);
       } else {
         throw new Error("Invalid data structure");
+      }
+      if (latestRes.data?.success && latestRes.data.data) {
+        setBrokenCumulativeKg(Number(latestRes.data.data.brokenFishCumulativeKg) || 0);
       }
     } catch (error) {
       setErrorStages(error.response?.data?.message || "Error getting broken fish quantity.");
@@ -466,7 +473,8 @@ export default function ViewBrokenHistory() {
               <div style={{ ...s.statCard, padding: '20px' }}>
                 <div style={{ width: '100%' }}>
                   <div style={{ height: '12px', width: '80px', background: '#f0f0f0', borderRadius: '4px', marginBottom: '12px' }} />
-                  <div style={{ height: '32px', width: '120px', background: '#f0f0f0', borderRadius: '4px' }} />
+                  <div style={{ height: '32px', width: '120px', background: '#f0f0f0', borderRadius: '4px', marginBottom: '8px' }} />
+                  <div style={{ height: '14px', width: '60px', background: '#f0f0f0', borderRadius: '4px' }} />
                 </div>
               </div>
             ) : errorStages ? (
@@ -478,6 +486,12 @@ export default function ViewBrokenHistory() {
                   <div>
                     <span style={s.statValue}>{brokenQuantity !== null ? new Intl.NumberFormat().format(brokenQuantity) : 'N/A'}</span>
                     <span style={s.statUnit}>pieces</span>
+                  </div>
+                  <div style={{ marginTop: '6px' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#E07B00' }}>
+                      {brokenCumulativeKg !== null ? brokenCumulativeKg.toFixed(3) : 'N/A'}
+                    </span>
+                    <span style={s.statUnit}>kg</span>
                   </div>
                 </div>
                 <button
