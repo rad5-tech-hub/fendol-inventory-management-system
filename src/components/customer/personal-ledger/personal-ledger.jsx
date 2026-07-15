@@ -183,33 +183,24 @@ export default function PersonalLedger() {
 
   const ledgerColumns = [
     { key: 'createdAt', label: 'DATE', width: '14%', render: (value) => <span style={{ color: '#8C949B', whiteSpace: 'nowrap' }}>{formatDate(value)}</span> },
-    {
-      key: '_description',
-      label: 'DESCRIPTION',
-      width: '28%',
-      render: (_, row) => (
-        <div className="d-flex align-items-center gap-2">
-          <span>{row.productName || '-'}</span>
-        </div>
-      ),
-    },
-    { key: 'paymentType', label: 'PAYMENT', width: '14%', render: (value) => value || '' },
-    { key: 'credit', label: 'CREDIT (₦)', width: '14%', align: 'right', render: (value) => Number(value) ? <span style={{ fontWeight: 600, color: '#16A34A' }}>{formatCurrency(value)}</span> : '' },
-    { key: 'debit', label: 'DEBIT (₦)', width: '14%', align: 'right', render: (value) => Number(value) ? <span style={{ fontWeight: 600, color: '#DC2626' }}>{formatCurrency(value)}</span> : '' },
+    { key: 'paymentType', label: 'PAYMENT', width: '18%', render: (value) => value || '' },
+    { key: 'credit', label: 'CREDIT (₦)', width: '18%', align: 'right', render: (value) => Number(value) ? <span style={{ fontWeight: 600, color: '#16A34A' }}>{formatCurrency(value)}</span> : '' },
+    { key: 'debit', label: 'DEBIT (₦)', width: '18%', align: 'right', render: (value) => Number(value) ? <span style={{ fontWeight: 600, color: '#DC2626' }}>{formatCurrency(value)}</span> : '' },
     {
       key: 'balance',
       label: 'BALANCE (₦)',
-      width: '14%',
+      width: '18%',
       align: 'right',
       render: (value) => {
         if (value == null) return '-';
         const bal = Number(value);
-        const color = bal < 0 ? '#DC2626' : bal > 0 ? '#16A34A' : '#6B7280';
-        const label = bal < 0 ? 'owes us' : bal > 0 ? 'we owe' : '';
+        if (bal === 0) return '';
+        const color = bal < 0 ? '#DC2626' : '#16A34A';
+        const label = bal < 0 ? 'owes us' : 'we owe';
         return (
           <div>
             <div style={{ fontWeight: 600, color }}>{formatCurrency(bal)}</div>
-            {label && <div style={{ fontSize: '10px', color, opacity: 0.7, lineHeight: 1.2 }}>{label}</div>}
+            <div style={{ fontSize: '10px', color, opacity: 0.7, lineHeight: 1.2 }}>{label}</div>
           </div>
         );
       },
