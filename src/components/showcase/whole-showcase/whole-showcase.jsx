@@ -282,7 +282,7 @@ export default function ViewWholeHistory() {
       },
     },
     {
-      key: 'wholeFishAdded', label: 'Sold',
+      key: 'wholeFishAdded', label: 'Removed',
       align: 'right',
       render: (value, row) => {
         if (!row.siteId && value > 0) {
