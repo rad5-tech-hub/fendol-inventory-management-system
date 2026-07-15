@@ -216,18 +216,15 @@ export default function PersonalLedger() {
     },
   ];
 
-  const ledgerActions = (row) => (
-    <PortalDropdown
-      btnClass={styles.threeDotBtn}
-      items={[
-      ...(Number(row.debit) > 0
-        ? [
-            { label: <><BsPrinter size={14} style={{ marginRight: 8 }} /> Print Receipt</>, onClick: () => handleReceipt(row) },
-          ]
-        : []),
-      ]}
-    />
-  );
+  const ledgerActions = (row) =>
+    Number(row.debit) > 0 ? (
+      <PortalDropdown
+        btnClass={styles.threeDotBtn}
+        items={[
+          { label: <><BsPrinter size={14} style={{ marginRight: 8 }} /> Print Receipt</>, onClick: () => handleReceipt(row) },
+        ]}
+      />
+    ) : null;
 
   const handleAddMoney = () => {
     setShowModal(true);
