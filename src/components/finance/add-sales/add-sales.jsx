@@ -13,12 +13,26 @@ import FreshForm from './freshfish';
 import FingerlingsForm from './fingerlingsfish';
 import FeedForm from './feed';
 
+const formatTypeLabel = (name) =>
+    name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+const getSalesForm = (typeName) => {
+    const n = typeName?.toLowerCase() || '';
+    if (n === 'dry-fish' || n.includes('dry')) return SalesForm;
+    if (n === 'fresh-fish' || n.includes('fresh fish')) return FreshForm;
+    if (n === 'fingerlings' || n.includes('fingerlings')) return FingerlingsForm;
+    if (n === 'feed') return FeedForm;
+    return null;
+};
+
 const AddSales = () => {
     const [salesType, setSalesType] = useState('');
+    const [selectedProductTypeId, setSelectedProductTypeId] = useState('');
     const [stages, setStages] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [products, setProducts] = useState([]);
     const [productTypes, setProductTypes] = useState([]);
+    const [loadingProducts, setLoadingProducts] = useState(false);
     const [showSidebar, setShowSidebar] = useState(false);
     const activeSite = useSelector((store) => store.activeSite);
 
@@ -62,19 +76,29 @@ const AddSales = () => {
         fetchProductTypes();
     }, []);
 
-    // Fetch products
+    // Fetch filtered products when product type is selected
     useEffect(() => {
-        setProducts(['LOADING....']); // Reset products state when component mounts
-        const fetchProducts = async () => {
+        if (!selectedProductTypeId) {
+            setProducts([]);
+            return;
+        }
+        const fetchFilteredProducts = async () => {
+            setLoadingProducts(true);
             try {
-                const response = await Api.get('/products');
-                setProducts(response.data.data);
+                const response = await ApiV2.get(`/api/v1/products?productType=${selectedProductTypeId}`);
+                setProducts(response.data.data || []);
             } catch (error) {
                 console.error("Error fetching products:", error);
-                setProducts([error || 'Error geting products']); // Reset products state in case of error   
+                setProducts([]);
+            } finally {
+                setLoadingProducts(false);
             }
         };
-        fetchProducts();
+        fetchFilteredProducts();
+    }, [selectedProductTypeId]);
+
+    // Fetch stages and customers
+    useEffect(() => {
         fetchStages();
         fetchCustomers();
     }, []);
@@ -100,15 +124,17 @@ const AddSales = () => {
                             <div style={{ width: '18%', minWidth: '150px' }}>
                                 <CustomDropdown
                                     value={salesType || ''}
-                                    onChange={(val) => setSalesType(val)}
+                                    onChange={(val) => {
+                                        const pt = productTypes.find(p => p.name === val);
+                                        setSalesType(val);
+                                        setSelectedProductTypeId(pt ? pt.id : '');
+                                    }}
                                     placeholder="Select Sales Type"
                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                    options={[
-                                        { value: 'Dry Fish', label: 'Dry Fish' },
-                                        { value: 'Fresh Fish', label: 'Fresh Fish' },
-                                        { value: 'Fingerlings Fish', label: 'Fingerlings Fish' },
-                                        { value: 'Feed', label: 'Feed' },
-                                    ]}
+                                    options={productTypes.map(pt => ({
+                                        value: pt.name,
+                                        label: formatTypeLabel(pt.name)
+                                    }))}
                                 />
                             </div>
                         </div>
@@ -124,32 +150,28 @@ const AddSales = () => {
                                 <div style={{ width: '18%', minWidth: '150px' }}>
                                     <CustomDropdown
                                         value={salesType || ''}
-                                        onChange={(val) => setSalesType(val)}
+                                        onChange={(val) => {
+                                            const pt = productTypes.find(p => p.name === val);
+                                            setSalesType(val);
+                                            setSelectedProductTypeId(pt ? pt.id : '');
+                                        }}
                                         placeholder="Select Sales Type"
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                                        options={[
-                                            { value: 'Dry Fish', label: 'Dry Fish' },
-                                            { value: 'Fresh Fish', label: 'Fresh Fish' },
-                                            { value: 'Fingerlings Fish', label: 'Fingerlings Fish' },
-                                            { value: 'Feed', label: 'Feed' },
-                                        ]}
+                                        options={productTypes.map(pt => ({
+                                            value: pt.name,
+                                            label: formatTypeLabel(pt.name)
+                                        }))}
                                     />
                                 </div>
                             </div>
                         )}
 
-                        {salesType === 'Dry Fish' && (
-                            <SalesForm customers={customers} stages={stages} products={products} siteId={activeSite?.id} productTypes={productTypes} />
-                        )}
-                        {salesType === 'Fresh Fish' && (
-                            <FreshForm customers={customers} stages={stages} products={products} siteId={activeSite?.id} productTypes={productTypes} />
-                        )}
-                        {salesType === 'Fingerlings Fish' && (
-                            <FingerlingsForm customers={customers} stages={stages} products={products} siteId={activeSite?.id} productTypes={productTypes} />
-                        )}
-                        {salesType === 'Feed' && (
-                            <FeedForm customers={customers} stages={stages} siteId={activeSite?.id} productTypes={productTypes} />
-                        )}
+                        {salesType && (() => {
+                            const FormComponent = getSalesForm(salesType);
+                            return FormComponent ? (
+                                <FormComponent customers={customers} stages={stages} products={products} siteId={activeSite?.id} productTypes={productTypes} />
+                            ) : null;
+                        })()}
                     </main>
                 </section>
             </div>
