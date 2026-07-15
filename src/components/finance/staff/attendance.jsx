@@ -400,16 +400,16 @@ export default function StaffAttendance() {
     : '\u2014';
 
   return (
-    <section className={`${financeStyles.body}`}>
+    <section className={`${financeStyles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2 flex-grow-1">
+      <div className="d-flex gap-2 flex-grow-1" style={{ overflow: 'hidden' }}>
         <div className={`${financeStyles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${financeStyles.content} flex-grow-1`}>
-          <main className={styles.pageWrapper}>
+        <section className={`${financeStyles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <main className={styles.pageWrapper} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
             <ToastContainer />
             {/* ── BREADCRUMB ── */}
@@ -425,7 +425,8 @@ export default function StaffAttendance() {
             <div className={styles.splitLayout}>
 
               {/* ════ LEFT PANEL: Staff List ════ */}
-              <div className={`${styles.leftPanel} ${showDetail ? styles.leftPanelCompressed : ''}`}>
+              <div className={`${styles.leftPanel} ${showDetail ? styles.leftPanelCompressed : ''}`} style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
 
                 {/* ── Filter Bar ── */}
                 <div className={styles.filterBar}>
@@ -533,48 +534,49 @@ export default function StaffAttendance() {
                       );
                     })()}
                   </div>
+                </div>
+                </div>
 
-                  {/* ── Table Footer ── */}
-                  <div className={styles.tableFooter}>
-                    <span className={styles.footerInfo}>{filtered.length} staff members</span>
-                    <div className={styles.pagination} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                      <button className={styles.pageArrow} disabled={safePage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
-                        <FiChevronLeft size={15} />
-                      </button>
-                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (safePage <= 3) {
-                          pageNum = i + 1;
-                        } else if (safePage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = safePage - 2 + i;
-                        }
-                        return (
-                          <button key={pageNum} className={`${styles.pageBtn} ${safePage === pageNum ? styles.pageBtnActive : ''}`} onClick={() => setCurrentPage(pageNum)}>
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-                      <button className={styles.pageArrow} disabled={safePage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
-                        <FiChevronRight size={15} />
-                      </button>
-                      <div className={styles.perPageWrapper} ref={perPageRef}>
-                        <button className={styles.perPageDropdown} onClick={() => setShowPerPageDropdown(!showPerPageDropdown)}>
-                          {itemsPerPage} / page <IoChevronDown size={11} />
+                {/* ── Table Footer ── */}
+                <div className={styles.tableFooter}>
+                  <span className={styles.footerInfo}>{filtered.length} staff members</span>
+                  <div className={styles.pagination}>
+                    <button className={styles.pageArrow} disabled={safePage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
+                      <FiChevronLeft size={15} />
+                    </button>
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (safePage <= 3) {
+                        pageNum = i + 1;
+                      } else if (safePage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = safePage - 2 + i;
+                      }
+                      return (
+                        <button key={pageNum} className={`${styles.pageBtn} ${safePage === pageNum ? styles.pageBtnActive : ''}`} onClick={() => setCurrentPage(pageNum)}>
+                          {pageNum}
                         </button>
-                        {showPerPageDropdown && (
-                          <div className={styles.dropdownMenu} style={{ right: 0, left: 'auto' }}>
-                            {[5, 10, 20, 50].map(n => (
-                              <div key={n} className={`${styles.dropdownItem} ${itemsPerPage === n ? styles.dropdownItemActive : ''}`} onClick={() => { setItemsPerPage(n); setCurrentPage(1); setShowPerPageDropdown(false); }}>
-                                {n} / page
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      );
+                    })}
+                    <button className={styles.pageArrow} disabled={safePage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
+                      <FiChevronRight size={15} />
+                    </button>
+                    <div className={styles.perPageWrapper} ref={perPageRef}>
+                      <button className={styles.perPageDropdown} onClick={() => setShowPerPageDropdown(!showPerPageDropdown)}>
+                        {itemsPerPage} / page <IoChevronDown size={11} />
+                      </button>
+                      {showPerPageDropdown && (
+                        <div className={styles.dropdownMenu} style={{ right: 0, left: 'auto' }}>
+                          {[5, 10, 20, 50].map(n => (
+                            <div key={n} className={`${styles.dropdownItem} ${itemsPerPage === n ? styles.dropdownItemActive : ''}`} onClick={() => { setItemsPerPage(n); setCurrentPage(1); setShowPerPageDropdown(false); }}>
+                              {n} / page
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

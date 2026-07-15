@@ -190,17 +190,18 @@ export default function UpdateStoreInventory() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
-        <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
+        <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
               <h4 className="m-0">View All</h4>
               <button className={`fw-semibold ${styles.addStoreBtn}`} onClick={() => setShowAddModal(true)}>Add store</button>
@@ -217,62 +218,62 @@ export default function UpdateStoreInventory() {
               <Alert variant="info">No store available.</Alert>
             )}
 
-            {!loading && !error && (
-              <>
-                <DataTable
-                  columns={[
-                    { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
-                    { key: 'name', label: 'NAME' },
-                    { key: 'unit', label: 'UNIT' },
-                    { key: 'quantity', label: 'QUANTITY', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
-                    { key: 'threshold', label: 'THRESHOLD VALUE', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
-                    { key: 'status', label: 'STATUS', render: (value) => (
-                      <span className={
-                        value === 'in stock'
-                          ? 'text-success text-uppercase fw-semibold'
-                          : value === 'out of stock'
-                          ? 'text-danger text-uppercase fw-semibold'
-                          : value === 'low stock'
-                          ? 'text-warning text-uppercase fw-semibold'
-                          : ''
-                      }>
-                        {value}
-                      </span>
-                    )},
-                  ]}
-                  data={currentProducts}
-                  actions={(row) => (
-                    <PortalDropdown btnClass={styles.threeDotBtn} items={[
-                      { label: 'Restock Store', onClick: () => handleAddClick(row) },
-                      { label: 'Use', onClick: () => handleRemoveClick(row) },
-                      { divider: true },
-                      { label: 'Edit', onClick: () => handleEditClick(row) },
-                    ]} />
-                  )}
+            {!loading && !error && products.length > 0 && (
+              <DataTable
+                columns={[
+                  { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
+                  { key: 'name', label: 'NAME' },
+                  { key: 'unit', label: 'UNIT' },
+                  { key: 'quantity', label: 'QUANTITY', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
+                  { key: 'threshold', label: 'THRESHOLD VALUE', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
+                  { key: 'status', label: 'STATUS', render: (value) => (
+                    <span className={
+                      value === 'in stock'
+                        ? 'text-success text-uppercase fw-semibold'
+                        : value === 'out of stock'
+                        ? 'text-danger text-uppercase fw-semibold'
+                        : value === 'low stock'
+                        ? 'text-warning text-uppercase fw-semibold'
+                        : ''
+                    }>
+                      {value}
+                    </span>
+                  )},
+                ]}
+                data={currentProducts}
+                actions={(row) => (
+                  <PortalDropdown btnClass={styles.threeDotBtn} items={[
+                    { label: 'Restock Store', onClick: () => handleAddClick(row) },
+                    { label: 'Use', onClick: () => handleRemoveClick(row) },
+                    { divider: true },
+                    { label: 'Edit', onClick: () => handleEditClick(row) },
+                  ]} />
+                )}
+              />
+            )}
+            </div>
+            {!loading && !error && products.length > 0 && (
+              <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+                <ReactPaginate
+                  previousLabel={"< "}
+                  nextLabel={" >"}
+                  breakLabel={"..."}
+                  pageCount={Math.ceil(products.length / itemsPerPage)}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageChange}
+                  containerClassName={"pagination"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={"page-link"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={"page-link"}
+                  nextClassName={"page-item"}
+                  nextLinkClassName={"page-link"}
+                  breakClassName={"page-item"}
+                  breakLinkClassName={"page-link"}
+                  activeClassName={"active"}
                 />
-
-<div className="d-flex justify-content-center mt-4" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                   <ReactPaginate
-                    previousLabel={"< "}
-                    nextLabel={" >"}
-                    breakLabel={"..."}
-                    pageCount={Math.ceil(products.length / itemsPerPage)}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    containerClassName={"pagination"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
-                </div>
-              </>
+              </div>
             )}
           </main>
         </section>

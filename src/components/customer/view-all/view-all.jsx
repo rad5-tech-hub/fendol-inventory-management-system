@@ -240,17 +240,18 @@ export default function ViewAllCustomers() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <ConfirmDialog />
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${styles.content}`}>
-          <main className={styles.create_form}>
+        <section className={`${styles.content}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <main className={styles.create_form} style={{ height: '100%', overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '40px' }}>
             <ToastContainer />
 
             {/* ── Header Actions ── */}
@@ -472,40 +473,39 @@ export default function ViewAllCustomers() {
 
             {/* ── Table ── */}
             {!loading && !error && filteredCustomers.length > 0 && (
-              <>
-                <DataTable
-                  columns={columns}
-                  data={currentCustomers}
-                  actions={tableActions}
-                />
-
-                {/* ── Pagination ── */}
-                <div className="d-flex justify-content-between align-items-center mt-3" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                  <div style={{ fontSize: '13px', color: '#8C949B' }}>
-                    Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length}
-                  </div>
-                  <ReactPaginate
-                    previousLabel={"‹"}
-                    nextLabel={"›"}
-                    breakLabel="..."
-                    pageCount={pageCount}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={(data) => setCurrentPage(data.selected)}
-                    containerClassName={"pagination mb-0"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                    forcePage={currentPage}
-                  />
+              <DataTable
+                columns={columns}
+                data={currentCustomers}
+                actions={tableActions}
+              />
+            )}
+            </div>
+            {!loading && !error && filteredCustomers.length > 0 && (
+              <div className="d-flex justify-content-between align-items-center" style={{ padding: '12px 24px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '13px', color: '#8C949B' }}>
+                  Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length}
                 </div>
-              </>
+                <ReactPaginate
+                  previousLabel={"‹"}
+                  nextLabel={"›"}
+                  breakLabel="..."
+                  pageCount={pageCount}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={(data) => setCurrentPage(data.selected)}
+                  containerClassName={"pagination mb-0"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={"page-link"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={"page-link"}
+                  nextClassName={"page-item"}
+                  nextLinkClassName={"page-link"}
+                  breakClassName={"page-item"}
+                  breakLinkClassName={"page-link"}
+                  activeClassName={"active"}
+                  forcePage={currentPage}
+                />
+              </div>
             )}
           </main>
         </section>

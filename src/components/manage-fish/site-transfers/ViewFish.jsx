@@ -336,7 +336,7 @@ export default function ViewFish() {
   ];
 
   return (
-    <section className={styles.body}>
+    <section className={styles.body} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <ToastContainer />
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton className={styles.modalHeader}>
@@ -520,13 +520,14 @@ export default function ViewFish() {
         <Header toggleSidebar={toggleSidebar} />
       </div>
 
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
         <section className={styles.content}>
-          <main className={styles.mainCard}>
+          <main className={styles.mainCard} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
             {/* ── Breadcrumb ── */}
             <div className={styles.breadcrumb}>
               <span>Fish Operations</span>
@@ -791,37 +792,38 @@ export default function ViewFish() {
                       )}
                     />
 
-                    {/* ── Pagination ── */}
-                    {pageCount > 1 && (
-                      <div className={styles.paginationFooter}>
-                        <small className={styles.paginationInfo}>
-                          Showing {offset + 1}&ndash;{Math.min(offset + ITEMS_PER_PAGE, filtered.length)} of {filtered.length} transfers
-                        </small>
-                        <div className={styles.pagination} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                          <ReactPaginate
-                            previousLabel={"< "}
-                            nextLabel={" >"}
-                            breakLabel={"..."}
-                            pageCount={pageCount}
-                            forcePage={page}
-                            onPageChange={({ selected }) => setPage(selected)}
-                            containerClassName={"pagination mb-0"}
-                            pageClassName={"page-item"}
-                            pageLinkClassName={"page-link"}
-                            previousClassName={"page-item"}
-                            previousLinkClassName={"page-link"}
-                            nextClassName={"page-item"}
-                            nextLinkClassName={"page-link"}
-                            breakClassName={"page-item"}
-                            breakLinkClassName={"page-link"}
-                            activeClassName={"active"}
-                          />
-                        </div>
-                      </div>
-                    )}
+
                   </>
                 )}
               </>
+            )}
+            </div>
+            {!loading && !error && pageCount > 1 && (
+              <div className={styles.paginationFooter}>
+                <small className={styles.paginationInfo}>
+                  Showing {offset + 1}&ndash;{Math.min(offset + ITEMS_PER_PAGE, filtered.length)} of {filtered.length} transfers
+                </small>
+                <div className={styles.pagination} style={{ paddingTop: 12, paddingBottom: 12, background: '#fff' }}>
+                  <ReactPaginate
+                    previousLabel={"< "}
+                    nextLabel={" >"}
+                    breakLabel={"..."}
+                    pageCount={pageCount}
+                    forcePage={page}
+                    onPageChange={({ selected }) => setPage(selected)}
+                    containerClassName={"pagination mb-0"}
+                    pageClassName={"page-item"}
+                    pageLinkClassName={"page-link"}
+                    previousClassName={"page-item"}
+                    previousLinkClassName={"page-link"}
+                    nextClassName={"page-item"}
+                    nextLinkClassName={"page-link"}
+                    breakClassName={"page-item"}
+                    breakLinkClassName={"page-link"}
+                    activeClassName={"active"}
+                  />
+                </div>
+              </div>
             )}
           </main>
         </section>

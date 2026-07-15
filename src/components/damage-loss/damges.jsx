@@ -62,11 +62,11 @@ export default function DamageLoss() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         {/* Sidebar */}
         <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
@@ -74,28 +74,28 @@ export default function DamageLoss() {
 
         {/* Content */}
         <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
-            <h4 className="mt-3 mb-5">Damage/Loss</h4>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <h4 className="mt-3 mb-5">Damage/Loss</h4>
 
-            {/* Table */}
-            {loading ? (
-              <div style={{ padding: "20px 0" }}>
-                <SkeletonTable rows={5} cols={5} />
-              </div>
-            ) : error ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
-                  <FaExclamationTriangle size={40} /><span className="fw-semibold">{error}</span>
-                </Alert>
-              </div>
-            ) : moveFishHistory.length === 0 ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-50 py-5">
-                  <FaExclamationTriangle size={40} /><span className="fw-semibold">No available Damage or loss.</span>
-                </Alert>
-              </div>
-            ) : (
-              <>
+              {/* Table */}
+              {loading ? (
+                <div style={{ padding: "20px 0" }}>
+                  <SkeletonTable rows={5} cols={5} />
+                </div>
+              ) : error ? (
+                <div className="d-flex justify-content-center">
+                  <Alert variant="danger" className="text-center w-50 py-5">
+                    <FaExclamationTriangle size={40} /><span className="fw-semibold">{error}</span>
+                  </Alert>
+                </div>
+              ) : moveFishHistory.length === 0 ? (
+                <div className="d-flex justify-content-center">
+                  <Alert variant="info" className="text-center w-50 py-5">
+                    <FaExclamationTriangle size={40} /><span className="fw-semibold">No available Damage or loss.</span>
+                  </Alert>
+                </div>
+              ) : (
                 <div className={styles.tableWrapper}>
                   <table className={styles.styled_table}>
                     <thead>
@@ -138,26 +138,27 @@ export default function DamageLoss() {
                     </tbody>
                   </table>
                 </div>
-                {/* Pagination */}
-                <div style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#f8f9fa', padding: '12px 0', borderTop: '1px solid #e5e7eb' }}>
-                <ReactPaginate
-                  previousLabel={"<"}
-                  nextLabel={">"}
-                  pageCount={pageCount}
-                  onPageChange={handlePageClick}
-                  containerClassName={"pagination justify-content-center mb-0"}
-                  pageClassName={"page-item"}
-                  pageLinkClassName={"page-link"}
-                  previousClassName={"page-item"}
-                  previousLinkClassName={"page-link"}
-                  nextClassName={"page-item"}
-                  nextLinkClassName={"page-link"}
-                  breakClassName={"page-item"}
-                  breakLinkClassName={"page-link"}
-                  activeClassName={"active-light"}
-                />
-                </div>
-              </>
+              )}
+            </div>
+            {!loading && !error && moveFishHistory.length > 0 && (
+              <div style={{ padding: '12px 0', borderTop: '1px solid #e5e7eb', background: '#f8f9fa' }}>
+              <ReactPaginate
+                previousLabel={"<"}
+                nextLabel={">"}
+                pageCount={pageCount}
+                onPageChange={handlePageClick}
+                containerClassName={"pagination justify-content-center mb-0"}
+                pageClassName={"page-item"}
+                pageLinkClassName={"page-link"}
+                previousClassName={"page-item"}
+                previousLinkClassName={"page-link"}
+                nextClassName={"page-item"}
+                nextLinkClassName={"page-link"}
+                breakClassName={"page-item"}
+                breakLinkClassName={"page-link"}
+                activeClassName={"active-light"}
+              />
+              </div>
             )}
           </main>
         </section>

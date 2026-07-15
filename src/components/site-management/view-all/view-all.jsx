@@ -84,16 +84,17 @@ const ViewAllSites = () => {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={styles.sidebar}>
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
+        <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
               <div className="mb-3 mb-md-0">
                 <h4 className="mt-3 mb-2">View Sites</h4>
@@ -145,75 +146,75 @@ const ViewAllSites = () => {
             )}
 
             {!loading && !error && displayedSites.length > 0 && (
-              <>
-                <DataTable
-                  columns={[
-                    { key: 'name', label: 'SITE NAME' },
-                    { key: 'type', label: 'TYPE', render: (_, row) => (
-                      <span
-                        style={{
-                          ...typeBadgeStyle(row.type?.name || row.description),
-                          padding: '2px 10px',
-                          borderRadius: '12px',
-                          fontSize: '0.8rem',
-                          fontWeight: 500,
-                          display: 'inline-block',
-                        }}
-                      >
-                        {row.type?.name || row.description}
-                      </span>
-                    )},
-                    { key: 'location', label: 'ADDRESS' },
-                    { key: 'managers', label: 'MANAGERS', render: (_, row) => (
-                      row.userSites?.length > 0 ? (
-                        <span>{row.userSites.length} {row.userSites.length === 1 ? 'Admin' : 'Admins'}</span>
-                      ) : (
-                        <span style={{ color: '#8C949B', fontStyle: 'italic' }}>Not assigned</span>
-                      )
-                    )},
-                    { key: 'contact', label: 'CONTACT', render: (_, row) => (
-                      row.userSites?.[0]?.Admin?.email || (
-                        <span style={{ color: '#8C949B', fontStyle: 'italic' }}>No contact</span>
-                      )
-                    )},
-                  ]}
-                  data={displayedSites}
-                  actions={(site) => (
-                    <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'center' }}>
-                      <PortalDropdown
-                        btnClass={styles.threeDotBtn}
-                        stopPropagation
-                        items={[
-                          { label: 'View', onClick: () => handleView(site) },
-                          { label: 'Edit', onClick: () => handleEdit(site) },
-                        ]}
-                      />
-                    </div>
-                  )}
+              <DataTable
+                columns={[
+                  { key: 'name', label: 'SITE NAME' },
+                  { key: 'type', label: 'TYPE', render: (_, row) => (
+                    <span
+                      style={{
+                        ...typeBadgeStyle(row.type?.name || row.description),
+                        padding: '2px 10px',
+                        borderRadius: '12px',
+                        fontSize: '0.8rem',
+                        fontWeight: 500,
+                        display: 'inline-block',
+                      }}
+                    >
+                      {row.type?.name || row.description}
+                    </span>
+                  )},
+                  { key: 'location', label: 'ADDRESS' },
+                  { key: 'managers', label: 'MANAGERS', render: (_, row) => (
+                    row.userSites?.length > 0 ? (
+                      <span>{row.userSites.length} {row.userSites.length === 1 ? 'Admin' : 'Admins'}</span>
+                    ) : (
+                      <span style={{ color: '#8C949B', fontStyle: 'italic' }}>Not assigned</span>
+                    )
+                  )},
+                  { key: 'contact', label: 'CONTACT', render: (_, row) => (
+                    row.userSites?.[0]?.Admin?.email || (
+                      <span style={{ color: '#8C949B', fontStyle: 'italic' }}>No contact</span>
+                    )
+                  )},
+                ]}
+                data={displayedSites}
+                actions={(site) => (
+                  <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'center' }}>
+                    <PortalDropdown
+                      btnClass={styles.threeDotBtn}
+                      stopPropagation
+                      items={[
+                        { label: 'View', onClick: () => handleView(site) },
+                        { label: 'Edit', onClick: () => handleEdit(site) },
+                      ]}
+                    />
+                  </div>
+                )}
+              />
+            )}
+            </div>
+            {!loading && !error && displayedSites.length > 0 && (
+              <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+                <ReactPaginate
+                  previousLabel={"< "}
+                  nextLabel={" >"}
+                  breakLabel={"..."}
+                  pageCount={Math.ceil(filteredSites.length / itemsPerPage)}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageChange}
+                  containerClassName={"pagination"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={"page-link"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={"page-link"}
+                  nextClassName={"page-item"}
+                  nextLinkClassName={"page-link"}
+                  breakClassName={"page-item"}
+                  breakLinkClassName={"page-link"}
+                  activeClassName={"active"}
                 />
-
-<div className="d-flex justify-content-center mt-4" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                   <ReactPaginate
-                    previousLabel={"< "}
-                    nextLabel={" >"}
-                    breakLabel={"..."}
-                    pageCount={Math.ceil(filteredSites.length / itemsPerPage)}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    containerClassName={"pagination"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
-                </div>
-              </>
+              </div>
             )}
           </main>
         </section>

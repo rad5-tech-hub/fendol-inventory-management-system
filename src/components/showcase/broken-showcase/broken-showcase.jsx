@@ -340,7 +340,10 @@ export default function ViewBrokenHistory() {
 
   const s = {
     pageWrap: {
-      minHeight: '100vh',
+      height: '100%',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
       backgroundColor: BG_PAGE,
       fontFamily: "'Inter', 'Segoe UI', sans-serif",
       color: TEXT_MAIN,

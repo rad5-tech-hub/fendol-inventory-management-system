@@ -269,16 +269,17 @@ const ViewAllStages = () => {
   };
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={styles.sidebar}>
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
+        <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             {/* ── Page Header ── */}
             <div className="d-flex justify-content-between align-items-start mb-4 mt-3 flex-wrap gap-2">
               <div>
@@ -403,68 +404,68 @@ const ViewAllStages = () => {
               </div>
             )}
 
-            {/* ── Table + Pagination ── */}
+            {/* ── Table ── */}
             {!loading && !error && displayedStages.length > 0 && (
-              <>
-                <div className="border rounded" style={{ backgroundColor: '#fff' }}>
-                  <DataTable
-                    columns={[
-                      { key: 'createdAt', label: 'DATE CREATED', render: (value) => <span style={{ color: '#8C949B' }}>{formatDate(value)}</span> },
-                      { key: 'title', label: 'POND NAME', render: (value) => <span style={{ color: '#512728', fontWeight: 600 }}>{value}</span> },
-                      { key: 'description', label: 'DESCRIPTION', render: (value) => <span style={{ color: '#2E3135' }}>{value}</span> },
-                      { key: 'site', label: 'SITE', render: (_, row) => {
-                        const siteName = row.site?.name;
-                        if (!siteName) return <span style={{ color: '#8C949B' }}>--</span>;
-                        const isHatchery = siteName.toLowerCase() === 'hatchery';
-                        return (
-                          <span className="px-2 py-1 rounded" style={{ backgroundColor: isHatchery ? '#FFF3CD' : '#E9ECEF', color: isHatchery ? '#856404' : '#495057', fontSize: '0.78rem', fontWeight: 500 }}>{siteName}</span>
-                        );
-                      }},
-                      { key: 'quantity', label: 'CURRENT STOCK', align: 'right', render: (value) => <span style={{ fontWeight: 600, color: '#2E3135' }}>{new Intl.NumberFormat().format(value)} pcs</span> },
-                    ]}
-                    data={displayedStages}
-                    actions={(row) => (
-                      <PortalDropdown
-                        btnClass={styles.threeDotBtn}
-                        items={[
-                          { label: 'Pond Summary', onClick: () => { setSelectedStage(row); setShowPondSummaryPanel(true); fetchPondDetail(row.id); } },
-                          { label: 'Edit Pond', onClick: () => { setSelectedStage(row); setShowEditPondModal(true); } },
-                          { label: 'Add Sampling Record', onClick: () => { setSelectedStage(row); setShowAddSamplingModal(true); } },
-                          { label: 'Add Notes', onClick: () => { setSelectedStage(row); setShowAddNoteModal(true); } },
-                          { divider: true },
-                          { label: 'Delete', onClick: () => { setSelectedStage(row); DeletePond(); }, style: { color: '#dc3545', fontWeight: 600 } },
-                        ]}
-                      />
-                    )}
-                  />
-                </div>
-
-                {/* Pagination row */}
-<div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                   <span style={{ fontSize: '0.875rem', color: '#8C949B' }}>
-                     Showing {startIndex + 1}–{Math.min(endIndex, filteredStages.length)} of {filteredStages.length} ponds
-                   </span>
-                   <ReactPaginate
-                    previousLabel={"< "}
-                    nextLabel={" >"}
-                    breakLabel={"..."}
-                    pageCount={Math.ceil(filteredStages.length / itemsPerPage)}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    containerClassName={"pagination mb-0"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
-                </div>
-              </>
+              <div className="border rounded" style={{ backgroundColor: '#fff' }}>
+                <DataTable
+                  columns={[
+                    { key: 'createdAt', label: 'DATE CREATED', render: (value) => <span style={{ color: '#8C949B' }}>{formatDate(value)}</span> },
+                    { key: 'title', label: 'POND NAME', render: (value) => <span style={{ color: '#512728', fontWeight: 600 }}>{value}</span> },
+                    { key: 'description', label: 'DESCRIPTION', render: (value) => <span style={{ color: '#2E3135' }}>{value}</span> },
+                    { key: 'site', label: 'SITE', render: (_, row) => {
+                      const siteName = row.site?.name;
+                      if (!siteName) return <span style={{ color: '#8C949B' }}>--</span>;
+                      const isHatchery = siteName.toLowerCase() === 'hatchery';
+                      return (
+                        <span className="px-2 py-1 rounded" style={{ backgroundColor: isHatchery ? '#FFF3CD' : '#E9ECEF', color: isHatchery ? '#856404' : '#495057', fontSize: '0.78rem', fontWeight: 500 }}>{siteName}</span>
+                      );
+                    }},
+                    { key: 'quantity', label: 'CURRENT STOCK', align: 'right', render: (value) => <span style={{ fontWeight: 600, color: '#2E3135' }}>{new Intl.NumberFormat().format(value)} pcs</span> },
+                  ]}
+                  data={displayedStages}
+                  actions={(row) => (
+                    <PortalDropdown
+                      btnClass={styles.threeDotBtn}
+                      items={[
+                        { label: 'Pond Summary', onClick: () => { setSelectedStage(row); setShowPondSummaryPanel(true); fetchPondDetail(row.id); } },
+                        { label: 'Edit Pond', onClick: () => { setSelectedStage(row); setShowEditPondModal(true); } },
+                        { label: 'Add Sampling Record', onClick: () => { setSelectedStage(row); setShowAddSamplingModal(true); } },
+                        { label: 'Add Notes', onClick: () => { setSelectedStage(row); setShowAddNoteModal(true); } },
+                        { divider: true },
+                        { label: 'Delete', onClick: () => { setSelectedStage(row); DeletePond(); }, style: { color: '#dc3545', fontWeight: 600 } },
+                      ]}
+                    />
+                  )}
+                />
+              </div>
+            )}
+            </div>
+            {/* Pagination row */}
+            {!loading && !error && displayedStages.length > 0 && (
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+                <span style={{ fontSize: '0.875rem', color: '#8C949B' }}>
+                  Showing {startIndex + 1}–{Math.min(endIndex, filteredStages.length)} of {filteredStages.length} ponds
+                </span>
+                <ReactPaginate
+                  previousLabel={"< "}
+                  nextLabel={" >"}
+                  breakLabel={"..."}
+                  pageCount={Math.ceil(filteredStages.length / itemsPerPage)}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageChange}
+                  containerClassName={"pagination mb-0"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={"page-link"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={"page-link"}
+                  nextClassName={"page-item"}
+                  nextLinkClassName={"page-link"}
+                  breakClassName={"page-item"}
+                  breakLinkClassName={"page-link"}
+                  activeClassName={"active"}
+                />
+              </div>
             )}
           </main>
         </section>

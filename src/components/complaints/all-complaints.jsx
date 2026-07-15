@@ -162,16 +162,17 @@ export default function AllComplaints() {
     type === 'Staff' ? `${styles.typeBadge} ${styles.typeStaff}` : `${styles.typeBadge} ${styles.typeGeneral}`;
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={`${styles.sidebar}`}>
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
             <div className={styles.headerRow}>
               <h4>All Complaints</h4>
             </div>
@@ -313,9 +314,9 @@ export default function AllComplaints() {
               )}
             />
             )}
-
+            </div>
             {pageCount > 1 && (
-              <div className={styles.paginationWrapper} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
+              <div className={styles.paginationWrapper}>
                 <ReactPaginate
                   previousLabel={<><FiChevronLeft size={16} style={{ marginRight: 4 }} /> Prev</>}
                   nextLabel={<>Next <FiChevronRight size={16} style={{ marginLeft: 4 }} /></>}

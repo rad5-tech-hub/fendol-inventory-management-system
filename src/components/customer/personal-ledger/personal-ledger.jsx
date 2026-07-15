@@ -300,16 +300,17 @@ export default function PersonalLedger() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={styles.content}>
-          <main className={styles.create_form}>
+        <section className={styles.content} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <ToastContainer />
 
             {/* ── Breadcrumb ── */}
@@ -513,40 +514,11 @@ export default function PersonalLedger() {
                       </Alert>
                     </div>
                   ) : (
-                    <>
-                      <DataTable
-                        columns={ledgerColumns}
-                        data={displayedLedgerData}
-                        actions={ledgerActions}
-                      />
-
-                      {/* ── Pagination ── */}
-                      <div className="d-flex justify-content-between align-items-center px-4 py-3 border-top" style={{ borderColor: '#e5e7eb', position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                        <div style={{ fontSize: '13px', color: '#8C949B' }}>
-                          Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredLedgerData.length)} of {filteredLedgerData.length} records
-                        </div>
-                        <ReactPaginate
-                          previousLabel={"‹"}
-                          nextLabel={"›"}
-                          breakLabel="..."
-                          pageCount={pageCount}
-                          marginPagesDisplayed={2}
-                          pageRangeDisplayed={3}
-                          onPageChange={handlePageChange}
-                          containerClassName={"pagination mb-0"}
-                          pageClassName={"page-item"}
-                          pageLinkClassName={"page-link"}
-                          previousClassName={"page-item"}
-                          previousLinkClassName={"page-link"}
-                          nextClassName={"page-item"}
-                          nextLinkClassName={"page-link"}
-                          breakClassName={"page-item"}
-                          breakLinkClassName={"page-link"}
-                          activeClassName={"active"}
-                          forcePage={currentPage}
-                        />
-                      </div>
-                    </>
+                    <DataTable
+                      columns={ledgerColumns}
+                      data={displayedLedgerData}
+                      actions={ledgerActions}
+                    />
                   )}
                 </div>
               </>
@@ -556,6 +528,35 @@ export default function PersonalLedger() {
               <Alert variant="info" className="text-center w-100 py-5">
                 <p className="text-center fw-semibold">No Ledger found</p>
               </Alert>
+            )}
+            </div>
+            {/* ── Pagination ── */}
+            {!loading && !error && ledgerData.length > 0 && filteredLedgerData.length > 0 && (
+              <div className="d-flex justify-content-between align-items-center px-4 py-3 border-top" style={{ borderColor: '#e5e7eb', background: '#fff' }}>
+                <div style={{ fontSize: '13px', color: '#8C949B' }}>
+                  Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredLedgerData.length)} of {filteredLedgerData.length} records
+                </div>
+                <ReactPaginate
+                  previousLabel={"‹"}
+                  nextLabel={"›"}
+                  breakLabel="..."
+                  pageCount={pageCount}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageChange}
+                  containerClassName={"pagination mb-0"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={"page-link"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={"page-link"}
+                  nextClassName={"page-item"}
+                  nextLinkClassName={"page-link"}
+                  breakClassName={"page-item"}
+                  breakLinkClassName={"page-link"}
+                  activeClassName={"active"}
+                  forcePage={currentPage}
+                />
+              </div>
             )}
           </main>
         </section>

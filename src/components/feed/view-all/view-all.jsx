@@ -207,44 +207,44 @@ export default function UpdateFeedInventory() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
-            <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
-              <h4 className="m-0">View All</h4>
-              <button className={`fw-semibold ${styles.addFeedBtn}`} onClick={() => setShowAddFeedModal(true)}>Add Feed</button>
-            </div>
-            <ToastContainer />
-
-            {loading && (
-              <div className="text-center">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
+        <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '15px' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+              <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
+                <h4 className="m-0">View All</h4>
+                <button className={`fw-semibold ${styles.addFeedBtn}`} onClick={() => setShowAddFeedModal(true)}>Add Feed</button>
               </div>
-            )}
+              <ToastContainer />
 
-            {error && (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5 my-5">
-                  <FaExclamationTriangle size={30} /> <span>{error}</span>
-                </Alert>
-              </div>
-            )}
+              {loading && (
+                <div className="text-center">
+                  <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </Spinner>
+                </div>
+              )}
 
-            {!loading && !error && products.length === 0 && (
-              <Alert variant="info">No products available.</Alert>
-            )}
+              {error && (
+                <div className="d-flex justify-content-center">
+                  <Alert variant="danger" className="text-center w-50 py-5 my-5">
+                    <FaExclamationTriangle size={30} /> <span>{error}</span>
+                  </Alert>
+                </div>
+              )}
 
-            {!loading && !error && (
-              <>
+              {!loading && !error && products.length === 0 && (
+                <Alert variant="info">No products available.</Alert>
+              )}
+
+              {!loading && !error && (
                 <div className={styles.tableWrapper}>
                   <DataTable
                     className={styles.styled_table}
@@ -286,31 +286,33 @@ export default function UpdateFeedInventory() {
                     )}
                   />
                 </div>
+              )}
+            </div>
 
-                <div className="d-flex justify-content-center mt-4" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                  <ReactPaginate
-                    previousLabel={"< "}
-                    nextLabel={" >"}
-                    breakLabel={"..."}
-                    pageCount={Math.ceil(products.length / itemsPerPage)}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    containerClassName={"pagination"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
-                </div>
-              </>
-            )}
-          </main>
+            {!loading && !error && products.length > 0 && (
+            <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+              <ReactPaginate
+                previousLabel={"< "}
+                nextLabel={" >"}
+                breakLabel={"..."}
+                pageCount={Math.ceil(products.length / itemsPerPage)}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={3}
+                onPageChange={handlePageChange}
+                containerClassName={"pagination"}
+                pageClassName={"page-item"}
+                pageLinkClassName={"page-link"}
+                previousClassName={"page-item"}
+                previousLinkClassName={"page-link"}
+                nextClassName={"page-item"}
+                nextLinkClassName={"page-link"}
+                breakClassName={"page-item"}
+                breakLinkClassName={"page-link"}
+                activeClassName={"active"}
+              />
+            </div>
+          )}
+        </main>
         </section>
 
         <Modal show={showModal} onHide={() => setShowModal(false)} className="rounded-0">

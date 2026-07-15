@@ -130,87 +130,87 @@ export default function InventoryHistory() {
   ];
 
   return (
-    <section className={`${feedStyles.body}`}>
+    <section className={`${feedStyles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={`${feedStyles.sidebar} d-lg-block ${showSidebar ? "d-block" : "d-none"}`}>
           <SideBar className={feedStyles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${feedStyles.content} flex-grow-1`}>
-          <main className={styles.pageWrapper}>
-            <div className={styles.breadcrumb}>
-              <span className={styles.breadcrumbItem}>Feed Management</span>
-              <span className={styles.breadcrumbSep}>&gt;</span>
-              <span className={styles.breadcrumbActive}>Inventory History</span>
-            </div>
-
-            <div className={styles.headerRow}>
-              <div className={styles.headerLeft}>
-                <h1 className={styles.pageTitle}>Feed Inventory History</h1>
-                <p className={styles.pageSubtitle}>Track all feed additions, usage, and sales.</p>
+        <section className={`${feedStyles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ overflowY: 'auto', height: '100%', padding: '15px' }}>
+            <main className={styles.pageWrapper}>
+              <div className={styles.breadcrumb}>
+                <span className={styles.breadcrumbItem}>Feed Management</span>
+                <span className={styles.breadcrumbSep}>&gt;</span>
+                <span className={styles.breadcrumbActive}>Inventory History</span>
               </div>
-              <div className={styles.headerRight}>
-                <button className={styles.backBtn} onClick={() => navigate(-1)}>
-                  <FiArrowLeft size={14} />
-                  Back
-                </button>
-              </div>
-            </div>
 
-            <div className={styles.filterRow}>
-              <div className={styles.filterLeft}>
-                <div className={styles.filterField}>
-                  <span className={styles.filterCaption}>Filter by Date</span>
-                  <div className={styles.filterControl}>
-                    <IoCalendarOutline size={15} className={styles.ctrlIcon} />
-                    <input
-                      type="date"
-                      className={styles.filterDateInput}
-                      value={selectedDate}
-                      onChange={handleDateChange}
-                    />
-                    {selectedDate && (
-                      <IoClose size={15} className={styles.ctrlClear} onClick={clearFilter} />
-                    )}
-                  </div>
+              <div className={styles.headerRow}>
+                <div className={styles.headerLeft}>
+                  <h1 className={styles.pageTitle}>Feed Inventory History</h1>
+                  <p className={styles.pageSubtitle}>Track all feed additions, usage, and sales.</p>
                 </div>
-                {selectedDate && (
-                  <button className={styles.filterClearBtn} onClick={clearFilter}>
-                    <IoClose size={14} />
-                    Clear filters
+                <div className={styles.headerRight}>
+                  <button className={styles.backBtn} onClick={() => navigate(-1)}>
+                    <FiArrowLeft size={14} />
+                    Back
                   </button>
-                )}
-              </div>
-            </div>
-
-            {loading ? (
-              <div style={{ padding: "20px 0" }}>
-                <SkeletonTable rows={5} cols={6} />
-              </div>
-            ) : error ? (
-              <div className={styles.errorBanner}>
-                <div className={styles.errorBannerContent}>
-                  <FaExclamationTriangle size={18} className={styles.errorBannerIcon} />
-                  <div className={styles.errorBannerText}>
-                    <span className={styles.errorBannerTitle}>Unable to load inventory history</span>
-                    <span className={styles.errorBannerMsg}>{error}</span>
-                  </div>
                 </div>
               </div>
-            ) : filteredData.length === 0 ? (
-              <div className={styles.emptyState}>
-                <BsInfoCircle size={36} className={styles.emptyStateIcon} />
-                <span className={styles.emptyStateText}>
-                  {selectedDate ? "No records for this date" : "No inventory history available"}
-                </span>
-                <span className={styles.emptyStateSub}>
-                  {selectedDate ? "Try selecting a different date." : "Feed transactions will appear here once recorded."}
-                </span>
+
+              <div className={styles.filterRow}>
+                <div className={styles.filterLeft}>
+                  <div className={styles.filterField}>
+                    <span className={styles.filterCaption}>Filter by Date</span>
+                    <div className={styles.filterControl}>
+                      <IoCalendarOutline size={15} className={styles.ctrlIcon} />
+                      <input
+                        type="date"
+                        className={styles.filterDateInput}
+                        value={selectedDate}
+                        onChange={handleDateChange}
+                      />
+                      {selectedDate && (
+                        <IoClose size={15} className={styles.ctrlClear} onClick={clearFilter} />
+                      )}
+                    </div>
+                  </div>
+                  {selectedDate && (
+                    <button className={styles.filterClearBtn} onClick={clearFilter}>
+                      <IoClose size={14} />
+                      Clear filters
+                    </button>
+                  )}
+                </div>
               </div>
-            ) : (
-              <>
+
+              {loading ? (
+                <div style={{ padding: "20px 0" }}>
+                  <SkeletonTable rows={5} cols={6} />
+                </div>
+              ) : error ? (
+                <div className={styles.errorBanner}>
+                  <div className={styles.errorBannerContent}>
+                    <FaExclamationTriangle size={18} className={styles.errorBannerIcon} />
+                    <div className={styles.errorBannerText}>
+                      <span className={styles.errorBannerTitle}>Unable to load inventory history</span>
+                      <span className={styles.errorBannerMsg}>{error}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : filteredData.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <BsInfoCircle size={36} className={styles.emptyStateIcon} />
+                  <span className={styles.emptyStateText}>
+                    {selectedDate ? "No records for this date" : "No inventory history available"}
+                  </span>
+                  <span className={styles.emptyStateSub}>
+                    {selectedDate ? "Try selecting a different date." : "Feed transactions will appear here once recorded."}
+                  </span>
+                </div>
+              ) : (
                 <div className={styles.tableCard}>
                   <div className={`d-none d-lg-block ${styles.tableWrapper}`}>
                     <DataTable
@@ -255,39 +255,39 @@ export default function InventoryHistory() {
                       );
                     })}
                   </div>
-
-                  {pageCount > 1 && (
-                    <div className={styles.tableFooter}>
-                      <span className={styles.footerInfo}>
-                        Showing {offset + 1} to {Math.min(offset + itemsPerPage, filteredData.length)} of {filteredData.length} records
-                      </span>
-                      <div className={styles.pagination} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                        <ReactPaginate
-                          previousLabel={<FiChevronLeft size={15} />}
-                          nextLabel={<FiChevronRight size={15} />}
-                          breakLabel="..."
-                          pageCount={pageCount}
-                          marginPagesDisplayed={2}
-                          pageRangeDisplayed={3}
-                          onPageChange={handlePageClick}
-                          containerClassName="pagination"
-                          pageClassName="page-item"
-                          pageLinkClassName="page-link"
-                          previousClassName="page-item"
-                          previousLinkClassName="page-link"
-                          nextClassName="page-item"
-                          nextLinkClassName="page-link"
-                          breakClassName="page-item"
-                          breakLinkClassName="page-link"
-                          activeClassName="active"
-                        />
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </>
-            )}
-          </main>
+              )}
+            </main>
+          </div>
+
+          {!loading && !error && pageCount > 1 && (
+            <div className={styles.tableFooter}>
+              <span className={styles.footerInfo}>
+                Showing {offset + 1} to {Math.min(offset + itemsPerPage, filteredData.length)} of {filteredData.length} records
+              </span>
+              <div className={styles.pagination} style={{ paddingTop: 12, paddingBottom: 12 }}>
+                <ReactPaginate
+                  previousLabel={<FiChevronLeft size={15} />}
+                  nextLabel={<FiChevronRight size={15} />}
+                  breakLabel="..."
+                  pageCount={pageCount}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageClick}
+                  containerClassName="pagination"
+                  pageClassName="page-item"
+                  pageLinkClassName="page-link"
+                  previousClassName="page-item"
+                  previousLinkClassName="page-link"
+                  nextClassName="page-item"
+                  nextLinkClassName="page-link"
+                  breakClassName="page-item"
+                  breakLinkClassName="page-link"
+                  activeClassName="active"
+                />
+              </div>
+            </div>
+          )}
         </section>
       </div>
     </section>

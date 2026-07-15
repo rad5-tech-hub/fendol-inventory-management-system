@@ -155,20 +155,21 @@ export default function ViewAll() {
   );
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
         <section className={`${styles.content}`}>
-            <main>
+            <main style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <ConfirmDialog />
             <ToastContainer />
 
+            <div style={{ flex: 1, overflowY: 'auto' }}>
             <div className={styles.pageHeader}>
               <h4 className={styles.pageTitle}>All Admins</h4>
               <div className={styles.headerActions}>
@@ -211,31 +212,35 @@ export default function ViewAll() {
                   actions={renderActions}
                 />
 
-                <div className={styles.tableFooter} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                  <small className="text-muted">
-                    Showing {offset + 1} to {Math.min(offset + adminsPerPage, filteredAdmins.length)} of {filteredAdmins.length} admins
-                  </small>
-                  <ReactPaginate
-                    previousLabel={"← Previous"}
-                    nextLabel={"Next →"}
-                    breakLabel="..."
-                    pageCount={Math.ceil(filteredAdmins.length / adminsPerPage)}
-                    pageRangeDisplayed={3}
-                    marginPagesDisplayed={2}
-                    onPageChange={handlePageClick}
-                    containerClassName={"pagination"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
-                </div>
+
               </>
+            )}
+            </div>
+            {!loading && !error && admins.length > 0 && (
+              <div className={styles.tableFooter} style={{ paddingTop: 12, paddingBottom: 12, background: '#fff' }}>
+                <small className="text-muted">
+                  Showing {offset + 1} to {Math.min(offset + adminsPerPage, filteredAdmins.length)} of {filteredAdmins.length} admins
+                </small>
+                <ReactPaginate
+                  previousLabel={"← Previous"}
+                  nextLabel={"Next →"}
+                  breakLabel="..."
+                  pageCount={Math.ceil(filteredAdmins.length / adminsPerPage)}
+                  pageRangeDisplayed={3}
+                  marginPagesDisplayed={2}
+                  onPageChange={handlePageClick}
+                  containerClassName={"pagination"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={"page-link"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={"page-link"}
+                  nextClassName={"page-item"}
+                  nextLinkClassName={"page-link"}
+                  breakClassName={"page-item"}
+                  breakLinkClassName={"page-link"}
+                  activeClassName={"active"}
+                />
+              </div>
             )}
           </main>
 

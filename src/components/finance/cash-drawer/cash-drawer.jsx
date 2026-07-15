@@ -200,17 +200,18 @@ const CashDrawer = () => {
   }, [entries, currentPage]);
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={styles.sidebar}>
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
-        <section className={`${styles.content}`}>
-          <main className={`${styles.create_form}`}>
+        <section className={`${styles.content}`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <main className={`${styles.create_form}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-3 gap-3 align-items-md-center">
               <h4 className="mb-3 mb-md-0">Cash Drawer</h4>
               <div className="d-flex flex-column justify-content-end align-items-center flex-md-row gap-2">
@@ -287,99 +288,100 @@ const CashDrawer = () => {
             )}
 
             {!loading && !error && entries.length > 0 && (
-              <>
-                <DataTable
-                  className={`${styles.styled_table} ${styles.table_responsive}`}
-                  columns={[
-                    {
-                      key: "date",
-                      label: "DATE",
-                      render: (val) => formatDate(val),
-                    },
-                    {
-                      key: "isWithdrawal",
-                      label: "TYPE",
-                      render: (val) => (
+              <DataTable
+                className={`${styles.styled_table} ${styles.table_responsive}`}
+                columns={[
+                  {
+                    key: "date",
+                    label: "DATE",
+                    render: (val) => formatDate(val),
+                  },
+                  {
+                    key: "isWithdrawal",
+                    label: "TYPE",
+                    render: (val) => (
+                      <span
+                        className={`badge ${val ? "bg-danger" : "bg-success"}`}
+                      >
+                        {val ? "Withdrawal" : "Deposit"}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "description",
+                    label: "DESCRIPTION",
+                    render: (val) =>
+                      val ? (
                         <span
-                          className={`badge ${val ? "bg-danger" : "bg-success"}`}
+                          title={val}
+                          style={{
+                            cursor: val.length > 50 ? "pointer" : "normal",
+                          }}
                         >
-                          {val ? "Withdrawal" : "Deposit"}
+                          {val.slice(0, 50) + (val.length > 50 ? "..." : "")}
+                        </span>
+                      ) : (
+                        "-"
+                      ),
+                  },
+                  {
+                    key: "credit",
+                    label: "CREDIT (₦)",
+                    render: (val, row) =>
+                      row?.isWithdrawal || !val ? (
+                        "-"
+                      ) : (
+                        <span style={{ color: "green" }}>
+                          ₦{val.toLocaleString()}
                         </span>
                       ),
-                    },
-                    {
-                      key: "description",
-                      label: "DESCRIPTION",
-                      render: (val) =>
-                        val ? (
-                          <span
-                            title={val}
-                            style={{
-                              cursor: val.length > 50 ? "pointer" : "normal",
-                            }}
-                          >
-                            {val.slice(0, 50) + (val.length > 50 ? "..." : "")}
-                          </span>
-                        ) : (
-                          "-"
-                        ),
-                    },
-                    {
-                      key: "credit",
-                      label: "CREDIT (₦)",
-                      render: (val, row) =>
-                        row?.isWithdrawal || !val ? (
-                          "-"
-                        ) : (
-                          <span style={{ color: "green" }}>
-                            ₦{val.toLocaleString()}
-                          </span>
-                        ),
-                    },
-                    {
-                      key: "debit",
-                      label: "DEBIT (₦)",
-                      render: (val, row) =>
-                        !row?.isWithdrawal || !val ? (
-                          "-"
-                        ) : (
-                          <span style={{ color: "red" }}>
-                            ₦{val.toLocaleString()}
-                          </span>
-                        ),
-                    },
-                    {
-                      key: "balance",
-                      label: "BALANCE (₦)",
-                      render: (val) =>
-                        val != null ? `₦${val.toLocaleString()}` : "-",
-                    },
-                  ]}
-                  data={displayedEntries}
+                  },
+                  {
+                    key: "debit",
+                    label: "DEBIT (₦)",
+                    render: (val, row) =>
+                      !row?.isWithdrawal || !val ? (
+                        "-"
+                      ) : (
+                        <span style={{ color: "red" }}>
+                          ₦{val.toLocaleString()}
+                        </span>
+                      ),
+                  },
+                  {
+                    key: "balance",
+                    label: "BALANCE (₦)",
+                    render: (val) =>
+                      val != null ? `₦${val.toLocaleString()}` : "-",
+                  },
+                ]}
+                data={displayedEntries}
+              />
+            )}
+            </div>
+            {!loading && !error && entries.length > 0 && (
+              <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+                <ReactPaginate
+                  previousLabel={"< "}
+                  nextLabel={" >"}
+                  breakLabel={"..."}
+                  pageCount={Math.max(1, Math.ceil(entries.length / itemsPerPage))}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageChange}
+                  forcePage={currentPage}
+                  containerClassName={"pagination"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={"page-link"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={"page-link"}
+                  nextClassName={"page-item"}
+                  nextLinkClassName={"page-link"}
+                  breakClassName={"page-item"}
+                  breakLinkClassName={"page-link"}
+                  activeClassName={"active"}
                 />
-                <div className="d-flex justify-content-center mt-4" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                  <ReactPaginate
-                    previousLabel={"< "}
-                    nextLabel={" >"}
-                    breakLabel={"..."}
-                    pageCount={Math.max(1, Math.ceil(entries.length / itemsPerPage))}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    forcePage={currentPage}
-                    containerClassName={"pagination"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
-                </div>
-              </>
+              </div>
             )}
           </main>
         </section>

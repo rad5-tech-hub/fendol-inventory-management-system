@@ -83,19 +83,20 @@ const FinanceLedger = () => {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         {/* Sidebar */}
         <div className={styles.sidebar}>
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
         {/* Content */}
-        <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form}>
+        <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-5 align-items-md-center">
               <h4 className="mb-3 mb-md-0">Finance Ledger</h4>
               <div className="d-flex gap-2">
@@ -132,51 +133,51 @@ const FinanceLedger = () => {
 
             {/* Ledger Table */}
             {!loading && !error && displayedLedgerData.length > 0 && (
-              <>
-                <DataTable
-                  className={`${styles.styled_table} ${styles.table_responsive}`}
-                  columns={[
-                    { key: 'date', label: 'DATE', render: (val) => formatDate(val) },
-                    { key: 'productName', label: 'PRODUCT', render: (val) => (
-                      <span title={val} style={{ cursor: val && val.length > 40 ? "pointer" : "normal" }}>
-                        {val ? val.slice(0, 40) + (val.length > 40 ? "..." : "") : "-"}
-                      </span>
-                    )},
-                    { key: 'description', label: 'DESCRIPTION', render: (val) => (
-                      <span title={val} style={{ cursor: val && val.length > 40 ? "pointer" : "normal" }}>
-                        {val ? val.slice(0, 40) + (val.length > 40 ? "..." : "") : ""}
-                      </span>
-                    )},
-                    { key: 'credit', label: 'CREDIT(₦)', render: (val) => <span style={{ color: "green" }}>{val ? `₦${new Intl.NumberFormat().format(val)}` : "-"}</span> },
-                    { key: 'debit', label: 'DEBIT(₦)', render: (val) => <span style={{ color: "red" }}>{val ? `₦${new Intl.NumberFormat().format(val)}` : "-"}</span> },
-                    { key: 'balance', label: 'BALANCE(₦)', render: (val) => `₦${new Intl.NumberFormat().format(val)}` },
-                  ]}
-                  data={displayedLedgerData}
+              <DataTable
+                className={`${styles.styled_table} ${styles.table_responsive}`}
+                columns={[
+                  { key: 'date', label: 'DATE', render: (val) => formatDate(val) },
+                  { key: 'productName', label: 'PRODUCT', render: (val) => (
+                    <span title={val} style={{ cursor: val && val.length > 40 ? "pointer" : "normal" }}>
+                      {val ? val.slice(0, 40) + (val.length > 40 ? "..." : "") : "-"}
+                    </span>
+                  )},
+                  { key: 'description', label: 'DESCRIPTION', render: (val) => (
+                    <span title={val} style={{ cursor: val && val.length > 40 ? "pointer" : "normal" }}>
+                      {val ? val.slice(0, 40) + (val.length > 40 ? "..." : "") : ""}
+                    </span>
+                  )},
+                  { key: 'credit', label: 'CREDIT(₦)', render: (val) => <span style={{ color: "green" }}>{val ? `₦${new Intl.NumberFormat().format(val)}` : "-"}</span> },
+                  { key: 'debit', label: 'DEBIT(₦)', render: (val) => <span style={{ color: "red" }}>{val ? `₦${new Intl.NumberFormat().format(val)}` : "-"}</span> },
+                  { key: 'balance', label: 'BALANCE(₦)', render: (val) => `₦${new Intl.NumberFormat().format(val)}` },
+                ]}
+                data={displayedLedgerData}
+              />
+            )}
+            </div>
+            {/* Pagination */}
+            {!loading && !error && displayedLedgerData.length > 0 && (
+              <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+                <ReactPaginate
+                  previousLabel={"< "}
+                  nextLabel={" >"}
+                  breakLabel={"..."}
+                  pageCount={Math.ceil(filteredLedgerData.length / itemsPerPage)}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageChange}
+                  containerClassName={"pagination"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={"page-link"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={"page-link"}
+                  nextClassName={"page-item"}
+                  nextLinkClassName={"page-link"}
+                  breakClassName={"page-item"}
+                  breakLinkClassName={"page-link"}
+                  activeClassName={"active"}
                 />
-
-                {/* Pagination */}
-                <div className="d-flex justify-content-center mt-4" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                  <ReactPaginate
-                    previousLabel={"< "}
-                    nextLabel={" >"}
-                    breakLabel={"..."}
-                    pageCount={Math.ceil(filteredLedgerData.length / itemsPerPage)}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageChange}
-                    containerClassName={"pagination"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                  />
-                </div>
-              </>
+              </div>
             )}
           </main>
         </section>

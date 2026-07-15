@@ -968,70 +968,70 @@ export default function ViewSummary() {
                 </Alert>
               </div>
             ) : (
-              <>
               <div style={s.tablePanel}>
                 <DataTable
                   columns={tableColumns}
                   data={paginatedData}
                 />
               </div>
-
-                {/* ── table footer / pagination ─────────────────────────── */}
-                <div style={{ ...s.tableFooter, flexDirection: 'column', gap: '10px', position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px' }}>
-                  <span>Showing {Math.min(itemsPerPage, filteredData.length - offset)} of {filteredData.length} processes</span>
-                  {pageCount > 1 && (
-                    <div style={{ ...s.paginationWrap }}>
-                      <button
-                        style={{ ...s.pageBtn(false), width: '32px' }}
-                        onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                        disabled={currentPage === 0}
-                      >
-                        <FaChevronLeft size={11} />
-                      </button>
-                      {(() => {
-                        const pages = [];
-                        const maxVisible = 5;
-                        let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-                        let end = Math.min(pageCount, start + maxVisible);
-                        if (end - start < maxVisible) start = Math.max(0, end - maxVisible);
-
-                        if (start > 0) {
-                          pages.push(
-                            <button key={0} style={s.pageBtn(false)} onClick={() => setCurrentPage(0)}>1</button>
-                          );
-                          if (start > 1) pages.push(<span key="sl" style={s.pageDots}>...</span>);
-                        }
-                        for (let i = start; i < end; i++) {
-                          pages.push(
-                            <button key={i} style={s.pageBtn(currentPage === i)} onClick={() => setCurrentPage(i)}>
-                              {i + 1}
-                            </button>
-                          );
-                        }
-                        if (end < pageCount) {
-                          if (end < pageCount - 1) pages.push(<span key="sr" style={s.pageDots}>...</span>);
-                          pages.push(
-                            <button key={pageCount - 1} style={s.pageBtn(false)} onClick={() => setCurrentPage(pageCount - 1)}>
-                              {pageCount}
-                            </button>
-                          );
-                        }
-                        return pages;
-                      })()}
-                      <button
-                        style={{ ...s.pageBtn(false), width: '32px' }}
-                        onClick={() => setCurrentPage(p => Math.min(pageCount - 1, p + 1))}
-                        disabled={currentPage >= pageCount - 1}
-                      >
-                        <FaChevronRight size={11} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
             )}
 
           </div>
+
+          {/* ── table footer / pagination ─────────────────────────── */}
+          {!loading && !error && filteredData.length > 0 && (
+            <div style={{ ...s.tableFooter, flexDirection: 'column', gap: '10px', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px' }}>
+              <span>Showing {Math.min(itemsPerPage, filteredData.length - offset)} of {filteredData.length} processes</span>
+              {pageCount > 1 && (
+                <div style={{ ...s.paginationWrap }}>
+                  <button
+                    style={{ ...s.pageBtn(false), width: '32px' }}
+                    onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                    disabled={currentPage === 0}
+                  >
+                    <FaChevronLeft size={11} />
+                  </button>
+                  {(() => {
+                    const pages = [];
+                    const maxVisible = 5;
+                    let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+                    let end = Math.min(pageCount, start + maxVisible);
+                    if (end - start < maxVisible) start = Math.max(0, end - maxVisible);
+
+                    if (start > 0) {
+                      pages.push(
+                        <button key={0} style={s.pageBtn(false)} onClick={() => setCurrentPage(0)}>1</button>
+                      );
+                      if (start > 1) pages.push(<span key="sl" style={s.pageDots}>...</span>);
+                    }
+                    for (let i = start; i < end; i++) {
+                      pages.push(
+                        <button key={i} style={s.pageBtn(currentPage === i)} onClick={() => setCurrentPage(i)}>
+                          {i + 1}
+                        </button>
+                      );
+                    }
+                    if (end < pageCount) {
+                      if (end < pageCount - 1) pages.push(<span key="sr" style={s.pageDots}>...</span>);
+                      pages.push(
+                        <button key={pageCount - 1} style={s.pageBtn(false)} onClick={() => setCurrentPage(pageCount - 1)}>
+                          {pageCount}
+                        </button>
+                      );
+                    }
+                    return pages;
+                  })()}
+                  <button
+                    style={{ ...s.pageBtn(false), width: '32px' }}
+                    onClick={() => setCurrentPage(p => Math.min(pageCount - 1, p + 1))}
+                    disabled={currentPage >= pageCount - 1}
+                  >
+                    <FaChevronRight size={11} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       </div>
 

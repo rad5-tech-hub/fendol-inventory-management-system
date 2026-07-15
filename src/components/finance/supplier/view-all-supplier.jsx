@@ -180,17 +180,18 @@ export default function ViewAllSupplier() {
   };
 
   return (
-    <section className={`${styles.body}`}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <ConfirmDialog />
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
         <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
-        <section className={`${styles.content}`}>
-          <main className={styles.create_form}>
+        <section className={`${styles.content}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <main className={styles.create_form} style={{ height: '100%', overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px' }}>
             <ToastContainer />
 
             {/* ── Breadcrumb + Header Actions ── */}
@@ -454,98 +455,97 @@ export default function ViewAllSupplier() {
 
             {/* ── Table ── */}
             {!loading && !error && filteredSuppliers.length > 0 && (
-              <>
-                <div className="table-responsive" style={{ overflow: 'visible' }}>
-                  <DataTable
-                    className={`${styles.styled_table} mb-0`}
-                    columns={[
-                      { key: 'createdAt', label: 'DATE ADDED', width: '100px', render: (val) => (
-                        <span style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>
-                          {new Date(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                      )},
-                      { key: 'name', label: 'SUPPLIER', width: '26%', render: (val, row, idx) => {
-                        const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-                        return (
-                          <div className="d-flex align-items-center gap-2">
-                            <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#ffffff', flexShrink: 0 }}>
-                              {getInitials(val)}
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '14px', fontWeight: 600, color: '#2E3135' }}>{val}</div>
-                            </div>
+              <div className="table-responsive" style={{ overflow: 'visible' }}>
+                <DataTable
+                  className={`${styles.styled_table} mb-0`}
+                  columns={[
+                    { key: 'createdAt', label: 'DATE ADDED', width: '100px', render: (val) => (
+                      <span style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>
+                        {new Date(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    )},
+                    { key: 'name', label: 'SUPPLIER', width: '26%', render: (val, row, idx) => {
+                      const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                      return (
+                        <div className="d-flex align-items-center gap-2">
+                          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#ffffff', flexShrink: 0 }}>
+                            {getInitials(val)}
                           </div>
-                        );
-                      }},
-                      { key: 'supplierType', label: 'SUPPLIER TYPE', width: '18%', render: (val) => {
-                        const typeName = getSupplierTypeName(val);
-                        const typeColor = getTypeColor(val);
-                        return typeName ? (
-                          <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, background: typeColor.bg, color: typeColor.text }}>
-                            {typeName}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '12px', color: '#9CA3AF' }}>—</span>
-                        );
-                      }},
-                      { key: 'phone', label: 'PHONE', width: '16%', render: (val) => <span style={{ fontSize: '13px', color: '#374151' }}>{val}</span> },
-                      { key: 'balance', label: 'BALANCE (₦)', width: '18%', align: 'right', render: (val) => {
-                        const balance = val || 0;
-                        const balanceColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';
-                        const balanceLabel = balance > 0 ? 'Owed to Supplier' : balance < 0 ? 'Supplier Owes Us' : 'Settled';
-                        return (
-                          <>
-                            <div style={{ fontSize: '14px', fontWeight: 700, color: balanceColor }}>{formatCurrency(balance)}</div>
-                            <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
-                          </>
-                        );
-                      }},
-                    ]}
-                    data={currentSuppliers}
-                    actions={(supplier) => (
-                      <PortalDropdown
-                        btnClass={styles.threeDotBtn}
-                        menuStyle={{ minWidth: 180 }}
-                        items={[
-                          { label: 'Edit', onClick: () => navigate('/finance/supplier/new', { state: { supplier } }) },
-                          ...(isSuperAdminOrMD
-                            ? [{ label: 'Delete', onClick: () => handleDelete(supplier) }]
-                            : []),
-                          { divider: true },
-                          { label: 'View Ledger', onClick: () => navigate(`/finance/supplier/ledger?id=${supplier.id}`) },
-                        ]}
-                      />
-                    )}
-                  />
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 600, color: '#2E3135' }}>{val}</div>
+                          </div>
+                        </div>
+                      );
+                    }},
+                    { key: 'supplierType', label: 'SUPPLIER TYPE', width: '18%', render: (val) => {
+                      const typeName = getSupplierTypeName(val);
+                      const typeColor = getTypeColor(val);
+                      return typeName ? (
+                        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, background: typeColor.bg, color: typeColor.text }}>
+                          {typeName}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: '#9CA3AF' }}>—</span>
+                      );
+                    }},
+                    { key: 'phone', label: 'PHONE', width: '16%', render: (val) => <span style={{ fontSize: '13px', color: '#374151' }}>{val}</span> },
+                    { key: 'balance', label: 'BALANCE (₦)', width: '18%', align: 'right', render: (val) => {
+                      const balance = val || 0;
+                      const balanceColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';
+                      const balanceLabel = balance > 0 ? 'Owed to Supplier' : balance < 0 ? 'Supplier Owes Us' : 'Settled';
+                      return (
+                        <>
+                          <div style={{ fontSize: '14px', fontWeight: 700, color: balanceColor }}>{formatCurrency(balance)}</div>
+                          <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
+                        </>
+                      );
+                    }},
+                  ]}
+                  data={currentSuppliers}
+                  actions={(supplier) => (
+                    <PortalDropdown
+                      btnClass={styles.threeDotBtn}
+                      menuStyle={{ minWidth: 180 }}
+                      items={[
+                        { label: 'Edit', onClick: () => navigate('/finance/supplier/new', { state: { supplier } }) },
+                        ...(isSuperAdminOrMD
+                          ? [{ label: 'Delete', onClick: () => handleDelete(supplier) }]
+                          : []),
+                        { divider: true },
+                        { label: 'View Ledger', onClick: () => navigate(`/finance/supplier/ledger?id=${supplier.id}`) },
+                      ]}
+                    />
+                  )}
+                />
+              </div>
+            )}
+            </div>
+            {!loading && !error && filteredSuppliers.length > 0 && (
+              <div className="d-flex justify-content-between align-items-center" style={{ padding: '12px 20px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '13px', color: '#8C949B' }}>
+                  Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredSuppliers.length)} of {filteredSuppliers.length}
                 </div>
-
-                {/* ── Pagination ── */}
-                <div className="d-flex justify-content-between align-items-center mt-3" style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
-                  <div style={{ fontSize: '13px', color: '#8C949B' }}>
-                    Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredSuppliers.length)} of {filteredSuppliers.length}
-                  </div>
-                  <ReactPaginate
-                    previousLabel={"‹"}
-                    nextLabel={"›"}
-                    breakLabel="..."
-                    pageCount={pageCount}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={(data) => setCurrentPage(data.selected)}
-                    containerClassName={"pagination mb-0"}
-                    pageClassName={"page-item"}
-                    pageLinkClassName={"page-link"}
-                    previousClassName={"page-item"}
-                    previousLinkClassName={"page-link"}
-                    nextClassName={"page-item"}
-                    nextLinkClassName={"page-link"}
-                    breakClassName={"page-item"}
-                    breakLinkClassName={"page-link"}
-                    activeClassName={"active"}
-                    forcePage={currentPage}
-                  />
-                </div>
-              </>
+                <ReactPaginate
+                  previousLabel={"‹"}
+                  nextLabel={"›"}
+                  breakLabel="..."
+                  pageCount={pageCount}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={(data) => setCurrentPage(data.selected)}
+                  containerClassName={"pagination mb-0"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={"page-link"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={"page-link"}
+                  nextClassName={"page-item"}
+                  nextLinkClassName={"page-link"}
+                  breakClassName={"page-item"}
+                  breakLinkClassName={"page-link"}
+                  activeClassName={"active"}
+                  forcePage={currentPage}
+                />
+              </div>
             )}
           </main>
         </section>
