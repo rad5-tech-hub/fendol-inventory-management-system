@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Form, Row, Col, Button, Alert } from 'react-bootstrap';
+import { Form, Row, Col, Button } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
 import Api from '../../shared/api/apiLink';
 import styles from '../finance.module.scss';
-import { BsExclamationTriangleFill } from 'react-icons/bs';
+import EmptyState from "../../shared/empty-state/EmptyState";
 import ReceiptModal from './receipt';
 import { useConfirm } from '../../shared/confirm-modal';
 
@@ -438,11 +438,7 @@ const FeedForm = ({ customers, stages, siteId, productTypes }) => {
                         </div>
                     </>
                 ) : (
-                    <div className="d-flex justify-content-center">
-                        <Alert variant="info" className="text-center w-50 py-5">
-                            <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">No Feed yet.</span>
-                        </Alert>
-                    </div>
+                    <EmptyState title="No Feed yet" description="Add feed inventory to get started." />
                 )
             )}
             {currentStep === 2 && (

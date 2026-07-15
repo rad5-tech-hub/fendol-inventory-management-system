@@ -5,8 +5,9 @@ import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-toastify/dist/ReactToastify.css";
 import styles from "../finance.module.scss";
-import { BsExclamationTriangleFill } from "react-icons/bs";
-import { Spinner, Alert, Modal, Button, Form } from "react-bootstrap";
+import { Spinner, Modal, Button, Form } from "react-bootstrap";
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import { toast, ToastContainer } from "react-toastify";
 import Api from "../../shared/api/apiLink";
 import ReactPaginate from "react-paginate";
@@ -272,19 +273,13 @@ const CashDrawer = () => {
 
             {loading && <SkeletonTable cols={6} rows={5} />}
 
-            {!loading && error && (
-              <Alert variant="danger" className="text-center w-75 py-5 mx-auto">
-                <BsExclamationTriangleFill size={40} />{" "}
-                <span className="fw-semibold">{error}</span>
-              </Alert>
-            )}
+            {!loading && error && <ErrorState message={error} />}
 
             {!loading && !error && entries.length === 0 && (
-              <Alert variant="info" className="text-center w-75 py-5 mx-auto">
-                {dateFrom || dateTo || typeFilter !== "all"
-                  ? "No entries match the selected filters."
-                  : "No cash drawer entries found."}
-              </Alert>
+              <EmptyState
+                title={dateFrom || dateTo || typeFilter !== "all" ? "No matches found" : "No cash drawer entries found"}
+                description={dateFrom || dateTo || typeFilter !== "all" ? "Try adjusting your filters." : "Add cash to get started."}
+              />
             )}
 
             {!loading && !error && entries.length > 0 && (

@@ -9,7 +9,9 @@ import { BsCalendar3, BsPrinter } from "react-icons/bs";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Button, Form, Modal, Spinner } from 'react-bootstrap';
+import { Button, Form, Modal, Spinner } from 'react-bootstrap';
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
@@ -347,11 +349,7 @@ export default function PersonalLedger() {
             {loading && <SkeletonTable cols={7} rows={5} />}
 
             {/* ── Error ── */}
-            {error && (
-              <div className="d-flex justify-content-center mb-4">
-                <Alert variant="danger" className="text-center w-50 py-4">{error}</Alert>
-              </div>
-            )}
+            {error && <ErrorState message={error} />}
 
             {/* ── Content ── */}
             {!loading && !error && ledgerData.length > 0 && (
@@ -508,11 +506,7 @@ export default function PersonalLedger() {
                   </div>
 
                   {filteredLedgerData.length === 0 ? (
-                    <div className="text-center py-5">
-                      <Alert variant="info" className="mx-auto" style={{ maxWidth: '400px' }}>
-                        No transactions match your filters.
-                      </Alert>
-                    </div>
+                    <EmptyState title="No transactions match your filters" />
                   ) : (
                     <DataTable
                       columns={ledgerColumns}
@@ -525,9 +519,7 @@ export default function PersonalLedger() {
             )}
 
             {!loading && !error && ledgerData.length < 1 && (
-              <Alert variant="info" className="text-center w-100 py-5">
-                <p className="text-center fw-semibold">No Ledger found</p>
-              </Alert>
+              <EmptyState title="No Ledger found" />
             )}
             </div>
             {/* ── Pagination ── */}

@@ -3,10 +3,11 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../product-stages.module.scss";
-import { Alert, Form } from "react-bootstrap";
+import { Form } from "react-bootstrap";
 import DataTable from "../../shared/data-table/DataTable";
 import { SkeletonTable, SkeletonFilterBar } from "../../shared/skeleton/Skeleton";
-import { FaExclamationTriangle } from "react-icons/fa";
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
 import styled from "styled-components";
@@ -259,12 +260,7 @@ export default function ViewAllHistory() {
                 <SkeletonTable rows={6} cols={7} />
               </div>
             ) : error ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-75 py-5">
-                  <FaExclamationTriangle size={40} />
-                  <span className="ms-2">{error}</span>
-                </Alert>
-              </div>
+              <ErrorState message={error} />
             ) : (
               renderTable()
             )}

@@ -7,8 +7,9 @@ import { BsSearch, BsPlusLg, BsChevronDown, BsX } from "react-icons/bs";
 import { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
@@ -435,22 +436,17 @@ export default function ViewAllSupplier() {
             </div>
 
             {/* ── Error ── */}
-            {error && (
-              <Alert variant="danger" className="text-center">{error}</Alert>
-            )}
+            {error && <ErrorState message={error} />}
 
             {/* ── Loading ── */}
             {loading && <SkeletonTable cols={6} rows={5} />}
 
             {/* ── Empty ── */}
             {!loading && !error && filteredSuppliers.length === 0 && (
-              <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-50 py-4">
-                  {searchQuery || selectedTypeFilter || balanceFilter !== 'all'
-                    ? 'No suppliers match your filters.'
-                    : 'No suppliers available.'}
-                </Alert>
-              </div>
+              <EmptyState
+                title={searchQuery || selectedTypeFilter || balanceFilter !== 'all' ? 'No matches found' : 'No suppliers available'}
+                description={searchQuery || selectedTypeFilter || balanceFilter !== 'all' ? 'Try adjusting your search or filters.' : 'Add new suppliers to get started.'}
+              />
             )}
 
             {/* ── Table ── */}

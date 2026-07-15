@@ -8,7 +8,9 @@ import { BsCalendar3, BsGeoAlt, BsPlusCircle, BsX, BsSend } from "react-icons/bs
 import { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Modal } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import DataTable from "../../shared/data-table/DataTable";
 
@@ -209,9 +211,7 @@ export default function SupplierLedger() {
 
             {/* ── Error ── */}
             {error && !supplier && (
-              <div className="d-flex justify-content-center mb-4">
-                <Alert variant="danger" className="text-center w-50 py-4">{error}</Alert>
-              </div>
+              <ErrorState message={error} />
             )}
 
             {/* ── Content ── */}
@@ -364,11 +364,10 @@ export default function SupplierLedger() {
                   </div>
 
                   {filteredEntries.length === 0 ? (
-                    <div className="text-center py-5">
-                      <Alert variant="info" className="mx-auto" style={{ maxWidth: '400px' }}>
-                        {entries.length === 0 ? 'Loading transactions...' : 'No transactions match your filters.'}
-                      </Alert>
-                    </div>
+                    <EmptyState
+                      title={entries.length === 0 ? "Loading transactions..." : "No matches found"}
+                      description={entries.length === 0 ? "" : "Try adjusting your filters."}
+                    />
                   ) : (
                     <>
                       <div className="table-responsive" style={{ overflow: 'visible' }}>

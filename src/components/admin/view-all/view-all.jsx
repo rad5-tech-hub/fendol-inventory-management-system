@@ -4,8 +4,9 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../admin-styles.module.scss';
-import { BsExclamationTriangleFill } from "react-icons/bs";
 import Api from '../../shared/api/apiLink';
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
@@ -191,17 +192,9 @@ export default function ViewAll() {
                 <SkeletonTable rows={5} cols={5} />
               </div>
             ) : error ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
-                  <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">{error}</span>
-                </Alert>
-              </div>
+              <ErrorState message={error} />
             ) : admins.length === 0 ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-50 py-5">
-                  <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">No available data</span>
-                </Alert>
-              </div>
+              <EmptyState title="No available data" />
             ) : (
               <>
                 <DataTable

@@ -4,7 +4,9 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../store.module.scss';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
-import { Alert, Modal, Form, Button, Spinner } from 'react-bootstrap';
+import { Modal, Form, Button, Spinner } from 'react-bootstrap';
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
@@ -210,12 +212,10 @@ export default function UpdateStoreInventory() {
 
             {loading && <SkeletonTable cols={6} rows={5} />}
 
-            {error && (
-              <Alert variant="danger" className="text-center">{error}</Alert>
-            )}
+            {error && <ErrorState message={error} />}
 
             {!loading && !error && products.length === 0 && (
-              <Alert variant="info">No store available.</Alert>
+              <EmptyState title="No store available" description="Add new stock to get started." />
             )}
 
             {!loading && !error && products.length > 0 && (

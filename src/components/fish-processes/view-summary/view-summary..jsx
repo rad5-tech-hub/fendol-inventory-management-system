@@ -5,9 +5,11 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../process.module.scss';
-import { Alert, OverlayTrigger, Popover } from "react-bootstrap";
+import { OverlayTrigger, Popover } from "react-bootstrap";
 import { SkeletonTable, SkeletonFilterBar, SkeletonStatGrid } from "../../shared/skeleton/Skeleton";
-import { FaExclamationTriangle, FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight, FaUsers, FaCogs } from "react-icons/fa";
+import { FaSearch, FaCalendarAlt, FaChevronDown, FaSlidersH, FaEllipsisV, FaPlus, FaChevronLeft, FaChevronRight, FaUsers, FaCogs } from "react-icons/fa";
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from "react-paginate";
@@ -954,19 +956,9 @@ export default function ViewSummary() {
                 <SkeletonTable rows={6} cols={6} />
               </div>
             ) : error ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-75 py-5">
-                  <FaExclamationTriangle size={40} />
-                  <span className="fw-semibold">{error}</span>
-                </Alert>
-              </div>
+              <ErrorState message={error} />
             ) : filteredData.length === 0 ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-75 py-5">
-                  <FaExclamationTriangle size={40} />
-                  <span className="fw-semibold">No data available.</span>
-                </Alert>
-              </div>
+              <EmptyState title="No data available" />
             ) : (
               <div style={s.tablePanel}>
                 <DataTable

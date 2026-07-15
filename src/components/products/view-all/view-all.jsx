@@ -7,7 +7,9 @@ import { BsPlusLg, BsBarChartFill, BsChevronDown } from "react-icons/bs";
 import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Alert, Modal, Form, Button } from 'react-bootstrap';
+import { Modal, Form, Button } from 'react-bootstrap';
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -302,20 +304,18 @@ export default function ViewAllProducts() {
             {loading && <SkeletonTable cols={4} rows={5} />}
 
             {/* ── Error ── */}
-            {error && (
-              <Alert variant="danger" className="text-center">{error}</Alert>
-            )}
+            {error && <ErrorState message={error} />}
 
             {/* ── Empty ── */}
             {!loading && !error && products.length === 0 && (
-              <Alert variant="info">No products available.</Alert>
+              <EmptyState title="No products available" description="Create new products to get started." />
             )}
 
             {/* ── SUPER ADMIN: By Site Type (collapsible cards) ── */}
             {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'by-site-type' && (
               <>
                 {siteTypeNames.length === 0 && selectedSiteTypeFilter && (
-                  <Alert variant="info">No products found for "{selectedSiteTypeFilter}".</Alert>
+                  <EmptyState title={`No products found for "${selectedSiteTypeFilter}"`} />
                 )}
                 {siteTypeNames.map((stName, stIdx) => (
                   <div key={stName} className={styles.siteCard}>

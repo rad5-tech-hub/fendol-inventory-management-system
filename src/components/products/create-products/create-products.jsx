@@ -20,12 +20,6 @@ export default function CreateProducts() {
     const profileSiteId = user?.siteId || '';
 
     useEffect(() => {
-        if (!isSuperAdmin && profileSiteId) {
-            setFormData((prev) => ({ ...prev, siteId: profileSiteId }));
-        }
-    }, [isSuperAdmin, profileSiteId]);
-
-    useEffect(() => {
         const fetchSiteTypes = async () => {
             try {
                 const res = await ApiV2.get('/v2/site-types');
@@ -138,12 +132,6 @@ export default function CreateProducts() {
         e.preventDefault();
         setLoader(true);
 
-        if (!formData.siteId) {
-            toast.error("Please select a site type.", { className: 'dark-toast' });
-            setLoader(false);
-            return;
-        }
-
         const loadingToast = toast.loading("Creating Product...", {
             className: 'dark-toast'
         });
@@ -155,9 +143,11 @@ export default function CreateProducts() {
                 unit: formData.unit,
                 basePrice: parseFloat(removeCommas(formData.basePrice)) || 0,
                 showOnwebsite: formData.showOnwebsite,
-                siteType: formData.siteId,
                 productType: formData.categoryId,
             };
+            if (formData.siteId) {
+                formDataToSubmit.siteType = formData.siteId;
+            }
 
             const response = await ApiV2.post('/api/v1/product', formDataToSubmit);
 
@@ -249,6 +239,7 @@ export default function CreateProducts() {
                                         value={formData.unit}
                                         onChange={(val) => handleInputChange({ target: { name: 'unit', value: val } })}
                                         placeholder="Select Unit"
+                                        triggerClassName={styles.inputs}
                                     />
                                 </Col>
                                 <Col className="mb-4">
@@ -271,6 +262,7 @@ export default function CreateProducts() {
                                         value={formData.siteId}
                                         onChange={(val) => handleInputChange({ target: { name: 'siteId', value: val } })}
                                         placeholder="Select Site Type"
+                                        triggerClassName={styles.inputs}
                                     />
                                 </Col>
                                 )}

@@ -64,6 +64,45 @@
 .statusCell {
   text-align: center;
   padding: 40px !important;
-  color: #9CA3AF;
-  font-size: 0.9rem;
+}
+
+.skeletonRow {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.skeletonCell {
+  flex: 1;
+  max-width: 120px;
+}
+
+.skeletonPulse {
+  height: 14px;
+  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.errorInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #DC2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.emptyInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #8C949B;
+  font-size: 0.875rem;
 }

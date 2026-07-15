@@ -10,10 +10,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
-import { Alert, Modal, Button, Form } from 'react-bootstrap';
+import { Modal, Button, Form } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import { useConfirm } from '../../shared/confirm-modal';
 import { normalizePhone } from '../../shared/phoneUtils';
 import PhoneInput from '../../shared/phone-input/PhoneInput';
@@ -454,22 +456,17 @@ export default function ViewAllCustomers() {
             </div>
 
             {/* ── Error ── */}
-            {error && (
-              <Alert variant="danger" className="text-center">{error}</Alert>
-            )}
+            {error && <ErrorState message={error} />}
 
             {/* ── Loading ── */}
             {loading && <SkeletonTable cols={6} rows={5} />}
 
             {/* ── Empty ── */}
             {!loading && !error && filteredCustomers.length === 0 && (
-              <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-50 py-4">
-                  {searchQuery || selectedCategory || balanceFilter !== 'all'
-                    ? 'No customers match your filters.'
-                    : 'No customers available.'}
-                </Alert>
-              </div>
+              <EmptyState
+                title={searchQuery || selectedCategory || balanceFilter !== 'all' ? 'No matches found' : 'No customers available'}
+                description={searchQuery || selectedCategory || balanceFilter !== 'all' ? 'Try adjusting your search or filters.' : 'Add new customers to get started.'}
+              />
             )}
 
             {/* ── Table ── */}

@@ -11,7 +11,8 @@ import DataTable from "../../shared/data-table/DataTable";
 import ReactPaginate from 'react-paginate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FaExclamationTriangle } from "react-icons/fa";
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 
 export default function FeedInventoryViewAll() {
   const navigate = useNavigate();
@@ -228,16 +229,10 @@ export default function FeedInventoryViewAll() {
                 </div>
               )}
 
-              {error && (
-                <div className="d-flex justify-content-center">
-                  <Alert variant="danger" className="text-center w-50 py-5 my-5">
-                    <FaExclamationTriangle size={30} /> <span>{error}</span>
-                  </Alert>
-                </div>
-              )}
+              {error && <ErrorState message={error} />}
 
               {!loading && !error && products.length === 0 && (
-                <Alert variant="info">No products available.</Alert>
+                <EmptyState title="No products available" description="Add new products to get started." />
               )}
 
               {!loading && !error && (

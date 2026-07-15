@@ -3,9 +3,9 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../finance.module.scss";
-import { BsExclamationTriangleFill } from "react-icons/bs";
-import { Alert } from "react-bootstrap";
 import Api from "../../shared/api/apiLink";
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import ReactPaginate from "react-paginate";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import DataTable from "../../shared/data-table/DataTable";
@@ -114,21 +114,10 @@ const FinanceLedger = () => {
             {loading && <SkeletonTable cols={6} rows={5} />}
 
             {/* Error Message */}
-            {error && (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-75 py-5">
-                  <BsExclamationTriangleFill size={40} />{" "}
-                  <span className="fw-semibold">{error}</span>
-                </Alert>
-              </div>
-            )}
+            {error && <ErrorState message={error} />}
 
             {!loading && !error && displayedLedgerData.length === 0 && (
-              <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-75 py-5">
-                  No available data
-                </Alert>
-              </div>
+              <EmptyState title="No available data" />
             )}
 
             {/* Ledger Table */}

@@ -3,8 +3,9 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../site-management.module.scss';
-import { BsExclamationTriangleFill } from "react-icons/bs";
-import { Alert, Modal } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import { ApiV2 } from "../../shared/api/apiLink";
 import ReactPaginate from 'react-paginate';
@@ -129,20 +130,10 @@ const ViewAllSites = () => {
 
             {loading && <SkeletonTable cols={6} rows={5} />}
 
-            {error && (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-75 py-5">
-                  <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">{error}</span>
-                </Alert>
-              </div>
-            )}
+            {error && <ErrorState message={error} />}
 
             {!loading && !error && filteredSites.length === 0 && (
-              <div className="d-flex justify-content-center">
-                <Alert variant="info" className="text-center w-75 py-5">
-                  No sites found.
-                </Alert>
-              </div>
+              <EmptyState title="No sites found" />
             )}
 
             {!loading && !error && displayedSites.length > 0 && (

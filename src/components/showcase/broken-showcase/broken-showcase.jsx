@@ -4,8 +4,8 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../showcase.module.scss";
-import { Alert } from "react-bootstrap";
-import { FaExclamationTriangle, FaChevronLeft, FaChevronRight, FaWeightHanging } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaWeightHanging } from "react-icons/fa";
+import ErrorState from "../../shared/error-state/ErrorState";
 import { FiX, FiArrowRight } from "react-icons/fi";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
@@ -114,17 +114,19 @@ export default function ViewBrokenHistory() {
   };
 
   const handleKgSubmit = async () => {
-    if (!kgQuantity || kgQuantity <= 0 || !kgWeight || kgWeight <= 0) {
-      toast.error("Please enter valid quantity and weight values.");
+    if (!kgWeight || kgWeight <= 0) {
+      toast.error("Weight in kg must be greater than 0.");
+      return;
+    }
+    if (!selectedRow?.id) {
+      toast.error("No record selected for conversion.");
       return;
     }
     setKgSubmitting(true);
     const loadingToast = toast.loading("Converting...");
     try {
-      await Api.post("/convert-broken-to-kg", {
-        historyId: selectedRow?.id,
-        quantity: Number(kgQuantity),
-        weightInKg: Number(kgWeight),
+      await Api.patch(`/convert-broken-to-kg/${selectedRow.id}`, {
+        brokenQuantityInKg: Number(kgWeight),
       });
       toast.update(loadingToast, {
         render: "Conversion successful!",
@@ -133,12 +135,28 @@ export default function ViewBrokenHistory() {
         autoClose: 3000,
       });
       handleCloseKgModal();
+      fetchData();
+      fetchTableData();
     } catch (error) {
+      const serverMsg = error.response?.data?.message;
+      const status = error.response?.status;
+      let msg;
+      if (!error.response) {
+        msg = "Network error — server is unreachable.";
+      } else if (status === 404) {
+        msg = `Record ${selectedRow.id} not found on the server.`;
+      } else if (status === 400) {
+        msg = serverMsg || "Invalid request. Check the weight value.";
+      } else if (status >= 500) {
+        msg = `Server error (${status}). Please try again later.`;
+      } else {
+        msg = serverMsg || `Unexpected error (${status}).`;
+      }
       toast.update(loadingToast, {
-        render: error.response?.data?.message || "Conversion failed. Please try again.",
+        render: msg,
         type: "error",
         isLoading: false,
-        autoClose: 3000,
+        autoClose: 6000,
       });
     } finally {
       setKgSubmitting(false);
@@ -481,10 +499,7 @@ export default function ViewBrokenHistory() {
                 </div>
               </div>
             ) : errorStages ? (
-              <Alert variant="danger" className="text-center py-4">
-                <FaExclamationTriangle size={24} />
-                <span className="fw-semibold ms-2">{errorStages}</span>
-              </Alert>
+              <ErrorState message={errorStages} />
             ) : (
               <div style={s.statCard}>
                 <div>
@@ -516,12 +531,7 @@ export default function ViewBrokenHistory() {
             {loadingTable ? (
               <SkeletonTable cols={6} rows={8} />
             ) : errorTable ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
-                  <FaExclamationTriangle size={40} />
-                  <span className="fw-semibold">{errorTable}</span>
-                </Alert>
-              </div>
+              <ErrorState message={errorTable} />
             ) : (
               <div style={s.tablePanel}>
                 <div style={{ overflowX: 'auto' }}>

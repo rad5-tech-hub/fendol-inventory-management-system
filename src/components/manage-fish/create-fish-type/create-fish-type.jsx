@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Alert, Modal } from 'react-bootstrap';
-import { BsExclamationTriangleFill } from "react-icons/bs";
+import { Form, Button, Modal } from 'react-bootstrap';
+import ErrorState from "../../shared/error-state/ErrorState";
+import EmptyState from "../../shared/empty-state/EmptyState";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
@@ -183,17 +184,9 @@ const AddSpecies = () => {
                                 {loading ? (
                                     <SkeletonTable cols={3} rows={5} />
                                 ) : error ? (
-                                    <div className="d-flex justify-content-center">
-                                        <Alert variant="danger" className="text-center w-75 py-5">
-                                            <BsExclamationTriangleFill size={40} /> <span className="fw-semibold">{error}</span>
-                                        </Alert>
-                                    </div>
+                                    <ErrorState message={error} />
                                 ) : stages.length === 0 ? (
-                                    <div className="d-flex justify-content-center">
-                                        <Alert variant="info" className="text-center w-75 py-5">
-                                            No available data
-                                        </Alert>
-                                    </div>
+                                    <EmptyState title="No available data" />
                                 ) : (
                                     <DataTable
                                         columns={[
