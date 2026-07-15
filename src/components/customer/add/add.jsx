@@ -35,7 +35,7 @@ const AddCustomer = () => {
     });
 
     try {
-      const payload = { ...formData, phone: formData.phone ? `+234${formData.phone}` : '' };
+      const payload = { ...formData, phone: formData.phone || '' };
       const response = await Api.post('/customers', payload);
       const { message } = response.data;
 
@@ -105,7 +105,7 @@ const AddCustomer = () => {
                 <Col className="mb-4">
                   <Form.Label className="fw-semibold">Phone</Form.Label>
                   <Form.Control
-                    placeholder="+234 XXX XXX XXXX"
+                    placeholder="+234 801 2345 678"
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} ${styles.fadedPlaceholder}`}
                     type="tel"
                     name="phone"

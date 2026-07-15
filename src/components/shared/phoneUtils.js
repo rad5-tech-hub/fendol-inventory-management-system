@@ -1,16 +1,19 @@
 export function normalizePhone(value) {
   if (!value) return '';
-  const digits = value.replace(/\D/g, '').replace(/^234/, '').replace(/^0+/, '').slice(0, 11);
-  return digits;
+  return value.replace(/[^0-9+]/g, '');
 }
 
 export function formatPhone(value) {
-  const digits = normalizePhone(value);
-  if (!digits) return '';
-  return `+234 ${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+  if (!value) return '';
+  return value;
 }
 
 export function handlePhoneChange(e) {
-  const raw = e.target.value.replace(/[^0-9]/g, '').replace(/^0+/, '').slice(0, 11);
-  return raw;
+  let val = e.target.value;
+  val = val.replace(/[^0-9+]/g, '');
+  const plusIndex = val.indexOf('+');
+  if (plusIndex > 0) val = val.replace(/\+/g, '');
+  if (plusIndex === -1 && val.length > 0) val = '+' + val;
+  if ((val.match(/\+/g) || []).length > 1) val = val.replace(/\+/g, '').replace(/^/, '+');
+  return val;
 }

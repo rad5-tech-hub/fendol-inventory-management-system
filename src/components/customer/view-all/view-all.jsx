@@ -154,7 +154,7 @@ export default function ViewAllCustomers() {
     setLoadingEdit(true);
     const loadingToast = toast.loading('Saving Customer...');
     try {
-      const payload = { ...selectedCustomer, phone: selectedCustomer.phone ? `+234${normalizePhone(selectedCustomer.phone)}` : '' };
+      const payload = { ...selectedCustomer, phone: selectedCustomer.phone ? normalizePhone(selectedCustomer.phone) : '' };
       await Api.put(`/customer/${selectedCustomer.id}`, payload);
       toast.update(loadingToast, { render: 'Customer saved successfully!', type: 'success', isLoading: false, autoClose: 3000 });
       fetchCustomers(getApiFilter());
@@ -539,7 +539,7 @@ export default function ViewAllCustomers() {
                     name="phone"
                     value={selectedCustomer.phone ? formatPhone(selectedCustomer.phone) : ''}
                     required
-                    placeholder="+234 XXX XXX XXXX"
+                    placeholder="+234 801 2345 678"
                     onChange={(e) => handleInputChange({ target: { name: 'phone', value: handlePhoneChange(e) } })}
                     className="py-2 shadow-none border-secondary-subtle border-1"
                   />

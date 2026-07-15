@@ -106,7 +106,7 @@ export default function NewSupplier() {
 
       const payload = {
         name: formData.fullName,
-        phone: formData.phone ? `+234${normalizePhone(formData.phone)}` : '',
+        phone: formData.phone ? normalizePhone(formData.phone) : '',
         supplierTypeId: selectedType?.id || formData.supplierType,
         address: formData.address,
       };
@@ -181,7 +181,7 @@ export default function NewSupplier() {
                 <Col className="mb-4">
                   <Form.Label className="fw-semibold">Phone</Form.Label>
                   <Form.Control
-                    placeholder="+234 XXX XXX XXXX"
+                    placeholder="+234 801 2345 678"
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                     type="tel"
                     name="phone"
