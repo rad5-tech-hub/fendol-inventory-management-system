@@ -16,7 +16,7 @@ import DataTable from "../../shared/data-table/DataTable";
 
 const formatCurrency = (value) => {
   if (value == null) return '₦0.00';
-  return `₦${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `₦${Math.abs(Number(value)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
@@ -165,7 +165,7 @@ export default function SupplierLedger() {
             <ToastContainer />
 
             {/* ── Breadcrumb ── */}
-            <div className="d-flex align-items-center gap-2 mb-3" style={{ fontSize: '13px' }}>
+            <div className="d-flex align-items-center gap-2 mb-1" style={{ fontSize: '12px' }}>
               <span className="text-muted" style={{ cursor: 'pointer' }} onClick={() => navigate('/finance/ledger')}>
                 Finance
               </span>
@@ -178,14 +178,11 @@ export default function SupplierLedger() {
             </div>
 
             {/* ── Page Title ── */}
-            <div className="d-flex justify-content-between align-items-start mb-4">
+            <div className="d-flex justify-content-between align-items-start mb-2">
               <div>
-                <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#2E3135', marginBottom: '4px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#2E3135', marginBottom: 0 }}>
                   Supplier Ledger
                 </h2>
-                <p style={{ fontSize: '14px', color: '#8C949B', margin: 0 }}>
-                  View all transactions and account balance for suppliers.
-                </p>
               </div>
               {supplier && (
                 <button
@@ -220,70 +217,70 @@ export default function SupplierLedger() {
                 {/* ── Supplier Header Card ── */}
                 <div
                   style={{
-                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px',
-                    padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '20px',
+                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
+                    padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
                   }}
                 >
-                  <div className="d-flex flex-wrap align-items-start" style={{ gap: '8px', justifyContent: 'space-between' }}>
+                  <div className="d-flex flex-wrap align-items-center" style={{ gap: '10px', justifyContent: 'space-between' }}>
                     {/* Left: Avatar + Info */}
-                    <div className="d-flex align-items-start gap-3">
+                    <div className="d-flex align-items-center gap-2">
                       <div
                         style={{
-                          width: '60px', height: '60px', borderRadius: '50%',
+                          width: '44px', height: '44px', borderRadius: '50%',
                           background: AVATAR_COLORS[0], display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', fontSize: '22px', fontWeight: 700,
+                          justifyContent: 'center', fontSize: '16px', fontWeight: 700,
                           color: '#ffffff', flexShrink: 0,
                         }}
                       >
                         {getInitials(supplier.name)}
                       </div>
                       <div>
-                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1C1E', marginBottom: '4px' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1C1E', marginBottom: 0 }}>
                           {supplier.name}
                         </h3>
-                        <div className="d-flex align-items-center gap-3 flex-wrap" style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>
+                        <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>
                           <span className="d-flex align-items-center gap-1">
-                            <BsGeoAlt style={{ fontSize: '12px' }} /> {supplier.address || 'N/A'}
+                            <BsGeoAlt style={{ fontSize: '11px' }} /> {supplier.address || 'N/A'}
                           </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Right: Metric Cards */}
-                    <div className="d-flex gap-2 flex-wrap">
+                    <div className="d-flex gap-2">
                       <div style={{
-                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '8px', padding: '10px 16px',
                       }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
-                          Total Credit (N)
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                          Total Credit
                         </div>
-                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#16A34A' }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A', lineHeight: 1.2 }}>
                           {formatCurrency(summary.totalCredits)}
                         </div>
                       </div>
                       <div style={{
-                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '8px', padding: '10px 16px',
                       }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
-                          Total Debit (N)
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                          Total Debit
                         </div>
-                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#DC2626' }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#DC2626', lineHeight: 1.2 }}>
                           {formatCurrency(summary.totalDebits)}
                         </div>
                       </div>
                       <div style={{
-                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '8px', padding: '10px 16px',
                       }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
-                          Balance (N)
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                          Balance
                         </div>
-                        <div style={{ fontSize: '20px', fontWeight: 700, color: balanceColor }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: balanceColor, lineHeight: 1.2 }}>
                           {formatCurrency(totalBalance)}
                         </div>
-                        <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>
+                        <div style={{ fontSize: '10px', color: balanceColor, opacity: 0.7, lineHeight: 1 }}>
                           {balanceLabel}
                         </div>
                       </div>
@@ -294,57 +291,57 @@ export default function SupplierLedger() {
                 {/* ── Filter Bar ── */}
                 <div
                   style={{
-                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
-                    padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '20px',
+                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px',
+                    padding: '10px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
                   }}
                 >
-                  <div className="d-flex flex-wrap align-items-end gap-3">
+                  <div className="d-flex flex-wrap align-items-end gap-2">
                     {/* Date From / To */}
-                    <div style={{ flex: '1 1 160px', minWidth: '140px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px', display: 'block' }}>
+                    <div style={{ flex: '1 1 140px', minWidth: '120px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px', display: 'block' }}>
                         Date Range
                       </label>
-                      <div className="d-flex align-items-center gap-2">
+                      <div className="d-flex align-items-center gap-1">
                         <div style={{ position: 'relative', flex: 1 }}>
                           <input
                             type="date"
                             value={dateFrom}
                             onChange={(e) => setDateFrom(e.target.value)}
                             style={{
-                              width: '100%', padding: '7px 10px 7px 30px',
-                              border: '1px solid #e5e7eb', borderRadius: '6px',
-                              fontSize: '12px', color: '#374151', outline: 'none',
+                              width: '100%', padding: '5px 8px 5px 24px',
+                              border: '1px solid #e5e7eb', borderRadius: '5px',
+                              fontSize: '11px', color: '#374151', outline: 'none',
                               background: '#ffffff',
                             }}
                           />
-                          <BsCalendar3 style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#8C949B' }} />
+                          <BsCalendar3 style={{ position: 'absolute', left: '6px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#8C949B' }} />
                         </div>
-                        <span style={{ fontSize: '12px', color: '#8C949B' }}>–</span>
+                        <span style={{ fontSize: '11px', color: '#8C949B' }}>–</span>
                         <div style={{ position: 'relative', flex: 1 }}>
                           <input
                             type="date"
                             value={dateTo}
                             onChange={(e) => setDateTo(e.target.value)}
                             style={{
-                              width: '100%', padding: '7px 10px 7px 30px',
-                              border: '1px solid #e5e7eb', borderRadius: '6px',
-                              fontSize: '12px', color: '#374151', outline: 'none',
+                              width: '100%', padding: '5px 8px 5px 24px',
+                              border: '1px solid #e5e7eb', borderRadius: '5px',
+                              fontSize: '11px', color: '#374151', outline: 'none',
                               background: '#ffffff',
                             }}
                           />
-                          <BsCalendar3 style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#8C949B' }} />
+                          <BsCalendar3 style={{ position: 'absolute', left: '6px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#8C949B' }} />
                         </div>
                       </div>
                     </div>
 
                     {/* Buttons */}
-                    <div className="d-flex gap-2" style={{ alignSelf: 'flex-end', paddingBottom: '1px' }}>
+                    <div className="d-flex gap-1" style={{ alignSelf: 'flex-end' }}>
                       {hasActiveFilters && (
                         <button
                           onClick={() => { setDateFrom(''); setDateTo(''); }}
                           style={{
-                            padding: '7px 16px', background: '#ffffff', color: '#6B7280',
-                            border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
+                            padding: '5px 12px', background: '#ffffff', color: '#6B7280',
+                            border: '1px solid #e5e7eb', borderRadius: '5px', fontSize: '11px', fontWeight: 500,
                             cursor: 'pointer',
                           }}
                         >
@@ -356,9 +353,9 @@ export default function SupplierLedger() {
                 </div>
 
                 {/* ── Ledger Table ── */}
-                <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'visible' }}>
-                  <div className="d-flex align-items-center justify-content-between px-4 pt-4 pb-2">
-                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#2E3135', margin: 0 }}>
+                <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'visible' }}>
+                  <div className="d-flex align-items-center justify-content-between px-3 pt-2 pb-1">
+                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#2E3135', margin: 0 }}>
                       Ledger Transactions ({filteredEntries.length})
                     </h4>
                   </div>
@@ -375,9 +372,9 @@ export default function SupplierLedger() {
                           className={`${styles.styled_table} mb-0`}
                           columns={[
                             { key: 'createdAt', label: 'DATE', width: '16%', render: (val) => <span style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>{formatDate(val)}</span> },
-                            { key: 'comment', label: 'DESCRIPTION', width: '34%', render: (val) => <span style={{ fontSize: '13px', color: '#2E3135' }}>{val || '-'}</span> },
-                            { key: 'credit', label: 'CREDIT (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A' }}>{Number(val) ? formatCurrency(val) : '-'}</span> },
-                            { key: 'debit', label: 'DEBIT (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#DC2626' }}>{Number(val) ? formatCurrency(val) : '-'}</span> },
+                            { key: 'comment', label: 'DESCRIPTION', width: '34%', render: (val) => <span style={{ fontSize: '13px', color: '#2E3135' }}>{val || ''}</span> },
+                            { key: 'credit', label: 'CREDIT (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A' }}>{Number(val) ? formatCurrency(val) : ''}</span> },
+                            { key: 'debit', label: 'DEBIT (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#DC2626' }}>{Number(val) ? formatCurrency(val) : ''}</span> },
                             { key: 'balance', label: 'BALANCE (₦)', width: '16%', align: 'right', render: (val) => {
                               const balance = Number(val || 0);
                               const txBalColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';

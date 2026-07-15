@@ -239,16 +239,13 @@ export default function ViewBrokenHistory() {
 
   const s = {
     pageWrap: {
-      height: '100%',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
+      minHeight: '100vh',
       backgroundColor: BG_PAGE,
       fontFamily: "'Inter', 'Segoe UI', sans-serif",
       color: TEXT_MAIN,
     },
     contentWrap: {
-      padding: '32px 36px',
+      padding: '20px 36px',
       maxWidth: '1300px',
       margin: '0 auto',
     },
@@ -256,58 +253,58 @@ export default function ViewBrokenHistory() {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: '28px',
+      marginBottom: '14px',
     },
     pageTitle: {
-      fontSize: '26px',
+      fontSize: '22px',
       fontWeight: 700,
       color: TEXT_MAIN,
       margin: 0,
       lineHeight: 1.2,
     },
     pageSubtitle: {
-      fontSize: '13.5px',
+      fontSize: '12px',
       color: TEXT_MUTED,
-      marginTop: '4px',
+      marginTop: '2px',
     },
     statCard: {
       backgroundColor: BG_CARD,
-      borderRadius: '12px',
-      padding: '24px 28px',
+      borderRadius: '10px',
+      padding: '16px 20px',
       boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: '24px',
+      marginBottom: '12px',
     },
     statLabel: {
-      fontSize: '10.5px',
+      fontSize: '10px',
       fontWeight: 700,
       letterSpacing: '0.08em',
       textTransform: 'uppercase',
       color: TEXT_MUTED,
-      marginBottom: '6px',
+      marginBottom: '4px',
     },
     statValue: {
-      fontSize: '38px',
+      fontSize: '30px',
       fontWeight: 800,
       color: '#E07B00',
       lineHeight: 1,
     },
     statUnit: {
-      fontSize: '14px',
+      fontSize: '13px',
       fontWeight: 500,
       color: '#AAB0B7',
       marginLeft: '6px',
     },
     statSub: {
-      fontSize: '11.5px',
+      fontSize: '11px',
       color: TEXT_MUTED,
-      marginTop: '6px',
+      marginTop: '4px',
     },
     tablePanel: {
       backgroundColor: BG_CARD,
-      borderRadius: '12px',
+      borderRadius: '10px',
       boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
       overflow: 'hidden',
     },
@@ -315,8 +312,8 @@ export default function ViewBrokenHistory() {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '14px 20px',
-      fontSize: '13px',
+      padding: '10px 16px',
+      fontSize: '12px',
       color: TEXT_MUTED,
       borderTop: `1px solid ${BORDER}`,
     },
@@ -409,8 +406,8 @@ export default function ViewBrokenHistory() {
                       <tr>
                         {columns.map(col => (
                           <th key={col.key} style={{
-                            padding: '12px 16px', textAlign: col.align === 'right' ? 'right' : 'left',
-                            fontSize: '11px', fontWeight: 700, letterSpacing: '0.07em',
+                            padding: '8px 12px', textAlign: col.align === 'right' ? 'right' : 'left',
+                            fontSize: '10px', fontWeight: 700, letterSpacing: '0.07em',
                             textTransform: 'uppercase', color: TEXT_MUTED, whiteSpace: 'nowrap',
                             borderBottom: `1px solid ${BORDER}`,
                           }}>
@@ -434,7 +431,7 @@ export default function ViewBrokenHistory() {
                           >
                             {columns.map(col => (
                               <td key={col.key} style={{
-                                padding: '14px 16px',
+                                padding: '10px 12px',
                                 borderBottom: `1px solid ${BORDER}`,
                                 textAlign: col.align === 'right' ? 'right' : 'left',
                                 whiteSpace: 'nowrap',
