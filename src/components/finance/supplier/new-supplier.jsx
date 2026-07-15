@@ -7,7 +7,8 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { formatPhone, handlePhoneChange, normalizePhone } from '../../shared/phoneUtils';
+import { normalizePhone } from '../../shared/phoneUtils';
+import PhoneInput from '../../shared/phone-input/PhoneInput';
 
 export default function NewSupplier() {
   const navigate = useNavigate();
@@ -180,14 +181,11 @@ export default function NewSupplier() {
                 </Col>
                 <Col className="mb-4">
                   <Form.Label className="fw-semibold">Phone</Form.Label>
-                  <Form.Control
-                    placeholder="+234 801 2345 678"
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                    type="tel"
-                    name="phone"
+                  <PhoneInput
+                    value={formData.phone}
+                    onChange={(val) => handleInputChange({ target: { name: 'phone', value: val } })}
+                    placeholder="801 234 5678"
                     required
-                    value={formData.phone ? formatPhone(formData.phone) : ''}
-                    onChange={(e) => handleInputChange({ target: { name: 'phone', value: handlePhoneChange(e) } })}
                   />
                 </Col>
                 <Col className="mb-4">

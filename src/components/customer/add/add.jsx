@@ -8,7 +8,7 @@ import Header from '../../shared/header/header';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import Api from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
-import { formatPhone, handlePhoneChange } from '../../shared/phoneUtils';
+import PhoneInput from '../../shared/phone-input/PhoneInput';
 
 const AddCustomer = () => {
   const [loader, setLoader] = useState(false);
@@ -104,13 +104,11 @@ const AddCustomer = () => {
                 </Col>
                 <Col className="mb-4">
                   <Form.Label className="fw-semibold">Phone</Form.Label>
-                  <Form.Control
-                    placeholder="+234 801 2345 678"
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} ${styles.fadedPlaceholder}`}
-                    type="tel"
-                    name="phone"
-                    value={formData.phone ? formatPhone(formData.phone) : ''}
-                    onChange={(e) => { const raw = handlePhoneChange(e); setFormData(prev => ({ ...prev, phone: raw })); }}
+                  <PhoneInput
+                    value={formData.phone}
+                    onChange={(val) => setFormData(prev => ({ ...prev, phone: val }))}
+                    placeholder="801 234 5678"
+                    className={styles.fadedPlaceholder}
                   />
                 </Col>
                 <Col className="mb-4">

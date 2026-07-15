@@ -15,7 +15,8 @@ import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import { useConfirm } from '../../shared/confirm-modal';
-import { formatPhone, handlePhoneChange, normalizePhone } from '../../shared/phoneUtils';
+import { normalizePhone } from '../../shared/phoneUtils';
+import PhoneInput from '../../shared/phone-input/PhoneInput';
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
 
@@ -534,14 +535,11 @@ export default function ViewAllCustomers() {
               <Form.Group className="mb-3 row">
                 <Form.Label className="col-4 fw-semibold">Phone</Form.Label>
                 <div className="col-8">
-                  <Form.Control
-                    type="tel"
-                    name="phone"
-                    value={selectedCustomer.phone ? formatPhone(selectedCustomer.phone) : ''}
+                  <PhoneInput
+                    value={selectedCustomer.phone}
+                    onChange={(val) => handleInputChange({ target: { name: 'phone', value: val } })}
+                    placeholder="801 234 5678"
                     required
-                    placeholder="+234 801 2345 678"
-                    onChange={(e) => handleInputChange({ target: { name: 'phone', value: handlePhoneChange(e) } })}
-                    className="py-2 shadow-none border-secondary-subtle border-1"
                   />
                 </div>
               </Form.Group>
