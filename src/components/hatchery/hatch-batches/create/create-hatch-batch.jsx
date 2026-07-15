@@ -310,6 +310,7 @@ export default function CreateHatchBatch() {
               </div>
 
               {/* Section 1 - Batch Information */}
+              <style>{`.site-dropdown-trigger { height: 38px !important; font-size: 14px !important; } .site-dropdown-wrapper { max-width: 100% !important; }`}</style>
               <div className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
                   <span className={styles.sectionBadge}>1</span>
@@ -323,6 +324,8 @@ export default function CreateHatchBatch() {
                   <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Site</Form.Label>
                     <CustomDropdown
+                      className="site-dropdown-wrapper"
+                      triggerClassName="site-dropdown-trigger"
                       options={sitesLoaded ? sites.map(s => ({ value: s.id, label: s.name })) : []}
                       value={form.site}
                       onChange={(val) => handleChange({ target: { name: 'site', value: val } })}
@@ -381,16 +384,15 @@ export default function CreateHatchBatch() {
                   <div className={styles.sectionCard} style={{ height: '100%' }}>
                     <div className={styles.sectionHeader}>
                       <span className={styles.sectionBadge}>2</span>
-                      <h5>Broodstock Information</h5>
+                      <h5>Female Broodstock</h5>
                     </div>
-                    <h6 style={{ fontSize: '0.88rem', fontWeight: 600, color: '#2E3135', marginBottom: 12 }}>Female</h6>
-                    <Row className="g-2" style={{ marginTop: 16 }}>
+                    <Row className="g-2">
                       <Col xs={6}>
-                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Number of Females</Form.Label>
+                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135', lineHeight: 1.3 }}>Number of Females</Form.Label>
                         <Form.Control type="number" name="numFemales" value={form.numFemales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                       <Col xs={6}>
-                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Average Weight (kg)</Form.Label>
+                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135', lineHeight: 1.3 }}>Average Weight (kg)</Form.Label>
                         <Form.Control type="number" step="0.01" name="avgWeightFemale" value={form.avgWeightFemale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                     </Row>
@@ -400,15 +402,15 @@ export default function CreateHatchBatch() {
                   <div className={styles.sectionCard} style={{ height: '100%' }}>
                     <div className={styles.sectionHeader}>
                       <span className={styles.sectionBadge} style={{ visibility: 'hidden' }}>2</span>
-                      <h5>Male</h5>
+                      <h5>Male Broodstock</h5>
                     </div>
-                    <Row className="g-2" style={{ marginTop: 16 }}>
+                    <Row className="g-2">
                       <Col xs={6}>
-                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Number of Males</Form.Label>
+                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135', lineHeight: 1.3 }}>Number of Males</Form.Label>
                         <Form.Control type="number" name="numMales" value={form.numMales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                       <Col xs={6}>
-                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Average Weight (kg)</Form.Label>
+                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135', lineHeight: 1.3 }}>Average Weight (kg)</Form.Label>
                         <Form.Control type="number" step="0.01" name="avgWeightMale" value={form.avgWeightMale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                     </Row>
