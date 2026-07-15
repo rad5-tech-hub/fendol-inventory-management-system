@@ -555,6 +555,48 @@ export default function BatchSummary() {
 
                 {/* Batch Information was removed per user request — Financial Summary above replaces it */}
 
+                {/* Processing Team */}
+                <div className={styles.colCard}>
+                  <h5>Processing Team</h5>
+                  {(() => {
+                    const allTeams = (batch.fishProcesses || []).flatMap(fp => fp.processingTeam || []);
+                    const unique = allTeams.filter((t, i, a) => a.findIndex(x => x.id === t.id) === i);
+                    if (unique.length === 0) {
+                      return <p style={{ margin: 0, fontSize: '0.78rem', color: '#B0B8C1', fontStyle: 'italic' }}>No team assigned</p>;
+                    }
+                    const visible = unique.slice(0, 5);
+                    return (
+                      <>
+                        {visible.map((member, i) => (
+                          <div key={member.id || i} style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '8px 0', borderBottom: i < visible.length - 1 ? '1px solid #E5E7EB' : 'none',
+                          }}>
+                            <div style={{
+                              width: '32px', height: '32px', borderRadius: '50%',
+                              backgroundColor: '#512728', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '0.7rem', fontWeight: 700, color: '#fff',
+                            }}>
+                              {(member.name || '?').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1C1C1C' }}>
+                                {member.name || '——'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {unique.length > 5 && (
+                          <p style={{ margin: '8px 0 0 0', fontSize: '0.72rem', color: '#B0B8C1', fontStyle: 'italic' }}>
+                            +{unique.length - 5} more
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+
                 {/* MODIFIED: Audit Information — split Created At into Created By / Date Created */}
                 <div className={styles.colCard}>
                   <h5>Audit Information</h5>

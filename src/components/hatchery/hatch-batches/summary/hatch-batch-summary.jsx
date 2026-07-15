@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import {
-  PieChart, Pie, Cell, ResponsiveContainer,
-} from 'recharts';
 import { GiCirclingFish, GiEggClutch } from 'react-icons/gi';
-import { FaChartLine, FaExchangeAlt, FaHeartbeat, FaChevronDown, FaChevronUp, FaSkull } from 'react-icons/fa';
+import { FaChartLine, FaExchangeAlt, FaHeartbeat, FaSkull } from 'react-icons/fa';
 import { BsGenderFemale, BsGenderMale } from 'react-icons/bs';
 import { IoArrowBackOutline, IoPrintOutline, IoPencilOutline } from 'react-icons/io5';
-import DataTable from "../../../shared/data-table/DataTable";
 import SideBar from '../../../shared/sidebar/sidebar';
 import Header from '../../../shared/header/header';
 import Api, { ApiV2 } from '../../../shared/api/apiLink';
@@ -25,21 +21,6 @@ const FALLBACK_INFO_CARDS = [
   { label: 'Transferred to Nursery', value: f(66500), sub: 'Last: May 24, 2025', icon: FaExchangeAlt, color: '#3B82F6' },
 ];
 
-const FALLBACK_FEMALE_BROODSTOCK = [
-  { tag: 'F-001', avgWeight: 3.20, role: 'Primary' },
-  { tag: 'F-002', avgWeight: 3.10, role: 'Primary' },
-  { tag: 'F-003', avgWeight: 3.00, role: 'Secondary' },
-];
-
-const FALLBACK_MALE_BROODSTOCK = [
-  { tag: 'M-001', avgWeight: 2.70, role: 'Primary' },
-  { tag: 'M-002', avgWeight: 2.60, role: 'Primary' },
-  { tag: 'M-003', avgWeight: 2.50, role: 'Secondary' },
-  { tag: 'M-004', avgWeight: 2.70, role: 'Secondary' },
-  { tag: 'M-005', avgWeight: 2.60, role: 'Secondary' },
-  { tag: 'M-006', avgWeight: 2.55, role: 'Secondary' },
-];
-
 const FALLBACK_TIMELINE = [
   { title: 'Date Injected', date: 'May 25, 2025 08:30 AM', detail: 'Eggs fertilized and placed in incubator', color: '#3B82F6', icon: '\u2022' },
   { title: 'Date Stripped', date: 'May 26, 2025 09:15 AM', detail: 'Eggs stripped from females', color: '#F97316', icon: '\u2022' },
@@ -47,18 +28,6 @@ const FALLBACK_TIMELINE = [
   { title: 'Fry Counted', date: 'May 28, 2025 02:30 PM', detail: 'Fry counted and recorded', color: '#14B8A6', icon: '\u2022' },
   { title: 'Transferred to Nursery', date: 'May 24, 2025 10:20 AM', detail: 'Fry transferred to Nursery Pond N-01', color: '#8B5CF6', icon: '\u2022' },
 ];
-
-
-const costData = [
-  { name: 'Feed', value: 62500, color: '#3B82F6' },
-  { name: 'Labour', value: 48000, color: '#F97316' },
-  { name: 'Energy', value: 32000, color: '#22C55E' },
-  { name: 'Medicine', value: 18000, color: '#8B5CF6' },
-  { name: 'Others', value: 24950, color: '#94A3B8' },
-];
-
-const totalCost = costData.reduce((sum, d) => sum + d.value, 0);
-const costPerFry = (185450 / 87360).toFixed(2);
 
 
 const formatDate = (iso) => {
@@ -92,54 +61,13 @@ export default function HatchBatchSummary() {
   const [error, setError] = useState('');
   const [batchData, setBatchData] = useState(null);
   const [sites, setSites] = useState([]);
-  const [showAllMales, setShowAllMales] = useState(false);
 
-  const [showTransferModal, setShowTransferModal] = useState(false);
-  const [transferStep, setTransferStep] = useState('form');
-  const [transferSubmitting, setTransferSubmitting] = useState(false);
-  const [transferResult, setTransferResult] = useState(null);
-  const [selectedPondId, setSelectedPondId] = useState('');
-  const [transferQty, setTransferQty] = useState('');
-  const [transferError, setTransferError] = useState('');
-  const [ponds, setPonds] = useState([]);
-  const [pondsLoading, setPondsLoading] = useState(false);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  const formatCurrency = (v) => '\u20A6' + f(v);
-
   const openTransferModal = () => {
     navigate(`/hatchery/transfers/transfer-to-nursery?batchId=${batchId}`);
-  };
-
-  const handleTransfer = async () => {
-    if (!selectedPondId) {
-      setTransferError('Please select a pond.');
-      return;
-    }
-    if (!transferQty || Number(transferQty) <= 0) {
-      setTransferError('Please enter a valid quantity.');
-      return;
-    }
-    setTransferError('');
-    setTransferStep('processing');
-    setTransferSubmitting(true);
-    try {
-      const res = await ApiV2.post(`/v2/hatch-to-pond/${batchId}`, {
-        pondId: selectedPondId,
-        quantity: Number(transferQty),
-      });
-      setTransferResult(res.data?.data || res.data);
-      setTransferStep('success');
-    } catch (err) {
-      const d = err.response?.data;
-      const msg = d?.response_message || d?.error?.message || d?.message || 'Transfer failed. Please try again.';
-      setTransferError(typeof msg === 'string' ? msg : 'Transfer failed. Please try again.');
-      setTransferStep('form');
-    } finally {
-      setTransferSubmitting(false);
-    }
   };
 
   useEffect(() => {
@@ -174,25 +102,32 @@ export default function HatchBatchSummary() {
   const infoCards = batchData
     ? FALLBACK_INFO_CARDS.map((card, i) => {
         const updated = { ...card };
+        if (i === 0) {
+          updated.value = f(batchData.estimatedFryCount);
+          updated.sub = `${batchData.weightOfEgg} kg`;
+        }
         if (i === 1) {
           updated.value = `${batchData.hatchabilityPercentage}%`;
-          updated.sub = `${f(batchData.fryProduced)} hatched`;
+          updated.sub = `${f(batchData.estimatedFryCount)} estimated`;
         }
         if (i === 2) {
           updated.value = f(batchData.fryProduced);
           updated.sub = 'Actual';
         }
-        if (i === 0) {
-          updated.sub = `${batchData.weightOfEgg} kg`;
-        }
         if (i === 3) {
-          updated.value = `${batchData.survivalRate || 89.2}%`;
-          updated.sub = batchData.survivalRateSub || 'After 7 Days';
+          updated.value = `${batchData.survivalRate}%`;
+          updated.sub = 'After hatch';
         }
-        // TODO: confirm calculation/source with backend
         if (i === 4) {
-          updated.value = f(batchData.totalMortality || 10720);
-          updated.sub = `${batchData.totalMortalityPercentage || 11.8}%`;
+          updated.value = f(batchData.mortality || 0);
+          const mortalityPct = batchData.estimatedFryCount > 0
+            ? ((batchData.mortality / batchData.estimatedFryCount) * 100).toFixed(1)
+            : '0.0';
+          updated.sub = `${mortalityPct}%`;
+        }
+        if (i === 5) {
+          updated.value = f(batchData.fryMoved || 0);
+          updated.sub = batchData.fryMoved > 0 ? 'Transferred' : 'Not yet';
         }
         return updated;
       })
@@ -228,22 +163,7 @@ export default function HatchBatchSummary() {
   const avgFemaleWeight = batchData ? Number(batchData.avgWeightOfFemale).toFixed(2) : '3.10';
   const avgMaleWeight = batchData ? Number(batchData.avgWeightOfMaleBroodstock).toFixed(2) : '2.63';
 
-  const femaleBroodstock = batchData?.femaleBroodstock || FALLBACK_FEMALE_BROODSTOCK;
-  const maleBroodstock = batchData?.maleBroodstock || FALLBACK_MALE_BROODSTOCK;
-  const visibleMales = showAllMales ? maleBroodstock : maleBroodstock.slice(0, 3);
-  const extraMalesCount = Math.max(0, maleBroodstock.length - 3);
 
-  const transferRows = (batchData?.events || [])
-    .filter(ev => ev.action === 'transferred')
-    .map(ev => ({
-      date: formatDate(ev.date),
-      dest: ev.details || 'Nursery Pond',
-      qty: Number(ev.quantity) || 0,
-      size: ev.size || '—',
-      transferredBy: ev.transferredBy || ev.by || 'John Doe',
-    }));
-  const totalTransferred = transferRows.reduce((s, r) => s + r.qty, 0);
-  const pondTitle = ponds.find(p => p.id === selectedPondId)?.title || selectedPondId;
 
   return (
     <section className={`${styles.body}`}>
@@ -318,10 +238,6 @@ export default function HatchBatchSummary() {
                     <span className={styles.detailLabel}>Site</span>
                     <span className={styles.detailValue}>{siteName}</span>
                   </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Tank / Incubator</span>
-                    <span className={styles.detailValue}>{batchData ? (batchData.tankNumber || batchData.incubatorTank) : 'Incubator Tank - 03'}</span>
-                  </div>
                   <div className={styles.detailDivider} />
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Date Injected</span>
@@ -342,7 +258,7 @@ export default function HatchBatchSummary() {
                   <div className={styles.detailDivider} />
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Created By</span>
-                    <span className={styles.detailValue}>{batchData ? '—' : 'John Doe'}</span>
+                    <span className={styles.detailValue}>{batchData ? (batchData.createdBy?.length > 20 ? '—' : batchData.createdBy) : 'John Doe'}</span>
                   </div>
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Date Created</span>
@@ -369,6 +285,10 @@ export default function HatchBatchSummary() {
                   </div>
                 </div>
 
+              </div>
+
+              {/* RIGHT COLUMN */}
+              <div className={styles.summaryRight}>
                 {/* Production Details */}
                 <div className={styles.colCard}>
                   <h5>Production Details</h5>
@@ -377,39 +297,36 @@ export default function HatchBatchSummary() {
                     <span className={styles.detailValue}>{batchData ? batchData.weightOfEgg : '1.20'}</span>
                   </div>
                   <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Number of Eggs</span>
-                    <span className={styles.detailValue}>{f(120000)}</span>
+                    <span className={styles.detailLabel}>Estimated Fry Count</span>
+                    <span className={styles.detailValue}>{batchData ? f(batchData.estimatedFryCount) : f(120000)}</span>
                   </div>
                   <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Hatchability Percentage (%)</span>
+                    <span className={styles.detailLabel}>Hatchability (%)</span>
                     <span className={`${styles.detailValue} ${styles.successValue}`}>{batchData ? `${batchData.hatchabilityPercentage}%` : '75.4%'}</span>
                   </div>
                   <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Fry Produced (Estimated)</span>
+                    <span className={styles.detailLabel}>Fry Produced (Est.)</span>
                     <span className={styles.detailValue}>{batchData ? f(batchData.fryProduced) : f(87360)}</span>
                   </div>
                   <div className={styles.detailDivider} />
                   <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Initial Fry Count</span>
+                    <span className={styles.detailLabel}>Fry Produced</span>
                     <span className={styles.detailValue}>{batchData ? f(batchData.fryProduced) : f(87360)}</span>
                   </div>
                   <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Final Fry Count (7 Days)</span>
-                    <span className={styles.detailValue}>{f(77920)}</span>
+                    <span className={styles.detailLabel}>Fry Moved</span>
+                    <span className={styles.detailValue}>{batchData ? f(batchData.fryMoved || 0) : '—'}</span>
                   </div>
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Total Mortality</span>
-                    <span className={`${styles.detailValue} ${styles.dangerValue}`}>{batchData ? f(batchData.totalMortality || 10720) : f(10720)}</span>
+                    <span className={`${styles.detailValue} ${styles.dangerValue}`}>{batchData ? f(batchData.mortality || 0) : f(10720)}</span>
                   </div>
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Survival Rate (%)</span>
-                    <span className={`${styles.detailValue} ${styles.successValue}`}>{batchData ? `${batchData.survivalRate || 89.2}%` : '89.2%'}</span>
+                    <span className={`${styles.detailValue} ${styles.successValue}`}>{batchData ? `${batchData.survivalRate}%` : '89.2%'}</span>
                   </div>
                 </div>
-              </div>
 
-              {/* RIGHT COLUMN */}
-              <div className={styles.summaryRight}>
                 {/* Broodstock Used */}
                 <div className={styles.colCard}>
                   <h5>Broodstock Used</h5>
@@ -418,14 +335,6 @@ export default function HatchBatchSummary() {
                       <div className={styles.broodstockTagFemale}>
                         <BsGenderFemale size={14} /> Female Broodstock ({femaleCount})
                       </div>
-                      <DataTable
-                        columns={[
-                          { key: 'tag', label: 'ID / Tag No.' },
-                          { key: 'avgWeight', label: 'Avg. Weight (kg)', render: (v) => Number(v).toFixed(2) },
-                          { key: 'role', label: 'Role', render: (v) => <span style={{ color: '#8C949B' }}>{v}</span> },
-                        ]}
-                        data={femaleBroodstock}
-                      />
                       <div className={styles.broodstockTotal}>
                         <span className={styles.totalItem}>Total Females: <strong>{femaleCount}</strong></span>
                         <span className={styles.totalItem}>Avg Weight: <strong>{avgFemaleWeight} kg</strong></span>
@@ -435,19 +344,6 @@ export default function HatchBatchSummary() {
                       <div className={styles.broodstockTagMale}>
                         <BsGenderMale size={14} /> Male Broodstock ({maleCount})
                       </div>
-                      <DataTable
-                        columns={[
-                          { key: 'tag', label: 'ID / Tag No.' },
-                          { key: 'avgWeight', label: 'Avg. Weight (kg)', render: (v) => Number(v).toFixed(2) },
-                          { key: 'role', label: 'Role', render: (v) => <span style={{ color: '#8C949B' }}>{v}</span> },
-                        ]}
-                        data={visibleMales}
-                      />
-                      {extraMalesCount > 0 && (
-                        <div className={styles.expandRow} onClick={() => setShowAllMales(!showAllMales)} style={{ cursor: 'pointer' }}>
-                          {showAllMales ? <>Show less <FaChevronUp className={styles.expandIcon} /></> : <>+ {extraMalesCount} more males <FaChevronDown className={styles.expandIcon} /></>}
-                        </div>
-                      )}
                       <div className={styles.broodstockTotal}>
                         <span className={styles.totalItem}>Total Males: <strong>{maleCount}</strong></span>
                         <span className={styles.totalItem}>Avg Weight: <strong>{avgMaleWeight} kg</strong></span>
@@ -456,85 +352,28 @@ export default function HatchBatchSummary() {
                   </div>
                 </div>
 
-                {/* Cost Summary */}
-                <div className={styles.colCard}>
-                  <h5>Cost Summary</h5>
-                  <div className={styles.costCenter}>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie data={costData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={2} dataKey="value">
-                          {costData.map((entry, i) => (
-                            <Cell key={i} fill={entry.color} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div style={{ marginTop: -120, textAlign: 'center', pointerEvents: 'none' }}>
-                      <div style={{ fontSize: '0.68rem', color: '#8C949B', fontWeight: 600 }}>Total Cost</div>
-                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#2E3135' }}>{formatCurrency(totalCost)}</div>
-                    </div>
+                {/* Audit Information */}
+                <div className={styles.colCard} style={{ marginBottom: 0 }}>
+                  <h5>Audit Information</h5>
+                  <div className={styles.auditRow}>
+                    <span className={styles.auditLabel}>Created By</span>
+                    <span className={styles.auditName}>{batchData ? (batchData.createdBy?.length > 20 ? '—' : batchData.createdBy) : 'John Doe'}</span>
+                    <span className={styles.auditDate}>{batchData ? formatDateTime(batchData.createdAt) : 'May 25, 2025 08:45 AM'}</span>
                   </div>
-                  <div className={styles.costLegend}>
-                    {costData.map((item, i) => (
-                      <div key={i} className={styles.legendItem}>
-                        <span className={styles.legendDot} style={{ background: item.color }} />
-                        <span>{item.name}</span>
-                        <span className={styles.legendValue}>{((item.value / totalCost) * 100).toFixed(1)}%</span>
-                      </div>
-                    ))}
+                  <div className={styles.auditRow}>
+                    <span className={styles.auditLabel}>Last Updated By</span>
+                    <span className={styles.auditName}>{batchData ? (batchData.updatedBy?.length > 20 ? '—' : batchData.updatedBy) : 'John Doe'}</span>
+                    <span className={styles.auditDate}>{batchData ? formatDateTime(batchData.updatedAt) : 'May 28, 2025 02:35 PM'}</span>
                   </div>
-                  <div className={styles.costPerFry}>
-                    Cost Per Fry (Estimated): <strong>{formatCurrency(Number(costPerFry))}</strong>
-                  </div>
-                </div>
-
-                {/* Transfer Summary */}
-                <div className={styles.colCard}>
-                  <h5>Transfer Summary</h5>
-                  {transferRows.length > 0 ? (
-                    <>
-                      <DataTable
-                        columns={[
-                          { key: 'date', label: 'Date', render: (v) => <span style={{ fontSize: '0.8rem', color: '#8C949B' }}>{v}</span> },
-                          { key: 'dest', label: 'Destination' },
-                          { key: 'qty', label: 'Qty', render: (v) => f(v) },
-                          { key: 'size', label: 'Avg Size' },
-                          { key: 'transferredBy', label: 'Transferred By' },
-                        ]}
-                        data={transferRows}
-                        emptyMessage="No transfers recorded yet."
-                      />
-                      <div className={styles.transferTotal}>Total Transferred: {f(totalTransferred)}</div>
-                    </>
-                  ) : (
-                    <p style={{ color: '#8C949B', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>
-                      No transfers recorded yet.
-                    </p>
-                  )}
                 </div>
 
               </div>
             </div>
 
-            {/* Bottom two-column: Remarks + Audit */}
-            <div className={styles.summaryBottomGrid}>
-              <div className={styles.notesCard}>
-                <h5>Remarks / Notes</h5>
-                <p>{batchData ? (batchData.comments || 'No remarks.') : 'Water temperature maintained between 27\u00B0C \u2013 29\u00B0C throughout incubation. Good water quality and aeration resulted in high hatchability.'}</p>
-              </div>
-              <div className={styles.colCard} style={{ marginBottom: 0 }}>
-                <h5>Audit Information</h5>
-                <div className={styles.auditRow}>
-                  <span className={styles.auditLabel}>Created By</span>
-                  <span className={styles.auditName}>{batchData?.createdBy || 'John Doe'}</span>
-                  <span className={styles.auditDate}>{batchData ? formatDateTime(batchData.createdAt) : 'May 25, 2025 08:45 AM'}</span>
-                </div>
-                <div className={styles.auditRow}>
-                  <span className={styles.auditLabel}>Last Updated By</span>
-                  <span className={styles.auditName}>{batchData?.updatedBy || 'John Doe'}</span>
-                  <span className={styles.auditDate}>{batchData ? formatDateTime(batchData.updatedAt) : 'May 28, 2025 02:35 PM'}</span>
-                </div>
-              </div>
+            {/* Remarks / Notes */}
+            <div className={styles.notesCard} style={{ marginTop: '20px' }}>
+              <h5>Remarks / Notes</h5>
+              <p>{batchData ? (batchData.comments || 'No remarks.') : 'Water temperature maintained between 27\u00B0C \u2013 29\u00B0C throughout incubation. Good water quality and aeration resulted in high hatchability.'}</p>
             </div>
               </>
             )}

@@ -102,21 +102,24 @@ export default function ProcessingTeamModal({ show, processId, existingTeam, onC
 
   const handleSave = async () => {
     setSubmitting(true);
-    const selectedMembers = staff
+    const members = staff
       .filter((s) => selectedIds.has(s.id))
       .map((s) => ({
-        id: s.id,
+        staffId: s.id,
         name: s.name,
-        role: s.role || '',
       }));
 
     try {
-      await Api.patch(`/fish-process/${processId}`, {
-        processingTeam: selectedMembers,
+      const res = await Api.post('/processing-team', {
+        processId,
+        members,
       });
 
       handleClose();
-      if (onSuccess) onSuccess(selectedMembers);
+      if (onSuccess) {
+        const saved = res.data?.data || members;
+        onSuccess(saved);
+      }
     } catch (error) {
       let msg = 'Failed to save processing team. Please try again.';
       if (error.response) {

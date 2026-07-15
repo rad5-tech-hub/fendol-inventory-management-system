@@ -1376,12 +1376,12 @@ export default function ViewSummary() {
             const errMsg = error.response?.data?.message || error.message || 'Unknown error';
             const status = error.response?.status || 'N/A';
             const statusText = error.response?.statusText || '';
-            const endpoint = error.config?.url || `/fish-process/${teamModalProcess?.id || teamModalProcess?._id}`;
-            const method = error.config?.method || 'PATCH';
+            const endpoint = error.config?.url || '/processing-team';
+            const method = error.config?.method || 'POST';
             console.error(`[${method}] ${endpoint} → ${status} ${statusText}: ${errMsg}`, error.response?.data || error);
             toast.error(
               <div>
-                <strong>Failed to update processing team</strong>
+                <strong>Failed to save processing team</strong>
                 <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
                 <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
                   {method.toUpperCase()} {endpoint} · HTTP {status}{statusText ? ` ${statusText}` : ''}
@@ -1394,7 +1394,7 @@ export default function ViewSummary() {
           if (members) {
             toast.success(
               <div>
-                <strong>Processing team updated</strong>
+                <strong>Processing team saved</strong>
                 <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>
                   {members.length} member{members.length !== 1 ? 's' : ''} assigned
                 </div>
