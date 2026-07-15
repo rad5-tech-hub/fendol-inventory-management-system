@@ -321,14 +321,6 @@ export default function ViewBrokenHistory() {
       ),
     },
     {
-      key: '_cumulative', label: 'Cumulative Added', align: 'right',
-      render: (value) => (
-        <span style={{ fontWeight: 700, color: TEXT_MAIN, fontSize: '13px' }}>
-          {value != null ? new Intl.NumberFormat().format(value) : '—'}
-        </span>
-      ),
-    },
-    {
       key: '_actions', label: '', width: '100px',
       render: (_value, row) => {
         if (!isFromProcess(row)) return null;
