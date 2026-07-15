@@ -255,7 +255,6 @@ export default function SideBar({ show, handleClose }) {
           {(() => {
             const hasHatcheryPermission = hasPermission(userTypes, 'hatchery');
             const isSuperAdmin = userTypes.includes('super_admin');
-            const activeSite = useSelector((store) => store.activeSite);
             const sites = user?.userSites || [];
             const hasHatcherySite = sites.some(s =>
               (typeof s === 'string' ? s : (s.name || s.siteName || ''))
