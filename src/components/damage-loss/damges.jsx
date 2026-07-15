@@ -139,12 +139,13 @@ export default function DamageLoss() {
                   </table>
                 </div>
                 {/* Pagination */}
+                <div style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#f8f9fa', padding: '12px 0', borderTop: '1px solid #e5e7eb' }}>
                 <ReactPaginate
                   previousLabel={"<"}
                   nextLabel={">"}
                   pageCount={pageCount}
                   onPageChange={handlePageClick}
-                  containerClassName={"pagination justify-content-center mt-4"}
+                  containerClassName={"pagination justify-content-center mb-0"}
                   pageClassName={"page-item"}
                   pageLinkClassName={"page-link"}
                   previousClassName={"page-item"}
@@ -155,6 +156,7 @@ export default function DamageLoss() {
                   breakLinkClassName={"page-link"}
                   activeClassName={"active-light"}
                 />
+                </div>
               </>
             )}
           </main>

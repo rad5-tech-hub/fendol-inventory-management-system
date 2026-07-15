@@ -8,6 +8,7 @@ import Header from '../../shared/header/header';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import Api from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
+import { formatPhone, handlePhoneChange } from '../../shared/phoneUtils';
 
 const AddCustomer = () => {
   const [loader, setLoader] = useState(false);
@@ -34,7 +35,8 @@ const AddCustomer = () => {
     });
 
     try {
-      const response = await Api.post('/customers', formData);
+      const payload = { ...formData, phone: formData.phone ? `+234${formData.phone}` : '' };
+      const response = await Api.post('/customers', payload);
       const { message } = response.data;
 
       setFormData({
@@ -103,12 +105,12 @@ const AddCustomer = () => {
                 <Col className="mb-4">
                   <Form.Label className="fw-semibold">Phone</Form.Label>
                   <Form.Control
-                    placeholder="Enter Phone Number"
+                    placeholder="+234 XXX XXX XXXX"
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} ${styles.fadedPlaceholder}`}
                     type="tel"
                     name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
+                    value={formData.phone ? formatPhone(formData.phone) : ''}
+                    onChange={(e) => { const raw = handlePhoneChange(e); setFormData(prev => ({ ...prev, phone: raw })); }}
                   />
                 </Col>
                 <Col className="mb-4">

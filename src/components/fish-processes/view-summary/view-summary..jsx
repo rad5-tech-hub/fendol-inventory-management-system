@@ -28,15 +28,21 @@ const BORDER     = '#e8eaed';
 
 const s = {
   page: {
-    minHeight: '100vh',
+    height: '100vh',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
     backgroundColor: BG_PAGE,
     fontFamily: "'Inter', 'Segoe UI', sans-serif",
     color: TEXT_MAIN,
   },
   contentWrap: {
+    flex: 1,
+    overflowY: 'auto',
     padding: '32px 36px',
     maxWidth: '1300px',
     margin: '0 auto',
+    width: '100%',
   },
   // ── page header ──────────────────────────────────────────────────────────
   pageHeaderRow: {
@@ -962,14 +968,16 @@ export default function ViewSummary() {
                 </Alert>
               </div>
             ) : (
+              <>
               <div style={s.tablePanel}>
                 <DataTable
                   columns={tableColumns}
                   data={paginatedData}
                 />
+              </div>
 
                 {/* ── table footer / pagination ─────────────────────────── */}
-                <div style={{ ...s.tableFooter, flexDirection: 'column', gap: '10px', position: 'sticky', bottom: 0, zIndex: 10, background: '#fff' }}>
+                <div style={{ ...s.tableFooter, flexDirection: 'column', gap: '10px', position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px' }}>
                   <span>Showing {Math.min(itemsPerPage, filteredData.length - offset)} of {filteredData.length} processes</span>
                   {pageCount > 1 && (
                     <div style={{ ...s.paginationWrap }}>
@@ -1020,7 +1028,7 @@ export default function ViewSummary() {
                     </div>
                   )}
                 </div>
-              </div>
+              </>
             )}
 
           </div>

@@ -15,6 +15,7 @@ import ReactPaginate from 'react-paginate';
 import { useNavigate } from "react-router-dom";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import { useConfirm } from '../../shared/confirm-modal';
+import { formatPhone, handlePhoneChange, normalizePhone } from '../../shared/phoneUtils';
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
 
@@ -153,7 +154,8 @@ export default function ViewAllCustomers() {
     setLoadingEdit(true);
     const loadingToast = toast.loading('Saving Customer...');
     try {
-      await Api.put(`/customer/${selectedCustomer.id}`, selectedCustomer);
+      const payload = { ...selectedCustomer, phone: selectedCustomer.phone ? `+234${normalizePhone(selectedCustomer.phone)}` : '' };
+      await Api.put(`/customer/${selectedCustomer.id}`, payload);
       toast.update(loadingToast, { render: 'Customer saved successfully!', type: 'success', isLoading: false, autoClose: 3000 });
       fetchCustomers(getApiFilter());
       setShowModal(false);
@@ -535,9 +537,10 @@ export default function ViewAllCustomers() {
                   <Form.Control
                     type="tel"
                     name="phone"
-                    value={selectedCustomer.phone}
+                    value={selectedCustomer.phone ? formatPhone(selectedCustomer.phone) : ''}
                     required
-                    onChange={handleInputChange}
+                    placeholder="+234 XXX XXX XXXX"
+                    onChange={(e) => handleInputChange({ target: { name: 'phone', value: handlePhoneChange(e) } })}
                     className="py-2 shadow-none border-secondary-subtle border-1"
                   />
                 </div>

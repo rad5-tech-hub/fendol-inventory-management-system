@@ -473,7 +473,7 @@ export default function ViewAllBatches() {
               </table>
             </div>
 
-            <div className={styles.paginationRow} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12 }}>
+            <div className={styles.paginationRow} style={{ position: 'sticky', bottom: 0, zIndex: 10, background: '#fff', paddingTop: 12, paddingBottom: 12, borderTop: '1px solid #e5e7eb', boxShadow: '0 -2px 6px rgba(0,0,0,0.04)' }}>
                 <span className={styles.paginationInfo}>{filteredBatches.length === 0 ? 'No batches' : `Showing 1 to ${Math.min(filteredBatches.length, 6)} of ${filteredBatches.length} batches`}</span>
               <div className="d-flex align-items-center gap-3">
                 <Pagination>
