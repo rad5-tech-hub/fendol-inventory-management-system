@@ -1,11 +1,18 @@
+function stripLeadingZeros(value) {
+  return value.replace(/^0+(?=\d)/, '');
+}
+
+function limitDigits(value, max = 11) {
+  return value.replace(/\d/g, (m, i, s) => s.slice(0, i).replace(/[^0-9]/g, '').length < max ? m : '');
+}
+
 export function normalizePhone(value) {
   if (!value) return '';
-  return value.replace(/[^0-9+]/g, '');
+  return limitDigits(stripLeadingZeros(value.replace(/[^0-9+]/g, '')));
 }
 
 export function formatPhone(value) {
-  if (!value) return '';
-  return value;
+  return value || '';
 }
 
 export function handlePhoneChange(e) {
@@ -15,5 +22,7 @@ export function handlePhoneChange(e) {
   if (plusIndex > 0) val = val.replace(/\+/g, '');
   if (plusIndex === -1 && val.length > 0) val = '+' + val;
   if ((val.match(/\+/g) || []).length > 1) val = val.replace(/\+/g, '').replace(/^/, '+');
+  if (!val) return '';
+  val = val[0] + limitDigits(val.slice(1));
   return val;
 }
