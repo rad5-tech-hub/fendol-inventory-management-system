@@ -189,11 +189,6 @@ export default function PersonalLedger() {
       width: '28%',
       render: (_, row) => (
         <div className="d-flex align-items-center gap-2">
-          {Number(row.debit) > 0 && (
-            <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#DBEAFE', color: '#1D4ED8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
-              S
-            </span>
-          )}
           <span>{row.productName || '-'}</span>
         </div>
       ),
