@@ -47,7 +47,7 @@ const ViewAllStages = () => {
   const [showAddSamplingModal, setShowAddSamplingModal] = useState(false);
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
 
-  const [ConfirmDialog, confirm] = useConfirm();
+  const [ConfirmDialog] = useConfirm();
   const navigate = useNavigate();
   const user = useSelector((store) => store.user);
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
@@ -218,32 +218,6 @@ const ViewAllStages = () => {
     }
   };
 
-  const DeletePond = async () => {
-    const ok = await confirm({ message: "Are you sure you want to delete this pond?", title: "Confirm Delete", variant: "danger" });
-    if (!ok) return;
-
-    const loadingToast = toast.loading('Deleting pond...');
-    try {
-      await Api.delete(`/fish-stage/${selectedStage.id}`);
-      toast.update(loadingToast, {
-        render: 'Pond deleted successfully!',
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000,
-      });
-      fetchStages();
-    } catch (err) {
-      toast.update(loadingToast, {
-        render: err.response?.data?.message || 'Failed to delete pond. Please try again.',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const displayedStages = filteredStages.slice(startIndex, endIndex);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
@@ -271,7 +245,7 @@ const ViewAllStages = () => {
   };
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 0 }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -423,8 +397,7 @@ const ViewAllStages = () => {
                         { label: 'Edit Pond', onClick: () => { setSelectedStage(row); setShowEditPondModal(true); } },
                         { label: 'Add Sampling Record', onClick: () => { setSelectedStage(row); setShowAddSamplingModal(true); } },
                         { label: 'Add Notes', onClick: () => { setSelectedStage(row); setShowAddNoteModal(true); } },
-                        { divider: true },
-                        { label: 'Delete', onClick: () => { setSelectedStage(row); DeletePond(); }, style: { color: '#dc3545', fontWeight: 600 } },
+
                       ]}
                     />
                   )}
@@ -434,7 +407,7 @@ const ViewAllStages = () => {
             </div>
             {/* Pagination row */}
             {!loading && !error && displayedStages.length > 0 && (
-              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2" style={{ padding: '12px 0', paddingBottom: 0, background: '#fff', borderTop: '1px solid #e5e7eb', marginTop: 'auto' }}>
                 <span style={{ fontSize: '0.875rem', color: '#8C949B' }}>
                   Showing {startIndex + 1}–{Math.min(endIndex, filteredStages.length)} of {filteredStages.length} ponds
                 </span>

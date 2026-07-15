@@ -204,7 +204,13 @@ export default function PersonalLedger() {
         if (value == null) return '-';
         const bal = Number(value);
         const color = bal < 0 ? '#DC2626' : bal > 0 ? '#16A34A' : '#6B7280';
-        return <span style={{ fontWeight: 600, color }}>{formatCurrency(bal)}</span>;
+        const label = bal < 0 ? 'owes us' : bal > 0 ? 'we owe' : '';
+        return (
+          <div>
+            <div style={{ fontWeight: 600, color }}>{formatCurrency(bal)}</div>
+            {label && <div style={{ fontSize: '10px', color, opacity: 0.7, lineHeight: 1.2 }}>{label}</div>}
+          </div>
+        );
       },
     },
   ];
@@ -213,13 +219,11 @@ export default function PersonalLedger() {
     <PortalDropdown
       btnClass={styles.threeDotBtn}
       items={[
-        ...(Number(row.debit) > 0
-          ? [
-              { label: <><BsPrinter size={14} style={{ marginRight: 8 }} /> Print Receipt</>, onClick: () => handleReceipt(row) },
-              { divider: true },
-            ]
-          : []),
-        { label: 'View Details', onClick: () => {} },
+      ...(Number(row.debit) > 0
+        ? [
+            { label: <><BsPrinter size={14} style={{ marginRight: 8 }} /> Print Receipt</>, onClick: () => handleReceipt(row) },
+          ]
+        : []),
       ]}
     />
   );
@@ -302,7 +306,7 @@ export default function PersonalLedger() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 0 }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -311,7 +315,7 @@ export default function PersonalLedger() {
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={styles.content} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0 }}>
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <ToastContainer />
 
@@ -524,7 +528,7 @@ export default function PersonalLedger() {
             </div>
             {/* ── Pagination ── */}
             {!loading && !error && ledgerData.length > 0 && filteredLedgerData.length > 0 && (
-              <div className="d-flex justify-content-between align-items-center px-4 py-3 border-top" style={{ borderColor: '#e5e7eb', background: '#fff' }}>
+              <div className="d-flex justify-content-between align-items-center px-4 pt-3 border-top" style={{ borderColor: '#e5e7eb', background: '#fff', paddingBottom: 0, marginTop: 'auto' }}>
                 <div style={{ fontSize: '13px', color: '#8C949B' }}>
                   Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredLedgerData.length)} of {filteredLedgerData.length} records
                 </div>
@@ -588,9 +592,16 @@ export default function PersonalLedger() {
                       </div>
                       <div className="d-flex justify-content-between align-items-center mt-1">
                         <span style={{ color: '#6B7280' }}>Balance: <strong>{formatCurrency(balance)}</strong></span>
-                        <span style={{ fontSize: '12px', color: balance > 0 ? '#DC2626' : '#16A34A', fontWeight: 500 }}>
-                          {balance > 0 ? 'Partial' : balance < 0 ? 'Overpaid' : 'Paid'}
-                        </span>
+                        <div className="d-flex flex-column align-items-end" style={{ gap: '1px' }}>
+                          <span style={{ fontSize: '12px', color: balance > 0 ? '#DC2626' : '#16A34A', fontWeight: 500 }}>
+                            {balance > 0 ? 'Partial' : balance < 0 ? 'Overpaid' : 'Paid'}
+                          </span>
+                          {balance !== 0 && (
+                            <span style={{ fontSize: '10px', color: balance < 0 ? '#DC2626' : '#16A34A', opacity: 0.7 }}>
+                              {balance < 0 ? 'owes us' : 'we owe'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

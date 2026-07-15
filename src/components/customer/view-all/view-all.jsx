@@ -54,7 +54,7 @@ export default function ViewAllCustomers() {
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 45;
   const [aggregates, setAggregates] = useState({ totalCustomers: 0, totalDebtors: 0, totalOutstandingDebt: 0 });
-  const [ConfirmDialog, confirm] = useConfirm();
+  const [ConfirmDialog] = useConfirm();
 
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -129,19 +129,6 @@ export default function ViewAllCustomers() {
   const pageCount = Math.ceil(filteredCustomers.length / itemsPerPage);
   const offset = currentPage * itemsPerPage;
   const currentCustomers = filteredCustomers.slice(offset, offset + itemsPerPage);
-
-  const handleDelete = async (customer) => {
-    const ok = await confirm({ message: `Are you sure you want to delete ${customer.fullName}?`, title: 'Confirm Delete', variant: 'danger' });
-    if (!ok) return;
-    const loadingToast = toast.loading('Deleting Customer...', { className: 'dark-toast' });
-    try {
-      await Api.delete(`/delete-customer/${customer.id}`);
-      setCustomers(prev => prev.filter(c => c.id !== customer.id));
-      toast.update(loadingToast, { render: 'Customer deleted successfully!', type: 'success', isLoading: false, autoClose: 3000, className: 'dark-toast' });
-    } catch {
-      toast.update(loadingToast, { render: 'Failed to delete customer.', type: 'error', isLoading: false, autoClose: 3000, className: 'dark-toast' });
-    }
-  };
 
   const handleEdit = (customer) => {
     setSelectedCustomer(customer);
@@ -232,7 +219,6 @@ export default function ViewAllCustomers() {
       btnClass={styles.threeDotBtn}
       items={[
         { label: 'Edit', onClick: () => handleEdit(row) },
-        { label: 'Delete', onClick: () => handleDelete(row) },
         { divider: true },
         { label: 'View Ledger', onClick: () => navigate(`/customer/personal-ledger?id=${row.id}`) },
       ]}
@@ -243,7 +229,7 @@ export default function ViewAllCustomers() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 0 }}>
       <ConfirmDialog />
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
@@ -479,7 +465,7 @@ export default function ViewAllCustomers() {
             )}
             </div>
             {!loading && !error && filteredCustomers.length > 0 && (
-              <div className="d-flex justify-content-between align-items-center" style={{ padding: '12px 24px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+              <div className="d-flex justify-content-between align-items-center" style={{ padding: '12px 24px', paddingBottom: 0, background: '#fff', borderTop: '1px solid #e5e7eb', marginTop: 'auto' }}>
                 <div style={{ fontSize: '13px', color: '#8C949B' }}>
                   Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length}
                 </div>

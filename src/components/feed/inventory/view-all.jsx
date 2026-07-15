@@ -164,10 +164,6 @@ export default function FeedInventoryViewAll() {
     setShowModal(true);
   };
 
-  const handleDeleteClick = (id) => {
-    // TODO: Implement delete functionality
-  };
-
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
     const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
@@ -204,7 +200,7 @@ export default function FeedInventoryViewAll() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 0 }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -270,8 +266,7 @@ export default function FeedInventoryViewAll() {
                         btnClass={styles.threeDotBtn}
                         items={[
                           { label: 'Edit', onClick: () => handleEditClick(row) },
-                          { divider: true },
-                          { label: 'Delete', onClick: () => handleDeleteClick(row.id), style: { color: '#dc3545', fontWeight: 600 } },
+
                         ]}
                       />
                     )}
@@ -281,7 +276,7 @@ export default function FeedInventoryViewAll() {
             </div>
 
             {!loading && !error && products.length > 0 && (
-            <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+            <div className="d-flex justify-content-center" style={{ padding: '12px 0', paddingBottom: 0, background: '#fff', borderTop: '1px solid #e5e7eb', marginTop: 'auto' }}>
               <ReactPaginate
                 previousLabel={"< "}
                 nextLabel={" >"}

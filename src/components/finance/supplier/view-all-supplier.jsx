@@ -54,7 +54,7 @@ export default function ViewAllSupplier() {
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const typeFilterRef = useRef(null);
   const itemsPerPage = 45;
-  const [ConfirmDialog, confirm] = useConfirm();
+  const [ConfirmDialog] = useConfirm();
 
   const fetchSuppliers = async () => {
     try {
@@ -129,25 +129,6 @@ export default function ViewAllSupplier() {
   const offset = currentPage * itemsPerPage;
   const currentSuppliers = filteredSuppliers.slice(offset, offset + itemsPerPage);
 
-  const handleDelete = async (supplier) => {
-    const ok = await confirm({ message: `Are you sure you want to delete ${supplier.name}?`, title: 'Confirm Delete', variant: 'danger' });
-    if (!ok) return;
-    const loadingToast = toast.loading('Deleting Supplier...', { className: 'dark-toast' });
-    try {
-      const res = await ApiV2.delete(`/v2/supplier/${supplier.id}`);
-      setSuppliers(prev => prev.filter(s => s.id !== supplier.id));
-      toast.update(loadingToast, {
-        render: res.data?.response_message || 'Supplier deleted successfully!',
-        type: 'success', isLoading: false, autoClose: 3000, className: 'dark-toast'
-      });
-    } catch (err) {
-      const msg = err.response?.data?.response_message || err.response?.data?.message || 'Failed to delete supplier.';
-      toast.update(loadingToast, {
-        render: msg, type: 'error', isLoading: false, autoClose: 5000, className: 'dark-toast'
-      });
-    }
-  };
-
   const resetFilters = () => {
     setSearchQuery('');
     setSelectedTypeFilter('');
@@ -181,7 +162,7 @@ export default function ViewAllSupplier() {
   };
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 0 }}>
       <ConfirmDialog />
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
@@ -504,9 +485,6 @@ export default function ViewAllSupplier() {
                       menuStyle={{ minWidth: 180 }}
                       items={[
                         { label: 'Edit', onClick: () => navigate('/finance/supplier/new', { state: { supplier } }) },
-                        ...(isSuperAdminOrMD
-                          ? [{ label: 'Delete', onClick: () => handleDelete(supplier) }]
-                          : []),
                         { divider: true },
                         { label: 'View Ledger', onClick: () => navigate(`/finance/supplier/ledger?id=${supplier.id}`) },
                       ]}
@@ -517,7 +495,7 @@ export default function ViewAllSupplier() {
             )}
             </div>
             {!loading && !error && filteredSuppliers.length > 0 && (
-              <div className="d-flex justify-content-between align-items-center" style={{ padding: '12px 20px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+              <div className="d-flex justify-content-between align-items-center" style={{ padding: '12px 20px', paddingBottom: 0, background: '#fff', borderTop: '1px solid #e5e7eb', marginTop: 'auto' }}>
                 <div style={{ fontSize: '13px', color: '#8C949B' }}>
                   Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredSuppliers.length)} of {filteredSuppliers.length}
                 </div>

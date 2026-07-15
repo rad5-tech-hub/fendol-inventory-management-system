@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Pagination, Modal, Form } from 'react-bootstrap';
 import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
 import { toast } from 'react-toastify';
-import { IoSearchOutline, IoFilterOutline, IoRefreshOutline, IoEyeOutline, IoPencilOutline, IoSendOutline, IoTrashOutline } from 'react-icons/io5';
+import { IoSearchOutline, IoFilterOutline, IoRefreshOutline, IoEyeOutline, IoPencilOutline, IoSendOutline } from 'react-icons/io5';
 import { GiCirclingFish } from 'react-icons/gi';
 import { FaChartLine, FaCheckCircle, FaPlus, FaExchangeAlt, FaTruck } from 'react-icons/fa';
 import {
@@ -317,15 +317,14 @@ export default function ViewAllBatches() {
           { label: <><IoPencilOutline size={16} style={{ marginRight: 10 }} /> Edit Batch</>, onClick: () => navigate('/hatchery/hatch-batches/create', { state: { batch: row } }) },
           { label: <><IoSendOutline size={16} style={{ marginRight: 10 }} /> Transfer to Nursery</>, onClick: () => openTransferModal(row) },
           { label: <><FaTruck size={16} style={{ marginRight: 10 }} /> Mark as Moved</>, onClick: () => openMoveModal(row) },
-          { divider: true },
-          { label: <><IoTrashOutline size={16} style={{ marginRight: 10 }} /> Delete Batch</>, onClick: () => {}, style: { color: '#dc3545', fontWeight: 600 } },
+
         ]}
       />
     );
   };
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 0 }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -334,7 +333,7 @@ export default function ViewAllBatches() {
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <main className={styles.page} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <main className={styles.page} style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0 }}>
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <div className={styles.breadcrumb}>
               <span>Hatchery</span>
@@ -475,7 +474,7 @@ export default function ViewAllBatches() {
             </div>
             </div>
 
-            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2" style={{ padding: '12px 0', paddingBottom: 0, background: '#fff', borderTop: '1px solid #e5e7eb', marginTop: 'auto' }}>
               <span className={styles.paginationInfo}>{filteredBatches.length === 0 ? 'No batches' : `Showing 1 to ${Math.min(filteredBatches.length, 6)} of ${filteredBatches.length} batches`}</span>
               <div className="d-flex align-items-center gap-3">
                 <Pagination>

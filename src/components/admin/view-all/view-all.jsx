@@ -48,7 +48,7 @@ export default function ViewAll() {
   const [adminsPerPage] = useState(45);
   const [showSidebar, setShowSidebar] = useState(false);
   const [filterSite, setFilterSite] = useState('');
-  const [ConfirmDialog, confirm] = useConfirm();
+  const [ConfirmDialog] = useConfirm();
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -71,31 +71,6 @@ export default function ViewAll() {
   useEffect(() => {
     fetchData();
   }, []);
-
-  const handleDelete = async (adminId) => {
-    const ok = await confirm({ message: "Are you sure you want to delete this Admin?", title: "Confirm Delete", variant: "danger" });
-    if (!ok) return;
-    const loadingToast = toast.loading("Deleting Admin...", { className: 'dark-toast' });
-    try {
-      await Api.delete(`/delete-admin/${adminId}`);
-      toast.update(loadingToast, {
-        render: "Admin deleted successfully!",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000,
-        className: 'dark-toast'
-      });
-      fetchData();
-    } catch (error) {
-      toast.update(loadingToast, {
-        render: "Failed to delete Admin. Please try again.",
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-        className: 'dark-toast'
-      });
-    }
-  };
 
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
@@ -149,14 +124,12 @@ export default function ViewAll() {
             }
           }
         })},
-        { divider: true },
-        { label: 'Delete', onClick: () => handleDelete(admin.id), style: { color: '#dc3545', fontWeight: 600 } },
       ]}
     />
   );
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 0 }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -210,7 +183,7 @@ export default function ViewAll() {
             )}
             </div>
             {!loading && !error && admins.length > 0 && (
-              <div className={styles.tableFooter} style={{ paddingTop: 12, paddingBottom: 12, background: '#fff' }}>
+              <div className={styles.tableFooter} style={{ paddingTop: 12, paddingBottom: 0, background: '#fff', marginTop: 'auto' }}>
                 <small className="text-muted">
                   Showing {offset + 1} to {Math.min(offset + adminsPerPage, filteredAdmins.length)} of {filteredAdmins.length} admins
                 </small>

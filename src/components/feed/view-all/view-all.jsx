@@ -168,10 +168,6 @@ export default function UpdateFeedInventory() {
     setShowModal(true);
   };
 
-  const handleDeleteClick = (id) => {
-    // TODO: Implement delete functionality
-  };
-
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
     const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
@@ -208,7 +204,7 @@ export default function UpdateFeedInventory() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 0 }}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -217,7 +213,7 @@ export default function UpdateFeedInventory() {
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '15px' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '15px', paddingBottom: 0 }}>
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
               <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
                 <h4 className="m-0">View All</h4>
@@ -274,8 +270,6 @@ export default function UpdateFeedInventory() {
                         btnClass={styles.threeDotBtn}
                         items={[
                           { label: 'Edit', onClick: () => handleEditClick(row) },
-                          { divider: true },
-                          { label: 'Delete', onClick: () => handleDeleteClick(row.id), style: { color: '#dc3545', fontWeight: 600 } },
                         ]}
                       />
                     )}
@@ -285,7 +279,7 @@ export default function UpdateFeedInventory() {
             </div>
 
             {!loading && !error && products.length > 0 && (
-            <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+            <div className="d-flex justify-content-center" style={{ padding: '12px 0', paddingBottom: 0, background: '#fff', borderTop: '1px solid #e5e7eb', marginTop: 'auto' }}>
               <ReactPaginate
                 previousLabel={"< "}
                 nextLabel={" >"}
