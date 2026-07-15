@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
@@ -95,8 +95,6 @@ export default function ViewBrokenHistory() {
   const handleCloseModal = () => {
     setShowModal(false);
   };
-
-  const isFromProcess = (row) => row && (row.batchNumber || row.pondId || row.siteId);
 
   const handleKgModal = (row) => {
     setSelectedRow(row);
@@ -226,19 +224,8 @@ export default function ViewBrokenHistory() {
     return { d, t };
   };
 
-  const enrichedData = useMemo(() => {
-    let running = 0;
-    const sorted = [...tableData].sort((a, b) => new Date(a.createdAt || a.date) - new Date(b.createdAt || b.date));
-    return sorted.map(row => {
-      const isRemoval = /damage|moved to|removed/i.test(row.description || '');
-      const added = isRemoval ? 0 : (row.quantity || 0);
-      const removed = isRemoval ? (row.quantity || 0) : 0;
-      running += added - removed;
-      return { ...row, _added: added, _removed: removed, _cumulative: running };
-    });
-  }, [tableData]);
-
-  const paginatedData = enrichedData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const sortedData = [...tableData].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+  const paginatedData = sortedData.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
@@ -305,25 +292,17 @@ export default function ViewBrokenHistory() {
       ),
     },
     {
-      key: '_added', label: 'Added', align: 'right',
+      key: 'quantity', label: 'Quantity', align: 'right',
       render: (value) => (
         <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
-          {value != null && value > 0 ? new Intl.NumberFormat().format(value) : '—'}
-        </span>
-      ),
-    },
-    {
-      key: '_removed', label: 'Removed', align: 'right',
-      render: (value) => (
-        <span style={{ fontWeight: 700, color: '#dc3545', fontSize: '13px' }}>
-          {value != null && value > 0 ? new Intl.NumberFormat().format(value) : '—'}
+          {value != null ? new Intl.NumberFormat().format(value) : '—'}
         </span>
       ),
     },
     {
       key: '_actions', label: '', width: '100px',
       render: (_value, row) => {
-        if (!isFromProcess(row)) return null;
+        if (row.isConverted) return null;
         return (
           <button
             onClick={(e) => { e.stopPropagation(); handleKgModal(row); }}
@@ -521,7 +500,7 @@ export default function ViewBrokenHistory() {
 
             {/* ── History Table ── */}
             {loadingTable ? (
-              <SkeletonTable cols={6} rows={8} />
+              <SkeletonTable cols={4} rows={8} />
             ) : errorTable ? (
               <ErrorState message={errorTable} />
             ) : (
