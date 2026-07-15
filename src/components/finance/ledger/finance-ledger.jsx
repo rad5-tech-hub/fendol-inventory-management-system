@@ -127,8 +127,8 @@ const FinanceLedger = () => {
                 columns={[
                   { key: 'date', label: 'DATE', render: (val) => formatDate(val) },
                   { key: 'productName', label: 'PRODUCT', render: (val) => (
-                    <span title={val} style={{ cursor: val && val.length > 40 ? "pointer" : "normal" }}>
-                      {val ? val.slice(0, 40) + (val.length > 40 ? "..." : "") : "-"}
+                    <span title={val} style={{ cursor: val && val.length > 80 ? "pointer" : "normal" }}>
+                      {val || "-"}
                     </span>
                   )},
                   { key: 'credit', label: 'CREDIT(₦)', render: (val) => Number(val) ? <span style={{ color: "green" }}>{`₦${new Intl.NumberFormat().format(val)}`}</span> : '' },
