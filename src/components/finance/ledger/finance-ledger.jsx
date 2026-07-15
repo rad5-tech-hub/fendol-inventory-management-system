@@ -131,14 +131,9 @@ const FinanceLedger = () => {
                       {val ? val.slice(0, 40) + (val.length > 40 ? "..." : "") : "-"}
                     </span>
                   )},
-                  { key: 'description', label: 'DESCRIPTION', render: (val) => (
-                    <span title={val} style={{ cursor: val && val.length > 40 ? "pointer" : "normal" }}>
-                      {val ? val.slice(0, 40) + (val.length > 40 ? "..." : "") : ""}
-                    </span>
-                  )},
-                  { key: 'credit', label: 'CREDIT(₦)', render: (val) => <span style={{ color: "green" }}>{val ? `₦${new Intl.NumberFormat().format(val)}` : "-"}</span> },
-                  { key: 'debit', label: 'DEBIT(₦)', render: (val) => <span style={{ color: "red" }}>{val ? `₦${new Intl.NumberFormat().format(val)}` : "-"}</span> },
-                  { key: 'balance', label: 'BALANCE(₦)', render: (val) => `₦${new Intl.NumberFormat().format(val)}` },
+                  { key: 'credit', label: 'CREDIT(₦)', render: (val) => Number(val) ? <span style={{ color: "green" }}>{`₦${new Intl.NumberFormat().format(val)}`}</span> : '' },
+                  { key: 'debit', label: 'DEBIT(₦)', render: (val) => Number(val) ? <span style={{ color: "red" }}>{`₦${new Intl.NumberFormat().format(val)}`}</span> : '' },
+                  { key: 'balance', label: 'BALANCE(₦)', render: (val) => Number(val) ? `₦${new Intl.NumberFormat().format(val)}` : '' },
                 ]}
                 data={displayedLedgerData}
               />

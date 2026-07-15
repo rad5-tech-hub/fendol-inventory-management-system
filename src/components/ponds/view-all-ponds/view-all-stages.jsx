@@ -257,17 +257,14 @@ const ViewAllStages = () => {
           <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             {/* ── Page Header ── */}
-            <div className="d-flex justify-content-between align-items-start mb-1 mt-2 flex-wrap gap-1">
+            <div className="d-flex justify-content-between align-items-start mb-2 mt-2 flex-wrap gap-2">
               <div>
-                <h4 className="mb-0 fw-bold" style={{ color: '#2E3135', fontSize: '1.1rem' }}>All Ponds</h4>
-                <p className="mb-0" style={{ fontSize: '0.78rem', color: '#8C949B' }}>
-                  Monitor and manage all active aquaculture ponds across your sites.
-                </p>
+                <h4 className="mb-0 fw-bold" style={{ color: '#2E3135' }}>All Ponds</h4>
               </div>
               <div className="d-flex gap-2">
                 <button
                   className="btn fw-semibold d-flex align-items-center gap-1"
-                  style={{ backgroundColor: '#512728', color: '#fff', fontSize: '0.8rem', border: 'none', padding: '4px 12px' }}
+                  style={{ backgroundColor: '#512728', color: '#fff', fontSize: '0.875rem', border: 'none' }}
                   onClick={() => navigate('../create')}
                 >
                   + Add Pond
@@ -276,16 +273,16 @@ const ViewAllStages = () => {
             </div>
 
             {/* ── Filter Bar ── */}
-            <div className="border rounded px-3 py-2 mb-1" style={{ backgroundColor: '#fff' }}>
+            <div className="border rounded p-2 mb-2" style={{ backgroundColor: '#fff' }}>
               <div className="d-flex flex-wrap gap-2 align-items-end">
                 {isSuperAdmin && (
-                  <div style={{ minWidth: '140px' }}>
-                    <label className="form-label mb-0" style={{ fontSize: '0.7rem', fontWeight: 600, color: '#2E3135' }}>Site</label>
+                  <div style={{ minWidth: '155px' }}>
+                    <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Site</label>
                     <SiteSelector onChange={handleSiteChange} />
                   </div>
                 )}
-                <div style={{ minWidth: '140px' }}>
-                  <label className="form-label mb-0" style={{ fontSize: '0.7rem', fontWeight: 600, color: '#2E3135' }}>Status</label>
+                <div style={{ minWidth: '155px' }}>
+                  <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Status</label>
                   <CustomDropdown
                     options={[
                       { value: '', label: 'All Status' },
@@ -297,11 +294,11 @@ const ViewAllStages = () => {
                     placeholder="All Status"
                   />
                 </div>
-                <div style={{ flex: 1, minWidth: '180px' }}>
-                  <label className="form-label mb-0" style={{ fontSize: '0.7rem', fontWeight: 600, color: '#2E3135' }}>Search</label>
+                <div style={{ flex: 1, minWidth: '220px' }}>
+                  <label className="form-label mb-1" style={{ fontSize: '0.78rem', fontWeight: 600, color: '#2E3135' }}>Search</label>
                   <div className="input-group input-group-sm">
-                    <span className="input-group-text bg-white border-end-0" style={{ padding: '2px 6px' }}>
-                      <BsSearch size={11} className="text-muted" />
+                    <span className="input-group-text bg-white border-end-0">
+                      <BsSearch size={13} className="text-muted" />
                     </span>
                     <input
                       type="text"
@@ -309,7 +306,6 @@ const ViewAllStages = () => {
                       placeholder="Pond name or description..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{ padding: '2px 6px', fontSize: '0.8rem' }}
                     />
                   </div>
                 </div>
@@ -317,8 +313,8 @@ const ViewAllStages = () => {
 
               {/* Active filter chips — only render when at least one filter is active */}
               {(isSuperAdmin && siteFilter || statusFilter) && (
-                <div className="d-flex gap-1 flex-wrap mt-1 align-items-center">
-                  <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#2E3135', letterSpacing: '0.03em' }}>
+                <div className="d-flex gap-2 flex-wrap mt-2 align-items-center">
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2E3135', letterSpacing: '0.03em' }}>
                     ACTIVE FILTERS:
                   </span>
                   {isSuperAdmin && siteFilter && (
