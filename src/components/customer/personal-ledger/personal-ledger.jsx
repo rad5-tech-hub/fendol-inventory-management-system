@@ -199,8 +199,8 @@ export default function PersonalLedger() {
       ),
     },
     { key: 'paymentType', label: 'PAYMENT', width: '14%', render: (value) => value || '' },
-    { key: 'credit', label: 'CREDIT (₦)', width: '14%', align: 'right', render: (value) => value ? <span style={{ fontWeight: 600, color: '#16A34A' }}>{formatCurrency(value)}</span> : '' },
-    { key: 'debit', label: 'DEBIT (₦)', width: '14%', align: 'right', render: (value) => value ? <span style={{ fontWeight: 600, color: '#DC2626' }}>{formatCurrency(value)}</span> : '' },
+    { key: 'credit', label: 'CREDIT (₦)', width: '14%', align: 'right', render: (value) => Number(value) ? <span style={{ fontWeight: 600, color: '#16A34A' }}>{formatCurrency(value)}</span> : '' },
+    { key: 'debit', label: 'DEBIT (₦)', width: '14%', align: 'right', render: (value) => Number(value) ? <span style={{ fontWeight: 600, color: '#DC2626' }}>{formatCurrency(value)}</span> : '' },
     {
       key: 'balance',
       label: 'BALANCE (₦)',
