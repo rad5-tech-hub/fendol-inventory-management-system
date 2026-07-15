@@ -551,7 +551,7 @@ export default function ViewBrokenHistory() {
                     Convert to Kilograms
                   </h2>
                   <p style={{ fontSize: '13px', color: '#6B7280', fontWeight: 400, margin: '4px 0 0 0', lineHeight: '1.4' }}>
-                    Record the kg equivalent for <strong>#{selectedRow?.id?.slice(0, 8) || '—'}</strong>
+                    Record the kg equivalent for this entry.
                   </p>
                 </div>
               </div>
@@ -573,22 +573,6 @@ export default function ViewBrokenHistory() {
 
             {/* Body */}
             <div style={{ padding: '20px 28px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Conversion info banner */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '12px 14px', borderRadius: '10px',
-                background: '#FDF5F5', border: '1px solid #E8C8C8',
-                fontSize: '12px', color: '#512728', lineHeight: '1.5',
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-                  <circle cx="12" cy="12" r="10" stroke="#512728" strokeWidth="1.5"/>
-                  <path d="M12 8v4M12 16h.01" stroke="#512728" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-                <span>
-                  Enter the quantity of fish pieces and their equivalent weight in kilograms for this record.
-                </span>
-              </div>
-
               {/* Quantity (pieces) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
