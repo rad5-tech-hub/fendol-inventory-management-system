@@ -5,8 +5,8 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "../showcase.module.scss";
-import { Alert } from "react-bootstrap";
-import { FaExclamationTriangle, FaEllipsisV, FaChevronLeft, FaChevronRight, FaExchangeAlt } from "react-icons/fa";
+import { FaEllipsisV, FaExchangeAlt } from "react-icons/fa";
+import ErrorState from "../../shared/error-state/ErrorState";
 import { FiX, FiArrowRight } from "react-icons/fi";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
@@ -30,8 +30,9 @@ export default function ViewWholeHistory() {
   const [wholeQuantity, setWholeQuantity] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [tableData, setTableData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageCount, setPageCount] = useState(0);
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loadingStages, setLoadingStages] = useState(true);
   const [loadingTable, setLoadingTable] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -46,39 +47,52 @@ export default function ViewWholeHistory() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [openActions, setOpenActions] = useState(false);
   const actionsRef = useRef(null);
+  const sentinelRef = useRef(null);
 
-  const itemsPerPage = 65;
-
-  const fetchTableData = async () => {
-    setLoadingStages(true);
-    setLoadingTable(true);
-    setErrorStages("");
-    setErrorTable("");
+  const fetchTableData = async (isLoadMore = false) => {
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoadingStages(true);
+      setLoadingTable(true);
+      setErrorStages("");
+      setErrorTable("");
+    }
 
     try {
+      const params = isLoadMore && cursor ? { cursor } : {};
       const [wholeResponse, historyResponse] = await Promise.all([
         Api.get("/show-glass/whole"),
-        Api.get("/get-all-whole-histories"),
+        Api.get("/get-all-whole-histories", { params }),
       ]);
 
       if (wholeResponse.data?.success && wholeResponse.data.data) {
         setWholeQuantity(wholeResponse.data.data.wholeFishCumulative || 0);
         setLastUpdated(wholeResponse.data.data.createdAt || null);
-      } else {
-        throw new Error("Invalid data structure");
       }
 
       const historyData = historyResponse.data.data || [];
-      setTableData(historyData);
-      setPageCount(Math.ceil(historyData.length / itemsPerPage));
+      const pagination = historyResponse.data.pagination;
+
+      setTableData(prev => isLoadMore ? [...prev, ...historyData] : historyData);
+      setCursor(pagination?.nextCursor || null);
+      setHasMore(pagination?.hasMore || false);
     } catch (error) {
       console.error("Fetch Error:", error);
       const errorMsg = error.response?.data?.message || "Error fetching data.";
-      setErrorStages(errorMsg);
-      setErrorTable(errorMsg);
+      if (!isLoadMore) {
+        setErrorStages(errorMsg);
+        setErrorTable(errorMsg);
+      } else {
+        toast.error("Failed to load more records.", { className: 'dark-toast' });
+      }
     } finally {
-      setLoadingStages(false);
-      setLoadingTable(false);
+      if (isLoadMore) {
+        setLoadingMore(false);
+      } else {
+        setLoadingStages(false);
+        setLoadingTable(false);
+      }
     }
   };
 
@@ -91,6 +105,21 @@ export default function ViewWholeHistory() {
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, []);
+
+  useEffect(() => {
+    if (!hasMore || loadingMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          fetchTableData(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const el = sentinelRef.current;
+    if (el) observer.observe(el);
+    return () => { if (el) observer.unobserve(el); };
+  }, [hasMore, loadingMore, cursor]);
 
   const handleShowModal = (type) => {
     setModalType(type);
@@ -220,18 +249,8 @@ export default function ViewWholeHistory() {
     return { d, t };
   };
 
-  const paginatedData = tableData.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
-  );
-
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
-
-  const formatBig = (n) => {
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-    return new Intl.NumberFormat().format(n);
-  };
 
   const columns = [
     {
@@ -399,35 +418,6 @@ export default function ViewWholeHistory() {
       color: TEXT_MUTED,
       borderTop: `1px solid ${BORDER}`,
     },
-    paginationWrap: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-    },
-    pageBtn: (active) => ({
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '32px',
-      height: '32px',
-      borderRadius: '6px',
-      border: `1px solid ${active ? PRIMARY : BORDER}`,
-      backgroundColor: active ? PRIMARY : BG_CARD,
-      color: active ? '#fff' : TEXT_MAIN,
-      fontSize: '13px',
-      fontWeight: active ? 600 : 400,
-      cursor: 'pointer',
-      transition: 'all 0.15s ease',
-    }),
-    pageDots: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '32px',
-      height: '32px',
-      fontSize: '13px',
-      color: TEXT_MUTED,
-    },
   };
 
   return (
@@ -459,10 +449,7 @@ export default function ViewWholeHistory() {
                 </div>
               </div>
             ) : errorStages ? (
-              <Alert variant="danger" className="text-center py-4">
-                <FaExclamationTriangle size={24} />
-                <span className="fw-semibold ms-2">{errorStages}</span>
-              </Alert>
+              <ErrorState message={errorStages} />
             ) : (
               <div style={s.statCard}>
                 <div>
@@ -535,12 +522,7 @@ export default function ViewWholeHistory() {
             {loadingTable ? (
               <SkeletonTable cols={5} rows={8} />
             ) : errorTable ? (
-              <div className="d-flex justify-content-center">
-                <Alert variant="danger" className="text-center w-50 py-5">
-                  <FaExclamationTriangle size={40} />
-                  <span className="fw-semibold">{errorTable}</span>
-                </Alert>
-              </div>
+              <ErrorState message={errorTable} />
             ) : (
               <div style={s.tablePanel}>
                 <div style={{ overflowX: 'auto' }}>
@@ -563,14 +545,14 @@ export default function ViewWholeHistory() {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedData.length === 0 ? (
+                      {tableData.length === 0 ? (
                         <tr>
                           <td colSpan={columns.length} style={{ textAlign: 'center', padding: '40px 16px', color: TEXT_MUTED }}>
                             No data available.
                           </td>
                         </tr>
                       ) : (
-                        paginatedData.map((row, idx) => (
+                        tableData.map((row, idx) => (
                           <tr key={row.id || idx} style={{ transition: 'background 0.1s' }}
                             onMouseOver={e => e.currentTarget.style.background = '#FAFBFC'}
                             onMouseOut={e => e.currentTarget.style.background = 'none'}
@@ -590,63 +572,20 @@ export default function ViewWholeHistory() {
                       )}
                     </tbody>
                   </table>
+                  {loadingMore && (
+                    <div style={{ textAlign: 'center', padding: '16px', color: TEXT_MUTED, fontSize: '13px', borderTop: `1px solid ${BORDER}` }}>
+                      <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid #E5E7EB', borderTopColor: PRIMARY, borderRadius: '50%', animation: 'spin 0.5s linear infinite', marginRight: '8px', verticalAlign: 'middle' }} />
+                      Loading more...
+                    </div>
+                  )}
                 </div>
 
-                {/* ── Pagination ── */}
-                <div style={{
+                {/* ── Footer / Sentinel ── */}
+                <div ref={sentinelRef} style={{
                   ...s.tableFooter, flexDirection: 'row', gap: '10px',
                   position: 'sticky', bottom: 0, zIndex: 10, background: '#fff',
                 }}>
-                  <span>
-                    Showing {Math.min(itemsPerPage, tableData.length - currentPage * itemsPerPage)} of {tableData.length} records
-                  </span>
-                  {pageCount > 1 && (
-                    <div style={s.paginationWrap}>
-                      <button
-                        style={{ ...s.pageBtn(false), width: '32px' }}
-                        onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                        disabled={currentPage === 0}
-                      >
-                        <FaChevronLeft size={11} />
-                      </button>
-                      {(() => {
-                        const pages = [];
-                        const maxVisible = 5;
-                        let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-                        let end = Math.min(pageCount, start + maxVisible);
-                        if (end - start < maxVisible) start = Math.max(0, end - maxVisible);
-                        if (start > 0) {
-                          pages.push(
-                            <button key={0} style={s.pageBtn(false)} onClick={() => setCurrentPage(0)}>1</button>
-                          );
-                          if (start > 1) pages.push(<span key="sl" style={s.pageDots}>...</span>);
-                        }
-                        for (let i = start; i < end; i++) {
-                          pages.push(
-                            <button key={i} style={s.pageBtn(currentPage === i)} onClick={() => setCurrentPage(i)}>
-                              {i + 1}
-                            </button>
-                          );
-                        }
-                        if (end < pageCount) {
-                          if (end < pageCount - 1) pages.push(<span key="sr" style={s.pageDots}>...</span>);
-                          pages.push(
-                            <button key={pageCount - 1} style={s.pageBtn(false)} onClick={() => setCurrentPage(pageCount - 1)}>
-                              {pageCount}
-                            </button>
-                          );
-                        }
-                        return pages;
-                      })()}
-                      <button
-                        style={{ ...s.pageBtn(false), width: '32px' }}
-                        onClick={() => setCurrentPage(p => Math.min(pageCount - 1, p + 1))}
-                        disabled={currentPage >= pageCount - 1}
-                      >
-                        <FaChevronRight size={11} />
-                      </button>
-                    </div>
-                  )}
+                  <span>{tableData.length} record{tableData.length !== 1 ? 's' : ''}</span>
                 </div>
               </div>
             )}
