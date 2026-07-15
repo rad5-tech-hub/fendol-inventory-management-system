@@ -4,7 +4,7 @@ import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product.module.scss';
 import { BsPlusLg, BsBarChartFill, BsChevronDown } from "react-icons/bs";
-import Api, { ApiV2 } from "../../shared/api/apiLink";
+import { ApiV2 } from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Modal, Form, Button } from 'react-bootstrap';
@@ -19,7 +19,7 @@ import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
 import DataTable from '../../shared/data-table/DataTable';
 
-const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick, showDelete = true }) => (
+const ProductTable = ({ rows, avatarColors, onEditClick }) => (
   <DataTable
     columns={[
       { key: 'productName', label: 'Product Name' },
@@ -50,10 +50,6 @@ const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick, showDele
           menuStyle={{ minWidth: 160 }}
           items={[
             { label: 'Edit', onClick: () => onEditClick(product) },
-            ...(showDelete ? [
-              { divider: true },
-              { label: 'Delete', onClick: () => onDeleteClick(product.id), style: { color: '#dc3545', fontWeight: 600 } },
-            ] : []),
           ]}
         />
       </div>
@@ -142,15 +138,6 @@ export default function ViewAllProducts() {
   const handleEditClick = (product) => {
     setSelectedProduct(product);
     setShowModal(true);
-  };
-
-  const handleDeleteClick = async (productId) => {
-    try {
-      await Api.delete(`/products/${productId}`);
-      setProducts(products.filter(product => product.id !== productId));
-    } catch (err) {
-      console.error('Failed to delete product:', err);
-    }
   };
 
   const handleInputChange = (e) => {
@@ -248,7 +235,7 @@ export default function ViewAllProducts() {
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0 }}>
             <div style={{ flex: 1, overflowY: 'auto' }}>
             <ToastContainer />
 
@@ -354,8 +341,6 @@ export default function ViewAllProducts() {
                           rows={groupedBySiteType[stName]}
                           avatarColors={AVATAR_COLORS}
                           onEditClick={handleEditClick}
-                          onDeleteClick={handleDeleteClick}
-                          showDelete={canAssignSite}
                         />
                       </>
                     )}
@@ -370,8 +355,6 @@ export default function ViewAllProducts() {
                 rows={currentProducts}
                 avatarColors={AVATAR_COLORS}
                 onEditClick={handleEditClick}
-                onDeleteClick={handleDeleteClick}
-                showDelete={canAssignSite}
               />
             )}
 
@@ -381,13 +364,11 @@ export default function ViewAllProducts() {
                 rows={currentProducts}
                 avatarColors={AVATAR_COLORS}
                 onEditClick={handleEditClick}
-                onDeleteClick={handleDeleteClick}
-                showDelete={canAssignSite}
               />
             )}
             </div>
             {!loading && !error && products.length > 0 && ((canAssignSite && viewMode === 'all') || !canAssignSite) && (
-              <div className="d-flex justify-content-center" style={{ marginTop: 'auto', paddingTop: 12, paddingBottom: 12, background: '#fff' }}>
+              <div className="d-flex justify-content-center" style={{ marginTop: 'auto', paddingTop: 12, paddingBottom: 0, background: '#fff' }}>
                 <ReactPaginate
                   previousLabel={"< "}
                   nextLabel={" >"}
