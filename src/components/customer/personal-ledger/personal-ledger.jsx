@@ -357,7 +357,7 @@ export default function PersonalLedger() {
             <ToastContainer />
 
             {/* ── Breadcrumb ── */}
-            <div className="d-flex align-items-center gap-2 mb-3" style={{ fontSize: '13px' }}>
+            <div className="d-flex align-items-center gap-2 mb-1" style={{ fontSize: '12px' }}>
               <span style={{ cursor: 'pointer', color: '#8C949B' }} onClick={() => navigate('/customer/view-all')}>
                 Customers
               </span>
@@ -375,14 +375,11 @@ export default function PersonalLedger() {
             </div>
 
             {/* ── Page Title ── */}
-            <div className="d-flex justify-content-between align-items-start mb-4">
+            <div className="d-flex justify-content-between align-items-start mb-2">
               <div>
-                <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#2E3135', marginBottom: '4px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#2E3135', marginBottom: 0 }}>
                   Customer Ledger
                 </h2>
-                <p style={{ fontSize: '14px', color: '#8C949B', margin: 0 }}>
-                  View all transactions and account balance for customers.
-                </p>
               </div>
             </div>
 
@@ -398,56 +395,56 @@ export default function PersonalLedger() {
                 {/* ── Customer Header Card ── */}
                 <div
                   style={{
-                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px',
-                    padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '20px',
+                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
+                    padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
                   }}
                 >
-                  <div className="d-flex flex-wrap align-items-start" style={{ gap: '8px', justifyContent: 'space-between' }}>
-                    <div className="d-flex align-items-start gap-3">
+                  <div className="d-flex flex-wrap align-items-center" style={{ gap: '10px', justifyContent: 'space-between' }}>
+                    <div className="d-flex align-items-center gap-2">
                       <div
                         style={{
-                          width: '60px', height: '60px', borderRadius: '50%',
+                          width: '44px', height: '44px', borderRadius: '50%',
                           background: AVATAR_COLORS[0], display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', fontSize: '22px', fontWeight: 700,
+                          justifyContent: 'center', fontSize: '16px', fontWeight: 700,
                           color: '#ffffff', flexShrink: 0,
                         }}
                       >
                         {getInitials(fullName)}
                       </div>
                       <div>
-                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1A1C1E', marginBottom: '4px' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1C1E', marginBottom: 0 }}>
                           {fullName?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
                         </h3>
-                        <p style={{ fontSize: '14px', color: '#374151', fontWeight: 500, margin: '0 0 8px 0' }}>
+                        <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500, margin: 0 }}>
                           {category || 'N/A'}
                         </p>
                       </div>
                     </div>
 
                     {/* Metric Cards */}
-                    <div className="d-flex gap-2 flex-wrap">
+                    <div className="d-flex gap-2">
                       <div style={{
-                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '8px', padding: '10px 16px',
                       }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
-                          Total Credit (N)
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                          Total Credit
                         </div>
-                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#16A34A' }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A', lineHeight: 1.2 }}>
                           {formatCurrency(totalCredit)}
                         </div>
                       </div>
                       <div style={{
-                        minWidth: '180px', flex: '1 1 auto', background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        background: '#FAFCFF', border: '1px solid #e5e7eb',
+                        borderRadius: '8px', padding: '10px 16px',
                       }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                           Current Balance
                         </div>
-                        <div style={{ fontSize: '20px', fontWeight: 700, color: balanceColor }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: balanceColor, lineHeight: 1.2 }}>
                           {formatCurrency(balance)}
                         </div>
-                        <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>
+                        <div style={{ fontSize: '10px', color: balanceColor, opacity: 0.7, lineHeight: 1 }}>
                           {balanceLabel}
                         </div>
                       </div>
@@ -458,49 +455,49 @@ export default function PersonalLedger() {
                 {/* ── Filter Bar ── */}
                 <div
                   style={{
-                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
-                    padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '20px',
+                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px',
+                    padding: '10px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
                   }}
                 >
-                  <div className="d-flex flex-wrap align-items-end gap-3">
-                    <div style={{ flex: '1 1 160px', minWidth: '140px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px', display: 'block' }}>
+                  <div className="d-flex flex-wrap align-items-end gap-2">
+                    <div style={{ flex: '1 1 140px', minWidth: '120px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px', display: 'block' }}>
                         Date Range
                       </label>
-                      <div className="d-flex align-items-center gap-2">
+                      <div className="d-flex align-items-center gap-1">
                         <div style={{ position: 'relative', flex: 1 }}>
                           <input
                             type="date"
                             value={dateFrom}
                             onChange={(e) => setDateFrom(e.target.value)}
                             style={{
-                              width: '100%', padding: '7px 10px 7px 30px',
-                              border: '1px solid #e5e7eb', borderRadius: '6px',
-                              fontSize: '12px', color: '#374151', outline: 'none', background: '#ffffff',
+                              width: '100%', padding: '5px 8px 5px 24px',
+                              border: '1px solid #e5e7eb', borderRadius: '5px',
+                              fontSize: '11px', color: '#374151', outline: 'none', background: '#ffffff',
                             }}
                           />
-                          <BsCalendar3 style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#8C949B' }} />
+                          <BsCalendar3 style={{ position: 'absolute', left: '6px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#8C949B' }} />
                         </div>
-                        <span style={{ fontSize: '12px', color: '#8C949B' }}>–</span>
+                        <span style={{ fontSize: '11px', color: '#8C949B' }}>–</span>
                         <div style={{ position: 'relative', flex: 1 }}>
                           <input
                             type="date"
                             value={dateTo}
                             onChange={(e) => setDateTo(e.target.value)}
                             style={{
-                              width: '100%', padding: '7px 10px 7px 30px',
-                              border: '1px solid #e5e7eb', borderRadius: '6px',
-                              fontSize: '12px', color: '#374151', outline: 'none', background: '#ffffff',
+                              width: '100%', padding: '5px 8px 5px 24px',
+                              border: '1px solid #e5e7eb', borderRadius: '5px',
+                              fontSize: '11px', color: '#374151', outline: 'none', background: '#ffffff',
                             }}
                           />
-                          <BsCalendar3 style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#8C949B' }} />
+                          <BsCalendar3 style={{ position: 'absolute', left: '6px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#8C949B' }} />
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ flex: '1 1 140px', minWidth: '120px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px', display: 'block' }}>
-                        Transaction Type
+                    <div style={{ flex: '1 1 120px', minWidth: '100px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px', display: 'block' }}>
+                        Type
                       </label>
                       <CustomDropdown
                         value={typeFilter}
@@ -509,12 +506,12 @@ export default function PersonalLedger() {
                       />
                     </div>
 
-                    <div className="d-flex gap-2" style={{ alignSelf: 'flex-end', paddingBottom: '1px' }}>
+                    <div className="d-flex gap-1" style={{ alignSelf: 'flex-end' }}>
                       <button
                         onClick={() => setCurrentPage(0)}
                         style={{
-                          padding: '7px 16px', background: '#512728', color: '#ffffff',
-                          border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
+                          padding: '5px 12px', background: '#512728', color: '#ffffff',
+                          border: 'none', borderRadius: '5px', fontSize: '11px', fontWeight: 500,
                           cursor: 'pointer', transition: 'background 0.12s ease',
                         }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = '#714445'; }}
@@ -526,8 +523,8 @@ export default function PersonalLedger() {
                         <button
                           onClick={resetFilters}
                           style={{
-                            padding: '7px 16px', background: '#ffffff', color: '#6B7280',
-                            border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
+                            padding: '5px 12px', background: '#ffffff', color: '#6B7280',
+                            border: '1px solid #e5e7eb', borderRadius: '5px', fontSize: '11px', fontWeight: 500,
                             cursor: 'pointer',
                           }}
                         >
@@ -540,8 +537,8 @@ export default function PersonalLedger() {
 
                 {/* ── Ledger Table ── */}
                 <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'visible' }}>
-                  <div className="d-flex align-items-center justify-content-between px-4 pt-4 pb-2">
-                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#2E3135', margin: 0 }}>
+                  <div className="d-flex align-items-center justify-content-between px-3 pt-2 pb-1">
+                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#2E3135', margin: 0 }}>
                       Ledger Transactions ({filteredLedgerData.length})
                     </h4>
                   </div>
