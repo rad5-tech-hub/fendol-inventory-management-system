@@ -61,22 +61,18 @@ export default function ViewWholeHistory() {
 
     try {
       const params = isLoadMore && cursor ? { cursor } : {};
-      const [wholeResponse, historyResponse] = await Promise.all([
-        Api.get("/show-glass/whole"),
-        Api.get("/get-all-whole-histories", { params }),
-      ]);
-
-      if (wholeResponse.data?.success && wholeResponse.data.data) {
-        setWholeQuantity(wholeResponse.data.data.wholeFishCumulative || 0);
-        setLastUpdated(wholeResponse.data.data.createdAt || null);
-      }
-
+      const historyResponse = await Api.get("/get-all-whole-histories", { params });
       const historyData = historyResponse.data.data || [];
       const pagination = historyResponse.data.pagination;
 
       setTableData(prev => isLoadMore ? [...prev, ...historyData] : historyData);
       setCursor(pagination?.nextCursor || null);
       setHasMore(pagination?.hasMore || false);
+
+      if (!isLoadMore && historyData.length > 0) {
+        setWholeQuantity(historyData[0].wholeFishCumulative || 0);
+        setLastUpdated(historyData[0].createdAt || null);
+      }
     } catch (error) {
       console.error("Fetch Error:", error);
       const errorMsg = error.response?.data?.message || "Error fetching data.";
@@ -276,29 +272,38 @@ export default function ViewWholeHistory() {
     {
       key: 'wholeFishAdded', label: 'Added',
       align: 'right',
-      render: (value) => (
-        <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
-          {value != null ? new Intl.NumberFormat().format(value) : '—'}
-        </span>
-      ),
+      render: (value, row) => {
+        if (row.siteId && value > 0) {
+          return <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
+            {new Intl.NumberFormat().format(value)}
+          </span>;
+        }
+        return <span style={{ color: TEXT_MUTED, fontSize: '13px' }}>—</span>;
+      },
     },
     {
-      key: 'brokenFishAdded', label: 'Removed',
+      key: 'wholeFishAdded', label: 'Sold',
       align: 'right',
-      render: (value) => (
-        <span style={{ fontWeight: 700, color: '#dc3545', fontSize: '13px' }}>
-          {value != null ? new Intl.NumberFormat().format(value) : '—'}
-        </span>
-      ),
+      render: (value, row) => {
+        if (!row.siteId && value > 0) {
+          return <span style={{ fontWeight: 700, color: '#dc3545', fontSize: '13px' }}>
+            {new Intl.NumberFormat().format(value)}
+          </span>;
+        }
+        return <span style={{ color: TEXT_MUTED, fontSize: '13px' }}>—</span>;
+      },
     },
     {
-      key: 'wholeFishCumulative', label: 'Cumulative Added',
+      key: 'brokenFishAdded', label: 'Broken',
       align: 'right',
-      render: (value) => (
-        <span style={{ fontWeight: 700, color: TEXT_MAIN, fontSize: '13px' }}>
-          {value != null ? new Intl.NumberFormat().format(value) : '—'}
-        </span>
-      ),
+      render: (value, row) => {
+        if (row.siteId && value > 0) {
+          return <span style={{ fontWeight: 700, color: '#E07B00', fontSize: '13px' }}>
+            {new Intl.NumberFormat().format(value)}
+          </span>;
+        }
+        return <span style={{ color: TEXT_MUTED, fontSize: '13px' }}>—</span>;
+      },
     },
   ];
 
