@@ -233,14 +233,14 @@ const CashDrawer = () => {
                 <Button
                   className={`border-0 btn-dark shadow py-2 px-3 fs-6 fw-semibold ${styles.submit}`}
                   onClick={() => setShowAddCashModal(true)}
-                  style={{ minWidth: '120px' }}
+                  style={{ minWidth: '160px', padding: '10px 24px' }}
                 >
                   Add Cash
                 </Button>
                 <Button
                   className={`border-0 btn-dark shadow py-2 px-3 fs-6 fw-semibold ${styles.submit}`}
                   onClick={() => setShowWithdrawModal(true)}
-                  style={{ minWidth: '120px' }}
+                  style={{ minWidth: '160px', padding: '10px 24px' }}
                 >
                   Withdraw
                 </Button>
