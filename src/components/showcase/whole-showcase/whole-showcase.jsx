@@ -293,18 +293,6 @@ export default function ViewWholeHistory() {
         return <span style={{ color: TEXT_MUTED, fontSize: '13px' }}>—</span>;
       },
     },
-    {
-      key: 'brokenFishAdded', label: 'Broken',
-      align: 'right',
-      render: (value, row) => {
-        if (row.siteId && value > 0) {
-          return <span style={{ fontWeight: 700, color: '#E07B00', fontSize: '13px' }}>
-            {new Intl.NumberFormat().format(value)}
-          </span>;
-        }
-        return <span style={{ color: TEXT_MUTED, fontSize: '13px' }}>—</span>;
-      },
-    },
   ];
 
   const modalMounted = useRef(false);
