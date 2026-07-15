@@ -19,7 +19,7 @@ import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
 import DataTable from '../../shared/data-table/DataTable';
 
-const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick }) => (
+const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick, showDelete = true }) => (
   <DataTable
     columns={[
       { key: 'productName', label: 'Product Name' },
@@ -50,8 +50,10 @@ const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick }) => (
           menuStyle={{ minWidth: 160 }}
           items={[
             { label: 'Edit', onClick: () => onEditClick(product) },
-            { divider: true },
-            { label: 'Delete', onClick: () => onDeleteClick(product.id), style: { color: '#dc3545', fontWeight: 600 } },
+            ...(showDelete ? [
+              { divider: true },
+              { label: 'Delete', onClick: () => onDeleteClick(product.id), style: { color: '#dc3545', fontWeight: 600 } },
+            ] : []),
           ]}
         />
       </div>
@@ -353,6 +355,7 @@ export default function ViewAllProducts() {
                           avatarColors={AVATAR_COLORS}
                           onEditClick={handleEditClick}
                           onDeleteClick={handleDeleteClick}
+                          showDelete={canAssignSite}
                         />
                       </>
                     )}
@@ -368,6 +371,7 @@ export default function ViewAllProducts() {
                 avatarColors={AVATAR_COLORS}
                 onEditClick={handleEditClick}
                 onDeleteClick={handleDeleteClick}
+                showDelete={canAssignSite}
               />
             )}
 
@@ -378,11 +382,12 @@ export default function ViewAllProducts() {
                 avatarColors={AVATAR_COLORS}
                 onEditClick={handleEditClick}
                 onDeleteClick={handleDeleteClick}
+                showDelete={canAssignSite}
               />
             )}
             </div>
             {!loading && !error && products.length > 0 && ((canAssignSite && viewMode === 'all') || !canAssignSite) && (
-              <div className="d-flex justify-content-center mt-4" style={{ paddingTop: 12, paddingBottom: 12, background: '#fff' }}>
+              <div className="d-flex justify-content-center" style={{ marginTop: 'auto', paddingTop: 12, paddingBottom: 12, background: '#fff' }}>
                 <ReactPaginate
                   previousLabel={"< "}
                   nextLabel={" >"}
