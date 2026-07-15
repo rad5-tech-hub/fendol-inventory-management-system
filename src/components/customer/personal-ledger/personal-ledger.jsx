@@ -194,7 +194,7 @@ export default function PersonalLedger() {
               S
             </span>
           )}
-          <span>{row.description || '-'}</span>
+          <span>{row.productName || '-'}</span>
         </div>
       ),
     },
