@@ -55,7 +55,9 @@ export default function PersonalLedger() {
   const customerId = queryParams.get('id');
   const activeSite = useSelector((store) => store.activeSite);
   const user = useSelector((store) => store.user);
-  const resolvedSiteId = activeSite?.id || user?.siteId;
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
+  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || activeSite?.id || '');
 
   const [ledgerData, setLedgerData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -290,6 +292,10 @@ export default function PersonalLedger() {
     }
     if (!salesType) {
       toast.error("Please select a payment type.", { autoClose: 3000 });
+      return;
+    }
+    if (!isSuperAdmin && !resolvedSiteId) {
+      toast.error("Site information is missing. Please contact support.", { autoClose: 3000 });
       return;
     }
     const loadingToastId = toast.loading("Processing payment...");

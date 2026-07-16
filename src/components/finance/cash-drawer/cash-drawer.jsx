@@ -50,7 +50,7 @@ const CashDrawer = () => {
   const [showSidebar, setShowSidebar] = useState(false);
 
   const isSuperAdmin = user?.userTypes?.includes("super_admin");
-  const resolvedSiteId = activeSite?.id || user?.siteId;
+  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || '');
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);

@@ -13,7 +13,9 @@ import { useConfirm } from '../../shared/confirm-modal';
 const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
     const activeSite = useSelector((store) => store.activeSite);
     const user = useSelector((store) => store.user);
-    const resolvedSiteId = siteId || activeSite?.id || user?.siteId;
+    const userTypes = useSelector((store) => store.user?.userTypes || []);
+    const isSuperAdmin = userTypes.includes('super_admin');
+    const resolvedSiteId = siteId || (isSuperAdmin ? activeSite?.id : user?.siteId);
     const feedTypeId = productTypes.find(t => t.name?.toLowerCase() === 'feed')?.id;
     const [feedData, setFeedData] = useState({
         products: [],

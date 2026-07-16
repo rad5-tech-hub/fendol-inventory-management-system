@@ -89,10 +89,11 @@ export default function ViewFish() {
   const [pondOptions, setPondOptions] = useState([]);
   const [pondsLoading, setPondsLoading] = useState(false);
   const [moveForm, setMoveForm] = useState({ pondId: '', quantity: '' });
-  const [moveSiteId, setMoveSiteId] = useState(activeSite?.id || user?.siteId || '');
+  const [moveSiteId, setMoveSiteId] = useState(resolvedSiteId);
   const [submittingMove, setSubmittingMove] = useState(false);
   const [moveError, setMoveError] = useState('');
   const isSuperAdmin = userTypes.includes('super_admin');
+  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || '');
 
   const fetchPonds = async (siteId) => {
     if (!siteId) { setPondOptions([]); return; }
@@ -110,7 +111,7 @@ export default function ViewFish() {
   };
 
   const openMoveModal = () => {
-    const id = activeSite?.id || user?.siteId || '';
+    const id = resolvedSiteId;
     setMoveSiteId(id);
     setMoveForm({ pondId: '', quantity: '' });
     setMoveError('');
@@ -122,7 +123,7 @@ export default function ViewFish() {
     e.preventDefault();
     setMoveError('');
 
-    const siteId = moveSiteId || activeSite?.id || user?.siteId;
+    const siteId = moveSiteId || resolvedSiteId;
     if (!siteId) {
       setMoveError('No site selected. Please select a site first.');
       return;
@@ -205,7 +206,7 @@ export default function ViewFish() {
     setLoading(true);
     setError(null);
     try {
-      const siteId = activeSite?.id || user?.siteId;
+      const siteId = resolvedSiteId;
       if (!siteId) {
         setError('No site selected. Please select a site from the header or contact an administrator.');
         setTransfers([]);

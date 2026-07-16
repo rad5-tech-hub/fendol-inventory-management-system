@@ -45,12 +45,14 @@ export default function History() {
 
   const user = useSelector((store) => store.user);
   const activeSite = useSelector((store) => store.activeSite);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
 
   const loadHistory = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const siteId = activeSite?.id || user?.siteId;
+      const siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || '');
       if (!siteId) {
         setError('No site selected. Please select a site from the header or contact an administrator.');
         setRecords([]);

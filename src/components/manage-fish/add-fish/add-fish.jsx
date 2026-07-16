@@ -27,18 +27,23 @@ const AddFish = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const navigate = useNavigate();
   const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
+  const effectiveSiteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+  const effectiveSite = isSuperAdmin ? activeSite : (user?.siteId ? { id: user.siteId } : null);
 
   // Fetch Data with useEffect
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const siteId = activeSite?.id || 'all';
+        const siteId = effectiveSiteId;
         const response = await Api.get(`/fish-stages?siteId=${siteId}`);
         if (Array.isArray(response.data.data)) {
           const filteredStages = response.data.data.filter(
             (stage) => !['harvest', 'damage', 'loss'].includes(String(stage.title ?? '').toLowerCase())
           );
-          if (filteredStages.length === 0 && siteId !== 'all' && /^[a-f0-9-]{36}$/i.test(siteId)) {
+          if (filteredStages.length === 0 && effectiveSiteId !== 'all' && /^[a-f0-9-]{36}$/i.test(effectiveSiteId)) {
             const fallbackResponse = await Api.get('/fish-stages?siteId=all');
             if (Array.isArray(fallbackResponse.data.data)) {
               setStages(fallbackResponse.data.data.filter(
@@ -57,7 +62,7 @@ const AddFish = () => {
     };
 
     fetchStages();
-  }, [activeSite?.id]);
+  }, [effectiveSiteId]);
 
   useEffect(() => {
     const fetchFishType = async () => {
@@ -139,10 +144,10 @@ const AddFish = () => {
 
   // Filtered Ponds for Dropdown
   const filteredPonds = stages.filter((stage) => {
-    const matchesSite = activeSite?.id
-      ? String(stage.siteId ?? '').toLowerCase() === String(activeSite.id).toLowerCase()
-      : activeSite?.name
-        ? String(stage.site ?? '').toLowerCase() === String(activeSite.name).toLowerCase()
+    const matchesSite = effectiveSite?.id
+      ? String(stage.siteId ?? '').toLowerCase() === String(effectiveSite.id).toLowerCase()
+      : effectiveSite?.name
+        ? String(stage.site ?? '').toLowerCase() === String(effectiveSite.name).toLowerCase()
         : true;
     return matchesSite && String(stage.title ?? '').toLowerCase().includes(pondSearch.toLowerCase());
   });
