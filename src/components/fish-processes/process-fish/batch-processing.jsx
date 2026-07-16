@@ -1,0 +1,1080 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Form, Row, Col, Button, Breadcrumb } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { toast, ToastContainer } from 'react-toastify';
+import { MdOutlineRefresh } from "react-icons/md";
+import { BsGrid3X3GapFill, BsXCircleFill, BsArrowRight, BsXLg, BsSave, BsExclamationCircle } from 'react-icons/bs';
+import SideBar from '../../shared/sidebar/sidebar';
+import Header from '../../shared/header/header';
+import Api from '../../shared/api/apiLink';
+import styles from '../process.module.scss';
+import 'react-toastify/dist/ReactToastify.css';
+
+export default function BatchProcessing() {
+  const navigate = useNavigate();
+  const user = useSelector((store) => store.user);
+  const activeSite = useSelector((store) => store.activeSite);
+  const isSuperAdmin = user?.userTypes?.includes('super_admin');
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
+  const [stagesLoading, setStagesLoading] = useState(true);
+  const [stages, setStages] = useState({ washing: null });
+  const [checkStages, setCheckStages] = useState([]);
+  const [fishType, setFishType] = useState([]);
+  const [processId, setProcessId] = useState(() => {
+    const saved = sessionStorage.getItem('batchProcessId');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [moveFishData, setMoveFishData] = useState(() => {
+    const saved = sessionStorage.getItem('batchMoveFishData');
+    return saved ? JSON.parse(saved) : {
+      stageId_to: '',
+      batch_no: '',
+      actual_quantity: 0,
+      remarks: '',
+    };
+  });
+  const [moveData, setMoveData] = useState(() => {
+    const saved = sessionStorage.getItem('batchMoveData');
+    return saved ? JSON.parse(saved) : {
+      stageId_from: "",
+      stageId_to: "",
+      wholeFishQuantity: '',
+      brokenFishQuantity: '',
+      damageOrLoss: '',
+    };
+  });
+  const [quantity, setQuantity] = useState(() => {
+    const saved = sessionStorage.getItem('batchQuantity');
+    return saved ? JSON.parse(saved) : {
+      wholeFish: 0,
+      brokenFish: 0,
+      damage: 0,
+    };
+  });
+  const [cumulativeBrokenFishQuantity, setCumulativeBrokenFishQuantity] = useState(() => {
+    const saved = sessionStorage.getItem('batchCumBroken');
+    return saved ? JSON.parse(saved) : 0;
+  });
+  const [cumulativeDamageOrLoss, setCumulativeDamageOrLoss] = useState(() => {
+    const saved = sessionStorage.getItem('batchCumDamage');
+    return saved ? JSON.parse(saved) : 0;
+  });
+  const [loader, setLoader] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalData, setSuccessModalData] = useState(null);
+  const [errorDetails, setErrorDetails] = useState(null);
+
+  const orderedStages = useMemo(() => {
+    const stageOrder = ["Washing", "Smoking", "Drying"];
+    return checkStages
+      .filter(s => stageOrder.includes(s.title))
+      .sort((a, b) => stageOrder.indexOf(a.title) - stageOrder.indexOf(b.title));
+  }, [checkStages]);
+
+  const fetchWashingStage = async () => {
+    setStagesLoading(true);
+    try {
+      const stageParams = {};
+      if (isSuperAdmin) {
+        if (activeSite?.id) stageParams.siteId = activeSite.id;
+      } else if (user?.siteId) {
+        stageParams.siteId = user.siteId;
+      }
+      const response = await Api.get('/process-stages', { params: stageParams });
+      if (Array.isArray(response.data.data)) {
+        setCheckStages(response.data.data);
+        const washingStage = response.data.data.find(stage => stage.title === "Washing");
+        setStages(prev => ({ ...prev, washing: washingStage }));
+        setMoveFishData(prev => ({
+          ...prev,
+          stageId_to: washingStage ? washingStage.id : '',
+          remarks: prev.actual_quantity ? `Process started with ${Number(prev.actual_quantity).toLocaleString()}` : ''
+        }));
+      } else {
+        throw new Error('Expected an array of stages for Washing');
+      }
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.message || 'Unknown error';
+      const status = err.response?.status || 'N/A';
+      const statusText = err.response?.statusText || '';
+      console.error(`[GET] /process-stages → ${status} ${statusText}: ${errMsg}`, err.response?.data || err);
+      toast.error(
+        <div>
+          <strong>Failed to fetch washing stage</strong>
+          <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
+          <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+            GET /process-stages · HTTP {status}{statusText ? ` ${statusText}` : ''}
+          </div>
+        </div>,
+        { autoClose: 8000 }
+      );
+    } finally {
+      setStagesLoading(false);
+    }
+  };
+
+  const fetchFishType = async () => {
+    setShowLoading(true);
+    try {
+      const params = {};
+      if (isSuperAdmin) {
+        if (activeSite?.id) params.siteId = activeSite.id;
+      } else if (user?.siteId) {
+        params.siteId = user.siteId;
+      }
+      const response = await Api.get('/get-all-active-harvest-batch', { params });
+      const quantity = Number(response.data.data) || 0;
+      if (quantity > 0) {
+        setMoveFishData(prev => ({
+          ...prev,
+          actual_quantity: quantity,
+          remarks: `Process started with ${quantity}`
+        }));
+      }
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.message || 'Unknown error';
+      const status = err.response?.status || 'N/A';
+      const statusText = err.response?.statusText || '';
+      console.error(`[GET] /get-all-active-harvest-batch → ${status} ${statusText}: ${errMsg}`, err.response?.data || err);
+      toast.error(
+        <div>
+          <strong>Failed to fetch harvest data</strong>
+          <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
+          <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+            GET /get-all-active-harvest-batch · HTTP {status}{statusText ? ` ${statusText}` : ''}
+          </div>
+        </div>,
+        { autoClose: 8000 }
+      );
+    }finally{
+      setShowLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!processId) {
+      toast.warn('No active batch process found. Redirecting to create a new batch.', { autoClose: 4000 });
+      navigate('/fish-processes/process-fish', { replace: true });
+      return;
+    }
+
+    const init = async () => {
+      await fetchWashingStage();
+      fetchFishType();
+
+      try {
+        const res = await Api.get(`/fish-process/${processId}`);
+        const data = res.data.data;
+        if (data) {
+          setQuantity({
+            wholeFish: data.wholeFishQuantity || 0,
+            brokenFish: data.cumulativeBrokenQuantity || data.brokenFishQuantity || 0,
+            damage: data.cumulativeDamageOrLoss || data.damageOrLoss || 0,
+          });
+          setMoveData(prev => ({
+            ...prev,
+            stageId_from: data.stageId_to || prev.stageId_from,
+            stageId_to: getNextStageId(data.stageId_to) || prev.stageId_to,
+          }));
+          setCumulativeBrokenFishQuantity(data.cumulativeBrokenQuantity || data.brokenFishQuantity || 0);
+          setCumulativeDamageOrLoss(data.cumulativeDamageOrLoss || data.damageOrLoss || 0);
+        }
+      } catch (err) {
+        const errMsg = err.response?.data?.message || err.message || 'Unknown error';
+        const status = err.response?.status || 'N/A';
+        const statusText = err.response?.statusText || '';
+        console.error(`[GET] /fish-process/${processId} → ${status} ${statusText}: ${errMsg}`, err.response?.data || err);
+        if (err.response?.status === 404) {
+          toast.warn(
+            <div>
+              <strong>Previous process no longer exists</strong>
+              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>
+                Process #{processId?.slice(0,8)} was not found (404). Starting fresh.
+              </div>
+            </div>,
+            { autoClose: 5000 }
+          );
+          clearBatchStorage();
+        } else {
+          toast.error(
+            <div>
+              <strong>Failed to restore process data</strong>
+              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
+              <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+                GET /fish-process/{processId?.slice(0,8)}… · HTTP {status}{statusText ? ` ${statusText}` : ''}
+              </div>
+            </div>,
+            { autoClose: 8000 }
+          );
+        }
+      }
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchMoveData', JSON.stringify(moveData));
+  }, [moveData]);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchQuantity', JSON.stringify(quantity));
+  }, [quantity]);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchMoveFishData', JSON.stringify(moveFishData));
+  }, [moveFishData]);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchCumBroken', JSON.stringify(cumulativeBrokenFishQuantity));
+  }, [cumulativeBrokenFishQuantity]);
+
+  useEffect(() => {
+    sessionStorage.setItem('batchCumDamage', JSON.stringify(cumulativeDamageOrLoss));
+  }, [cumulativeDamageOrLoss]);
+
+  useEffect(() => {
+    if (processId !== null) {
+      sessionStorage.setItem('batchProcessId', JSON.stringify(processId));
+    }
+  }, [processId]);
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(''), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  useEffect(() => {
+    if (orderedStages.length > 0) {
+      setMoveData(prev => {
+        if (!prev.stageId_from) {
+          const defaultStageId = orderedStages[0].id;
+          return {
+            ...prev,
+            stageId_from: defaultStageId,
+            stageId_to: getNextStageId(defaultStageId),
+          };
+        }
+        if (!orderedStages.some(s => s.id === prev.stageId_from)) {
+          const washing = orderedStages[0];
+          return {
+            ...prev,
+            stageId_from: washing.id,
+            stageId_to: getNextStageId(washing.id),
+          };
+        }
+        return prev;
+      });
+    }
+  }, [orderedStages]);
+
+  const handleMoveFish = (e) => {
+    const { name, value } = e.target;
+    setMoveData(prev => ({
+      ...prev,
+      [name]: ["wholeFishQuantity", "brokenFishQuantity", "damageOrLoss"].includes(name)
+        ? value === '' ? '' : parseFloat(value) >= 0 ? parseFloat(value) : 0
+        : value,
+    }));
+  };
+
+  const handleStageSelect = (stageId) => {
+    setMoveData(prev => ({
+      ...prev,
+      stageId_from: stageId,
+      stageId_to: getNextStageId(stageId),
+    }));
+  };
+
+  const getNextStageId = (currentStageId) => {
+    const currentIndex = orderedStages.findIndex(stage => stage.id === currentStageId);
+    return currentIndex !== -1 && currentIndex + 1 < orderedStages.length
+      ? orderedStages[currentIndex + 1].id
+      : null;
+  };
+
+  const getEndpoint = (stageTitle) => {
+    const normalized = (stageTitle || '').trim().toLowerCase();
+    if (normalized === "washing") return "/washing-to-smoking";
+    if (normalized === "smoking") return "/smoking-to-drying";
+    if (normalized === "drying") return "/add-fish-to-show-glass";
+    return null;
+  };
+
+  const getStageIndex = (stageId) => {
+    return orderedStages.findIndex(s => s.id === stageId);
+  };
+
+  const getEndpointByIndex = (stageId) => {
+    const idx = getStageIndex(stageId);
+    if (idx === 0) return "/washing-to-smoking";
+    if (idx === 1) return "/smoking-to-drying";
+    if (idx === 2) return "/add-fish-to-show-glass";
+    return null;
+  };
+
+  const getErrorMessage = (error, stageTitle = '') => {
+    if (!error.response) {
+      if (error.code === 'ECONNABORTED') return 'Request timed out. Please check your network and try again.';
+      return 'Network error \u2014 server unreachable. Please check your internet connection.';
+    }
+    const { status, data } = error.response;
+    const context = stageTitle ? ` for ${stageTitle} stage` : '';
+    const serverMsg = data?.message || data?.response_message || '';
+    if (status === 400) return `Invalid request${context}. ${serverMsg || 'Please check your input values.'}`;
+    if (status === 404) return `The ${stageTitle || 'requested'} endpoint was not found. Please contact support.`;
+    if (status === 409) return `Conflict: ${serverMsg || 'This batch may already be processed through this stage.'}`;
+    if (status === 422) return `Validation error${context}. ${serverMsg || 'One or more fields are invalid.'}`;
+    if (status >= 500) return `Server error${context} (${status}). Please try again later.`;
+    if (!data) return `Server returned empty response${context}.`;
+    return serverMsg || `Failed to process${context}. Please try again.`;
+  };
+
+  const handleNext = async () => {
+    setLoading(true);
+    setErrorDetails(null);
+    setMessage("Processing your request...");
+    console.log('[handleNext] entry', { moveData_stageId_from: moveData.stageId_from, orderedStageIds: orderedStages.map(s => ({ id: s.id, title: s.title })) });
+    try {
+      const currentStage = orderedStages.find(stage => stage.id === moveData.stageId_from);
+      console.log('[handleNext] currentStage', currentStage);
+
+      if (!currentStage || stagesLoading) {
+        console.error(`[VALIDATION] Stages not ready — currentStage: ${!!currentStage}, stagesLoading: ${stagesLoading}`);
+        const stageError = "Stages are still loading. Please wait.";
+        toast.error(
+          <div>
+            <strong>Stages Not Ready</strong>
+            <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{stageError}</div>
+            <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+              currentStage: {currentStage ? 'loaded' : 'null'} · stagesLoading: {String(stagesLoading)}
+            </div>
+          </div>,
+          { autoClose: 6000 }
+        );
+        throw new Error(stageError);
+      }
+
+      const endpoint = getEndpoint(currentStage.title) || getEndpointByIndex(currentStage.id);
+      console.log('[handleNext] endpoint', endpoint);
+
+      if (endpoint) {
+        const wholeFish = parseFloat(moveData.wholeFishQuantity);
+        const brokenFish = parseFloat(moveData.brokenFishQuantity);
+        const damageLoss = parseFloat(moveData.damageOrLoss);
+        if (isNaN(wholeFish) || wholeFish < 0) {
+          const validationError = 'Invalid quantity: Whole Fish must be 0 or greater.';
+          console.error(`[VALIDATION] ${validationError} (received: ${moveData.wholeFishQuantity})`);
+          toast.error(
+            <div>
+              <strong>Validation Error</strong>
+              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{validationError}</div>
+              <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+                Field: wholeFishQuantity · Value: "{moveData.wholeFishQuantity}"
+              </div>
+            </div>,
+            { autoClose: 6000 }
+          );
+          throw new Error(validationError);
+        }
+        if (isNaN(brokenFish) || brokenFish < 0) {
+          const validationError = 'Invalid quantity: Broken Fish must be 0 or greater.';
+          console.error(`[VALIDATION] ${validationError} (received: ${moveData.brokenFishQuantity})`);
+          toast.error(
+            <div>
+              <strong>Validation Error</strong>
+              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{validationError}</div>
+              <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+                Field: brokenFishQuantity · Value: "{moveData.brokenFishQuantity}"
+              </div>
+            </div>,
+            { autoClose: 6000 }
+          );
+          throw new Error(validationError);
+        }
+        if (isNaN(damageLoss) || damageLoss < 0) {
+          const validationError = 'Invalid quantity: Damage/Loss must be 0 or greater.';
+          console.error(`[VALIDATION] ${validationError} (received: ${moveData.damageOrLoss})`);
+          toast.error(
+            <div>
+              <strong>Validation Error</strong>
+              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{validationError}</div>
+              <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+                Field: damageOrLoss · Value: "{moveData.damageOrLoss}"
+              </div>
+            </div>,
+            { autoClose: 6000 }
+          );
+          throw new Error(validationError);
+        }
+
+        const payload = {
+          ...moveData,
+          processId,
+          ...(isSuperAdmin
+            ? (activeSite?.id ? { siteId: activeSite.id } : {})
+            : (user?.siteId ? { siteId: user.siteId } : {})
+          ),
+        };
+        console.log('[handleNext] POST payload', payload);
+        const response = await Api.post(endpoint, payload);
+
+        const data = response.data.data || response.data.newProcess;
+        const newProcessId = data?.id || data?.processId;
+        if (newProcessId) setProcessId(newProcessId);
+
+        const fetchProcessData = async (id) => {
+          try {
+            const res = await Api.get(`/fish-process/${id}`);
+            const pd = res.data.data;
+            if (pd) {
+              setQuantity({
+                wholeFish: pd.wholeFishQuantity || 0,
+                brokenFish: pd.cumulativeBrokenQuantity || pd.brokenFishQuantity || 0,
+                damage: pd.cumulativeDamageOrLoss || pd.damageOrLoss || 0,
+              });
+              setMoveData(prev => ({
+                ...prev,
+                stageId_from: pd.stageId_to || prev.stageId_from,
+                stageId_to: getNextStageId(pd.stageId_to) || prev.stageId_to,
+                wholeFishQuantity: '',
+                brokenFishQuantity: '',
+                damageOrLoss: '',
+              }));
+              setCumulativeBrokenFishQuantity(pd.cumulativeBrokenQuantity || pd.brokenFishQuantity || 0);
+              setCumulativeDamageOrLoss(pd.cumulativeDamageOrLoss || pd.damageOrLoss || 0);
+            }
+          } catch (err) {
+            const errMsg = err.response?.data?.message || err.message || 'Unknown error';
+            const fStatus = err.response?.status || 'N/A';
+            const fStatusText = err.response?.statusText || '';
+            console.error(`[GET] /fish-process/${id} → ${fStatus} ${fStatusText}: ${errMsg}`, err.response?.data || err);
+            toast.error(
+              <div>
+                <strong>Failed to fetch updated process data</strong>
+                <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
+                <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+                  GET /fish-process/{id?.slice(0,8)}… · HTTP {fStatus}{fStatusText ? ` ${fStatusText}` : ''}
+                </div>
+              </div>,
+              { autoClose: 8000 }
+            );
+          }
+        };
+
+        if (newProcessId) {
+          await fetchProcessData(newProcessId);
+        } else if (processId) {
+          await fetchProcessData(processId);
+        }
+
+        setMoveData(prev => ({
+          ...prev,
+          wholeFishQuantity: '',
+          brokenFishQuantity: '',
+          damageOrLoss: '',
+        }));
+
+        setMessage("Fish moved successfully!");
+        const isDrying = getEndpoint(currentStage.title) === "/add-fish-to-show-glass"
+          || getEndpointByIndex(currentStage.id) === "/add-fish-to-show-glass";
+        if (isDrying) {
+          setSuccessModalData({
+            batch_no: moveFishData.batch_no || `#PR-${new Date().getFullYear()}`,
+            wholeFish: quantity.wholeFish,
+            brokenFish: quantity.brokenFish,
+            damage: quantity.damage,
+          });
+          setShowSuccessModal(true);
+          clearBatchStorage();
+        } else if (!newProcessId) {
+          const nextStageId = getNextStageId(moveData.stageId_from);
+          if (nextStageId) {
+            setMoveData(prev => ({
+              ...prev,
+              stageId_from: nextStageId,
+              stageId_to: getNextStageId(nextStageId),
+              wholeFishQuantity: '',
+              brokenFishQuantity: '',
+              damageOrLoss: '',
+            }));
+          }
+        }
+      } else {
+        const stageError = `Invalid stage transition for stage "${currentStage?.title || 'unknown'}" (id: ${moveData.stageId_from}). No matching endpoint found.`;
+        console.error(`[VALIDATION] ${stageError}`);
+        toast.error(
+          <div>
+            <strong>Invalid Stage Transition</strong>
+            <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{stageError}</div>
+            <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+              currentStage: {currentStage?.title || 'null'} · endpoints available: washing-to-smoking, smoking-to-drying, add-fish-to-show-glass
+            </div>
+          </div>,
+          { autoClose: 8000 }
+        );
+        throw new Error("Invalid stage transition.");
+      }
+    } catch (error) {
+      const errMsg = error.response?.data?.message || error.message || 'Unknown error';
+      const status = error.response?.status || 'N/A';
+      const statusText = error.response?.statusText || '';
+      const stageTitle = orderedStages.find(s => s.id === moveData.stageId_from)?.title || 'Unknown';
+      const endpoint = getEndpoint(stageTitle) || getEndpointByIndex(moveData.stageId_from) || '/unknown';
+      console.error(`[POST] ${endpoint} (${stageTitle}) → ${status} ${statusText}: ${errMsg}`, error.response?.data || error);
+      toast.error(
+        <div>
+          <strong>Failed to process ${stageTitle} stage</strong>
+          <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{getErrorMessage(error, stageTitle)}</div>
+          <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+            POST {endpoint} · HTTP {status}{statusText ? ` ${statusText}` : ''}
+          </div>
+          {processId && (
+            <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
+              Process ID: {processId.slice(0,8)}…
+            </div>
+          )}
+        </div>,
+        { autoClose: 8000 }
+      );
+      setMessage(getErrorMessage(error, stageTitle));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchWashingStage();
+  };
+
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
+
+  const clearBatchStorage = () => {
+    setProcessId(null);
+    ['batchMoveData', 'batchQuantity', 'batchMoveFishData', 'batchCumBroken', 'batchCumDamage', 'batchProcessId', 'showSuccessOverlay'].forEach(k => sessionStorage.removeItem(k));
+  };
+
+  const handleSaveProgress = () => {
+    toast.success('Progress saved successfully!', { autoClose: 2000 });
+  };
+
+  const resolvedStageId = orderedStages.some(s => s.id === moveData.stageId_from)
+    ? moveData.stageId_from
+    : orderedStages[0]?.id;
+  const currentStage = orderedStages.find(s => s.id === resolvedStageId);
+  const nextStage = orderedStages[orderedStages.findIndex(s => s.id === resolvedStageId) + 1];
+  const totalInput = quantity.wholeFish + quantity.brokenFish + quantity.damage;
+  const expYield = (totalInput * 0.8).toFixed(2);
+  const damageRatio = quantity.wholeFish > 0 ? quantity.damage / quantity.wholeFish : 0;
+  const batchHealthy = quantity.wholeFish > 0 && damageRatio < 0.1;
+
+  const processingNotes = {
+    Washing: 'Ensure all fish are thoroughly rinsed. Record initial quantity before proceeding.',
+    Smoking: 'Ensure smoking temperature remains between 65–75°C. Recording moisture loss is critical for yield calculation.',
+    Drying: 'Ensure fish are evenly spread. Target moisture content below 15% before showcase transfer.',
+  };
+  const noteText = processingNotes[currentStage?.title] || 'Follow standard processing procedures for this stage.';
+
+  return (
+    <section className={`${styles.body}`}>
+      <div className="sticky-top">
+        <Header toggleSidebar={toggleSidebar} />
+      </div>
+      <div className="d-flex gap-2">
+        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
+        </div>
+        <section className={`${styles.content} flex-grow-1`}>
+          <main className={styles.create_form}>
+            <ToastContainer />
+
+            <div style={{ marginTop: '0', fontFamily: 'inherit' }}>
+
+              {/* ── Page Header Bar ── */}
+              <div style={{ backgroundColor: '#F5F5F3', borderRadius: '10px', padding: '20px 28px 0 28px', marginBottom: '0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.55rem', color: '#2E3135', letterSpacing: '-0.01em' }}>
+                      Batch Processing: {moveFishData.batch_no || `#PR-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(moveFishData.actual_quantity || 0).padStart(3, '0')}`}
+                    </h3>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      Processing Date
+                    </p>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '1rem', color: '#2E3135' }}>
+                      {(() => { const d = new Date(); return `${d.getDate().toString().padStart(2,'0')} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getFullYear()}`; })()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* ── Stage Tabs ── */}
+                <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #E0E0DC' }}>
+                  {orderedStages.length > 0 ? orderedStages.map((stage) => {
+                    const isActive = moveData.stageId_from === stage.id;
+                    const stageIdx = orderedStages.findIndex(s => s.id === stage.id);
+                    const currentIdx = orderedStages.findIndex(s => s.id === moveData.stageId_from);
+                    const isPast = stageIdx < currentIdx;
+                    return (
+                      <div
+                        key={stage.id}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '7px',
+                          padding: '12px 22px 11px 22px',
+                          borderBottom: isActive ? '2px solid #512728' : '2px solid transparent',
+                          cursor: isActive ? 'default' : 'not-allowed',
+                          marginBottom: '-1px',
+                        }}
+                      >
+                        <span style={{
+                          width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
+                          backgroundColor: isActive ? '#512728' : 'transparent',
+                          border: isActive ? 'none' : `2px solid ${isPast ? '#512728' : '#C0C0BA'}`,
+                          display: 'inline-block',
+                        }} />
+                        <span style={{
+                          fontSize: '0.82rem', fontWeight: 700,
+                          color: isActive ? '#512728' : isPast ? '#512728' : '#8C949B',
+                          letterSpacing: '0.06em', textTransform: 'uppercase',
+                        }}>
+                          {stage.title}
+                        </span>
+                      </div>
+                    );
+                  }) : (
+                    <p className="text-muted fw-semibold px-3 pb-2" style={{ fontSize: '0.82rem' }}>Loading...</p>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Main Content Card ── */}
+              <div style={{
+                backgroundColor: '#fff',
+                border: '1px solid #E8E8E4',
+                borderRadius: '10px',
+                marginTop: '16px',
+                overflow: 'hidden',
+              }}>
+                <div style={{ display: 'flex', minHeight: '360px' }}>
+
+                  {/* Left Column */}
+                  <div style={{ width: '34%', borderRight: '1px solid #F0F0EC', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    {/* Batch Reference Image */}
+                    <div>
+                      <p style={{ margin: '0 0 10px 0', fontSize: '0.68rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        Batch Reference Image
+                      </p>
+                      <div style={{
+                        border: '1px dashed #C8C8C4',
+                        borderRadius: '6px',
+                        padding: '10px',
+                        backgroundColor: '#FAFAFA',
+                        fontSize: '0.65rem',
+                        color: '#8C949B',
+                        lineHeight: 1.6,
+                      }}>
+                        <div style={{ backgroundColor: '#E8E8E4', borderRadius: '3px', padding: '4px 6px', marginBottom: '6px', fontSize: '0.62rem', color: '#5F5E5A', fontWeight: 600 }}>
+                          WASHING / SMOKING / DRYING
+                        </div>
+                        {['WHOLE FISH', 'BROKEN FISH', 'DAMAGE/LOSS'].map((label, i) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px', gap: '6px' }}>
+                            <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#8C949B', whiteSpace: 'nowrap' }}>{label}</span>
+                            <div style={{ display: 'flex', gap: '4px', flex: 1, justifyContent: 'flex-end' }}>
+                              <div style={{ height: '14px', flex: 1, backgroundColor: '#E8E8E4', borderRadius: '2px', maxWidth: '36px' }} />
+                              <div style={{ height: '14px', flex: 1, backgroundColor: '#E8E8E4', borderRadius: '2px', maxWidth: '60px' }} />
+                            </div>
+                          </div>
+                        ))}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                          <div style={{ backgroundColor: '#512728', borderRadius: '3px', padding: '3px 10px', fontSize: '0.6rem', color: '#fff', fontWeight: 600 }}>Next</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Processing Notes */}
+                    <div style={{
+                      backgroundColor: '#FFF8F0',
+                      border: '1px solid #FAD8A8',
+                      borderLeft: '3px solid #e8a020',
+                      borderRadius: '6px',
+                      padding: '14px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
+                        <BsExclamationCircle size={15} color="#e8a020" />
+                        <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, color: '#e8a020' }}>Processing Notes</p>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#5F5E5A', lineHeight: 1.6, fontStyle: 'italic' }}>
+                        {noteText}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div style={{ flex: 1, padding: '0' }}>
+
+                    {/* Column Headers */}
+                    <div style={{
+                      display: 'grid', gridTemplateColumns: '2fr 1.4fr 1.4fr',
+                      padding: '12px 20px',
+                      borderBottom: '1px solid #F0F0EC',
+                      backgroundColor: '#FAFAFA',
+                    }}>
+                      {['Fish Category', 'Before (Kg)', 'After (Kg)'].map((h) => (
+                        <p key={h} style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#8C949B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</p>
+                      ))}
+                    </div>
+
+                    {/* Fish Rows */}
+                    {[
+                      {
+                        icon: <BsGrid3X3GapFill size={20} color="#512728" />,
+                        bgIcon: '#FFF0F0',
+                        label: 'Whole Fish',
+                        before: quantity.wholeFish,
+                        afterName: 'wholeFishQuantity',
+                        afterValue: moveData.wholeFishQuantity,
+                      },
+                      {
+                        icon: <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '2px', padding: '3px' }}>
+                          {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: '14px', height: '3px', backgroundColor: '#e8a020', borderRadius: '1px' }} />)}
+                        </span>,
+                        bgIcon: '#FFFBF0',
+                        label: 'Broken Fish',
+                        before: quantity.brokenFish,
+                        afterName: 'brokenFishQuantity',
+                        afterValue: moveData.brokenFishQuantity,
+                      },
+                      {
+                        icon: <BsXCircleFill size={20} color="#dc3545" />,
+                        bgIcon: '#FFF5F5',
+                        label: 'Damage / Loss',
+                        before: quantity.damage,
+                        afterName: 'damageOrLoss',
+                        afterValue: moveData.damageOrLoss,
+                      },
+                    ].map((row, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: 'grid', gridTemplateColumns: '2fr 1.4fr 1.4fr',
+                          padding: '14px 20px', alignItems: 'center',
+                          borderBottom: i < 2 ? '1px solid #F8F8F5' : 'none',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{
+                            width: '36px', height: '36px', borderRadius: '8px',
+                            backgroundColor: row.bgIcon,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0,
+                          }}>
+                            {row.icon}
+                          </div>
+                          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#2E3135' }}>{row.label}</span>
+                        </div>
+                        <div style={{ paddingRight: '12px' }}>
+                          <input
+                            type="number"
+                            readOnly
+                            value={row.before}
+                            style={{
+                              width: '100%', padding: '9px 12px',
+                              border: '1px solid #E8E8E4', borderRadius: '6px',
+                              backgroundColor: '#F5F5F3', color: '#2E3135',
+                              fontSize: '0.875rem', fontWeight: 600,
+                              outline: 'none',
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="number"
+                            name={row.afterName}
+                            value={row.afterValue}
+                            onChange={handleMoveFish}
+                            required
+                            placeholder="Enter quantity"
+                            style={{
+                              width: '100%', padding: '9px 12px',
+                              border: '1px solid #E0E0DC', borderRadius: '6px',
+                              backgroundColor: '#fff', color: '#2E3135',
+                              fontSize: '0.875rem',
+                              outline: 'none',
+                            }}
+                            onFocus={e => e.target.style.borderColor = '#512728'}
+                            onBlur={e => e.target.style.borderColor = '#E0E0DC'}
+                          />
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Action Buttons */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '16px 20px', borderTop: '1px solid #F0F0EC',
+                      justifyContent: 'flex-end',
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/fish-processes/process-fish')}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '7px',
+                          padding: '9px 18px', borderRadius: '7px',
+                          border: '1px solid #D0D0CC', backgroundColor: '#fff',
+                          color: '#5F5E5A', fontSize: '0.875rem', fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <BsXLg size={13} /> Cancel Movement
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveProgress}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '7px',
+                          padding: '9px 18px', borderRadius: '7px',
+                          border: '1px solid #D0D0CC', backgroundColor: '#fff',
+                          color: '#5F5E5A', fontSize: '0.875rem', fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <BsSave size={13} /> Save Progress
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleNext}
+                        disabled={
+                          loading ||
+                          stagesLoading ||
+                          !currentStage ||
+                          moveData.wholeFishQuantity === '' ||
+                          moveData.brokenFishQuantity === '' ||
+                          moveData.damageOrLoss === ''
+                        }
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px',
+                          padding: '9px 22px', borderRadius: '7px',
+                          border: 'none',
+                          backgroundColor:
+                            loading ||
+                            stagesLoading ||
+                            !currentStage ||
+                            moveData.wholeFishQuantity === '' ||
+                            moveData.brokenFishQuantity === '' ||
+                            moveData.damageOrLoss === ''
+                              ? '#8C6364'
+                              : '#512728',
+                          color: '#fff', fontSize: '0.875rem', fontWeight: 700,
+                          cursor:
+                            loading ||
+                            stagesLoading ||
+                            !currentStage ||
+                            moveData.wholeFishQuantity === '' ||
+                            moveData.brokenFishQuantity === '' ||
+                            moveData.damageOrLoss === ''
+                              ? 'not-allowed'
+                              : 'pointer',
+                          transition: 'background-color 0.15s ease',
+                        }}
+                      >
+                        {loading ? (
+                          <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.5s linear infinite' }} />
+                        ) : stagesLoading || !currentStage ? (
+                          <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.5s linear infinite' }} />
+                        ) : null}
+                        {loading ? 'Processing...' : stagesLoading || !currentStage ? 'Loading...' : currentStage?.title !== 'Drying' ? `Proceed to ${nextStage?.title || 'Next'}` : 'Move To Showcase'}
+                        {!loading && !stagesLoading && currentStage && <BsArrowRight size={15} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Summary Stat Bar ── */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '16px' }}>
+                {[
+                  {
+                    label: 'Total Input',
+                    value: `${totalInput.toFixed(2)} Kg`,
+                    valueColor: '#2E3135',
+                    content: null,
+                  },
+                  {
+                    label: 'Exp. Yield (80%)',
+                    value: `${expYield} Kg`,
+                    valueColor: '#e8a020',
+                    content: null,
+                  },
+                  {
+                    label: 'Processing Team',
+                    value: null,
+                    content: (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                        {['FT', 'JA'].map((init, i) => (
+                          <div key={i} style={{
+                            width: '28px', height: '28px', borderRadius: '50%',
+                            backgroundColor: i === 0 ? '#512728' : '#e8a020',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '0.6rem', fontWeight: 700, color: '#fff',
+                            border: '2px solid #fff', marginLeft: i > 0 ? '-6px' : '0',
+                          }}>
+                            {init}
+                          </div>
+                        ))}
+                        <span style={{
+                          backgroundColor: '#F0F0EC', borderRadius: '20px',
+                          padding: '2px 8px', fontSize: '0.72rem', fontWeight: 600, color: '#5F5E5A',
+                        }}>+3</span>
+                      </div>
+                    ),
+                  },
+                  {
+                    label: 'Batch Health',
+                    value: null,
+                    content: (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
+                        <span style={{
+                          backgroundColor: batchHealthy ? '#E8F5E9' : '#FFF3CD',
+                          color: batchHealthy ? '#28a745' : '#e8a020',
+                          border: `1px solid ${batchHealthy ? '#C8E6CA' : '#FFE082'}`,
+                          borderRadius: '4px', padding: '3px 10px',
+                          fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em',
+                        }}>
+                          {batchHealthy ? 'STABLE' : 'AT RISK'}
+                        </span>
+                        <span style={{
+                          width: '22px', height: '22px', borderRadius: '50%',
+                          backgroundColor: batchHealthy ? '#28a745' : '#e8a020',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                            <path d="M1 4L4 7L10 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </span>
+                      </div>
+                    ),
+                  },
+                ].map((card, i) => (
+                  <div key={i} style={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #E8E8E4',
+                    borderRadius: '8px',
+                    padding: '14px 18px',
+                  }}>
+                    <p style={{ margin: '0 0 2px 0', fontSize: '0.75rem', color: '#8C949B', fontWeight: 500 }}>{card.label}</p>
+                    {card.value !== null && (
+                      <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: card.valueColor }}>{card.value}</p>
+                    )}
+                    {card.content}
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Status Footer Bar ── */}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                marginTop: '14px', padding: '10px 16px',
+                backgroundColor: '#F5F5F3', borderRadius: '8px',
+                fontSize: '0.75rem', color: '#8C949B',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#28a745', display: 'inline-block' }} />
+                    ERP Sync Active
+                  </span>
+                  <span style={{ color: '#D0D0CC' }}>|</span>
+                  <span>Central Cold Store – Sector 4</span>
+                </div>
+                <span>Last change: 2 mins ago</span>
+              </div>
+
+              {/* Inline fade message */}
+              {message && (
+                <p style={{
+                  textAlign: 'right', fontSize: '0.875rem', fontWeight: 600,
+                  color: message.includes('Error') ? '#dc3545' : '#28a745',
+                  padding: '8px 4px 0 0',
+                  animation: 'fadeInOut 0.3s ease',
+                }}>
+                  {message}
+                </p>
+              )}
+
+            </div>
+
+            {/* ── Success Modal ── */}
+            {showSuccessModal && (
+              <div style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <div style={{
+                  backgroundColor: '#fff', borderRadius: '12px', padding: '40px',
+                  maxWidth: '420px', width: '90%', textAlign: 'center',
+                  boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                }}>
+                  <div style={{
+                    width: '64px', height: '64px', borderRadius: '50%',
+                    backgroundColor: '#E8F5E9', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', margin: '0 auto 16px',
+                  }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 13L9 17L19 7" stroke="#28a745" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <h3 style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '1.4rem', color: '#2E3135' }}>
+                    Batch Complete!
+                  </h3>
+                  <p style={{ margin: '0 0 20px', fontSize: '0.9rem', color: '#6B7280' }}>
+                    Fish moved to showcase successfully.
+                  </p>
+                  <div style={{
+                    backgroundColor: '#F9FAFB', borderRadius: '8px', padding: '16px',
+                    marginBottom: '20px', textAlign: 'left',
+                  }}>
+                    {[
+                      { label: 'Batch', value: successModalData?.batch_no || `#PR-${new Date().getFullYear()}` },
+                      { label: 'Whole Fish', value: `${successModalData?.wholeFish || 0} Kg` },
+                      { label: 'Broken Fish', value: `${successModalData?.brokenFish || 0} Kg` },
+                      { label: 'Damage/Loss', value: `${successModalData?.damage || 0} Kg` },
+                    ].map((row, i) => (
+                      <div key={i} style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        padding: '6px 0', fontSize: '0.85rem',
+                        borderBottom: i < 3 ? '1px solid #E5E7EB' : 'none',
+                      }}>
+                        <span style={{ color: '#6B7280' }}>{row.label}</span>
+                        <span style={{ fontWeight: 600, color: '#2E3135' }}>{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowSuccessModal(false);
+                      navigate('/showcase/whole-showcase');
+                    }}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: '8px',
+                      border: 'none', backgroundColor: '#512728', color: '#fff',
+                      fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer',
+                    }}
+                  >
+                    View Showcase
+                  </button>
+                </div>
+              </div>
+            )}
+          </main>
+        </section>
+      </div>
+    </section>
+  );
+}
