@@ -43,7 +43,7 @@ const AddFish = () => {
           const filteredStages = response.data.data.filter(
             (stage) => !['harvest', 'damage', 'loss'].includes(String(stage.title ?? '').toLowerCase())
           );
-          if (filteredStages.length === 0 && effectiveSiteId !== 'all' && /^[a-f0-9-]{36}$/i.test(effectiveSiteId)) {
+          if (filteredStages.length === 0 && effectiveSiteId !== 'all' && /^[a-f0-9-]{36}$/i.test(effectiveSiteId) && isSuperAdmin) {
             const fallbackResponse = await Api.get('/fish-stages?siteId=all');
             if (Array.isArray(fallbackResponse.data.data)) {
               setStages(fallbackResponse.data.data.filter(

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from 'react-redux';
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -15,6 +16,10 @@ import ErrorState from "../../shared/error-state/ErrorState";
 import EmptyState from "../../shared/empty-state/EmptyState";
 
 export default function FeedInventoryViewAll() {
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +135,8 @@ export default function FeedInventoryViewAll() {
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const response = await Api.get('/fish-stages?siteId=all');
+        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+        const response = await Api.get(`/fish-stages?siteId=${siteId}`);
         if (Array.isArray(response.data.data)) {
           const filteredStages = response.data.data.filter(pond => pond.quantity >= 1);
           setStages(filteredStages);

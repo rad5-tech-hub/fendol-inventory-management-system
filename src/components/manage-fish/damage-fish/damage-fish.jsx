@@ -26,14 +26,17 @@ const DamageFish = () => {
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
   const navigate = useNavigate();
   const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
 
   // Fetch ponds (stages)
   const fetchStages = async () => {
     try {
-      const siteId = activeSite?.id || 'all';
+      const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
       const response = await Api.get(`/fish-stages?siteId=${siteId}`);
       if (Array.isArray(response.data.data)) {
-        if (response.data.data.length === 0 && siteId !== 'all' && /^[a-f0-9-]{36}$/i.test(siteId)) {
+        if (response.data.data.length === 0 && siteId !== 'all' && /^[a-f0-9-]{36}$/i.test(siteId) && isSuperAdmin) {
           const fallbackResponse = await Api.get('/fish-stages?siteId=all');
           if (Array.isArray(fallbackResponse.data.data)) {
             setStages(fallbackResponse.data.data);

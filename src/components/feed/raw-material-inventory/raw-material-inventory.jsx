@@ -37,6 +37,9 @@ const formatDate = (dateStr) => {
 
 export default function RawMaterialInventory() {
   const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -73,7 +76,7 @@ export default function RawMaterialInventory() {
     setFetchError(null);
 
     try {
-      const params = { siteId: activeSite?.id || 'all' };
+      const params = { siteId: isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all') };
 
       const res = await ApiV2.get('/v2/raw-material', { params });
       if (res.data?.success && res.data?.data) {
@@ -100,7 +103,7 @@ export default function RawMaterialInventory() {
     } finally {
       setLoading(false);
     }
-  }, [activeSite?.id]);
+  }, [activeSite?.id, isSuperAdmin, user?.siteId]);
 
   useEffect(() => {
     fetchMaterials();

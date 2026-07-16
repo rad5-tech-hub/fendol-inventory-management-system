@@ -65,7 +65,7 @@ export default function FeedLedger() {
           Api.get(`/feed-history/${feedName}`, { params: { siteId } }),
           ApiV2.get('/v2/site-types'),
           Api.get('/feeds', { params: { siteId } }).catch(() => null),
-          Api.get('/fish-stages?siteId=all').catch(() => null),
+          Api.get(`/fish-stages?siteId=${isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all')}`).catch(() => null),
         ]);
 
         if (histRes.data?.success) {

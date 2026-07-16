@@ -11,6 +11,10 @@ import { BsPeople } from 'react-icons/bs';
 import { ApiV2 } from '../shared/api/apiLink';
 
 export default function Complaints() {
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
   const [showSidebar, setShowSidebar] = useState(false);
   const [complaintType, setComplaintType] = useState('');
   const [description, setDescription] = useState('');
@@ -50,7 +54,8 @@ export default function Complaints() {
   const fetchStaff = async () => {
     setStaffLoading(true);
     try {
-      const res = await ApiV2.get('/api/v1/staff', { params: { siteId: 'all' } });
+      const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+      const res = await ApiV2.get('/api/v1/staff', { params: { siteId } });
       const data = Array.isArray(res.data?.data) ? res.data.data : [];
       setStaff(data);
     } catch (err) {

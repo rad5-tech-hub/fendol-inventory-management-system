@@ -186,7 +186,7 @@ export default function CreateFeedBatch() {
     let cancelled = false;
     const fetchFeeds = async () => {
       try {
-        const res = await ApiV2.get('/api/v1/feeds', { params: { siteId: 'all' } });
+        const res = await ApiV2.get('/api/v1/feeds', { params: { siteId: isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all') } });
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setFeedOptions(list);
       } catch (err) {
@@ -206,7 +206,7 @@ export default function CreateFeedBatch() {
     let cancelled = false;
     const fetchStaff = async () => {
       try {
-        const res = await ApiV2.get('/api/v1/staff', { params: { siteId: 'all' } });
+        const res = await ApiV2.get('/api/v1/staff', { params: { siteId: isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all') } });
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setStaffOptions(list);
       } catch (err) {

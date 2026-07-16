@@ -63,7 +63,7 @@ export default function PersonalLedger() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [fullName, setFullName] = useState('');
-  const [category, setCategory] = useState('');
+  const [address, setAddress] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
   const itemsPerPage = 45;
@@ -120,6 +120,7 @@ export default function PersonalLedger() {
       setLedgerData(allData);
       if (allData.length > 0) {
         setFullName(allData[0].fullName);
+        setAddress(allData[0].address || '');
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -414,7 +415,7 @@ export default function PersonalLedger() {
                           {fullName?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
                         </h3>
                         <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500, margin: 0 }}>
-                          {category || 'N/A'}
+                          {address || 'N/A'}
                         </p>
                       </div>
                     </div>

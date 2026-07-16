@@ -92,6 +92,9 @@ const mapApiBatchToRow = (item) => ({
 
 export default function ViewAllBatches() {
   const navigate = useNavigate();
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
   const [showSidebar, setShowSidebar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -141,7 +144,7 @@ export default function ViewAllBatches() {
     setMoveError('');
     setMovePondsLoading(true);
     setMovePonds([]);
-    Api.get(`/fish-stages?siteId=${row.siteId || 'all'}`)
+    Api.get(`/fish-stages?siteId=${isSuperAdmin ? (row.siteId || 'all') : (user?.siteId || 'all')}`)
       .then((res) => {
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         setMovePonds(list);

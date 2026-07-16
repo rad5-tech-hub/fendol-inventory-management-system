@@ -31,6 +31,9 @@ const STATUS_CONFIG = {
 
 export default function RawMaterialDetailSidebar({ material, onClose }) {
   const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
   const [history, setHistory] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -39,7 +42,7 @@ export default function RawMaterialDetailSidebar({ material, onClose }) {
     if (!material?.id) return;
     setHistoryLoading(true);
     try {
-      const params = { siteId: activeSite?.id || 'all' };
+      const params = { siteId: isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all') };
       if (cursor) params.cursor = cursor;
 
       const res = await ApiV2.get(`/v2/raw-material-history/${material.id}`, { params });
@@ -53,7 +56,7 @@ export default function RawMaterialDetailSidebar({ material, onClose }) {
     } finally {
       setHistoryLoading(false);
     }
-  }, [material?.id, activeSite?.id]);
+  }, [material?.id, activeSite?.id, isSuperAdmin, user?.siteId]);
 
   useEffect(() => {
     if (material?.id) {

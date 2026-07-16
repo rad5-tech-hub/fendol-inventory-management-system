@@ -280,7 +280,7 @@ export default function StaffAttendance() {
         successMsg = 'Staff marked as absent.';
         errorMsg = 'Failed to mark absent.';
       }
-      const siteId = staff.siteId || userSiteId || 'all';
+      const siteId = isSuperAdmin ? (staff.siteId || userSiteId || 'all') : (userSiteId || staff.siteId);
       await ApiV2.post(endpoint, payload, { params: { siteId } });
       toast.success(successMsg, { className: 'dark-toast' });
       closeModal();

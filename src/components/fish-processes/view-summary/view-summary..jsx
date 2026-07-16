@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from 'react-redux';
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -462,6 +463,10 @@ function buildStageBreakdown(histories, data) {
 // ─── component ───────────────────────────────────────────────────────────────
 export default function ViewSummary() {
   const navigate = useNavigate();
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
   const [moveFishHistory, setMoveFishHistory] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -498,7 +503,7 @@ export default function ViewSummary() {
         const [historyRes, sitesRes, pondsRes] = await Promise.all([
           Api.get('/latest-completed'),
           ApiV2.get('/v2/all-site'),
-          Api.get('/fish-stages?siteId=all'),
+          Api.get(`/fish-stages?siteId=${isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all')}`),
         ]);
         const data = Array.isArray(historyRes.data.data) ? historyRes.data.data : [];
         setMoveFishHistory(data);

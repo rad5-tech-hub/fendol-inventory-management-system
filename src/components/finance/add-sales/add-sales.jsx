@@ -35,11 +35,15 @@ const AddSales = () => {
     const [loadingProducts, setLoadingProducts] = useState(false);
     const [showSidebar, setShowSidebar] = useState(false);
     const activeSite = useSelector((store) => store.activeSite);
+    const user = useSelector((store) => store.user);
+    const userTypes = useSelector((store) => store.user?.userTypes || []);
+    const isSuperAdmin = userTypes.includes('super_admin');
 
     // Fetch stages
     const fetchStages = async () => {
         try {
-            const response = await Api.get('/fish-stages?siteId=all');
+            const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+            const response = await Api.get(`/fish-stages?siteId=${siteId}`);
             if (Array.isArray(response.data.data)) {
                 setStages(response.data.data);
             } else {

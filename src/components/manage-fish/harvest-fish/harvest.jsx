@@ -29,6 +29,9 @@ const HarvestFish = () => {
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
 
   // Fetch Fish Stages
   useEffect(() => {
@@ -37,14 +40,14 @@ const HarvestFish = () => {
       setStagesLoading(true);
       setStagesError(null);
       try {
-        const siteParam = activeSite?.id || 'all';
+        const siteParam = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
         console.log('[harvest] Fetching stages with siteId:', siteParam);
         const response = await Api.get(`/fish-stages?siteId=${siteParam}`);
         console.log('[harvest] API response:', response.data);
         let list = Array.isArray(response.data?.data) ? response.data.data : [];
         if (list.length === 0) {
           console.log('[harvest] No stages from siteParam:', siteParam);
-          if (siteParam !== 'all') {
+          if (siteParam !== 'all' && isSuperAdmin) {
             console.log('[harvest] Retrying with siteId=all');
             const fallback = await Api.get('/fish-stages?siteId=all');
             console.log('[harvest] Fallback response:', fallback.data);

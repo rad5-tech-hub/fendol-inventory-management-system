@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Form } from 'react-bootstrap';
 import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
@@ -17,6 +18,9 @@ export default function TransferToNursery() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const batchId = searchParams.get('batchId');
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
 
   const [showSidebar, setShowSidebar] = useState(false);
   const toggleSidebar = () => setShowSidebar(!showSidebar);
@@ -67,9 +71,10 @@ export default function TransferToNursery() {
 
         setPondsLoading(true);
         try {
-          const pondsRes = await Api.get(`/fish-stages?siteId=${data.siteId || 'all'}`);
+          const siteParam = isSuperAdmin ? (data.siteId || 'all') : (user?.siteId || 'all');
+          const pondsRes = await Api.get(`/fish-stages?siteId=${siteParam}`);
           let list = Array.isArray(pondsRes.data?.data) ? pondsRes.data.data : [];
-          if (list.length === 0 && data.siteId) {
+          if (list.length === 0 && siteParam !== 'all' && isSuperAdmin) {
             const fallback = await Api.get('/fish-stages?siteId=all');
             list = Array.isArray(fallback.data?.data) ? fallback.data.data : [];
           }

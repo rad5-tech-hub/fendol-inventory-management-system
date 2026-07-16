@@ -304,7 +304,8 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
                 required
                 value={feedName}
                 onChange={(e) => setFeedName(e.target.value)}
-                className={`py-2 bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                className={`bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                style={{ height: '48px' }}
               />
             </Col>
             <Col md={6} className="mb-3">
@@ -318,7 +319,7 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
                 onChange={(val) => setUnit(val)}
                 placeholder="Select Unit"
                 required
-                className={`py-2 bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                className={`bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
               />
             </Col>
 
@@ -326,8 +327,8 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
               <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Feed Type</Form.Label>
               <div ref={feedTypeRef} className="position-relative">
                 <div
-                  className={`py-2 px-3 bg-light-subtle d-flex justify-content-between align-items-center ${feedStyles.inputs}`}
-                  style={{ borderRadius: '0.375rem', cursor: 'pointer', minHeight: '48px' }}
+                  className={`bg-light-subtle d-flex justify-content-between align-items-center ${feedStyles.inputs}`}
+                  style={{ borderRadius: '0.375rem', cursor: 'pointer', height: '48px', padding: '0 16px' }}
                   onClick={() => {
                     if (!showFeedTypeDropdown) {
                       setFeedTypeSearch('');
@@ -527,7 +528,7 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
                 onChange={(val) => setSiteId(val)}
                 placeholder="Select Site Type"
                 required
-                className={`py-2 bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                className={`bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
               />
             </Col>
 
@@ -540,7 +541,8 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
                 min="1"
                 value={threshold}
                 onChange={(e) => setThreshold(e.target.value === '' ? '' : Number(e.target.value))}
-                className={`py-2 bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                className={`bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                style={{ height: '48px' }}
               />
             </Col>
 
@@ -553,7 +555,8 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
                 min="1"
                 value={weightPerBag}
                 onChange={(e) => setWeightPerBag(e.target.value === '' ? '' : Number(e.target.value))}
-                className={`py-2 bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                className={`bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                style={{ height: '48px' }}
               />
             </Col>
 
@@ -568,7 +571,8 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
                   const raw = e.target.value.replace(/,/g, '').replace(/[^\d]/g, '');
                   setPricePerBag(raw);
                 }}
-                className={`py-2 bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                className={`bg-light-subtle shadow-none border-1 ${feedStyles.inputs}`}
+                style={{ height: '48px' }}
               />
             </Col>
           </Row>
