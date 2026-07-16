@@ -141,7 +141,7 @@ const FinanceLedger = () => {
             </div>
             {/* Pagination */}
             {!loading && !error && displayedLedgerData.length > 0 && (
-              <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+              <div className="d-flex justify-content-center" style={{ padding: 0, background: '#fff' }}>
                 <ReactPaginate
                   previousLabel={"< "}
                   nextLabel={" >"}
