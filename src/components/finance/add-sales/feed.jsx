@@ -50,7 +50,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
         const fetchFeedProducts = async () => {
             setFeedProductsLoading(true);
             try {
-                const res = await Api.get(`/api/v1/feeds?siteId=${resolvedSiteId}`);
+                const res = await Api.get(`/feeds?siteId=${resolvedSiteId}`);
                 const data = Array.isArray(res.data?.data) ? res.data.data : [];
                 const mapped = data.map(f => ({
                     id: f.id,
