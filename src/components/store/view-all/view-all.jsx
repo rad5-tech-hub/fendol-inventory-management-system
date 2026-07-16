@@ -167,6 +167,8 @@ export default function UpdateStoreInventory() {
   const handleEditClick = (product) => {
     setSelectedProduct(product);
     setModalType('edit');
+    setUnit(product?.unit || '');
+    setThreshold(product?.threshold ?? null);
     setShowModal(true);
   };
 

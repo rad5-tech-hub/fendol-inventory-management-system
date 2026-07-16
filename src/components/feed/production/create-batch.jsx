@@ -127,6 +127,8 @@ export default function CreateFeedBatch() {
   const [costTypeCreating, setCostTypeCreating] = useState(false);
   const [costTypeDropdownCoords, setCostTypeDropdownCoords] = useState({ top: 0, left: 0, width: 0 });
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef(null);
+  const [batchImage, setBatchImage] = useState(null);
 
   /* ── Pre-fill form when editing ── */
   useEffect(() => {
@@ -511,6 +513,20 @@ export default function CreateFeedBatch() {
         ? await ApiV2.patch(`/v2/feed-production-batch/${editBatch.batchNumber}`, payload)
         : await ApiV2.post('/v2/feed-production-batch/start', payload);
       if (res.data?.success) {
+        if (batchImage) {
+          try {
+            const batchNumber = isEditing ? editBatch.batchNumber : res.data?.batchNumber;
+            if (batchNumber) {
+              const formData = new FormData();
+              formData.append('image', batchImage);
+              await ApiV2.patch(`/v2/feed-production-batch/${batchNumber}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+              });
+            }
+          } catch (imgErr) {
+            console.error('[CreateBatch] Image upload failed:', imgErr);
+          }
+        }
         toast.update(loadingToast, {
           render: res.data.response_message || (isEditing ? 'Batch updated successfully!' : 'Batch created successfully!'),
           type: 'success',
@@ -1131,10 +1147,36 @@ export default function CreateFeedBatch() {
                 <div className={styles.card}>
                   <h2 className={styles.cardTitle}>Attachments (Optional)</h2>
                   <p className={styles.cardSubtitle}>Upload supporting documents (e.g., formula, lab result).</p>
-                  <div className={styles.dropzone}>
-                    <FiUploadCloud size={36} className={styles.uploadIcon} />
-                    <span className={styles.dropzoneText}>Drag and drop files here or click to browse</span>
-                    <span className={styles.dropzoneHint}>PDF, PNG, JPG up to 5MB</span>
+                  <div className={styles.dropzone} onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
+                    {batchImage ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                        <img src={URL.createObjectURL(batchImage)} alt="Preview" style={{ maxWidth: 160, maxHeight: 120, borderRadius: 8, objectFit: 'cover' }} />
+                        <span style={{ fontSize: 13, color: '#888' }}>{batchImage.name}</span>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setBatchImage(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', fontSize: 13, textDecoration: 'underline' }}>Remove</button>
+                      </div>
+                    ) : (
+                      <>
+                        <FiUploadCloud size={36} className={styles.uploadIcon} />
+                        <span className={styles.dropzoneText}>Click to upload an image</span>
+                        <span className={styles.dropzoneHint}>PNG, JPG up to 5MB</span>
+                      </>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error('Image must be under 5MB', { className: 'dark-toast' });
+                            return;
+                          }
+                          setBatchImage(file);
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                    />
                   </div>
                 </div>
               </div>
