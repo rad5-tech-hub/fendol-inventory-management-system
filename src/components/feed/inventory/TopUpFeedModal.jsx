@@ -6,6 +6,14 @@ import { BsArrowUpCircle } from 'react-icons/bs';
 import Api from '../../shared/api/apiLink';
 import styles from './TopUpFeedModal.module.scss';
 
+const formatCommas = (v) => {
+  const parts = v.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+};
+
+const stripCommas = (v) => v.replace(/,/g, '');
+
 export default function TopUpFeedModal({ show, feed, onClose, onSuccess }) {
   const user = useSelector((store) => store.user);
   const activeSite = useSelector((store) => store.activeSite);
@@ -55,21 +63,22 @@ export default function TopUpFeedModal({ show, feed, onClose, onSuccess }) {
   };
 
   const validate = (field, value) => {
+    const raw = stripCommas(String(value));
     if (field === 'feedPrice') {
-      if (value === '' || value === null || value === undefined) return 'Feed price is required';
-      const num = Number(value);
+      if (raw === '' || raw === null || raw === undefined) return 'Feed price is required';
+      const num = Number(raw);
       if (isNaN(num)) return 'Must be a valid number';
       if (!Number.isFinite(num)) return 'Must be a finite number';
       if (num <= 0) return 'Must be greater than 0';
       if (num > 999999999) return 'Value exceeds maximum allowed';
-      if (value.includes('.') && value.split('.')[1]?.length > 2) return 'At most 2 decimal places';
+      if (raw.includes('.') && raw.split('.')[1]?.length > 2) return 'At most 2 decimal places';
       return null;
     }
     if (field === 'noOfBag') {
-      if (value === '' || value === null || value === undefined) return 'Number of bags is required';
-      const num = Number(value);
+      if (raw === '' || raw === null || raw === undefined) return 'Number of bags is required';
+      const num = Number(raw);
       if (isNaN(num)) return 'Must be a valid number';
-      if (!Number.isInteger(num) && value.includes('.')) return 'Must be a whole number';
+      if (!Number.isInteger(num) && raw.includes('.')) return 'Must be a whole number';
       if (num <= 0) return 'Must be at least 1';
       if (num > 999999) return 'Value too large';
       return null;
@@ -77,13 +86,16 @@ export default function TopUpFeedModal({ show, feed, onClose, onSuccess }) {
     return null;
   };
 
-  const handleChange = (field, value) => {
-    if (field === 'feedPrice') setFeedPrice(value);
-    if (field === 'noOfBag') setNoOfBag(value);
+  const handleChange = (field, raw) => {
+    const stripped = stripCommas(raw);
+    if (stripped !== '' && isNaN(Number(stripped))) return;
+    const formatted = stripped === '' ? '' : formatCommas(stripped);
+    if (field === 'feedPrice') setFeedPrice(formatted);
+    if (field === 'noOfBag') setNoOfBag(formatted);
     if (touched[field]) {
       setErrors((prev) => {
         const copy = { ...prev };
-        const err = validate(field, value);
+        const err = validate(field, formatted);
         if (err) copy[field] = err;
         else delete copy[field];
         return copy;
@@ -93,7 +105,8 @@ export default function TopUpFeedModal({ show, feed, onClose, onSuccess }) {
 
   const handleBlur = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    const err = validate(field, field === 'feedPrice' ? feedPrice : noOfBag);
+    const value = field === 'feedPrice' ? feedPrice : noOfBag;
+    const err = validate(field, stripCommas(value));
     setErrors((prev) => {
       const copy = { ...prev };
       if (err) copy[field] = err;
@@ -120,9 +133,11 @@ export default function TopUpFeedModal({ show, feed, onClose, onSuccess }) {
     setSubmitting(true);
 
     try {
+      const rawPrice = stripCommas(feedPrice);
+      const rawBags = stripCommas(noOfBag);
       const payload = {
-        feedPrice: String(Number(feedPrice)),
-        noOfBag: String(Number(noOfBag)),
+        feedPrice: String(Number(rawPrice)),
+        noOfBag: String(Number(rawBags)),
       };
 
       payload.siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
@@ -223,16 +238,16 @@ export default function TopUpFeedModal({ show, feed, onClose, onSuccess }) {
 
             {renderField('feedPrice', {
               label: 'Feed Price (₦)',
-              placeholder: 'e.g. 45600',
-              type: 'number',
+              placeholder: 'e.g. 45,600',
+              type: 'text',
               step: '0.01',
               refField: true,
             })}
 
             {renderField('noOfBag', {
               label: 'Number of Bags',
-              placeholder: 'e.g. 2',
-              type: 'number',
+              placeholder: 'e.g. 10',
+              type: 'text',
               step: '1',
             })}
           </div>
