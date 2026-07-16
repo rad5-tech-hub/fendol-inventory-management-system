@@ -109,7 +109,7 @@ export default function UpdateStoreInventory() {
         response = await Api.put(`/use-store-item/${id}`, { pondId, quantityUsed: Number(quantityUsed) });
         toast.update(loadingToast, { render: "Store removed successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
       } else if (modalType === 'edit') {
-        response = await Api.put(`/edit-store-threshold/${id}`, { threshold, unit });
+        response = await Api.patch(`/edit-store-threshold/${id}`, { name: selectedProduct?.name, unit, threshold: Number(threshold) });
         toast.update(loadingToast, { render: "Store edited successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
       }
 
