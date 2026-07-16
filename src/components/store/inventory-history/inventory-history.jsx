@@ -123,7 +123,7 @@ export default function InventoryHistory() {
                     { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
                     { key: 'storeId', label: 'STORE', render: (value) => value ? value.slice(0, 8) + '…' : '-' },
                     { key: 'stage', label: 'POND', render: (value) => value || '-' },
-                    { key: 'originalQuantity', label: 'ORIGINAL QTY (KG)' },
+                    { key: 'originalQuantity', label: 'ORIGINAL QUANTITY (KG)' },
                     { key: 'quantityUsed', label: 'QUANTITY USED (KG)', render: (value) => value || '-' },
                     { key: 'remainingStock', label: 'REMAINING (KG)' },
                     { key: 'status', label: 'STATUS', render: (value) => (
