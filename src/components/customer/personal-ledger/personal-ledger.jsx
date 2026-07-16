@@ -297,6 +297,7 @@ export default function PersonalLedger() {
     try {
       const paymentData = {
         customerId,
+        saleId: selectedPendingSale || null,
         amountPaid: Number(amountPaid),
         paymentType: salesType.toLowerCase(),
         description: description || "",
