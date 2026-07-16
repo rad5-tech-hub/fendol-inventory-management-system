@@ -33,6 +33,7 @@ export default function UpdateStoreInventory() {
   const [quantity, setQuantity] = useState(null);
   const [quantityUsed, setQuantityUsed] = useState(null);
   const [price, setPrice] = useState(null);
+  const [pondId, setPondId] = useState('');
   const [stage, setStage] = useState('');
   const [threshold, setThreshold] = useState(null);
   const [unit, setUnit] = useState('');
@@ -105,7 +106,7 @@ export default function UpdateStoreInventory() {
         response = await Api.post(`/store/${id}`, { price: Number(price), quantity: Number(quantity) });
         toast.update(loadingToast, { render: "Store topped up successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
       } else if (modalType === 'remove') {
-        response = await Api.put(`/update-store/${id}`, { stage, quantityUsed });
+        response = await Api.put(`/use-store-item/${id}`, { pondId, quantityUsed: Number(quantityUsed) });
         toast.update(loadingToast, { render: "Store removed successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
       } else if (modalType === 'edit') {
         response = await Api.put(`/edit-store-threshold/${id}`, { threshold, unit });
@@ -115,6 +116,7 @@ export default function UpdateStoreInventory() {
       setQuantity(null);
       setQuantityUsed(null);
       setPrice(null);
+      setPondId('');
       setStage('');
       setThreshold(null);
       setUnit('');
@@ -183,6 +185,7 @@ export default function UpdateStoreInventory() {
   };
 
   const handlePondSelect = (pond) => {
+    setPondId(pond.id);
     setStage(pond.title);
     setPondSearch(pond.title);
     setShowPondDropdown(false);
