@@ -63,10 +63,8 @@ export default function BatchProcessing() {
   });
   const [loader, setLoader] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalData, setSuccessModalData] = useState(null);
-  const [errorDetails, setErrorDetails] = useState(null);
 
   const orderedStages = useMemo(() => {
     const stageOrder = ["Washing", "Smoking", "Drying"];
@@ -98,20 +96,8 @@ export default function BatchProcessing() {
         throw new Error('Expected an array of stages for Washing');
       }
     } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || 'Unknown error';
-      const status = err.response?.status || 'N/A';
-      const statusText = err.response?.statusText || '';
-      console.error(`[GET] /process-stages → ${status} ${statusText}: ${errMsg}`, err.response?.data || err);
-      toast.error(
-        <div>
-          <strong>Failed to fetch washing stage</strong>
-          <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
-          <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-            GET /process-stages · HTTP {status}{statusText ? ` ${statusText}` : ''}
-          </div>
-        </div>,
-        { autoClose: 8000 }
-      );
+      console.error(`[GET] /process-stages`, err);
+      toast.error(getErrorMessage(err, 'fetching stages'), { autoClose: 6000 });
     } finally {
       setStagesLoading(false);
     }
@@ -141,19 +127,8 @@ export default function BatchProcessing() {
       if (status === 404 && data?.response_message?.includes('No harvest records')) {
         return;
       }
-      const errMsg = data?.message || err.message || 'Unknown error';
-      const statusText = err.response?.statusText || '';
-      console.error(`[GET] /get-all-active-harvest-batch → ${status} ${statusText}: ${errMsg}`, data || err);
-      toast.error(
-        <div>
-          <strong>Failed to fetch harvest data</strong>
-          <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
-          <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-            GET /get-all-active-harvest-batch · HTTP {status}{statusText ? ` ${statusText}` : ''}
-          </div>
-        </div>,
-        { autoClose: 8000 }
-      );
+      console.error(`[GET] /get-all-active-harvest-batch`, err);
+      toast.error(getErrorMessage(err, 'fetching harvest data'), { autoClose: 6000 });
     }finally{
       setShowLoading(false);
     }
@@ -188,32 +163,12 @@ export default function BatchProcessing() {
           setCumulativeDamageOrLoss(data.cumulativeDamageOrLoss || data.damageOrLoss || 0);
         }
       } catch (err) {
-        const errMsg = err.response?.data?.message || err.message || 'Unknown error';
-        const status = err.response?.status || 'N/A';
-        const statusText = err.response?.statusText || '';
-        console.error(`[GET] /fish-process/${processId} → ${status} ${statusText}: ${errMsg}`, err.response?.data || err);
+        console.error(`[GET] /fish-process/${processId}`, err);
         if (err.response?.status === 404) {
-          toast.warn(
-            <div>
-              <strong>Previous process no longer exists</strong>
-              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>
-                Process #{processId?.slice(0,8)} was not found (404). Starting fresh.
-              </div>
-            </div>,
-            { autoClose: 5000 }
-          );
+          toast.warn(getErrorMessage(err, 'restoring previous process'), { autoClose: 5000 });
           clearBatchStorage();
         } else {
-          toast.error(
-            <div>
-              <strong>Failed to restore process data</strong>
-              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
-              <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-                GET /fish-process/{processId?.slice(0,8)}… · HTTP {status}{statusText ? ` ${statusText}` : ''}
-              </div>
-            </div>,
-            { autoClose: 8000 }
-          );
+          toast.error(getErrorMessage(err, 'restoring process data'), { autoClose: 6000 });
         }
       }
     };
@@ -245,13 +200,6 @@ export default function BatchProcessing() {
       sessionStorage.setItem('batchProcessId', JSON.stringify(processId));
     }
   }, [processId]);
-
-  useEffect(() => {
-    if (message) {
-      const timer = setTimeout(() => setMessage(''), 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [message]);
 
   useEffect(() => {
     if (orderedStages.length > 0) {
@@ -341,80 +289,33 @@ export default function BatchProcessing() {
 
   const handleNext = async () => {
     setLoading(true);
-    setErrorDetails(null);
-    setMessage("Processing your request...");
     console.log('[handleNext] entry', { moveData_stageId_from: moveData.stageId_from, orderedStageIds: orderedStages.map(s => ({ id: s.id, title: s.title })) });
     try {
       const currentStage = orderedStages.find(stage => stage.id === moveData.stageId_from);
       console.log('[handleNext] currentStage', currentStage);
 
       if (!currentStage || stagesLoading) {
-        console.error(`[VALIDATION] Stages not ready — currentStage: ${!!currentStage}, stagesLoading: ${stagesLoading}`);
-        const stageError = "Stages are still loading. Please wait.";
-        toast.error(
-          <div>
-            <strong>Stages Not Ready</strong>
-            <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{stageError}</div>
-            <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-              currentStage: {currentStage ? 'loaded' : 'null'} · stagesLoading: {String(stagesLoading)}
-            </div>
-          </div>,
-          { autoClose: 6000 }
-        );
-        throw new Error(stageError);
+        toast.warn('Stages are still loading. Please wait.', { autoClose: 4000 });
+        throw new Error('Stages are still loading. Please wait.');
       }
 
       const endpoint = getEndpoint(currentStage.title) || getEndpointByIndex(currentStage.id);
-      console.log('[handleNext] endpoint', endpoint);
 
       if (endpoint) {
         const wholeFish = parseFloat(moveData.wholeFishQuantity);
         const brokenFish = parseFloat(moveData.brokenFishQuantity);
         const damageLoss = parseFloat(moveData.damageOrLoss);
         if (isNaN(wholeFish) || wholeFish < 0) {
-          const validationError = 'Invalid quantity: Whole Fish must be 0 or greater.';
-          console.error(`[VALIDATION] ${validationError} (received: ${moveData.wholeFishQuantity})`);
-          toast.error(
-            <div>
-              <strong>Validation Error</strong>
-              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{validationError}</div>
-              <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-                Field: wholeFishQuantity · Value: "{moveData.wholeFishQuantity}"
-              </div>
-            </div>,
-            { autoClose: 6000 }
-          );
-          throw new Error(validationError);
+          toast.error('Whole Fish quantity must be 0 or greater.', { autoClose: 4000 });
+          throw new Error('Invalid quantity: Whole Fish must be 0 or greater.');
         }
         if (isNaN(brokenFish) || brokenFish < 0) {
-          const validationError = 'Invalid quantity: Broken Fish must be 0 or greater.';
-          console.error(`[VALIDATION] ${validationError} (received: ${moveData.brokenFishQuantity})`);
-          toast.error(
-            <div>
-              <strong>Validation Error</strong>
-              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{validationError}</div>
-              <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-                Field: brokenFishQuantity · Value: "{moveData.brokenFishQuantity}"
-              </div>
-            </div>,
-            { autoClose: 6000 }
-          );
-          throw new Error(validationError);
+          toast.error('Broken Fish quantity must be 0 or greater.', { autoClose: 4000 });
+          throw new Error('Invalid quantity: Broken Fish must be 0 or greater.');
         }
         if (isNaN(damageLoss) || damageLoss < 0) {
-          const validationError = 'Invalid quantity: Damage/Loss must be 0 or greater.';
-          console.error(`[VALIDATION] ${validationError} (received: ${moveData.damageOrLoss})`);
-          toast.error(
-            <div>
-              <strong>Validation Error</strong>
-              <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{validationError}</div>
-              <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-                Field: damageOrLoss · Value: "{moveData.damageOrLoss}"
-              </div>
-            </div>,
-            { autoClose: 6000 }
-          );
-          throw new Error(validationError);
+          toast.error('Damage/Loss quantity must be 0 or greater.', { autoClose: 4000 });
+          throw new Error('Invalid quantity: Damage/Loss must be 0 or greater.');
         }
 
         const payload = {
@@ -454,20 +355,8 @@ export default function BatchProcessing() {
               setCumulativeDamageOrLoss(pd.cumulativeDamageOrLoss || pd.damageOrLoss || 0);
             }
           } catch (err) {
-            const errMsg = err.response?.data?.message || err.message || 'Unknown error';
-            const fStatus = err.response?.status || 'N/A';
-            const fStatusText = err.response?.statusText || '';
-            console.error(`[GET] /fish-process/${id} → ${fStatus} ${fStatusText}: ${errMsg}`, err.response?.data || err);
-            toast.error(
-              <div>
-                <strong>Failed to fetch updated process data</strong>
-                <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{errMsg}</div>
-                <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-                  GET /fish-process/{id?.slice(0,8)}… · HTTP {fStatus}{fStatusText ? ` ${fStatusText}` : ''}
-                </div>
-              </div>,
-              { autoClose: 8000 }
-            );
+            console.error(`[GET] /fish-process/${id}`, err);
+            toast.error(getErrorMessage(err, 'fetching updated process data'), { autoClose: 6000 });
           }
         };
 
@@ -484,7 +373,6 @@ export default function BatchProcessing() {
           damageOrLoss: '',
         }));
 
-        setMessage("Fish moved successfully!");
         const isDrying = getEndpoint(currentStage.title) === "/add-fish-to-show-glass"
           || getEndpointByIndex(currentStage.id) === "/add-fish-to-show-glass";
         if (isDrying) {
@@ -510,43 +398,13 @@ export default function BatchProcessing() {
           }
         }
       } else {
-        const stageError = `Invalid stage transition for stage "${currentStage?.title || 'unknown'}" (id: ${moveData.stageId_from}). No matching endpoint found.`;
-        console.error(`[VALIDATION] ${stageError}`);
-        toast.error(
-          <div>
-            <strong>Invalid Stage Transition</strong>
-            <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{stageError}</div>
-            <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-              currentStage: {currentStage?.title || 'null'} · endpoints available: washing-to-smoking, smoking-to-drying, add-fish-to-show-glass
-            </div>
-          </div>,
-          { autoClose: 8000 }
-        );
+        toast.error('No matching endpoint found for the current stage.', { autoClose: 6000 });
         throw new Error("Invalid stage transition.");
       }
     } catch (error) {
-      const errMsg = error.response?.data?.message || error.message || 'Unknown error';
-      const status = error.response?.status || 'N/A';
-      const statusText = error.response?.statusText || '';
-      const stageTitle = orderedStages.find(s => s.id === moveData.stageId_from)?.title || 'Unknown';
-      const endpoint = getEndpoint(stageTitle) || getEndpointByIndex(moveData.stageId_from) || '/unknown';
-      console.error(`[POST] ${endpoint} (${stageTitle}) → ${status} ${statusText}: ${errMsg}`, error.response?.data || error);
-      toast.error(
-        <div>
-          <strong>Failed to process ${stageTitle} stage</strong>
-          <div style={{fontSize:'12px',marginTop:'4px',color:'#6B7280'}}>{getErrorMessage(error, stageTitle)}</div>
-          <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-            POST {endpoint} · HTTP {status}{statusText ? ` ${statusText}` : ''}
-          </div>
-          {processId && (
-            <div style={{fontSize:'11px',marginTop:'2px',color:'#9CA3AF'}}>
-              Process ID: {processId.slice(0,8)}…
-            </div>
-          )}
-        </div>,
-        { autoClose: 8000 }
-      );
-      setMessage(getErrorMessage(error, stageTitle));
+      const stageTitle = orderedStages.find(s => s.id === moveData.stageId_from)?.title || '';
+      console.error(`[POST] stage=${stageTitle}`, error);
+      toast.error(getErrorMessage(error, stageTitle ? `processing ${stageTitle}` : 'processing stage'), { autoClose: 6000 });
     } finally {
       setLoading(false);
     }
