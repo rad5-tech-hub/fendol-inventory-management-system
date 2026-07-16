@@ -17,6 +17,8 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
     const isSuperAdmin = userTypes.includes('super_admin');
     const resolvedSiteId = siteId || (isSuperAdmin ? activeSite?.id : user?.siteId);
     const feedTypeId = productTypes.find(t => t.name?.toLowerCase() === 'feed')?.id;
+    const [feedProducts, setFeedProducts] = useState([]);
+    const [feedProductsLoading, setFeedProductsLoading] = useState(true);
     const [feedData, setFeedData] = useState({
         products: [],
         category: '',
@@ -43,6 +45,30 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
         setCustomer(customers || []);
     }, [customers]);
 
+    useEffect(() => {
+        if (!resolvedSiteId) return;
+        const fetchFeedProducts = async () => {
+            setFeedProductsLoading(true);
+            try {
+                const res = await Api.get(`/api/v1/feeds?siteId=${resolvedSiteId}`);
+                const data = Array.isArray(res.data?.data) ? res.data.data : [];
+                const mapped = data.map(f => ({
+                    id: f.id,
+                    productName: f.feedName,
+                    productWeight: String(f.weightPerBag || 0),
+                    unit: f.unit || 'kg',
+                    basePrice: f.pricePerBag || 0,
+                }));
+                setFeedProducts(mapped);
+            } catch {
+                setFeedProducts([]);
+            } finally {
+                setFeedProductsLoading(false);
+            }
+        };
+        fetchFeedProducts();
+    }, [resolvedSiteId]);
+
     const fetchCustomers = async () => {
         try {
             const response = await Api.get('/customers');
@@ -60,7 +86,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
         const total = feedData.products.reduce((total, product) => {
             if (checkedProducts[product?.id]) {
                 const quantity = product?.quantity || 0;
-                const feedItem = products.find(f => f?.id === product?.id);
+                const feedItem = feedProducts.find(f => f?.id === product?.id);
                 const basePrice = parseFloat(feedItem?.basePrice) || 0;
                 return total + (quantity * basePrice);
             }
@@ -70,7 +96,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
             setFeedData((prev) => ({ ...prev, amountPaid: 0 }));
         }
         setTotalPrice(total);
-    }, [feedData.products, checkedProducts, products, feedData.paymentType]);
+    }, [feedData.products, checkedProducts, feedProducts, feedData.paymentType]);
 
     const handleCheckChange = (e, productId) => {
         const { checked } = e.target;
@@ -79,7 +105,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
             [productId]: checked
         }));
         if (checked) {
-            const product = products.find(p => p.id === productId);
+            const product = feedProducts.find(p => p.id === productId);
             setFeedData(prevState => ({
                 ...prevState,
                 products: [
@@ -102,7 +128,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
 
     const handleInputChange = (e, productId) => {
         const { name, value } = e.target;
-        const feedItem = products.find(f => f.id === productId);
+        const feedItem = feedProducts.find(f => f.id === productId);
         const weightPerBag = parseFloat(feedItem?.productWeight) || 0;
 
         setFeedData(prevState => {
@@ -124,7 +150,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                         : product
                 );
             } else {
-                const feedInfo = products.find(f => f.id === productId);
+                const feedInfo = feedProducts.find(f => f.id === productId);
                 const qty = name === 'quantity' ? (value === '' ? '' : parseFloat(value) || 0) : '';
                 const usedToPack = name === 'quantity' && value !== ''
                     ? (parseFloat(value) || 0) * weightPerBag
@@ -152,7 +178,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
         const product = feedData.products.find(p => p.id === productId);
         if (!product) return 0;
         const quantity = product?.quantity || 0;
-        const feedItem = products.find(f => f.id === productId);
+        const feedItem = feedProducts.find(f => f.id === productId);
         const basePrice = parseFloat(feedItem?.basePrice) || 0;
         return quantity * basePrice;
     };
@@ -213,7 +239,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                 ...prevState,
                 [productId]: true
             }));
-            const feed = products.find(p => p.id === productId);
+            const feed = feedProducts.find(p => p.id === productId);
             setFeedData(prevState => ({
                 ...prevState,
                 products: [
@@ -359,7 +385,13 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
     return (
         <div>
             {currentStep === 1 && (
-                products.length > 0 ? (
+                feedProductsLoading ? (
+                    <div className="text-center py-5">
+                        <div className="spinner-border text-secondary" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                ) : feedProducts.length > 0 ? (
                     <>
                         <DataTable
                             className={`bg-light px-2 ${styles.styled_table}`}
@@ -405,7 +437,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                                 }},
                                 { key: 'id', label: 'SUBTOTAL', render: (val) => <p className="text-muted py-2">₦ {new Intl.NumberFormat().format(calculateSubtotal(val))}</p> },
                             ]}
-                            data={products}
+                            data={feedProducts}
                         />
                         <div className="mt-3">
                             <h5 className='fw-semibold mt-3'>Total Price: ₦ {new Intl.NumberFormat().format(totalPrice)}</h5>
