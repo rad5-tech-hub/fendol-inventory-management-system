@@ -158,8 +158,8 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ color: "#6B7280" }}>Amount Due</span>
-              <span style={{ fontWeight: 700, color: Number(receipt.remainingBalance) > 0 || (Number(receipt.totalPrice) > Number(receipt.totalPaid) && !receipt.remainingBalance) ? "#DC2626" : "#1A1C1E" }}>
-                ₦{Math.max(0, Number(receipt.remainingBalance ?? (Number(receipt.totalPrice) - Number(receipt.totalPaid)))).toLocaleString()}
+              <span style={{ fontWeight: 700, color: Number(receipt.remainingBalance) > 0 || (Number(receipt.totalPrice) - Number(receipt.discount) > Number(receipt.totalPaid) && !receipt.remainingBalance) ? "#DC2626" : "#1A1C1E" }}>
+                ₦{Math.max(0, Number(receipt.remainingBalance ?? (Number(receipt.totalPrice) - Number(receipt.discount) - Number(receipt.totalPaid)))).toLocaleString()}
               </span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
