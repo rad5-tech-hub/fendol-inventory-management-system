@@ -309,10 +309,6 @@ export default function PersonalLedger() {
       toast.error("Please select a payment type.", { autoClose: 3000 });
       return;
     }
-    if (!isSuperAdmin && !resolvedSiteId) {
-      toast.error("Site information is missing. Please contact support.", { autoClose: 3000 });
-      return;
-    }
     const loadingToastId = toast.loading("Processing payment...");
     setLoadingPayment(true);
     try {
