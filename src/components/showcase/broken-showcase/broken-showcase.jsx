@@ -197,15 +197,15 @@ export default function ViewBrokenHistory() {
       key: 'description', label: 'Description',
       render: (value) => (
         <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block' }} title={value}>
-          {value || '—'}
+          {value || ''}
         </span>
       ),
     },
     {
       key: 'quantity', label: 'Quantity added', align: 'right',
-      render: (value) => (
+      render: (value, row) => (
         <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
-          {value != null ? new Intl.NumberFormat().format(value) : '—'}
+          {row.kgRemoved ? '' : (value ? new Intl.NumberFormat().format(value) : '')}
         </span>
       ),
     },
@@ -213,14 +213,14 @@ export default function ViewBrokenHistory() {
       key: 'kgRemoved', label: 'Removed (kg)', align: 'right',
       render: (value) => (
         <span style={{ fontWeight: 600, color: '#DC2626', fontSize: '13px' }}>
-          {value != null ? `${Number(value).toFixed(3)}` : '—'}
+          {value ? `${Number(value).toFixed(3)}` : ''}
         </span>
       ),
     },
     {
       key: '_actions', label: '', width: '100px',
       render: (_value, row) => {
-        if (row.isConverted) return null;
+        if (row.isConverted || row.kgRemoved) return null;
         return (
           <button
             onClick={(e) => { e.stopPropagation(); handleKgModal(row); }}
@@ -444,7 +444,7 @@ export default function ViewBrokenHistory() {
                                 textAlign: col.align === 'right' ? 'right' : 'left',
                                 whiteSpace: 'nowrap',
                               }}>
-                                {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
+                                {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '')}
                               </td>
                             ))}
                           </tr>
