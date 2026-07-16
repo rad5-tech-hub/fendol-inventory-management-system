@@ -103,7 +103,10 @@ export default function UpdateStoreInventory() {
     try {
       let response;
       if (modalType === 'add') {
-        response = await Api.post(`/store/${id}`, { price: Number(price), quantity: Number(quantity) });
+        const resolvedSiteId = user?.siteId || user?.userSites?.[0]?.id || '';
+        const payload = { price: Number(price), quantity: Number(quantity) };
+        if (resolvedSiteId) payload.siteId = resolvedSiteId;
+        response = await Api.post(`/store/${id}`, payload);
         toast.update(loadingToast, { render: "Store topped up successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
       } else if (modalType === 'remove') {
         response = await Api.put(`/use-store-item/${id}`, { pondId, quantityUsed: Number(quantityUsed) });
