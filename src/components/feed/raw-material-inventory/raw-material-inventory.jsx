@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { FiDownload, FiPlus, FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight, FiEdit2, FiAlertTriangle, FiPackage, FiX } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight, FiEdit2, FiAlertTriangle, FiPackage, FiX } from 'react-icons/fi';
 import { BsEye, BsBoxSeam } from 'react-icons/bs';
 import { IoChevronDown } from 'react-icons/io5';
 import { GiGreenPower, GiMoneyStack } from 'react-icons/gi';
@@ -229,10 +229,6 @@ export default function RawMaterialInventory() {
                 <p className={styles.pageSubtitle}>Track and manage raw materials used for feed production.</p>
               </div>
               <div className={styles.headerRight}>
-                <button className={styles.exportBtn} disabled>
-                  <FiDownload size={14} />
-                  Export
-                </button>
                 <button className={styles.addBtn} onClick={() => { setEditMaterial(null); setShowAddModal(true); }}>
                   <FiPlus size={16} />
                   Add Raw Material

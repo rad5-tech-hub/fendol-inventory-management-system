@@ -218,7 +218,7 @@ export default function UpdateStoreInventory() {
         </div>
 
         <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0 }}>
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
               <h4 className="m-0">View All</h4>
@@ -269,7 +269,7 @@ export default function UpdateStoreInventory() {
             )}
             </div>
             {!loading && !error && products.length > 0 && (
-              <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+              <div className="d-flex justify-content-center" style={{ background: '#fff', borderTop: '1px solid #e5e7eb' }}>
                 <ReactPaginate
                   previousLabel={"< "}
                   nextLabel={" >"}

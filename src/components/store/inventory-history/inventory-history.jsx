@@ -97,7 +97,7 @@ export default function InventoryHistory() {
         </div>
 
         <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0 }}>
             <div style={{ flex: 1, overflowY: 'auto' }}>
             <div className="d-flex justify-content-between mt-3">
               <h4 className="mb-4">Store Inventory History</h4>
@@ -152,7 +152,7 @@ export default function InventoryHistory() {
             )}
             </div>
             {!loading && !error && filteredData.length > 0 && (
-              <div className="d-flex justify-content-center mt-4" style={{ paddingTop: 12, paddingBottom: 12, background: '#fff' }}>
+              <div className="d-flex justify-content-center" style={{ background: '#fff' }}>
                 <ReactPaginate
                   previousLabel={"<"}
                   nextLabel={">"}
