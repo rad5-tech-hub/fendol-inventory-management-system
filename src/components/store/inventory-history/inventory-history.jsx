@@ -121,11 +121,11 @@ export default function InventoryHistory() {
                 <DataTable
                   columns={[
                     { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
-                    { key: 'storeName', label: 'NAME', render: (_, row) => row.storeDetails?.name },
+                    { key: 'storeId', label: 'STORE', render: (value) => value ? value.slice(0, 8) + '…' : '-' },
                     { key: 'stage', label: 'POND', render: (value) => value || '-' },
-                    { key: 'quantityAdded', label: 'QUANTITY ADDED (KG)', render: (_, row) => row.stage === null ? row.storeDetails.originalQuantity : '-' },
+                    { key: 'originalQuantity', label: 'ORIGINAL QTY (KG)' },
                     { key: 'quantityUsed', label: 'QUANTITY USED (KG)', render: (value) => value || '-' },
-                    { key: 'remainingStock', label: 'QUANTITY REMAINING (KG)' },
+                    { key: 'remainingStock', label: 'REMAINING (KG)' },
                     { key: 'status', label: 'STATUS', render: (value) => (
                       <span className={`text-uppercase fw-semibold ${
                         value === 'in stock' 
