@@ -56,7 +56,8 @@ const CashDrawer = () => {
     setLoading(true);
     setError("");
     try {
-      const params = { siteId: isSuperAdmin ? (activeSite?.id || "all") : user?.siteId };
+      const params = {};
+      if (resolvedSiteId) params.siteId = resolvedSiteId;
       if (typeFilter !== "all") params.type = typeFilter;
       if (dateFrom) params.startDate = dateFrom;
       if (dateTo) params.endDate = dateTo;
@@ -85,7 +86,7 @@ const CashDrawer = () => {
     } finally {
       setLoading(false);
     }
-  }, [typeFilter, dateFrom, dateTo, isSuperAdmin, resolvedSiteId]);
+  }, [typeFilter, dateFrom, dateTo, resolvedSiteId]);
 
   useEffect(() => {
     fetchEntries();
@@ -127,12 +128,9 @@ const CashDrawer = () => {
     }
     setModalLoading(true);
     try {
-      const res = await Api.post("/add-cash-to-drawer", {
-        amount,
-        description: addCashDescription,
-        siteId: resolvedSiteId,
-        isWithdrawal: false,
-      });
+      const payload = { amount, description: addCashDescription, isWithdrawal: false };
+      if (resolvedSiteId) payload.siteId = resolvedSiteId;
+      const res = await Api.post("/add-cash-to-drawer", payload);
       toast.success(res.data?.response_message || "Cash added successfully!", { className: "dark-toast" });
       setShowAddCashModal(false);
       setAddCashAmount("");
@@ -159,12 +157,9 @@ const CashDrawer = () => {
     }
     setModalLoading(true);
     try {
-      const res = await Api.post("/add-cash-to-drawer", {
-        amount,
-        description: withdrawDescription,
-        siteId: resolvedSiteId,
-        isWithdrawal: true,
-      });
+      const payload = { amount, description: withdrawDescription, isWithdrawal: true };
+      if (resolvedSiteId) payload.siteId = resolvedSiteId;
+      const res = await Api.post("/add-cash-to-drawer", payload);
       toast.success(res.data?.response_message || "Withdrawal successful!", { className: "dark-toast" });
       setShowWithdrawModal(false);
       setWithdrawAmount("");
