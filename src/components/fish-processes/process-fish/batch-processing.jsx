@@ -136,10 +136,14 @@ export default function BatchProcessing() {
         }));
       }
     } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || 'Unknown error';
-      const status = err.response?.status || 'N/A';
+      const status = err.response?.status;
+      const data = err.response?.data;
+      if (status === 404 && data?.response_message?.includes('No harvest records')) {
+        return;
+      }
+      const errMsg = data?.message || err.message || 'Unknown error';
       const statusText = err.response?.statusText || '';
-      console.error(`[GET] /get-all-active-harvest-batch → ${status} ${statusText}: ${errMsg}`, err.response?.data || err);
+      console.error(`[GET] /get-all-active-harvest-batch → ${status} ${statusText}: ${errMsg}`, data || err);
       toast.error(
         <div>
           <strong>Failed to fetch harvest data</strong>

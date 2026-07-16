@@ -83,6 +83,8 @@ export default function ViewFish() {
   const user = useSelector((store) => store.user);
   const activeSite = useSelector((store) => store.activeSite);
   const userTypes = user?.userTypes || [];
+  const isSuperAdmin = userTypes.includes('super_admin');
+  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || '');
 
   /* ── Move to Pond modal ── */
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -92,8 +94,6 @@ export default function ViewFish() {
   const [moveSiteId, setMoveSiteId] = useState(resolvedSiteId);
   const [submittingMove, setSubmittingMove] = useState(false);
   const [moveError, setMoveError] = useState('');
-  const isSuperAdmin = userTypes.includes('super_admin');
-  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || '');
 
   const fetchPonds = async (siteId) => {
     if (!siteId) { setPondOptions([]); return; }
