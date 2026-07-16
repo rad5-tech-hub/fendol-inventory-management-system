@@ -244,7 +244,11 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
         unitCost: Number(form.unitCost),
         threshold: Number(form.threshold),
       };
-      payload.siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
+      if (isSuperAdmin) {
+        if (activeSite?.id) payload.siteId = activeSite.id;
+      } else if (user?.siteId) {
+        payload.siteId = user.siteId;
+      }
 
       const res = isEditing
         ? await ApiV2.patch(`/v2/raw-material/${editData.id}`, payload)

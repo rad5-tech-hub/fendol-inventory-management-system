@@ -42,7 +42,12 @@ export default function RawMaterialDetailSidebar({ material, onClose }) {
     if (!material?.id) return;
     setHistoryLoading(true);
     try {
-      const params = { siteId: isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '') };
+      const params = {};
+      if (isSuperAdmin) {
+        if (activeSite?.id) params.siteId = activeSite.id;
+      } else if (user?.siteId) {
+        params.siteId = user.siteId;
+      }
       if (cursor) params.cursor = cursor;
 
       const res = await ApiV2.get(`/v2/raw-material-history/${material.id}`, { params });

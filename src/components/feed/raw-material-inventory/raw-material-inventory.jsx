@@ -76,7 +76,12 @@ export default function RawMaterialInventory() {
     setFetchError(null);
 
     try {
-      const params = { siteId: isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '') };
+      const params = {};
+      if (isSuperAdmin) {
+        if (activeSite?.id) params.siteId = activeSite.id;
+      } else if (user?.siteId) {
+        params.siteId = user.siteId;
+      }
 
       const res = await ApiV2.get('/v2/raw-material', { params });
       if (res.data?.success && res.data?.data) {

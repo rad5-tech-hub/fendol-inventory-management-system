@@ -85,7 +85,11 @@ export default function RestockRawMaterialModal({ show, material, onClose, onSuc
 
     try {
       const payload = { quantity: Number(quantity) };
-      payload.siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
+      if (isSuperAdmin) {
+        if (activeSite?.id) payload.siteId = activeSite.id;
+      } else if (user?.siteId) {
+        payload.siteId = user.siteId;
+      }
 
       const res = await ApiV2.patch(`/v2/restock-raw-material/${material.id}`, payload);
 
