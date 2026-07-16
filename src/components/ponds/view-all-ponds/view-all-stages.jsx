@@ -254,7 +254,7 @@ const ViewAllStages = () => {
           <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0 }}>
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             {/* ── Page Header ── */}
             <div className="d-flex justify-content-between align-items-start mb-2 mt-2 flex-wrap gap-2">
@@ -404,7 +404,7 @@ const ViewAllStages = () => {
             </div>
             {/* Pagination row */}
             {!loading && !error && displayedStages.length > 0 && (
-              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2" style={{ padding: '12px 0', paddingBottom: 0, background: '#fff', borderTop: '1px solid #e5e7eb', marginTop: 'auto' }}>
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2" style={{ background: '#fff', borderTop: '1px solid #e5e7eb' }}>
                 <span style={{ fontSize: '0.875rem', color: '#8C949B' }}>
                   Showing {startIndex + 1}–{Math.min(endIndex, filteredStages.length)} of {filteredStages.length} ponds
                 </span>

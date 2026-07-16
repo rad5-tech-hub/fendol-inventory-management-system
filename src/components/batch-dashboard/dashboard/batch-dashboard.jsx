@@ -229,7 +229,6 @@ export default function BatchDashboard() {
                     { key: 'createdAt', label: 'Date Created', render: (value) => <span style={{ fontSize: '0.82rem', color: '#8C949B' }}>{formatDate(value)}</span> },
                     { key: 'comments', label: 'Descriptions', render: (value) => <span style={{ maxWidth: '200px', display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value || '—'}</span> },
                     { key: 'currentStage', label: 'Current Stage', render: (value) => <StageBadge stage={value} /> },
-                    { key: 'fishStocks', label: 'Fish Stocks', align: 'right', render: (value) => f(totalFish(value)) },
                     { key: 'endDate', label: 'Status', render: (value) => <StatusBadge completed={!!value} /> },
                   ]}
                   data={paginatedData}
