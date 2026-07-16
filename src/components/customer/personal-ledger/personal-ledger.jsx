@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { jwtDecode } from "jwt-decode";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -60,17 +59,7 @@ export default function PersonalLedger() {
   const isSuperAdmin = userTypes.includes('super_admin');
   const getSiteId = () => {
     if (isSuperAdmin) return activeSite?.id || '';
-    if (user?.siteId) return user.siteId;
-    if (user?.userSites?.[0]?.id) return user.userSites[0].id;
-    if (activeSite?.id) return activeSite.id;
-    try {
-      const token = sessionStorage.getItem('authToken');
-      if (token) {
-        const decoded = jwtDecode(token);
-        return decoded?.siteId || decoded?.sites?.[0]?.id || decoded?.userSites?.[0]?.id || '';
-      }
-    } catch {}
-    return '';
+    return user?.siteId || user?.userSites?.[0]?.id || activeSite?.id || '';
   };
   const resolvedSiteId = getSiteId();
 
@@ -333,8 +322,8 @@ export default function PersonalLedger() {
         amountPaid: Number(amountPaid),
         paymentType: salesType.toLowerCase(),
         description: description || "",
-        siteId: resolvedSiteId,
       };
+      if (resolvedSiteId) paymentData.siteId = resolvedSiteId;
       const res = await Api.post("/add-payment", paymentData);
       toast.update(loadingToastId, { render: res.data?.message || "Payment added successfully!", type: "success", isLoading: false, autoClose: 3000 });
       setShowModal(false);
