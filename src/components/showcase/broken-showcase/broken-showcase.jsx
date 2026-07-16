@@ -202,10 +202,18 @@ export default function ViewBrokenHistory() {
       ),
     },
     {
-      key: 'quantity', label: 'Quantity', align: 'right',
+      key: 'quantity', label: 'Quantity added', align: 'right',
       render: (value) => (
         <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
           {value != null ? new Intl.NumberFormat().format(value) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'kgRemoved', label: 'Removed (kg)', align: 'right',
+      render: (value) => (
+        <span style={{ fontWeight: 600, color: '#DC2626', fontSize: '13px' }}>
+          {value != null ? `${Number(value).toFixed(3)}` : '—'}
         </span>
       ),
     },
