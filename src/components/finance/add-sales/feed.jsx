@@ -15,7 +15,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
     const user = useSelector((store) => store.user);
     const userTypes = useSelector((store) => store.user?.userTypes || []);
     const isSuperAdmin = userTypes.includes('super_admin');
-    const resolvedSiteId = siteId || (isSuperAdmin ? activeSite?.id : user?.siteId);
+    const resolvedSiteId = siteId || (isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || ''));
     const feedTypeId = productTypes.find(t => t.name?.toLowerCase() === 'feed')?.id;
     const [feedProducts, setFeedProducts] = useState([]);
     const [feedProductsLoading, setFeedProductsLoading] = useState(true);
@@ -46,10 +46,13 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
     }, [customers]);
 
     useEffect(() => {
-        if (!resolvedSiteId) return;
         const fetchFeedProducts = async () => {
             setFeedProductsLoading(true);
             try {
+                if (!resolvedSiteId) {
+                    setFeedProducts([]);
+                    return;
+                }
                 const res = await Api.get(`/feeds?siteId=${resolvedSiteId}`);
                 const data = Array.isArray(res.data?.data) ? res.data.data : [];
                 const mapped = data.map(f => ({

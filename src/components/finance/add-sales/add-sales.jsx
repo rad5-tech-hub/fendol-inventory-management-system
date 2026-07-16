@@ -38,6 +38,7 @@ const AddSales = () => {
     const user = useSelector((store) => store.user);
     const userTypes = useSelector((store) => store.user?.userTypes || []);
     const isSuperAdmin = userTypes.includes('super_admin');
+    const resolvedSiteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '');
 
     // Fetch stages
     const fetchStages = async () => {
@@ -173,7 +174,7 @@ const AddSales = () => {
                         {salesType && (() => {
                             const FormComponent = getSalesForm(salesType);
                             return FormComponent ? (
-                                <FormComponent customers={customers} stages={stages} products={products} siteId={activeSite?.id} productTypes={productTypes} />
+                                <FormComponent customers={customers} stages={stages} products={products} siteId={resolvedSiteId} productTypes={productTypes} />
                             ) : null;
                         })()}
                     </main>
