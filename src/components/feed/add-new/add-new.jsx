@@ -48,10 +48,10 @@ const AddFeed = () => {
         });
 
         try {
-            const currentSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
+            const currentSiteId = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]?.id);
             const response = await Api.post('/create-feed', {
                 ...formData,
-                siteId: currentSiteId,
+                ...(currentSiteId ? { siteId: currentSiteId } : {}),
                 threshold: Number(formData.threshold),
                 weightPerBag: Number(formData.weightPerBag)
             });
