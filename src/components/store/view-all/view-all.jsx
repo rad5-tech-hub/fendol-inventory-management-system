@@ -102,7 +102,7 @@ export default function UpdateStoreInventory() {
     try {
       let response;
       if (modalType === 'add') {
-        response = await Api.post(`/store?name=${feedName}`, { quantity, price });
+        response = await Api.post(`/store/${id}`, { price: Number(price), quantity: Number(quantity) });
         toast.update(loadingToast, { render: "Store topped up successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
       } else if (modalType === 'remove') {
         response = await Api.put(`/update-store/${id}`, { stage, quantityUsed });
