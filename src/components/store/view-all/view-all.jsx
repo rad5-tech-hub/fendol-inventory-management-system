@@ -109,6 +109,11 @@ export default function UpdateStoreInventory() {
         response = await Api.put(`/use-store-item/${id}`, { pondId, quantityUsed: Number(quantityUsed) });
         toast.update(loadingToast, { render: "Store removed successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
       } else if (modalType === 'edit') {
+        if (!unit) {
+          toast.update(loadingToast, { render: "Please select a unit.", type: "error", isLoading: false, autoClose: 3000, className: 'dark-toast' });
+          setDisabled(false);
+          return;
+        }
         response = await Api.patch(`/edit-store-threshold/${id}`, { name: selectedProduct?.name, unit, threshold: Number(threshold) });
         toast.update(loadingToast, { render: "Store edited successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
       }
@@ -475,11 +480,17 @@ export default function UpdateStoreInventory() {
                 <Form.Group className="mb-3 row">
                   <Form.Label className="col-4 fw-semibold">Unit</Form.Label>
                   <div className="col-8">
-                    <Form.Control
-                      type="text"
-                      readOnly
-                      defaultValue={selectedProduct?.unit}
-                      className={`py-2 shadow-none border-1 ${styles.inputs}`}
+                    <CustomDropdown
+                      value={unit}
+                      onChange={(val) => setUnit(val)}
+                      className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                      placeholder="Select Unit"
+                      required
+                      options={[
+                        { value: 'kg', label: 'Kg' },
+                        { value: 'liters', label: 'Liters' },
+                        { value: 'pieces', label: 'Pieces' },
+                      ]}
                     />
                   </div>
                 </Form.Group>
