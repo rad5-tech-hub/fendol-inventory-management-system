@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from 'react-redux';
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -11,6 +12,11 @@ import DataTable from "../../shared/data-table/DataTable";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 
 export default function InventoryHistory() {
+  const user = useSelector((store) => store.user);
+  const activeSite = useSelector((store) => store.activeSite);
+  const isSuperAdmin = user?.userTypes?.includes('super_admin');
+  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || '');
+
   const [inventoryHistory, setInventoryHistory] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,12 +24,14 @@ export default function InventoryHistory() {
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 45;
   const [selectedDate, setSelectedDate] = useState("");
-  const [showSidebar, setShowSidebar] = useState(false); // Added for sidebar toggle
+  const [showSidebar, setShowSidebar] = useState(false);
 
   useEffect(() => {
     const fetchInventoryHistory = async () => {
       try {
-        const response = await Api.get('/stores-histories');
+        const params = {};
+        if (resolvedSiteId) params.siteId = resolvedSiteId;
+        const response = await Api.get('/stores-histories', { params });
         setInventoryHistory(response.data.data);
         setFilteredData(response.data.data);
       } catch (error) {
@@ -33,7 +41,7 @@ export default function InventoryHistory() {
       }
     };
     fetchInventoryHistory();
-  }, []);
+  }, [resolvedSiteId]);
 
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
