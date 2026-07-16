@@ -79,7 +79,7 @@ export default function PhoneInput({ value, onChange, className, placeholder = '
   };
 
   const handleNumberChange = (e) => {
-    let raw = e.target.value.replace(/[^0-9]/g, '');
+    let raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
     const newVal = selected.code + raw;
     if (onChange) onChange(newVal);
   };
@@ -122,6 +122,7 @@ export default function PhoneInput({ value, onChange, className, placeholder = '
         placeholder={placeholder}
         required={required}
         disabled={disabled}
+        maxLength={11}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
   IoChevronDown,
 } from 'react-icons/io5';
@@ -57,6 +58,10 @@ const nameIconColors = [
 
 export default function FeedInventory() {
   const navigate = useNavigate();
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAddFeedModal, setShowAddFeedModal] = useState(false);
   const [editFeed, setEditFeed] = useState(null);
@@ -79,6 +84,8 @@ export default function FeedInventory() {
   const feedTypeFilterRef = useRef(null);
   const siteFilterRef = useRef(null);
 
+  const currentSiteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
@@ -86,7 +93,7 @@ export default function FeedInventory() {
     setLoading(true);
     setFetchError(null);
     try {
-      const res = await Api.get('/feeds?siteId=all');
+      const res = await Api.get(`/feeds?siteId=${currentSiteId}`);
       const data = res.data?.data;
       const responseMeta = res.data?.meta;
       if (Array.isArray(data)) {
@@ -116,7 +123,7 @@ export default function FeedInventory() {
 
   useEffect(() => {
     fetchFeeds();
-  }, []);
+  }, [currentSiteId]);
 
   useEffect(() => {
     const fetchSiteTypes = async () => {
