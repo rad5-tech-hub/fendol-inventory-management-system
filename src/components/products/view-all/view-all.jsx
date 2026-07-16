@@ -7,7 +7,7 @@ import { BsPlusLg, BsBarChartFill, BsChevronDown } from "react-icons/bs";
 import { ApiV2 } from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Modal, Form, Button } from 'react-bootstrap';
+import { Modal, Button } from 'react-bootstrap';
 import ErrorState from "../../shared/error-state/ErrorState";
 import EmptyState from "../../shared/empty-state/EmptyState";
 import ReactPaginate from 'react-paginate';
@@ -19,7 +19,7 @@ import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
 import DataTable from '../../shared/data-table/DataTable';
 
-const ProductTable = ({ rows, avatarColors, onEditClick }) => (
+const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick, isSuperAdmin }) => (
   <DataTable
     columns={[
       { key: 'productName', label: 'Product Name' },
@@ -43,28 +43,34 @@ const ProductTable = ({ rows, avatarColors, onEditClick }) => (
       }},
     ]}
     data={rows}
-    actions={(product) => (
-      <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'center' }}>
-        <PortalDropdown
-          btnClass={styles.threeDotBtn}
-          menuStyle={{ minWidth: 160 }}
-          items={[
-            { label: 'Edit', onClick: () => onEditClick(product) },
-          ]}
-        />
-      </div>
-    )}
+    actions={(product) => {
+      const items = [
+        { label: 'Edit', onClick: () => onEditClick(product) },
+      ];
+      if (isSuperAdmin) {
+        items.push({ label: 'Delete', onClick: () => onDeleteClick(product), style: { color: '#ff6b6b' } });
+      }
+      return (
+        <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'center' }}>
+          <PortalDropdown
+            btnClass={styles.threeDotBtn}
+            menuStyle={{ minWidth: 160 }}
+            items={items}
+          />
+        </div>
+      );
+    }}
   />
 );
 
 export default function ViewAllProducts() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const itemsPerPage = 45;
   const [showSidebar, setShowSidebar] = useState(false);
   const [viewMode, setViewMode] = useState('all');
@@ -136,44 +142,42 @@ export default function ViewAllProducts() {
   }, [viewMode, products, siteTypes]);
 
   const handleEditClick = (product) => {
-    setSelectedProduct(product);
-    setShowModal(true);
+    navigate('/products/create-products', { state: { editProduct: product } });
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setSelectedProduct(prev => ({ ...prev, [name]: value }));
+  const handleDeleteClick = (product) => {
+    setProductToDelete(product);
+    setShowDeleteModal(true);
   };
 
-  const handleSaveClick = async () => {
-    setLoadingEdit(true)
-    const loadingToast = toast.loading("Editing Product...", {
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+    setDeleting(true);
+    const loadingToast = toast.loading("Deleting Product...", {
       className: 'dark-toast'
     });
     try {
-      if (selectedProduct && selectedProduct.id) {
-        await Api.put(`/product/${selectedProduct.id}`, selectedProduct);
-        setProducts(products.map(product => product.id === selectedProduct.id ? selectedProduct : product));
-        setShowModal(false);
-
-        toast.update(loadingToast, {
-          render: "Product Edited successfully!",
-          type: "success",
-          isLoading: false,
-          autoClose: 3000,
-          className: 'dark-toast'
-        });
-      }
+      await ApiV2.delete(`/api/v1/product/${productToDelete.id}`);
+      setProducts(products.filter(p => p.id !== productToDelete.id));
+      setShowDeleteModal(false);
+      setProductToDelete(null);
+      toast.update(loadingToast, {
+        render: "Product deleted successfully",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+        className: 'dark-toast'
+      });
     } catch (error) {
       toast.update(loadingToast, {
-        render: error.response?.data?.message || "Error adding fish. Please try again.",
+        render: error.response?.data?.response_message || "Error deleting product. Please try again.",
         type: "error",
         isLoading: false,
         autoClose: 3000,
         className: 'dark-toast'
       });
     } finally {
-      setLoadingEdit(false);
+      setDeleting(false);
     }
   };
 
@@ -341,6 +345,8 @@ export default function ViewAllProducts() {
                           rows={groupedBySiteType[stName]}
                           avatarColors={AVATAR_COLORS}
                           onEditClick={handleEditClick}
+                          onDeleteClick={handleDeleteClick}
+                          isSuperAdmin={canAssignSite}
                         />
                       </>
                     )}
@@ -355,6 +361,8 @@ export default function ViewAllProducts() {
                 rows={currentProducts}
                 avatarColors={AVATAR_COLORS}
                 onEditClick={handleEditClick}
+                onDeleteClick={handleDeleteClick}
+                isSuperAdmin={canAssignSite}
               />
             )}
 
@@ -364,6 +372,8 @@ export default function ViewAllProducts() {
                 rows={currentProducts}
                 avatarColors={AVATAR_COLORS}
                 onEditClick={handleEditClick}
+                onDeleteClick={handleDeleteClick}
+                isSuperAdmin={canAssignSite}
               />
             )}
             </div>
@@ -392,76 +402,30 @@ export default function ViewAllProducts() {
             )}
           </main>
 
-          <Modal show={showModal} onHide={() => setShowModal(false)}>
-            <Modal.Header closeButton className="border-0 ">
-              <Modal.Title className="fw-semibold">Edit Product</Modal.Title>
+          <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+            <Modal.Header closeButton className="border-0">
+              <Modal.Title className="fw-semibold">Delete Product</Modal.Title>
             </Modal.Header>
-            <Modal.Body className="mt-5">
-              {selectedProduct && (
-                <Form>
-                  <Form.Group className="mb-3 row">
-                    <Form.Label className="col-4 fw-semibold">Product Name</Form.Label>
-                    <div className="col-8">
-                      <Form.Control
-                        type="text"
-                        name="productName"
-                        value={selectedProduct.productName}
-                        onChange={handleInputChange}
-                        className="py-2 shadow-none border-secondary-subtle border-1"
-                      />
-                    </div>
-                  </Form.Group>
-
-                  <Form.Group className="mb-3 row">
-                    <Form.Label className="col-4 fw-semibold">Base Weight</Form.Label>
-                    <div className="col-8">
-                      <Form.Control
-                        type="text"
-                        name="productWeight"
-                        value={selectedProduct.productWeight}
-                        onChange={handleInputChange}
-                        className="py-2 shadow-none border-secondary-subtle border-1"
-                      />
-                    </div>
-                  </Form.Group>
-
-                  <Form.Group className="mb-3 row">
-                    <Form.Label className="col-4 fw-semibold">Unit</Form.Label>
-                    <div className="col-8">
-                      <CustomDropdown
-                        options={[
-                          { value: 'KG', label: 'Kilogram' },
-                          { value: 'G', label: 'Gram' },
-                        ]}
-                        value={selectedProduct.unit}
-                        onChange={(val) => handleInputChange({ target: { name: 'unit', value: val } })}
-                        placeholder="Select Unit"
-                      />
-                    </div>
-                  </Form.Group>
-
-                  <Form.Group className="mb-3 row">
-                    <Form.Label className="col-4 fw-semibold">Base Price (₦)</Form.Label>
-                    <div className="col-8">
-                      <Form.Control
-                        type="number"
-                        name="basePrice"
-                        value={selectedProduct.basePrice}
-                        onChange={handleInputChange}
-                        className="py-2 shadow-none border-secondary-subtle border-1"
-                      />
-                    </div>
-                  </Form.Group>
-                </Form>
-              )}
+            <Modal.Body>
+              <p>Are you sure you want to delete <strong>{productToDelete?.productName}</strong>?</p>
+              <p className="text-muted" style={{ fontSize: '0.875rem' }}>This action cannot be undone.</p>
             </Modal.Body>
             <Modal.Footer className="border-0">
               <Button
-                className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-                onClick={handleSaveClick}
-                disabled={loadingEdit}
+                variant="secondary"
+                className="shadow-none"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
               >
-                Save
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                className="shadow-none"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
               </Button>
             </Modal.Footer>
           </Modal>

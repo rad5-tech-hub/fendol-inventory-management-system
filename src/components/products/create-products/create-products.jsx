@@ -6,13 +6,16 @@ import { Col, Form, Row, Button } from 'react-bootstrap';
 import styles from '../product.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import Api, { ApiV2 } from "../../shared/api/apiLink";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+    const editProduct = location.state?.editProduct;
+    const isEditing = !!editProduct;
     const [showSidebar, setShowSidebar] = useState(false);
     const [siteTypes, setSiteTypes] = useState([]);
     const user = useSelector((store) => store.user);
@@ -88,13 +91,13 @@ export default function CreateProducts() {
 
     // Form fields state
     const [formData, setFormData] = useState({
-        productName: "",
-        productWeight: "",
-        unit: "",
-        basePrice: "",
-        siteId: "",
-        showOnwebsite: false,
-        categoryId: ""
+        productName: editProduct?.productName || "",
+        productWeight: editProduct?.productWeight?.toString() || "",
+        unit: editProduct?.unit || "",
+        basePrice: editProduct?.basePrice?.toString() || "",
+        siteId: editProduct?.siteType || "",
+        showOnwebsite: editProduct?.showOnwebsite || false,
+        categoryId: editProduct?.productType || ""
     });
 
     // Function to format numbers with commas
@@ -132,7 +135,7 @@ export default function CreateProducts() {
         e.preventDefault();
         setLoader(true);
 
-        const loadingToast = toast.loading("Creating Product...", {
+        const loadingToast = toast.loading(isEditing ? "Updating Product..." : "Creating Product...", {
             className: 'dark-toast'
         });
 
@@ -149,7 +152,12 @@ export default function CreateProducts() {
                 formDataToSubmit.siteType = formData.siteId;
             }
 
-            const response = await ApiV2.post('/api/v1/product', formDataToSubmit);
+            let response;
+            if (isEditing) {
+                response = await ApiV2.put(`/api/v1/product/${editProduct.id}`, formDataToSubmit);
+            } else {
+                response = await ApiV2.post('/api/v1/product', formDataToSubmit);
+            }
 
             // Reset form or handle success as needed
             setFormData({
@@ -164,7 +172,7 @@ export default function CreateProducts() {
 
             // After a successful API call
             toast.update(loadingToast, {
-                render: response.data?.response_message || "Product created successfully",
+                render: response.data?.response_message || (isEditing ? "Product updated successfully" : "Product created successfully"),
                 type: "success",
                 isLoading: false,
                 autoClose: 3000,
@@ -176,7 +184,7 @@ export default function CreateProducts() {
             }, 2500)
         } catch (error) {
             toast.update(loadingToast, {
-                render: error.response?.data?.message || "Error creating product. Please try again.",
+                render: error.response?.data?.message || `Error ${isEditing ? 'updating' : 'creating'} product. Please try again.`,
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,
@@ -203,7 +211,7 @@ export default function CreateProducts() {
                     <main>
                         <ToastContainer />
                         <Form className={styles.create_form} onSubmit={handleSubmit}>
-                            <h4 className="mt-3 mb-5">Create Product</h4>
+                            <h4 className="mt-3 mb-5">{isEditing ? 'Edit Product' : 'Create Product'}</h4>
                             <Row xxl={2} xl={2} lg={2} md={1}>
                                 <Col className="mb-4">
                                     <Form.Label className="fw-semibold">Product Name</Form.Label>
@@ -444,7 +452,7 @@ export default function CreateProducts() {
 
                             <div className="d-flex justify-content-end mt-5">
                                 <Button className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`} disabled={loader} type="submit">
-                                    {loader ? 'Creating...' : 'Create'}
+                                    {loader ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update' : 'Create')}
                                 </Button>
                             </div>
                         </Form>

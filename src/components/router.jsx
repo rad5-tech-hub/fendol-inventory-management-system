@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import LogIn from "./shared/login/login";
+import ForgotPassword from "./shared/forgot-password/forgot-password";
+import ResetPassword from "./shared/reset-password/reset-password";
 import ProtectedRoute from "./protect-routes";
 import { Provider } from "react-redux";
 import store from "./shared/reduxForProtectingRoute/store";
@@ -60,6 +62,8 @@ export default function RouterSwitch() {
         <ToastContainer />
         <Routes>
           <Route path="/" element={<LogIn />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/dashboard"
             element={

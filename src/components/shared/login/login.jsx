@@ -7,7 +7,7 @@ import top from '../../../assests/top.png';
 import bottom from '../../../assests/bottom.png';
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import Logo from '../../../assests/logo.png';
 import { loginUser } from "../reduxForProtectingRoute/actions/authActions";
@@ -148,7 +148,11 @@ export default function LogIn() {
                                 </InputGroup.Text>
                             </InputGroup>
 
-                            {/* <a href="#pasword" className="text-white border-0 fw-semibold">Forgot Password?</a> */}
+                            <div className="text-end mt-1 mb-2">
+                              <Link to="/forgot-password" className="text-white" style={{ textDecoration: 'underline', opacity: 0.8, fontSize: '0.9rem' }}>
+                                Forgot Password?
+                              </Link>
+                            </div>
                             <Button type="submit" className={`w-100 ${styles.btn} shadow-sm btn-dark py-2 fs-5 mt-5 fw-semibold`} disabled={loader}>
                                 {loader ? 'Logging In' : "Log in"}
                             </Button>
