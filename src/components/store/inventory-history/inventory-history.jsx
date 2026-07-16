@@ -70,6 +70,11 @@ export default function InventoryHistory() {
     }
   };
 
+  const showValue = (val) => {
+    const num = val === null || val === undefined ? null : Number(val);
+    return (num !== null && num >= 1) ? String(num) : '';
+  };
+
   const offset = currentPage * itemsPerPage;
   const paginatedData = filteredData.slice(offset, offset + itemsPerPage);
   const pageCount = Math.ceil(filteredData.length / itemsPerPage);
@@ -121,11 +126,11 @@ export default function InventoryHistory() {
                 <DataTable
                   columns={[
                     { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
-                    { key: 'storeId', label: 'STORE', render: (value) => value ? value.slice(0, 8) + '…' : '-' },
+                    { key: 'store', label: 'STORE', render: (_, row) => row?.store?.name || '-' },
                     { key: 'stage', label: 'POND', render: (value) => value || '-' },
-                    { key: 'originalQuantity', label: 'ORIGINAL QUANTITY (KG)' },
-                    { key: 'quantityUsed', label: 'QUANTITY USED (KG)', render: (value) => value || '-' },
-                    { key: 'remainingStock', label: 'REMAINING (KG)' },
+                    { key: 'quantityAdded', label: 'QUANTITY ADDED (KG)', render: (value) => showValue(value) },
+                    { key: 'quantityUsed', label: 'QUANTITY USED (KG)', render: (value) => showValue(value) },
+                    { key: 'remainingStock', label: 'REMAINING (KG)', render: (value) => showValue(value) },
                     { key: 'status', label: 'STATUS', render: (value) => (
                       <span className={`text-uppercase fw-semibold ${
                         value === 'in stock' 
