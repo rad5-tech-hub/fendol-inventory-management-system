@@ -92,8 +92,23 @@ export default function PersonalLedger() {
   useEffect(() => {
     if (customerId) {
       fetchLedgerData();
+      fetchCustomerInfo();
     }
   }, [customerId]);
+
+  const fetchCustomerInfo = async () => {
+    try {
+      const response = await Api.get('/customers');
+      const customers = Array.isArray(response.data?.data) ? response.data.data : [];
+      const customer = customers.find(c => c.id === customerId);
+      if (customer) {
+        setFullName(customer.fullName || '');
+        setAddress(customer.address || '');
+      }
+    } catch (err) {
+      console.error('Error fetching customer info:', err);
+    }
+  };
 
   const fetchLedgerData = async () => {
     try {
@@ -120,7 +135,6 @@ export default function PersonalLedger() {
       setLedgerData(allData);
       if (allData.length > 0) {
         setFullName(allData[0].fullName);
-        setAddress(allData[0].address || '');
       }
     } catch (err) {
       console.error('Error fetching data:', err);

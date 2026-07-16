@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Row, Col, Button } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import styles from '../feed.module.scss'; // Adjust the import as needed
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -10,6 +11,10 @@ import { useNavigate } from 'react-router-dom';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 
 const AddFeed = () => {
+    const activeSite = useSelector((store) => store.activeSite);
+    const user = useSelector((store) => store.user);
+    const userTypes = useSelector((store) => store.user?.userTypes || []);
+    const isSuperAdmin = userTypes.includes('super_admin');
     const [formData, setFormData] = useState({
         feedName: '',
         feedType: '',
@@ -43,10 +48,12 @@ const AddFeed = () => {
         });
 
         try {
+            const currentSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
             const response = await Api.post('/create-feed', {
                 ...formData,
-                threshold: Number(formData.threshold), // Ensure threshold is a number
-                weightPerBag: Number(formData.weightPerBag) // Ensure weightPerBag is a number
+                siteId: currentSiteId,
+                threshold: Number(formData.threshold),
+                weightPerBag: Number(formData.weightPerBag)
             });
 
             setFormData({

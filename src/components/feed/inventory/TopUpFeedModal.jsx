@@ -125,10 +125,7 @@ export default function TopUpFeedModal({ show, feed, onClose, onSuccess }) {
         noOfBag: String(Number(noOfBag)),
       };
 
-      const needsSiteId = isSuperAdmin || (user?.siteId && activeSite?.id && user.siteId !== activeSite.id);
-      if (needsSiteId && activeSite?.id) {
-        payload.siteId = activeSite.id;
-      }
+      payload.siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
 
       const res = await Api.patch(`/top-feed/${feed.id}`, payload);
 

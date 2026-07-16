@@ -60,12 +60,12 @@ export default function FeedLedger() {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '');
         const [histRes, siteRes, feedsRes, pondsRes] = await Promise.all([
           Api.get(`/feed-history/${feedName}`, { params: { siteId } }),
           ApiV2.get('/v2/site-types'),
           Api.get('/feeds', { params: { siteId } }).catch(() => null),
-          Api.get(`/fish-stages?siteId=${isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all')}`).catch(() => null),
+          Api.get(`/fish-stages?siteId=${isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '')}`).catch(() => null),
         ]);
 
         if (histRes.data?.success) {

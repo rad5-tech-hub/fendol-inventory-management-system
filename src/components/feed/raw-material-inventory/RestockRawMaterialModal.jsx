@@ -8,6 +8,9 @@ import styles from './AddRawMaterialModal.module.scss';
 
 export default function RestockRawMaterialModal({ show, material, onClose, onSuccess }) {
   const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
   const [quantity, setQuantity] = useState('');
   const [error, setError] = useState(null);
   const [touched, setTouched] = useState(false);
@@ -82,7 +85,7 @@ export default function RestockRawMaterialModal({ show, material, onClose, onSuc
 
     try {
       const payload = { quantity: Number(quantity) };
-      if (activeSite?.id) payload.siteId = activeSite.id;
+      payload.siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
 
       const res = await ApiV2.patch(`/v2/restock-raw-material/${material.id}`, payload);
 

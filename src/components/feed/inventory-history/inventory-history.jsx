@@ -41,7 +41,7 @@ export default function InventoryHistory() {
     const fetchInventoryHistory = async () => {
       try {
         setLoading(true);
-        const siteId = isSuperAdmin ? (activeSite?.id || "all") : (user?.siteId || "all");
+        const siteId = isSuperAdmin ? (activeSite?.id || "all") : (user?.siteId || user?.userSites?.[0]?.id || "");
         const params = {};
         if (siteId) params.siteId = siteId;
         const response = await Api.get("/feeds-histories", { params });

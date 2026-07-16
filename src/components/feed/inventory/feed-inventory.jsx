@@ -84,7 +84,7 @@ export default function FeedInventory() {
   const feedTypeFilterRef = useRef(null);
   const siteFilterRef = useRef(null);
 
-  const currentSiteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+  const currentSiteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '');
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);

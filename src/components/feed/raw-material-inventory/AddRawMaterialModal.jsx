@@ -126,6 +126,9 @@ function validateAll(form) {
 
 export default function AddRawMaterialModal({ show, onClose, onSuccess, editData }) {
   const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
   const [form, setForm] = useState(defaultForm);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -241,7 +244,7 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
         unitCost: Number(form.unitCost),
         threshold: Number(form.threshold),
       };
-      if (activeSite?.id) payload.siteId = activeSite.id;
+      payload.siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
 
       const res = isEditing
         ? await ApiV2.patch(`/v2/raw-material/${editData.id}`, payload)
