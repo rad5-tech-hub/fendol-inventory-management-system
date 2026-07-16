@@ -220,7 +220,7 @@ export default function ViewBrokenHistory() {
     {
       key: '_actions', label: '', width: '100px',
       render: (_value, row) => {
-        if (!row.quantity || row.kgRemoved) return null;
+        if (!row.quantity || row.kgRemoved || row.isConverted) return null;
         return (
           <button
             onClick={(e) => { e.stopPropagation(); handleKgModal(row); }}
