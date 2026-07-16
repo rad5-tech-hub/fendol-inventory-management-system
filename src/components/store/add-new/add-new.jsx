@@ -102,9 +102,8 @@ const AddStock = () => {
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                         placeholder="Select Unit"
                                         options={[
-                                            { value: 'kg', label: 'Kg' },
-                                            { value: 'liters', label: 'Liters' },
-                                            { value: 'pieces', label: 'Pieces' },
+                                            { value: 'kg', label: 'Kg (Kilogram)' },
+                                            { value: 'g', label: 'G (Grams)' },
                                         ]}
                                     />
                                 </Col>
