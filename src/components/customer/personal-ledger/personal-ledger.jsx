@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { jwtDecode } from "jwt-decode";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -57,7 +58,21 @@ export default function PersonalLedger() {
   const user = useSelector((store) => store.user);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const isSuperAdmin = userTypes.includes('super_admin');
-  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || activeSite?.id || '');
+  const getSiteId = () => {
+    if (isSuperAdmin) return activeSite?.id || '';
+    if (user?.siteId) return user.siteId;
+    if (user?.userSites?.[0]?.id) return user.userSites[0].id;
+    if (activeSite?.id) return activeSite.id;
+    try {
+      const token = sessionStorage.getItem('authToken');
+      if (token) {
+        const decoded = jwtDecode(token);
+        return decoded?.siteId || decoded?.sites?.[0]?.id || decoded?.userSites?.[0]?.id || '';
+      }
+    } catch {}
+    return '';
+  };
+  const resolvedSiteId = getSiteId();
 
   const [ledgerData, setLedgerData] = useState([]);
   const [loading, setLoading] = useState(true);
