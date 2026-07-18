@@ -500,6 +500,12 @@
   background: #F3F4F6;
 }
 
+.pageArrowDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .pageBtn {
   width: 36px;
   height: 36px;

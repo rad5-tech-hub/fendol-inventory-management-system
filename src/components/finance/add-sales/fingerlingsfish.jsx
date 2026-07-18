@@ -501,8 +501,8 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
               onChange={(val) => {
                 setFingerlingsData((prev) => ({
                   ...prev,
-                  paymentType: val,
-                  amountPaid: "",
+        paymentType: val,
+        amountPaid: null,
                 }));
               }}
               required
@@ -537,7 +537,7 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
                   const value = e.target.value.replace(/,/g, "");
                   setFingerlingsData({
                     ...fingerlingsData,
-                    amountPaid: value ? parseFloat(value) : "",
+                    amountPaid: value ? parseFloat(value) : null,
                   });
                 }}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}

@@ -537,8 +537,8 @@ const SalesForm = ({ customers, stages, products, siteId, productTypes }) => {
                                 onChange={(val) => {
                                     setDryData((prev) => ({
                                         ...prev,
-                                        paymentType: val,
-                                        amountPaid: '',
+                                paymentType: val,
+                                amountPaid: null,
                                     }));
                                 }}
                                 required
@@ -571,7 +571,7 @@ const SalesForm = ({ customers, stages, products, siteId, productTypes }) => {
                                 const value = e.target.value.replace(/,/g, "");
                                 setDryData({
                                 ...dryData,
-                                amountPaid: value ? parseFloat(value) : "",
+                                amountPaid: value ? parseFloat(value) : null,
                                 });
                             }}
                             className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}

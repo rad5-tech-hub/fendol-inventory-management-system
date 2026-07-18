@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
-  IoCalendarOutline, IoChevronDown, IoClose, IoArrowUp, IoArrowDown,
+  IoCalendarOutline, IoClose, IoArrowUp, IoArrowDown,
 } from 'react-icons/io5';
 import {
   FiChevronLeft, FiChevronRight, FiArrowLeft,
@@ -10,6 +10,7 @@ import {
 import { GiCube } from 'react-icons/gi';
 import { BsInfoCircle, BsCurrencyDollar } from 'react-icons/bs';
 import { toast } from 'react-toastify';
+import ReactPaginate from 'react-paginate';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import DataTable from "../../shared/data-table/DataTable";
@@ -50,6 +51,8 @@ export default function FeedLedger() {
   const [fetchError, setFetchError] = useState(null);
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 20;
 
   const displayName = feedDetails?.feedName || feedMeta?.feedName || 'Feed';
 
@@ -144,6 +147,13 @@ export default function FeedLedger() {
       return true;
     });
   }, [historyData, filterStartDate, filterEndDate]);
+
+  const pageCount = Math.ceil(filteredHistory.length / itemsPerPage);
+  const paginatedData = filteredHistory.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
+  };
 
   const sum = (arr, key) => arr.reduce((s, h) => s + Number(h[key] || 0), 0);
 
@@ -379,26 +389,30 @@ export default function FeedLedger() {
                     },
                     { key: 'remainingFeed', label: 'Qty Remaining', render: (value) => <span style={{ fontWeight: 700 }}>{f(value)}</span> },
                   ]}
-                  data={filteredHistory}
+                  data={paginatedData}
                   loading={loading}
                   emptyMessage="No records found."
                 />
               </div>
 
               <div className={styles.tableFooter}>
-                <span className={styles.footerInfo}>Showing {filteredHistory.length} of {historyData.length} transactions</span>
-                <div className={styles.pagination}>
-                  <button className={styles.pageArrow}>
-                    <FiChevronLeft size={15} />
-                  </button>
-                  <button className={`${styles.pageBtn} ${styles.pageBtnActive}`}>1</button>
-                  <button className={styles.pageArrow}>
-                    <FiChevronRight size={15} />
-                  </button>
-                  <button className={styles.perPageDropdown}>
-                    20 / page <IoChevronDown size={11} />
-                  </button>
-                </div>
+                <span className={styles.footerInfo}>Showing {paginatedData.length} of {filteredHistory.length} transactions</span>
+                <ReactPaginate
+                  previousLabel={<FiChevronLeft size={15} />}
+                  nextLabel={<FiChevronRight size={15} />}
+                  breakLabel="..."
+                  pageCount={pageCount}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageChange}
+                  containerClassName={styles.pagination}
+                  pageLinkClassName={styles.pageBtn}
+                  activeLinkClassName={styles.pageBtnActive}
+                  previousLinkClassName={styles.pageArrow}
+                  nextLinkClassName={styles.pageArrow}
+                  disabledLinkClassName={styles.pageArrowDisabled}
+                  renderOnZeroPageCount={null}
+                />
               </div>
             </div>
 

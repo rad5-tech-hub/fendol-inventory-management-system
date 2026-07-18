@@ -513,25 +513,34 @@ export default function CreateFeedBatch() {
         ? await ApiV2.patch(`/v2/feed-production-batch/${editBatch.batchNumber}`, payload)
         : await ApiV2.post('/v2/feed-production-batch/start', payload);
       if (res.data?.success) {
+        let imageUploaded = false;
         if (batchImage) {
           try {
-            const batchNumber = isEditing ? editBatch.batchNumber : res.data?.batchNumber;
+            const batchNumber = isEditing ? editBatch.batchNumber : res.data?.data?.batchNumber || res.data?.batchNumber;
             if (batchNumber) {
               const formData = new FormData();
               formData.append('image', batchImage);
               await ApiV2.patch(`/v2/feed-production-batch/${batchNumber}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
               });
+              imageUploaded = true;
             }
           } catch (imgErr) {
             console.error('[CreateBatch] Image upload failed:', imgErr);
           }
         }
+
+        const baseMsg = res.data.response_message || (isEditing ? 'Batch updated successfully!' : 'Batch created successfully!');
+        const imgSuffix = batchImage
+          ? (imageUploaded ? ' Image uploaded.' : ' However, the image could not be uploaded. You can re-upload from the batch details.')
+          : '';
+        const successMsg = baseMsg + imgSuffix;
+
         toast.update(loadingToast, {
-          render: res.data.response_message || (isEditing ? 'Batch updated successfully!' : 'Batch created successfully!'),
-          type: 'success',
+          render: successMsg,
+          type: batchImage && !imageUploaded ? 'warning' : 'success',
           isLoading: false,
-          autoClose: 3000,
+          autoClose: 5000,
           className: 'dark-toast',
         });
         navigate('/feed/production/history');
@@ -549,10 +558,16 @@ export default function CreateFeedBatch() {
       if (!err.response) {
         finalMsg = 'Network error — please check your internet connection and try again.';
       } else if (status === 422 || status === 400) {
-        if (fieldErrors && typeof fieldErrors === 'object') {
-          const lines = Object.entries(fieldErrors)
-            .map(([key, msgs]) => `• ${key}: ${Array.isArray(msgs) ? msgs[0] : msgs}`);
-          finalMsg = `Validation failed:\n${lines.slice(0, 5).join('\n')}${lines.length > 5 ? `\n…and ${lines.length - 5} more` : ''}`;
+        if (fieldErrors) {
+          if (typeof fieldErrors === 'object') {
+            const lines = Object.entries(fieldErrors)
+              .map(([key, msgs]) => `${key}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`);
+            finalMsg = `Validation error — ${lines.slice(0, 3).join(' | ')}${lines.length > 3 ? ` (and ${lines.length - 3} more)` : ''}`;
+          } else if (Array.isArray(fieldErrors)) {
+            finalMsg = `Validation error — ${fieldErrors.slice(0, 3).join(' | ')}${fieldErrors.length > 3 ? ` (and ${fieldErrors.length - 3} more)` : ''}`;
+          } else {
+            finalMsg = String(fieldErrors);
+          }
         } else {
           finalMsg = serverMsg || `Request was rejected (status ${status}).`;
         }

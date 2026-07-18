@@ -557,7 +557,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                                     setFeedData((prev) => ({
                                         ...prev,
                                         paymentType: val,
-                                        amountPaid: '',
+                                        amountPaid: null,
                                     }));
                                 }}
                                 required
@@ -589,7 +589,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                                         const value = e.target.value.replace(/,/g, "");
                                         setFeedData({
                                             ...feedData,
-                                            amountPaid: value ? parseFloat(value) : "",
+                                            amountPaid: value ? parseFloat(value) : null,
                                         });
                                     }}
                                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}

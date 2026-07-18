@@ -505,8 +505,8 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
               onChange={(val) => {
                 setFreshData((prev) => ({
                   ...prev,
-                  paymentType: val,
-                  amountPaid: "",
+        paymentType: val,
+        amountPaid: null,
                 }));
               }}
               required
@@ -541,7 +541,7 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
                   const value = e.target.value.replace(/,/g, "");
                   setFreshData({
                     ...freshData,
-                    amountPaid: value ? parseFloat(value) : "",
+                    amountPaid: value ? parseFloat(value) : null,
                   });
                 }}
                 className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
