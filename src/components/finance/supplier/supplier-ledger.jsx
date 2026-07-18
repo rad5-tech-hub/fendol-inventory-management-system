@@ -57,8 +57,9 @@ export default function SupplierLedger() {
     try {
       setLoading(true);
       setError('');
-      const params = nextCursor ? { cursor: nextCursor } : {};
-      const response = await ApiV2.get(`/v2/supplier-ledger/${supplierId}`, { params });
+      const params = { supplierId };
+      if (nextCursor) params.cursor = nextCursor;
+      const response = await ApiV2.get('/v2/supplier-ledger', { params });
       const body = response.data;
       const data = body?.data;
 
