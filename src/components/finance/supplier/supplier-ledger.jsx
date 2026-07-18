@@ -19,6 +19,11 @@ const formatCurrency = (value) => {
   return `₦${Math.abs(Number(value)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+const formatCommas = (n) => {
+  if (n === '' || n == null) return '';
+  return Number(n).toLocaleString('en-US');
+};
+
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
 
 const getInitials = (name) => {
@@ -498,12 +503,16 @@ export default function SupplierLedger() {
                           fontWeight: 600, color: '#8C949B', pointerEvents: 'none',
                         }}>₦</span>
                         <input
-                          type="number"
-                          step="0.01"
-                          min="0"
+                          type="text"
+                          inputMode="decimal"
                           placeholder="0.00"
-                          value={paymentForm.expectedAmountToPay}
-                          onChange={(e) => setPaymentForm(p => ({ ...p, expectedAmountToPay: e.target.value }))}
+                          value={paymentForm.expectedAmountToPay !== '' && paymentForm.expectedAmountToPay != null ? formatCommas(paymentForm.expectedAmountToPay) : ''}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/,/g, '');
+                            if (/^\d*\.?\d*$/.test(raw)) {
+                              setPaymentForm(p => ({ ...p, expectedAmountToPay: raw }));
+                            }
+                          }}
                           required
                           style={{
                             width: '100%', padding: '12px 14px 12px 30px', fontSize: '14px',
@@ -531,12 +540,16 @@ export default function SupplierLedger() {
                           fontWeight: 600, color: '#8C949B', pointerEvents: 'none',
                         }}>₦</span>
                         <input
-                          type="number"
-                          step="0.01"
-                          min="0"
+                          type="text"
+                          inputMode="decimal"
                           placeholder="0.00"
-                          value={paymentForm.amountPaid}
-                          onChange={(e) => setPaymentForm(p => ({ ...p, amountPaid: e.target.value }))}
+                          value={paymentForm.amountPaid !== '' && paymentForm.amountPaid != null ? formatCommas(paymentForm.amountPaid) : ''}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/,/g, '');
+                            if (/^\d*\.?\d*$/.test(raw)) {
+                              setPaymentForm(p => ({ ...p, amountPaid: raw }));
+                            }
+                          }}
                           required
                           style={{
                             width: '100%', padding: '12px 14px 12px 30px', fontSize: '14px',
