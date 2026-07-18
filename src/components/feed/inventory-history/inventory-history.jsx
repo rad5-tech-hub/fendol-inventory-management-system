@@ -35,7 +35,7 @@ export default function InventoryHistory() {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedDate, setSelectedDate] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
-  const itemsPerPage = 45;
+  const itemsPerPage = 20;
 
   useEffect(() => {
     const fetchInventoryHistory = async () => {
@@ -127,6 +127,16 @@ export default function InventoryHistory() {
       label: "Qty Sold",
       render: (value) => <span className={styles.numCell}>{Number(value) > 0 ? f(value) : "--"}</span>,
     },
+    {
+      key: "remainingFeed",
+      label: "Qty Remaining",
+      render: (value) => <span className={styles.numCell} style={{ fontWeight: 700 }}>{Number(value) > 0 ? f(value) : "--"}</span>,
+    },
+    {
+      key: "stage",
+      label: "Remake",
+      render: (value) => <span>{value || "--"}</span>,
+    },
   ];
 
   return (
@@ -139,7 +149,7 @@ export default function InventoryHistory() {
           <SideBar className={feedStyles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
         <section className={`${feedStyles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ overflowY: 'auto', height: '100%', padding: '15px' }}>
+          <div style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0, padding: '15px' }}>
             <main className={styles.pageWrapper}>
               <div className={styles.breadcrumb}>
                 <span className={styles.breadcrumbItem}>Feed Management</span>
@@ -251,6 +261,15 @@ export default function InventoryHistory() {
                             <span className={styles.cardLabel}>Qty Sold</span>
                             <span className={styles.cardValue}>{Number(history.quantitySold) > 0 ? f(history.quantitySold) : "--"}</span>
                           </div>
+                          <div className={styles.cardDivider} />
+                          <div className={styles.cardRow}>
+                            <span className={styles.cardLabel}>Qty Remaining</span>
+                            <span className={styles.cardValue} style={{ fontWeight: 700 }}>{Number(history.remainingFeed) > 0 ? f(history.remainingFeed) : "--"}</span>
+                          </div>
+                          <div className={styles.cardRow}>
+                            <span className={styles.cardLabel}>Remake</span>
+                            <span className={styles.cardValue}>{history.stage || "--"}</span>
+                          </div>
                         </div>
                       );
                     })}
@@ -260,7 +279,7 @@ export default function InventoryHistory() {
             </main>
           </div>
 
-          {!loading && !error && pageCount > 1 && (
+          {!loading && !error && pageCount >= 1 && filteredData.length > 0 && (
             <div className={styles.tableFooter}>
               <span className={styles.footerInfo}>
                 Showing {offset + 1} to {Math.min(offset + itemsPerPage, filteredData.length)} of {filteredData.length} records
