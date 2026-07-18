@@ -383,8 +383,8 @@ export default function SupplierLedger() {
                           columns={[
                             { key: 'createdAt', label: 'DATE', width: '16%', render: (val) => <span style={{ fontSize: '12px', color: '#8C949B', whiteSpace: 'nowrap' }}>{formatDate(val)}</span> },
                             { key: 'comment', label: 'DESCRIPTION', width: '34%', render: (val) => <span style={{ fontSize: '13px', color: '#2E3135' }}>{val || ''}</span> },
-                            { key: 'credit', label: 'CREDIT (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A' }}>{Number(val) ? formatCurrency(val) : ''}</span> },
-                            { key: 'debit', label: 'DEBIT (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#DC2626' }}>{Number(val) ? formatCurrency(val) : ''}</span> },
+                            { key: 'credit', label: 'AMOUNT PAID (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#16A34A' }}>{Number(val) ? formatCurrency(val) : ''}</span> },
+                            { key: 'debit', label: 'PURCHASE AMOUNT (₦)', width: '16%', align: 'right', render: (val) => <span style={{ fontSize: '13px', fontWeight: 600, color: '#DC2626' }}>{Number(val) ? formatCurrency(val) : ''}</span> },
                             { key: 'balance', label: 'BALANCE (₦)', width: '16%', align: 'right', render: (val) => {
                               const balance = Number(val || 0);
                               const txBalColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';
