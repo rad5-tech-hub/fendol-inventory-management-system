@@ -22,7 +22,7 @@ export default function ForgotPassword() {
     const loadingToast = toast.loading("Sending reset link...", { className: 'dark-toast' });
 
     try {
-      const response = await Api.post('/admin/forgot-password', { email });
+      const response = await Api.patch('/admin/forgot-password', { email });
 
       toast.update(loadingToast, {
         render: response.data?.response_message || "If this email exists, a password reset email has been sent.",

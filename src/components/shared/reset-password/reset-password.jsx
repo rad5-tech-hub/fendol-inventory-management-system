@@ -37,7 +37,7 @@ export default function ResetPassword() {
     const loadingToast = toast.loading("Resetting password...", { className: 'dark-toast' });
 
     try {
-      const response = await Api.post('/admin/reset-password', {
+      const response = await Api.patch('/admin/reset-password', {
         token,
         newPassword,
         confirmPassword,
@@ -84,17 +84,7 @@ export default function ResetPassword() {
                 Enter your new password.
               </p>
 
-              <Form.Label className="fw-semibold">Token</Form.Label>
-              <Form.Control
-                type="text"
-                className={`shadow-none ${styles.inputs}`}
-                placeholder="Reset token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                required
-              />
-
-              <Form.Label className="mt-3 fw-semibold">New Password</Form.Label>
+              <Form.Label className="fw-semibold">New Password</Form.Label>
               <InputGroup className="mb-3">
                 <Form.Control
                   type={showPassword ? "text" : "password"}
