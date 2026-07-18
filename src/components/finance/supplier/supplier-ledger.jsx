@@ -50,16 +50,20 @@ export default function SupplierLedger() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (supplierId) fetchData();
+    if (supplierId) {
+      fetchData();
+    } else {
+      setError('Supplier ID is required. Please select a supplier from the supplier list.');
+      setLoading(false);
+    }
   }, [supplierId]);
 
   const fetchData = async (nextCursor) => {
     try {
       setLoading(true);
       setError('');
-      const params = { supplierId };
-      if (nextCursor) params.cursor = nextCursor;
-      const response = await ApiV2.get('/v2/supplier-ledger', { params });
+      const params = nextCursor ? { cursor: nextCursor } : {};
+      const response = await ApiV2.get(`/v2/supplier-ledger/${supplierId}`, { params });
       const body = response.data;
       const data = body?.data;
 
