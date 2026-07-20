@@ -257,6 +257,15 @@ export default function FeedProductionBatchDetail() {
                 <div className={styles.summaryTwoCol}>
                   {/* ── LEFT COLUMN ── */}
                   <div className={styles.summaryLeft}>
+                    {/* Batch Image */}
+                    {batch.imageUrl && (
+                      <div className={styles.colCard}>
+                        <div className={styles.imageBanner}>
+                          <img src={batch.imageUrl} alt="Batch" />
+                        </div>
+                      </div>
+                    )}
+
                     {/* Batch Information */}
                     <div className={styles.colCard}>
                       <h5>Batch Information</h5>
@@ -309,12 +318,12 @@ export default function FeedProductionBatchDetail() {
                       <h5>Audit Information</h5>
                       <div className={styles.auditRow}>
                         <span className={styles.auditLabel}>Created By</span>
-                        <span className={styles.auditName}>{batch.createdBy || '--'}</span>
+                        <span className={styles.auditName}>{batch.staff?.name || '--'}</span>
                         <span className={styles.auditDate}>{formatDateTime(batch.createdAt)}</span>
                       </div>
                       <div className={styles.auditRow}>
                         <span className={styles.auditLabel}>Last Updated By</span>
-                        <span className={styles.auditName}>{batch.updatedBy || '--'}</span>
+                        <span className={styles.auditName}>{batch.staff?.name || '--'}</span>
                         <span className={styles.auditDate}>{batch.updatedAt ? formatDateTime(batch.updatedAt) : '--'}</span>
                       </div>
                     </div>

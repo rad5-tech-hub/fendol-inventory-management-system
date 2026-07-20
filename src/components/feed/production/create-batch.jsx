@@ -85,12 +85,6 @@ export default function CreateFeedBatch() {
     setRawMaterials(prev => prev.map(m => m.id === id ? { ...m, [field]: parseFloat(value) || 0 } : m));
   };
 
-  const handleAddMaterial = () => {
-    // TODO: replace with real add-material modal/suggestion picker
-    const newId = Math.max(...rawMaterials.map(m => m.id)) + 1;
-    setRawMaterials([...rawMaterials, { id: newId, name: 'New Material', unit: 'kg', qty: 0, unitCost: 0, swatch: '#D1D5DB' }]);
-  };
-
   const handleRemoveMaterial = (id) => {
     setRawMaterials(rawMaterials.filter(m => m.id !== id));
   };
@@ -310,13 +304,50 @@ export default function CreateFeedBatch() {
     };
   }, [costTypeDropdownOpen]);
 
+  const handleAddNewMaterial = () => {
+    if (!newMaterialName) {
+      toast.error('Please select a raw material from the list.', { className: 'dark-toast', autoClose: 4000 });
+      return;
+    }
+    const found = rawMaterialOptions.find(m => m.id === newMaterialName);
+    if (!found) {
+      toast.error('Selected material not found. Please try again.', { className: 'dark-toast', autoClose: 4000 });
+      return;
+    }
+    const qty = parseFloat(newMaterialQty);
+    if (!newMaterialQty || isNaN(qty) || qty <= 0) {
+      toast.error('Please enter a valid quantity greater than 0.', { className: 'dark-toast', autoClose: 4000 });
+      return;
+    }
+    const already = rawMaterials.find(m => m.id === found.id);
+    if (already) {
+      setRawMaterials(prev => prev.map(m =>
+        m.id === found.id
+          ? { ...m, qty: (parseFloat(m.qty) || 0) + (parseFloat(newMaterialQty) || 0) }
+          : m
+      ));
+    } else {
+      setRawMaterials([...rawMaterials, {
+        id: found.id,
+        name: found.name,
+        unit: found.unit || 'kg',
+        qty: parseFloat(newMaterialQty) || 0,
+        unitCost: found.unitCost ? Number(found.unitCost) : 0,
+        swatch: '#6366F1',
+      }]);
+    }
+    setNewMaterialName('');
+    setNewMaterialQty('');
+    setShowAddMaterialModal(false);
+  };
+
   const handleAddPackaging = () => {
     const newId = Math.max(...packagingRows.map(r => r.id)) + 1;
     setPackagingRows([...packagingRows, { id: newId, unit: 'kg', qty: '' }]);
   };
 
   const handlePackagingChange = (id, field, value) => {
-    setPackagingRows(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+    setPackagingRows(prev => prev.map(r => r.id === id ? { ...r, [field]: field === 'qty' ? (parseFloat(value) || 0) : value } : r));
   };
 
   const handleRemovePackaging = (id) => {
@@ -362,46 +393,6 @@ export default function CreateFeedBatch() {
     setSelectedMaterial(null);
     setShowTopUpModal(false);
   };
-
-  const handleAddNewMaterial = () => {
-    if (!newMaterialName) {
-      toast.error('Please select a raw material from the list.', { className: 'dark-toast', autoClose: 4000 });
-      return;
-    }
-    const found = rawMaterialOptions.find(m => m.id === newMaterialName);
-    if (!found) {
-      toast.error('Selected material not found. Please try again.', { className: 'dark-toast', autoClose: 4000 });
-      return;
-    }
-    const qty = parseFloat(newMaterialQty);
-    if (!newMaterialQty || isNaN(qty) || qty <= 0) {
-      toast.error('Please enter a valid quantity greater than 0.', { className: 'dark-toast', autoClose: 4000 });
-      return;
-    }
-    const already = rawMaterials.find(m => m.id === found.id);
-    if (already) {
-      setRawMaterials(prev => prev.map(m =>
-        m.id === found.id
-          ? { ...m, qty: (parseFloat(m.qty) || 0) + (parseFloat(newMaterialQty) || 0) }
-          : m
-      ));
-    } else {
-      setRawMaterials([...rawMaterials, {
-        id: found.id,
-        name: found.name,
-        unit: found.unit || 'kg',
-        qty: parseFloat(newMaterialQty) || 0,
-        unitCost: found.unitCost ? Number(found.unitCost) : 0,
-        swatch: '#6366F1',
-      }]);
-    }
-    setNewMaterialName('');
-    setNewMaterialQty('');
-    setShowAddMaterialModal(false);
-  };
-
-  const totalProductionCost = totalRawMaterialCost + (parseFloat(otherCostInput) || 0);
-  const costPerKg = totalFeedProduced > 0 ? totalProductionCost / totalFeedProduced : 0;
 
   // Other Costs Breakdown
   const [otherCostItems, setOtherCostItems] = useState([]);
@@ -460,6 +451,11 @@ export default function CreateFeedBatch() {
     setOtherCostItems(otherCostItems.filter(c => c.id !== id));
   };
 
+  // ── Computed values ──
+  const otherCostTotal = otherCostItems.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+  const totalProductionCost = totalRawMaterialCost + otherCostTotal;
+  const costPerKg = totalFeedProduced > 0 ? totalProductionCost / totalFeedProduced : 0;
+
   // ── Client-side validation ──
   const validate = () => {
     const missing = [];
@@ -489,6 +485,10 @@ export default function CreateFeedBatch() {
       const basePayload = {
         machineUsed,
         comments: batchNotes || undefined,
+        totalFeedProduced: parseFloat(totalFeedProduced) || 0,
+        totalBagsProduced: parseInt(totalBagsProduced, 10) || 0,
+        shelfLife: shelfLife || undefined,
+        expiryDate: expiryDate ? new Date(expiryDate + 'T00:00:00').toISOString() : undefined,
         productionEndDate: endDate ? new Date(endDate + 'T00:00:00').toISOString() : undefined,
         rawMaterials: rawMaterials.map(m => ({
           rawMaterialId: String(m.id),
@@ -507,6 +507,7 @@ export default function CreateFeedBatch() {
         feedId: feedId || undefined,
         siteTypeId: siteTypeId || undefined,
         staffId: staffId || undefined,
+        siteId: isSuperAdmin ? (activeSite?.id || user?.siteId || undefined) : undefined,
         productionStartDate: startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined,
       };
       const res = isEditing
@@ -735,6 +736,7 @@ export default function CreateFeedBatch() {
                     placeholder="Enter any notes..."
                   />
                 </div>
+
               </div>
             </div>
 
@@ -772,26 +774,46 @@ export default function CreateFeedBatch() {
                           key: 'qty',
                           label: 'Quantity Used',
                           render: (value, row) => (
-                            <input
-                              type="number"
-                              className={styles.inlineInput}
-                              value={row.qty}
-                              onChange={e => handleRawMaterialChange(row.id, 'qty', e.target.value)}
-                              step="0.01"
-                            />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <input
+                                type="number"
+                                className={styles.inlineInput}
+                                value={row.qty}
+                                onChange={e => handleRawMaterialChange(row.id, 'qty', e.target.value)}
+                                step="0.01"
+                              />
+                              <button
+                                type="button"
+                                className={styles.inlinePlusBtn}
+                                onClick={() => handleRawMaterialChange(row.id, 'qty', (parseFloat(row.qty) || 0) + 0.5)}
+                                title="Increment"
+                              >
+                                <FiPlus size={11} />
+                              </button>
+                            </div>
                           ),
                         },
                         {
                           key: 'unitCost',
                           label: 'Unit Cost (₦)',
                           render: (value, row) => (
-                            <input
-                              type="number"
-                              className={styles.inlineInput}
-                              value={row.unitCost}
-                              onChange={e => handleRawMaterialChange(row.id, 'unitCost', e.target.value)}
-                              step="0.01"
-                            />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <input
+                                type="number"
+                                className={styles.inlineInput}
+                                value={row.unitCost}
+                                onChange={e => handleRawMaterialChange(row.id, 'unitCost', e.target.value)}
+                                step="0.01"
+                              />
+                              <button
+                                type="button"
+                                className={styles.inlinePlusBtn}
+                                onClick={() => handleRawMaterialChange(row.id, 'unitCost', (parseFloat(row.unitCost) || 0) + 10)}
+                                title="Increment"
+                              >
+                                <FiPlus size={11} />
+                              </button>
+                            </div>
                           ),
                         },
                         {
@@ -813,10 +835,6 @@ export default function CreateFeedBatch() {
                             padding: '4px 0',
                           }}
                           items={[
-                            {
-                              label: 'Top Up Raw Material',
-                              onClick: () => { setSelectedMaterial(m); setModalInputValue(''); setShowTopUpModal(true); },
-                            },
                             {
                               label: 'Delete',
                               onClick: () => handleRemoveMaterial(m.id),
@@ -934,13 +952,7 @@ export default function CreateFeedBatch() {
                         <FiInfo size={13} />
                       </span>
                     </span>
-                    <input
-                      type="number"
-                      className={styles.summaryInput}
-                      value={otherCostInput}
-                      onChange={e => setOtherCostInput(parseFloat(e.target.value) || 0)}
-                      step="0.01"
-                    />
+                    <span className={styles.summaryValue}>{formatCurrency(otherCostTotal)}</span>
                   </div>
 
                   <div className={styles.divider} />
