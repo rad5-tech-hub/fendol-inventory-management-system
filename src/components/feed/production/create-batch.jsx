@@ -482,14 +482,19 @@ export default function CreateFeedBatch() {
     setSubmitting(true);
     const loadingToast = toast.loading(isEditing ? 'Updating production batch...' : 'Starting production batch...', { className: 'dark-toast' });
     try {
-      const basePayload = {
+      const payload = {
+        feedId: feedId || undefined,
+        siteTypeId: siteTypeId || undefined,
+        staffId: staffId || undefined,
+        siteId: isSuperAdmin ? (activeSite?.id || user?.siteId || undefined) : undefined,
         machineUsed,
         comments: batchNotes || undefined,
+        productionStartDate: startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined,
+        productionEndDate: endDate ? new Date(endDate + 'T00:00:00').toISOString() : undefined,
         totalFeedProduced: parseFloat(totalFeedProduced) || 0,
         totalBagsProduced: parseInt(totalBagsProduced, 10) || 0,
         shelfLife: shelfLife || undefined,
         expiryDate: expiryDate ? new Date(expiryDate + 'T00:00:00').toISOString() : undefined,
-        productionEndDate: endDate ? new Date(endDate + 'T00:00:00').toISOString() : undefined,
         rawMaterials: rawMaterials.map(m => ({
           rawMaterialId: String(m.id),
           quantityUsed: parseFloat(m.qty) || 0,
@@ -501,14 +506,6 @@ export default function CreateFeedBatch() {
             amount: c.amount,
             comment: c.desc || undefined,
           })),
-      };
-      const payload = isEditing ? basePayload : {
-        ...basePayload,
-        feedId: feedId || undefined,
-        siteTypeId: siteTypeId || undefined,
-        staffId: staffId || undefined,
-        siteId: isSuperAdmin ? (activeSite?.id || user?.siteId || undefined) : undefined,
-        productionStartDate: startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined,
       };
       const res = isEditing
         ? await ApiV2.patch(`/v2/feed-production-batch/${editBatch.batchNumber}`, payload)
