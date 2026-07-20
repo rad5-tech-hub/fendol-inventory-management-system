@@ -94,7 +94,7 @@ export default function CreateFeedBatch() {
 
   // Production Summary
   const [totalFeedProduced, setTotalFeedProduced] = useState(0);
-  const [packagingRows, setPackagingRows] = useState([]);
+  const [packagingRows, setPackagingRows] = useState([{ id: 1, unit: 'kg', qty: '' }]);
   const [otherCostInput, setOtherCostInput] = useState(0);
   const [shelfLife, setShelfLife] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
