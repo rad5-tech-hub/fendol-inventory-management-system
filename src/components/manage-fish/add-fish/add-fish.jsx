@@ -30,7 +30,7 @@ const AddFish = () => {
   const user = useSelector((store) => store.user);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const isSuperAdmin = userTypes.includes('super_admin');
-  const effectiveSiteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+  const effectiveSiteId = isSuperAdmin ? (activeSite?.id || 'all') : user?.siteId;
   const effectiveSite = isSuperAdmin ? activeSite : (user?.siteId ? { id: user.siteId } : null);
 
   // Fetch Data with useEffect
@@ -38,7 +38,9 @@ const AddFish = () => {
     const fetchStages = async () => {
       try {
         const siteId = effectiveSiteId;
-        const response = await Api.get(`/fish-stages?siteId=${siteId}`);
+        const params = {};
+        if (siteId) params.siteId = siteId;
+        const response = await Api.get('/fish-stages', { params });
         if (Array.isArray(response.data.data)) {
           const filteredStages = response.data.data.filter(
             (stage) => !['harvest', 'damage', 'loss'].includes(String(stage.title ?? '').toLowerCase())

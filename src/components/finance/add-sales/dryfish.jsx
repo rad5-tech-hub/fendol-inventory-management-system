@@ -452,7 +452,7 @@ const SalesForm = ({ customers, stages, products, siteId, productTypes }) => {
                                         style={{ width: '100%' }}
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs} pe-5`}
                                         required
-                                    />{balance && balance > 0 && dryData.customerId ? <p className="p-2">Balance: ₦{balance.toLocaleString()}</p> : ''}
+                                    />{balance !== undefined && balance !== null && balance !== 0 && dryData.customerId ? <p className="p-2" style={{ color: balance < 0 ? '#DC2626' : '#16A34A', fontWeight: 600 }}>Balance: ₦{Math.abs(balance).toLocaleString()} {balance < 0 ? '(Debit)' : '(Credit)'}</p> : ''}
                                     {dryData.fullName && filteredCustomer.length > 0 && (
                                         <div className={`${styles.suggestions_box}`}>
                                             <ul>

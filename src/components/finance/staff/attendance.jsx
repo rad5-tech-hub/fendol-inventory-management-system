@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { IoCalendarOutline, IoChevronDown, IoClose, IoTimeOutline } from 'react-icons/io5';
 import {
   FiSearch, FiFilter, FiRefreshCw, FiChevronLeft, FiChevronRight,
@@ -194,11 +194,12 @@ export default function StaffAttendance() {
   }, [attLoadingMore, attHasMore, attCursor, fetchAttendanceData]);
 
   useEffect(() => {
+    if ((dateFrom && !dateTo) || (!dateFrom && dateTo)) return;
     (async () => {
       await fetchAttendanceData();
       setLoadingStaff(false);
     })();
-  }, [fetchAttendanceData]);
+  }, [fetchAttendanceData, dateFrom, dateTo]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -290,36 +291,35 @@ export default function StaffAttendance() {
     const { staff, mode, loading } = attendanceModal;
     if (!staff || loading) return;
     setAttendanceModal(prev => ({ ...prev, loading: true }));
+
+    let endpoint, payload, siteId, errorMsg;
+    if (mode === 'checkin') {
+      payload = { staffId: staff.id, date: attendanceForm.date, checkIn: attendanceForm.time, comment: attendanceForm.comment.trim() || undefined };
+      endpoint = '/v2/attendance/check-in';
+      errorMsg = 'Failed to check in.';
+    } else if (mode === 'checkout') {
+      payload = { staffId: staff.id, date: attendanceForm.date, checkOut: attendanceForm.time, comment: attendanceForm.comment.trim() || undefined };
+      endpoint = '/v2/attendance/check-out';
+      errorMsg = 'Failed to check out.';
+    } else {
+      payload = { staffId: staff.id, date: attendanceForm.date, comment: attendanceForm.comment.trim() || undefined };
+      endpoint = '/v2/attendance/mark-absent';
+      errorMsg = 'Failed to mark absent.';
+    }
+    siteId = isSuperAdmin ? (activeSite?.id || staff.siteId || userSiteId) : (userSiteId || staff.siteId);
+
     try {
-      let payload, endpoint, successMsg, errorMsg;
-      if (mode === 'checkin') {
-        payload = { staffId: staff.id, date: attendanceForm.date, checkIn: attendanceForm.time, comment: attendanceForm.comment.trim() || undefined };
-        endpoint = '/v2/attendance/check-in';
-        successMsg = 'Check-in recorded successfully!';
-        errorMsg = 'Failed to check in.';
-      } else if (mode === 'checkout') {
-        payload = { staffId: staff.id, date: attendanceForm.date, checkOut: attendanceForm.time, comment: attendanceForm.comment.trim() || undefined };
-        endpoint = '/v2/attendance/check-out';
-        successMsg = 'Check-out recorded successfully!';
-        errorMsg = 'Failed to check out.';
-      } else {
-        payload = { staffId: staff.id, date: attendanceForm.date, comment: attendanceForm.comment.trim() || undefined };
-        endpoint = '/v2/attendance/mark-absent';
-        successMsg = 'Staff marked as absent.';
-        errorMsg = 'Failed to mark absent.';
-      }
-      const siteId = isSuperAdmin ? (activeSite?.id || staff.siteId || userSiteId) : (userSiteId || staff.siteId);
       await ApiV2.post(endpoint, payload, { params: { siteId } });
-      toast.success(successMsg, { className: 'dark-toast' });
+      toast.success(`${staff.name} ${mode === 'checkin' ? 'checked in' : mode === 'checkout' ? 'checked out' : 'marked absent'} successfully.`, { className: 'dark-toast' });
       closeModal();
       await fetchAttendanceData();
     } catch (err) {
-      const serverMsg = err?.response?.data?.response_message;
-      const isDuplicateCheckin = serverMsg?.toLowerCase().includes('already checked in')
-        || err?.response?.data?.error?.message?.toLowerCase().includes('already checked in');
+      const responseData = err?.response?.data || {};
+      const serverMsg = responseData.response_message || responseData.error?.message || '';
+      const isDuplicateCheckin = /already checked in/i.test(serverMsg);
       let displayMsg;
       if (isDuplicateCheckin) {
-        displayMsg = `${attendanceModal.staff?.name || 'This staff member'} has already checked in today. No duplicate check-in is allowed.`;
+        displayMsg = `${staff.name} has already checked in today.`;
       } else if (err?.response?.status === 400) {
         displayMsg = serverMsg || 'Invalid request. Please check your input.';
       } else if (err?.response?.status === 401) {
@@ -337,14 +337,8 @@ export default function StaffAttendance() {
       } else {
         displayMsg = serverMsg || errorMsg;
       }
-      console.error(`[Attendance] ${endpoint} failed:`, {
-        payload,
-        siteId,
-        status: err.response?.status,
-        data: err.response?.data,
-        message: err.message,
-      });
       toast.error(displayMsg, { className: 'dark-toast' });
+      console.error(`[Attendance] ${endpoint} failed:`, { payload, siteId, error: err });
     } finally {
       setAttendanceModal(prev => ({ ...prev, loading: false }));
     }
@@ -733,6 +727,18 @@ export default function StaffAttendance() {
                         data={detailAttendance.slice().reverse()}
                         emptyMessage="No attendance records found."
                       />
+                      {attHasMore && (
+                        <div style={{ textAlign: 'center', padding: '12px 0' }}>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={(e) => { e.stopPropagation(); loadMoreAttendance(); }}
+                            disabled={attLoadingMore}
+                          >
+                            {attLoadingMore ? 'Loading...' : 'Load More'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </>

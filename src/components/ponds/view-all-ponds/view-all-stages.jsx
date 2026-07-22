@@ -161,7 +161,6 @@ const ViewAllStages = () => {
       await Api.post(`/note/${selectedStage.id}`, note);
       toast.update(noteToast, { render: 'Note added successfully!', type: 'success', isLoading: false, autoClose: 3000 });
       setShowAddNoteModal(false);
-      fetchnote(selectedStage.id);
       if (selectedStage) fetchPondDetail(selectedStage.id);
     } catch (err) {
       toast.update(noteToast, { render: err.response?.data?.message || 'Failed to add note. Please try again.', type: 'error', isLoading: false, autoClose: 3000 });

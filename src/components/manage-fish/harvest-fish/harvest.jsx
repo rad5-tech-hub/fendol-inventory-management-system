@@ -40,9 +40,11 @@ const HarvestFish = () => {
       setStagesLoading(true);
       setStagesError(null);
       try {
-        const siteParam = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+        const siteParam = isSuperAdmin ? (activeSite?.id || 'all') : user?.siteId;
         console.log('[harvest] Fetching stages with siteId:', siteParam);
-        const response = await Api.get(`/fish-stages?siteId=${siteParam}`);
+        const params = {};
+        if (siteParam) params.siteId = siteParam;
+        const response = await Api.get('/fish-stages', { params });
         console.log('[harvest] API response:', response.data);
         let list = Array.isArray(response.data?.data) ? response.data.data : [];
         if (list.length === 0) {

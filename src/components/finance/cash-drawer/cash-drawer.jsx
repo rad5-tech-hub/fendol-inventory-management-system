@@ -101,8 +101,9 @@ const CashDrawer = () => {
   }, [typeFilter, dateFrom, dateTo, resolvedSiteId]);
 
   useEffect(() => {
+    if ((dateFrom && !dateTo) || (!dateFrom && dateTo)) return;
     fetchEntries();
-  }, [fetchEntries]);
+  }, [fetchEntries, dateFrom, dateTo]);
 
   const formatNumberWithCommas = (number) =>
     number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -243,129 +244,149 @@ const CashDrawer = () => {
               </div>
             </div>
 
-            {/* ── Filter Bar ── */}
-            {!loading && !error && entries.length > 0 && (
-              <div
-                style={{
-                  background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px',
-                  padding: '10px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
-                }}
-              >
-                <div className="d-flex flex-wrap align-items-end gap-2">
-                  <div style={{ flex: '1 1 140px', minWidth: '120px' }}>
-                    <label style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px', display: 'block' }}>
-                      Date Range
-                    </label>
-                    <div className="d-flex align-items-center gap-1">
-                      <input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(0); }}
-                        style={{
-                          width: '100%', padding: '5px 8px',
-                          border: '1px solid #e5e7eb', borderRadius: '5px',
-                          fontSize: '11px', color: '#374151', outline: 'none', background: '#ffffff',
-                        }}
-                      />
-                      <span style={{ fontSize: '11px', color: '#8C949B' }}>–</span>
-                      <input
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => { setDateTo(e.target.value); setCurrentPage(0); }}
-                        style={{
-                          width: '100%', padding: '5px 8px',
-                          border: '1px solid #e5e7eb', borderRadius: '5px',
-                          fontSize: '11px', color: '#374151', outline: 'none', background: '#ffffff',
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div style={{ flex: '1 1 120px', minWidth: '100px' }}>
-                    <label style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px', display: 'block' }}>
-                      Type
-                    </label>
-                    <CustomDropdown
-                      value={typeFilter}
-                      onChange={(val) => { setTypeFilter(val); setCurrentPage(0); }}
-                      options={TRANSACTION_TYPES}
+            {/* ── Filter Bar (always visible) ── */}
+            <div
+              style={{
+                background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px',
+                padding: '10px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
+                opacity: loading ? 0.55 : 1,
+                pointerEvents: loading ? 'none' : 'auto',
+                transition: 'opacity 0.15s ease',
+              }}
+            >
+              <div className="d-flex flex-wrap align-items-end gap-2">
+                <div style={{ flex: '1 1 140px', minWidth: '120px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px', display: 'block' }}>
+                    Date Range
+                  </label>
+                  <div className="d-flex align-items-center gap-1">
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(0); }}
+                      style={{
+                        width: '100%', padding: '5px 8px',
+                        border: '1px solid #e5e7eb', borderRadius: '5px',
+                        fontSize: '11px', color: '#374151', outline: 'none', background: '#ffffff',
+                      }}
+                    />
+                    <span style={{ fontSize: '11px', color: '#8C949B' }}>–</span>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => { setDateTo(e.target.value); setCurrentPage(0); }}
+                      style={{
+                        width: '100%', padding: '5px 8px',
+                        border: '1px solid #e5e7eb', borderRadius: '5px',
+                        fontSize: '11px', color: '#374151', outline: 'none', background: '#ffffff',
+                      }}
                     />
                   </div>
-                  <div className="d-flex gap-1" style={{ alignSelf: 'flex-end' }}>
-                    {(dateFrom || dateTo || typeFilter !== 'all') && (
-                      <button
-                        onClick={resetFilters}
-                        style={{
-                          padding: '5px 12px', background: '#ffffff', color: '#6B7280',
-                          border: '1px solid #e5e7eb', borderRadius: '5px', fontSize: '11px', fontWeight: 500,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Reset
-                      </button>
-                    )}
+                </div>
+                <div style={{ flex: '1 1 120px', minWidth: '100px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px', display: 'block' }}>
+                    Type
+                  </label>
+                  <CustomDropdown
+                    value={typeFilter}
+                    onChange={(val) => { setTypeFilter(val); setCurrentPage(0); }}
+                    options={TRANSACTION_TYPES}
+                  />
+                </div>
+                <div className="d-flex gap-1" style={{ alignSelf: 'flex-end' }}>
+                  {(dateFrom || dateTo || typeFilter !== 'all') && (
+                    <button
+                      onClick={resetFilters}
+                      style={{
+                        padding: '5px 12px', background: '#ffffff', color: '#6B7280',
+                        border: '1px solid #e5e7eb', borderRadius: '5px', fontSize: '11px', fontWeight: 500,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Summary Cards (always visible; skeleton while loading) ── */}
+            <div
+              style={{
+                background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
+                padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
+                opacity: loading ? 0.5 : 1,
+                transition: 'opacity 0.15s ease',
+              }}
+            >
+              <div className="d-flex flex-wrap gap-3">
+                <div style={{
+                  background: '#FAFCFF', border: '1px solid #e5e7eb',
+                  borderRadius: '8px', padding: '10px 16px', flex: '1 1 auto',
+                }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                    Total Deposits
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A', lineHeight: 1.2 }}>
+                    {loading ? '\u2014' : formatCurrency(totalDeposits)}
+                  </div>
+                </div>
+                <div style={{
+                  background: '#FAFCFF', border: '1px solid #e5e7eb',
+                  borderRadius: '8px', padding: '10px 16px', flex: '1 1 auto',
+                }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                    Total Withdrawals
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#DC2626', lineHeight: 1.2 }}>
+                    {loading ? '\u2014' : formatCurrency(totalWithdrawals)}
+                  </div>
+                </div>
+                <div style={{
+                  background: '#FAFCFF', border: '1px solid #e5e7eb',
+                  borderRadius: '8px', padding: '10px 16px', flex: '1 1 auto',
+                }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                    Current Balance
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: loading ? '#6B7280' : balanceColor, lineHeight: 1.2 }}>
+                    {loading ? '\u2014' : formatCurrency(currentBalance)}
+                  </div>
+                  <div style={{ fontSize: '10px', color: loading ? '#6B7280' : balanceColor, opacity: 0.7, lineHeight: 1 }}>
+                    {loading ? '\u2014' : balanceLabel}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* ── Summary Cards ── */}
-            {!loading && !error && entries.length > 0 && (
-              <div
-                style={{
-                  background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
-                  padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
-                }}
-              >
-                <div className="d-flex flex-wrap gap-3">
-                  <div style={{
-                    background: '#FAFCFF', border: '1px solid #e5e7eb',
-                    borderRadius: '8px', padding: '10px 16px', flex: '1 1 auto',
-                  }}>
-                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                      Total Deposits
-                    </div>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A', lineHeight: 1.2 }}>
-                      {formatCurrency(totalDeposits)}
-                    </div>
-                  </div>
-                  <div style={{
-                    background: '#FAFCFF', border: '1px solid #e5e7eb',
-                    borderRadius: '8px', padding: '10px 16px', flex: '1 1 auto',
-                  }}>
-                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                      Total Withdrawals
-                    </div>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#DC2626', lineHeight: 1.2 }}>
-                      {formatCurrency(totalWithdrawals)}
-                    </div>
-                  </div>
-                  <div style={{
-                    background: '#FAFCFF', border: '1px solid #e5e7eb',
-                    borderRadius: '8px', padding: '10px 16px', flex: '1 1 auto',
-                  }}>
-                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                      Current Balance
-                    </div>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: balanceColor, lineHeight: 1.2 }}>
-                      {formatCurrency(currentBalance)}
-                    </div>
-                    <div style={{ fontSize: '10px', color: balanceColor, opacity: 0.7, lineHeight: 1 }}>
-                      {balanceLabel}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
+            {/* ── Table Area (loading / error / empty / data) ── */}
             {loading && <SkeletonTable cols={6} rows={5} />}
 
-            {!loading && error && <ErrorState message={error} />}
+            {!loading && error && (
+              <div style={{ padding: '20px 0' }}>
+                <ErrorState message={error} />
+                <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                  <button
+                    onClick={() => fetchEntries()}
+                    style={{
+                      padding: '8px 24px', background: '#111827', color: '#fff',
+                      border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            )}
 
             {!loading && !error && entries.length === 0 && (
-              <EmptyState
-                title={dateFrom || dateTo || typeFilter !== "all" ? "No matches found" : "No cash drawer entries found"}
-                description={dateFrom || dateTo || typeFilter !== "all" ? "Try adjusting your filters." : "Add cash to get started."}
-              />
+              <div style={{ padding: '20px 0' }}>
+                <EmptyState
+                  title={dateFrom || dateTo || typeFilter !== "all" ? "No matches found" : "No cash drawer entries found"}
+                  description={dateFrom || dateTo || typeFilter !== "all" ? "Try adjusting your date range or type filter above." : "Add cash to the drawer to get started."}
+                />
+              </div>
             )}
 
             {!loading && !error && entries.length > 0 && (
@@ -426,7 +447,7 @@ const CashDrawer = () => {
               </div>
             )}
             </div>
-            {!loading && !error && entries.length > 0 && (
+            {entries.length > 0 && !loading && !error && (
               <div className="d-flex justify-content-between align-items-center px-4 pt-3 border-top" style={{ borderColor: '#e5e7eb', background: '#fff', paddingBottom: 0 }}>
                 <div style={{ fontSize: '13px', color: '#8C949B' }}>
                   Showing {startIndex + 1}–{Math.min(startIndex + itemsPerPage, entries.length)} of {entries.length} records

@@ -39,8 +39,10 @@ export default function MoveFish() {
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
-        const response = await Api.get(`/fish-stages?siteId=${siteId}`);
+        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : user?.siteId;
+        const params = {};
+        if (siteId) params.siteId = siteId;
+        const response = await Api.get('/fish-stages', { params });
         if (Array.isArray(response.data.data)) {
           const filteredProcessStages = response.data.data.filter(
             (stage) => stage.title !== 'Smoking' && stage.title !== 'Drying'
