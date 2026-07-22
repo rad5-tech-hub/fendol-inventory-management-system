@@ -31,7 +31,8 @@ export default function TransferFish() {
   const [description, setDescription] = useState("");
 
   const selectedPond = pondOptions.find((p) => p.id === selectedPondId) || null;
-  const selectedSite = siteOptions.find((s) => s.id === selectedSiteId) || null;
+  const otherSites = siteOptions.filter((s) => s.id !== activeSite?.id);
+  const selectedSite = otherSites.find((s) => s.id === selectedSiteId) || null;
 
   /* ── Fetch ponds from backend by specific siteId (never siteId=all) ── */
   useEffect(() => {
@@ -75,6 +76,11 @@ export default function TransferFish() {
     fetchSites();
     return () => { cancelled = true; };
   }, []);
+
+  /* ── Clear destination site if it matches the pond's site ── */
+  useEffect(() => {
+    if (selectedSiteId === activeSite?.id) setSelectedSiteId('');
+  }, [selectedSiteId, activeSite?.id, siteOptions]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -217,8 +223,8 @@ export default function TransferFish() {
                   value={selectedSiteId}
                   onChange={(value) => setSelectedSiteId(value)}
                   disabled={sitesLoading}
-                  placeholder={sitesLoading ? 'Loading sites...' : (siteOptions.length === 0 ? 'No sites available' : 'Select a destination site')}
-                  options={siteOptions.map(s => ({ value: s.id, label: s.name }))}
+                  placeholder={sitesLoading ? 'Loading sites...' : (otherSites.length === 0 ? 'No other sites available' : 'Select a destination site')}
+                  options={otherSites.map(s => ({ value: s.id, label: s.name }))}
                   className="py-2 bg-light-subtle shadow-none"
                 />
 

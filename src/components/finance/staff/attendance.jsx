@@ -102,17 +102,25 @@ export default function StaffAttendance() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
+  const [attCursor, setAttCursor] = useState(null);
+  const [attHasMore, setAttHasMore] = useState(false);
+  const [attLoadingMore, setAttLoadingMore] = useState(false);
+  const attendanceRecordsRef = useRef([]);
   const statusRef = React.useRef(null);
   const dateRef = React.useRef(null);
   const perPageRef = React.useRef(null);
 
-  const fetchAttendanceData = useCallback(async () => {
+  const fetchAttendanceData = useCallback(async (appendCursor) => {
     try {
-      const siteParam = isSuperAdmin ? 'all' : (userSiteId || 'all');
-      const settingsSiteId = userSiteId;
+      const siteParam = isSuperAdmin ? (activeSite?.id || 'all') : (userSiteId || 'all');
+      const settingsSiteId = isSuperAdmin ? (activeSite?.id || userSiteId) : userSiteId;
+      const attParams = { siteId: siteParam };
+      if (dateFrom) attParams.dateFrom = dateFrom;
+      if (dateTo) attParams.dateTo = dateTo;
+      if (appendCursor) attParams.cursor = appendCursor;
       const [staffRes, attRes, settingsRes] = await Promise.all([
         ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } }),
-        ApiV2.get('/v2/attendances', { params: { siteId: siteParam } }).catch((err) => {
+        ApiV2.get('/v2/attendances', { params: attParams }).catch((err) => {
           console.error('[Attendance] fetch attendances failed:', {
             siteParam,
             status: err.response?.status,
@@ -127,7 +135,9 @@ export default function StaffAttendance() {
       ]);
 
       const staffData = Array.isArray(staffRes.data?.data) ? staffRes.data.data : [];
-      const attData = Array.isArray(attRes?.data?.data) ? attRes.data.data : [];
+      const newAttData = Array.isArray(attRes?.data?.data) ? attRes.data.data : [];
+      const nextCursor = attRes?.data?.nextCursor || null;
+      const hasMore = attRes?.data?.hasMore === true;
       const settingsData = settingsRes?.data?.data || null;
 
       if (!staffData.length) {
@@ -135,26 +145,38 @@ export default function StaffAttendance() {
       }
 
       setSettings(settingsData);
+      setAttCursor(nextCursor);
+      setAttHasMore(hasMore);
+      setAttLoadingMore(false);
+
+      const mergedAtt = appendCursor
+        ? [...attendanceRecordsRef.current, ...newAttData]
+        : newAttData;
+
+      attendanceRecordsRef.current = mergedAtt;
+      setAttendanceRecords(mergedAtt);
 
       // Merge latest attendance status into staff list
       const latestByStaff = {};
-      for (const a of attData) {
+      for (const a of mergedAtt) {
         const prev = latestByStaff[a.staffId];
         if (!prev || new Date(a.date) > new Date(prev.date)) {
           latestByStaff[a.staffId] = a;
         }
       }
 
-      setStaffList(staffData.map(s => ({
-        id: s.id,
-        name: s.name,
-        position: s.role,
-        status: STATUS_API_MAP[latestByStaff[s.id]?.status] || '\u2014',
-        siteId: s.UserSites?.[0]?.Site?.id || null,
-        avatar: null,
-      })));
-
-      setAttendanceRecords(attData);
+      setStaffList(staffData.map(s => {
+        const latest = latestByStaff[s.id];
+        return {
+          id: s.id,
+          name: s.name,
+          position: s.role,
+          status: STATUS_API_MAP[latest?.status] || '\u2014',
+          comment: latest?.comment || null,
+          siteId: s.UserSites?.[0]?.Site?.id || null,
+          avatar: null,
+        };
+      }));
     } catch (err) {
       console.error('[Attendance] fetch failed:', {
         status: err.response?.status,
@@ -163,7 +185,13 @@ export default function StaffAttendance() {
         stack: err.stack,
       });
     }
-  }, [isSuperAdmin, userSiteId]);
+  }, [isSuperAdmin, userSiteId, activeSite?.id, dateFrom, dateTo]);
+
+  const loadMoreAttendance = useCallback(async () => {
+    if (attLoadingMore || !attHasMore || !attCursor) return;
+    setAttLoadingMore(true);
+    await fetchAttendanceData(attCursor);
+  }, [attLoadingMore, attHasMore, attCursor, fetchAttendanceData]);
 
   useEffect(() => {
     (async () => {
@@ -280,13 +308,35 @@ export default function StaffAttendance() {
         successMsg = 'Staff marked as absent.';
         errorMsg = 'Failed to mark absent.';
       }
-      const siteId = isSuperAdmin ? (staff.siteId || userSiteId || 'all') : (userSiteId || staff.siteId);
+      const siteId = isSuperAdmin ? (activeSite?.id || staff.siteId || userSiteId) : (userSiteId || staff.siteId);
       await ApiV2.post(endpoint, payload, { params: { siteId } });
       toast.success(successMsg, { className: 'dark-toast' });
       closeModal();
       await fetchAttendanceData();
     } catch (err) {
-      const msg = err.response?.data?.response_message || errorMsg;
+      const serverMsg = err?.response?.data?.response_message;
+      const isDuplicateCheckin = serverMsg?.toLowerCase().includes('already checked in')
+        || err?.response?.data?.error?.message?.toLowerCase().includes('already checked in');
+      let displayMsg;
+      if (isDuplicateCheckin) {
+        displayMsg = `${attendanceModal.staff?.name || 'This staff member'} has already checked in today. No duplicate check-in is allowed.`;
+      } else if (err?.response?.status === 400) {
+        displayMsg = serverMsg || 'Invalid request. Please check your input.';
+      } else if (err?.response?.status === 401) {
+        displayMsg = 'Session expired. Please log in again.';
+      } else if (err?.response?.status === 403) {
+        displayMsg = 'You do not have permission to perform this action.';
+      } else if (err?.response?.status === 404) {
+        displayMsg = 'Staff record not found.';
+      } else if (err?.code === 'ECONNABORTED') {
+        displayMsg = 'Request timed out. Please try again.';
+      } else if (!err?.response) {
+        displayMsg = 'Network error. Please check your connection and try again.';
+      } else if (err?.response?.status >= 500) {
+        displayMsg = 'Server error. Please try again later.';
+      } else {
+        displayMsg = serverMsg || errorMsg;
+      }
       console.error(`[Attendance] ${endpoint} failed:`, {
         payload,
         siteId,
@@ -294,7 +344,7 @@ export default function StaffAttendance() {
         data: err.response?.data,
         message: err.message,
       });
-      toast.error(msg, { className: 'dark-toast' });
+      toast.error(displayMsg, { className: 'dark-toast' });
     } finally {
       setAttendanceModal(prev => ({ ...prev, loading: false }));
     }
@@ -508,7 +558,7 @@ export default function StaffAttendance() {
                                 </div>
                               );
                             }},
-                            { key: 'id', label: 'Staff ID', render: (val) => <span className={styles.staffIdCell}>{val}</span> },
+                            { key: 'comment', label: 'Comment', render: (val) => <span className={styles.commentCell}>{val || '\u2014'}</span> },
                             { key: 'position', label: 'Position' },
                             { key: 'status', label: 'Status', render: (val) => {
                               const statusStyle = STATUS_STYLES[val] || {};

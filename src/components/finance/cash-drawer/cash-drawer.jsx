@@ -13,6 +13,7 @@ import Api from "../../shared/api/apiLink";
 import ReactPaginate from "react-paginate";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import DataTable from "../../shared/data-table/DataTable";
+import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 
 const extractError = (error, fallback) => {
   const data = error?.response?.data;
@@ -24,6 +25,17 @@ const extractError = (error, fallback) => {
   }
   return fallback;
 };
+
+const formatCurrency = (value) => {
+  if (value == null) return '₦0.00';
+  return `₦${Math.abs(Number(value)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+const TRANSACTION_TYPES = [
+  { value: 'all', label: 'All Types' },
+  { value: 'deposit', label: 'Deposits' },
+  { value: 'withdrawal', label: 'Withdrawals' },
+];
 
 const CashDrawer = () => {
   const activeSite = useSelector((store) => store.activeSite);
@@ -176,11 +188,6 @@ const CashDrawer = () => {
   const toggleSidebar = () => setShowSidebar((prev) => !prev);
   const handleCloseSidebar = () => setShowSidebar(false);
 
-  const handleTypeFilterChange = (type) => {
-    setTypeFilter(type);
-    setCurrentPage(0);
-  };
-
   const handlePageChange = ({ selected }) => setCurrentPage(selected);
 
   const resetFilters = () => {
@@ -195,6 +202,14 @@ const CashDrawer = () => {
     return entries.slice(start, start + itemsPerPage);
   }, [entries, currentPage]);
 
+  const totalDeposits = entries.reduce((sum, r) => sum + (Number(r.credit) || 0), 0);
+  const totalWithdrawals = entries.reduce((sum, r) => sum + (Number(r.debit) || 0), 0);
+  const currentBalance = entries.length > 0 ? Number(entries[0]?.balance || 0) : 0;
+  const balanceColor = currentBalance < 0 ? '#DC2626' : currentBalance > 0 ? '#16A34A' : '#6B7280';
+  const balanceLabel = currentBalance < 0 ? 'Negative' : currentBalance > 0 ? 'Positive' : 'Zero';
+
+  const startIndex = currentPage * itemsPerPage;
+
   return (
     <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div className="sticky-top">
@@ -206,67 +221,141 @@ const CashDrawer = () => {
         </div>
 
         <section className={`${styles.content}`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <main className={`${styles.create_form}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <main className={`${styles.create_form}`} style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0 }}>
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-3 gap-3 align-items-md-center">
               <h4 className="mb-3 mb-md-0">Cash Drawer</h4>
-              <div className="d-flex flex-column justify-content-end align-items-center flex-md-row gap-2">
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(0); }}
-                  className="form-control"
-                  placeholder="Start Date"
-                />
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => { setDateTo(e.target.value); setCurrentPage(0); }}
-                  className="form-control"
-                  placeholder="End Date"
-                />
+              <div className="d-flex gap-2">
                 <Button
                   className={`border-0 btn-dark shadow py-2 px-3 fs-6 fw-semibold ${styles.submit}`}
                   onClick={() => setShowAddCashModal(true)}
-                  style={{ minWidth: '160px', padding: '10px 24px' }}
+                  style={{ minWidth: '140px', padding: '10px 24px' }}
                 >
                   Add Cash
                 </Button>
                 <Button
                   className={`border-0 btn-dark shadow py-2 px-3 fs-6 fw-semibold ${styles.submit}`}
                   onClick={() => setShowWithdrawModal(true)}
-                  style={{ minWidth: '160px', padding: '10px 24px' }}
+                  style={{ minWidth: '140px', padding: '10px 24px' }}
                 >
                   Withdraw
                 </Button>
               </div>
             </div>
 
-            <div className="d-flex gap-4 mb-4 flex-wrap align-items-center">
-              {[
-                { key: "all", label: "All" },
-                { key: "deposit", label: "Deposits" },
-                { key: "withdrawal", label: "Withdrawals" },
-              ].map(({ key, label }) => (
-                <h5
-                  key={key}
-                  className={`fs-6 ${typeFilter === key ? styles.activeView : ""}`}
-                  onClick={() => handleTypeFilterChange(key)}
-                  style={{ cursor: "pointer" }}
-                >
-                  {label}
-                </h5>
-              ))}
-              {(dateFrom || dateTo) && (
-                <span
-                  className="text-muted"
-                  style={{ cursor: "pointer", fontSize: "0.85rem" }}
-                  onClick={resetFilters}
-                >
-                  Clear filters
-                </span>
-              )}
-            </div>
+            {/* ── Filter Bar ── */}
+            {!loading && !error && entries.length > 0 && (
+              <div
+                style={{
+                  background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px',
+                  padding: '10px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
+                }}
+              >
+                <div className="d-flex flex-wrap align-items-end gap-2">
+                  <div style={{ flex: '1 1 140px', minWidth: '120px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px', display: 'block' }}>
+                      Date Range
+                    </label>
+                    <div className="d-flex align-items-center gap-1">
+                      <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(0); }}
+                        style={{
+                          width: '100%', padding: '5px 8px',
+                          border: '1px solid #e5e7eb', borderRadius: '5px',
+                          fontSize: '11px', color: '#374151', outline: 'none', background: '#ffffff',
+                        }}
+                      />
+                      <span style={{ fontSize: '11px', color: '#8C949B' }}>–</span>
+                      <input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => { setDateTo(e.target.value); setCurrentPage(0); }}
+                        style={{
+                          width: '100%', padding: '5px 8px',
+                          border: '1px solid #e5e7eb', borderRadius: '5px',
+                          fontSize: '11px', color: '#374151', outline: 'none', background: '#ffffff',
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ flex: '1 1 120px', minWidth: '100px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px', display: 'block' }}>
+                      Type
+                    </label>
+                    <CustomDropdown
+                      value={typeFilter}
+                      onChange={(val) => { setTypeFilter(val); setCurrentPage(0); }}
+                      options={TRANSACTION_TYPES}
+                    />
+                  </div>
+                  <div className="d-flex gap-1" style={{ alignSelf: 'flex-end' }}>
+                    {(dateFrom || dateTo || typeFilter !== 'all') && (
+                      <button
+                        onClick={resetFilters}
+                        style={{
+                          padding: '5px 12px', background: '#ffffff', color: '#6B7280',
+                          border: '1px solid #e5e7eb', borderRadius: '5px', fontSize: '11px', fontWeight: 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Summary Cards ── */}
+            {!loading && !error && entries.length > 0 && (
+              <div
+                style={{
+                  background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
+                  padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
+                }}
+              >
+                <div className="d-flex flex-wrap gap-3">
+                  <div style={{
+                    background: '#FAFCFF', border: '1px solid #e5e7eb',
+                    borderRadius: '8px', padding: '10px 16px', flex: '1 1 auto',
+                  }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      Total Deposits
+                    </div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A', lineHeight: 1.2 }}>
+                      {formatCurrency(totalDeposits)}
+                    </div>
+                  </div>
+                  <div style={{
+                    background: '#FAFCFF', border: '1px solid #e5e7eb',
+                    borderRadius: '8px', padding: '10px 16px', flex: '1 1 auto',
+                  }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      Total Withdrawals
+                    </div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#DC2626', lineHeight: 1.2 }}>
+                      {formatCurrency(totalWithdrawals)}
+                    </div>
+                  </div>
+                  <div style={{
+                    background: '#FAFCFF', border: '1px solid #e5e7eb',
+                    borderRadius: '8px', padding: '10px 16px', flex: '1 1 auto',
+                  }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      Current Balance
+                    </div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: balanceColor, lineHeight: 1.2 }}>
+                      {formatCurrency(currentBalance)}
+                    </div>
+                    <div style={{ fontSize: '10px', color: balanceColor, opacity: 0.7, lineHeight: 1 }}>
+                      {balanceLabel}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {loading && <SkeletonTable cols={6} rows={5} />}
 
@@ -280,89 +369,78 @@ const CashDrawer = () => {
             )}
 
             {!loading && !error && entries.length > 0 && (
-              <DataTable
-                className={`${styles.styled_table} ${styles.table_responsive}`}
-                columns={[
-                  {
-                    key: "date",
-                    label: "DATE",
-                    render: (val) => formatDate(val),
-                  },
-                  {
-                    key: "isWithdrawal",
-                    label: "TYPE",
-                    render: (val) => (
-                      <span
-                        className={`badge ${val ? "bg-danger" : "bg-success"}`}
-                      >
-                        {val ? "Withdrawal" : "Deposit"}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "description",
-                    label: "DESCRIPTION",
-                    render: (val) =>
-                      val ? (
-                        <span
-                          title={val}
-                          style={{
-                            cursor: val.length > 50 ? "pointer" : "normal",
-                          }}
-                        >
-                          {val.slice(0, 50) + (val.length > 50 ? "..." : "")}
-                        </span>
-                      ) : (
-                        "-"
-                      ),
-                  },
-                  {
-                    key: "credit",
-                    label: "CREDIT (₦)",
-                    render: (val, row) =>
-                      row?.isWithdrawal || !val ? (
-                        "-"
-                      ) : (
-                        <span style={{ color: "green" }}>
-                          ₦{val.toLocaleString()}
-                        </span>
-                      ),
-                  },
-                  {
-                    key: "debit",
-                    label: "DEBIT (₦)",
-                    render: (val, row) =>
-                      !row?.isWithdrawal || !val ? (
-                        "-"
-                      ) : (
-                        <span style={{ color: "red" }}>
-                          ₦{val.toLocaleString()}
-                        </span>
-                      ),
-                  },
-                  {
-                    key: "balance",
-                    label: "BALANCE (₦)",
-                    render: (val) =>
-                      val != null ? `₦${val.toLocaleString()}` : "-",
-                  },
-                ]}
-                data={displayedEntries}
-              />
+              <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'visible' }}>
+                <div className="d-flex align-items-center justify-content-between px-3 pt-2 pb-1">
+                  <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#2E3135', margin: 0 }}>
+                    Ledger ({entries.length})
+                  </h4>
+                </div>
+                <DataTable
+                  className={`${styles.styled_table} ${styles.table_responsive}`}
+                  columns={[
+                    {
+                      key: "date",
+                      label: "DATE",
+                      render: (val) => <span style={{ color: '#8C949B', whiteSpace: 'nowrap' }}>{formatDate(val)}</span>,
+                    },
+                    {
+                      key: "description",
+                      label: "DESCRIPTION",
+                      render: (val) =>
+                        val ? (
+                          <span
+                            title={val}
+                            style={{
+                              cursor: val.length > 50 ? "pointer" : "normal",
+                            }}
+                          >
+                            {val.slice(0, 50) + (val.length > 50 ? "..." : "")}
+                          </span>
+                        ) : (
+                          "-"
+                        ),
+                    },
+                    {
+                      key: "credit",
+                      label: "CREDIT (₦)",
+                      render: (val) => Number(val) ? <span style={{ fontWeight: 600, color: '#16A34A' }}>{formatCurrency(val)}</span> : '',
+                    },
+                    {
+                      key: "debit",
+                      label: "DEBIT (₦)",
+                      render: (val) => Number(val) ? <span style={{ fontWeight: 600, color: '#DC2626' }}>{formatCurrency(val)}</span> : '',
+                    },
+                    {
+                      key: "balance",
+                      label: "BALANCE (₦)",
+                      render: (val) => {
+                        if (val == null) return '-';
+                        const bal = Number(val);
+                        const color = bal < 0 ? '#DC2626' : bal > 0 ? '#16A34A' : '#6B7280';
+                        return <span style={{ fontWeight: 600, color }}>{formatCurrency(bal)}</span>;
+                      },
+                    },
+                  ]}
+                  data={displayedEntries}
+                />
+              </div>
             )}
             </div>
             {!loading && !error && entries.length > 0 && (
-              <div className="d-flex justify-content-center" style={{ padding: '12px 0', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+              <div className="d-flex justify-content-between align-items-center px-4 pt-3 border-top" style={{ borderColor: '#e5e7eb', background: '#fff', paddingBottom: 0 }}>
+                <div style={{ fontSize: '13px', color: '#8C949B' }}>
+                  Showing {startIndex + 1}–{Math.min(startIndex + itemsPerPage, entries.length)} of {entries.length} records
+                </div>
                 <ReactPaginate
-                  previousLabel={"< "}
-                  nextLabel={" >"}
-                  breakLabel={"..."}
+                  previousLabel={"‹"}
+                  nextLabel={"›"}
+                  breakLabel="..."
                   pageCount={Math.max(1, Math.ceil(entries.length / itemsPerPage))}
                   marginPagesDisplayed={2}
                   pageRangeDisplayed={3}
                   onPageChange={handlePageChange}
                   forcePage={currentPage}
-                  containerClassName={"pagination"}
+                  containerClassName={"pagination mb-0"}
                   pageClassName={"page-item"}
                   pageLinkClassName={"page-link"}
                   previousClassName={"page-item"}

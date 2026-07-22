@@ -53,7 +53,7 @@ const fmtISODate = (iso) => {
 
 export default function ViewFish() {
   const [transfers, setTransfers] = useState([]);
-  const [summary, setSummary] = useState({ totalReceived: 0, totalMovedToPond: 0 });
+  const [summary, setSummary] = useState({ totalReceived: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
@@ -79,6 +79,9 @@ export default function ViewFish() {
   const [customEndDate, setCustomEndDate] = useState('');
   const [siteOptions, setSiteOptions] = useState([]);
   const [transferSites, setTransferSites] = useState([]);
+  const cursorRef = useRef(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const user = useSelector((store) => store.user);
   const activeSite = useSelector((store) => store.activeSite);
@@ -202,33 +205,32 @@ export default function ViewFish() {
   }, [activeTooltip]);
 
   /* ── Real API fetch ── */
-  const loadTransfers = useCallback(async () => {
-    setLoading(true);
+  const loadTransfers = useCallback(async (append = false) => {
+    if (!append) setLoading(true);
     setError(null);
     try {
       const siteId = resolvedSiteId;
       if (!siteId) {
         setError('No site selected. Please select a site from the header or contact an administrator.');
         setTransfers([]);
-        setSummary({ totalReceived: 0, totalMovedToPond: 0 });
-        setLoading(false);
+        setSummary({ totalReceived: 0 });
+        if (!append) setLoading(false);
         return;
       }
-      const res = await ApiV2.get('/v2/fish-transfer-incoming', {
-        params: { siteId },
-      });
+      const params = { siteId };
+      if (append && cursorRef.current) params.cursor = cursorRef.current;
+      const res = await ApiV2.get('/v2/fish-transfer-incoming', { params });
       const body = res.data;
       if (!body || body.success !== true) {
         throw new Error(body?.response_message || 'Failed to load incoming transfers.');
       }
       const list = body?.data?.transfers;
       if (!Array.isArray(list)) {
-        setTransfers([]);
-        setSummary({ totalReceived: 0, totalMovedToPond: 0 });
-        setLoading(false);
+        if (!append) setTransfers([]);
+        setSummary({ totalReceived: body?.summary?.totalReceived ?? 0 });
+        if (!append) setLoading(false);
         return;
       }
-      const paginationSummary = body?.pagination?.summary || {};
       const mapped = list.map((t) => ({
         id: t.id,
         date: fmtISODate(t.createdAt),
@@ -239,21 +241,20 @@ export default function ViewFish() {
         description: null,
         raw: t,
       }));
-      setTransfers(mapped);
-      setSummary({
-        totalReceived: paginationSummary.totalReceived ?? 0,
-        totalMovedToPond: paginationSummary.totalMovedToPond ?? 0,
-      });
+      setTransfers(prev => append ? [...prev, ...mapped] : mapped);
+      setSummary({ totalReceived: body?.summary?.totalReceived ?? 0 });
+      cursorRef.current = body?.pagination?.nextCursor || null;
+      setHasMore(body?.pagination?.hasMore ?? false);
     } catch (err) {
       const msg = err?.response?.data?.response_message
         || err?.response?.data?.message
         || err?.message
         || 'Failed to load incoming transfers. Please try again.';
       setError(typeof msg === 'string' ? msg : 'An unexpected error occurred.');
-      setTransfers([]);
-      setSummary({ totalReceived: 0, totalMovedToPond: 0 });
+      if (!append) { setTransfers([]); setSummary({ totalReceived: 0 }); }
     } finally {
-      setLoading(false);
+      if (!append) setLoading(false);
+      setLoadingMore(false);
     }
   }, [activeSite?.id, user?.siteId]);
 
@@ -303,10 +304,7 @@ export default function ViewFish() {
   /* ── Unique site names from backend fetch — falls back to transfer data ── */
   const allSites = siteOptions.length > 0 ? siteOptions : [...new Set(transfers.map((t) => t.siteFrom))].sort();
 
-  const totalMoved = summary.totalMovedToPond ?? 0;
-  const totalRemaining = totalFish - totalMoved;
-  const movedPct = totalFish > 0 ? Math.round((totalMoved / totalFish) * 100) : 0;
-  const remainPct = totalFish > 0 ? Math.round((totalRemaining / totalFish) * 100) : 0;
+  const totalTransferRecords = transfers.length;
 
   /* ── Stat card definitions ── */
   const statCards = [
@@ -319,20 +317,20 @@ export default function ViewFish() {
       tooltipText: `Total of ${formatNumber(totalFish)} fish transferred to your site across all incoming transfers.`,
     },
     {
-      label: 'MOVED TO PONDS',
-      value: `${formatNumber(totalMoved)} pcs`,
-      sub: totalFish > 0 ? `${movedPct}% of received stock moved` : 'No data',
+      label: 'TRANSFER RECORDS',
+      value: `${formatNumber(totalTransferRecords)}`,
+      sub: totalTransferRecords === 1 ? '1 incoming transfer' : `${totalTransferRecords} incoming transfers`,
       icon: <FaWarehouse size={16} />,
       iconClass: styles.statIconGreen,
-      tooltipText: `${formatNumber(totalMoved)} fish (${movedPct}%) have been moved into ponds.`,
+      tooltipText: `${formatNumber(totalTransferRecords)} incoming transfer record${totalTransferRecords !== 1 ? 's' : ''} received.`,
     },
     {
       label: 'STOCK REMAINING',
-      value: `${formatNumber(totalRemaining)} pcs`,
-      sub: totalFish > 0 ? `${remainPct}% yet to be ponded` : 'No data',
+      value: `${formatNumber(totalFish)} pcs`,
+      sub: 'Awaiting pond assignment',
       icon: <FaExchangeAlt size={16} />,
       iconClass: styles.statIconBlue,
-      tooltipText: `${formatNumber(totalRemaining)} fish (${remainPct}%) are still awaiting pond assignment.`,
+      tooltipText: `${formatNumber(totalFish)} fish are still awaiting pond assignment.`,
     },
   ];
 
