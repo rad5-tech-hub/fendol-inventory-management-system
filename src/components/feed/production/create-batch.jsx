@@ -104,6 +104,9 @@ export default function CreateFeedBatch() {
   const [showBagsProducedModal, setShowBagsProducedModal] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
+  const [showQtyModal, setShowQtyModal] = useState(false);
+  const [qtyModalMaterialId, setQtyModalMaterialId] = useState(null);
+  const [qtyModalInput, setQtyModalInput] = useState('');
   const [modalInputValue, setModalInputValue] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [newMaterialName, setNewMaterialName] = useState('');
@@ -479,6 +482,10 @@ export default function CreateFeedBatch() {
       });
       return;
     }
+    if (!parseFloat(totalFeedProduced) || parseFloat(totalFeedProduced) <= 0) {
+      toast.error('Total Feed Produced must be greater than 0.', { autoClose: 5000, className: 'dark-toast' });
+      return;
+    }
     setSubmitting(true);
     const loadingToast = toast.loading(isEditing ? 'Updating production batch...' : 'Starting production batch...', { className: 'dark-toast' });
     try {
@@ -782,8 +789,8 @@ export default function CreateFeedBatch() {
                               <button
                                 type="button"
                                 className={styles.inlinePlusBtn}
-                                onClick={() => handleRawMaterialChange(row.id, 'qty', (parseFloat(row.qty) || 0) + 0.5)}
-                                title="Increment"
+                                onClick={() => { setQtyModalMaterialId(row.id); setQtyModalInput(''); setShowQtyModal(true); }}
+                                title="Add quantity"
                               >
                                 <FiPlus size={11} />
                               </button>
@@ -794,23 +801,7 @@ export default function CreateFeedBatch() {
                           key: 'unitCost',
                           label: 'Unit Cost (₦)',
                           render: (value, row) => (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <input
-                                type="number"
-                                className={styles.inlineInput}
-                                value={row.unitCost}
-                                onChange={e => handleRawMaterialChange(row.id, 'unitCost', e.target.value)}
-                                step="0.01"
-                              />
-                              <button
-                                type="button"
-                                className={styles.inlinePlusBtn}
-                                onClick={() => handleRawMaterialChange(row.id, 'unitCost', (parseFloat(row.unitCost) || 0) + 10)}
-                                title="Increment"
-                              >
-                                <FiPlus size={11} />
-                              </button>
-                            </div>
+                            <span className={styles.totalCostCell}>{formatCurrency(row.unitCost)}</span>
                           ),
                         },
                         {
@@ -930,10 +921,6 @@ export default function CreateFeedBatch() {
                       )}
                     </div>
                   ))}
-                  <button className={styles.addLinkBtn} onClick={handleAddPackaging}>
-                    <FiPlus size={13} />
-                    Add Packaging
-                  </button>
 
                   {/* Total Raw Material Cost */}
                   <div className={styles.summaryRow}>
@@ -1273,6 +1260,47 @@ export default function CreateFeedBatch() {
               <div className={styles.modalFooter}>
                 <button className={styles.modalCancelBtn} onClick={() => { setNewMaterialName(''); setNewMaterialQty(''); setShowAddMaterialModal(false); }} type="button">Cancel</button>
                 <button className={styles.modalSaveBtn} onClick={handleAddNewMaterial} type="button">Add Material</button>
+              </div>
+            </ModalShell>
+
+            <ModalShell title="Add Quantity Used" show={showQtyModal} onClose={() => { setQtyModalInput(''); setQtyModalMaterialId(null); setShowQtyModal(false); }}>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Additional Quantity</label>
+                <input
+                  type="number"
+                  className={styles.modalInput}
+                  value={qtyModalInput}
+                  onChange={e => setQtyModalInput(e.target.value)}
+                  step="0.01"
+                  min="0"
+                  placeholder="Enter quantity to add"
+                  autoFocus
+                />
+              </div>
+              <div className={styles.modalFooter}>
+                <button
+                  className={styles.modalCancelBtn}
+                  onClick={() => { setQtyModalInput(''); setQtyModalMaterialId(null); setShowQtyModal(false); }}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className={styles.modalSaveBtn}
+                  onClick={() => {
+                    const addQty = parseFloat(qtyModalInput) || 0;
+                    if (addQty <= 0) { toast.warning('Please enter a valid quantity.'); return; }
+                    setRawMaterials(prev => prev.map(m =>
+                      m.id === qtyModalMaterialId ? { ...m, qty: (parseFloat(m.qty) || 0) + addQty } : m
+                    ));
+                    setQtyModalInput('');
+                    setQtyModalMaterialId(null);
+                    setShowQtyModal(false);
+                  }}
+                  type="button"
+                >
+                  Add
+                </button>
               </div>
             </ModalShell>
 
