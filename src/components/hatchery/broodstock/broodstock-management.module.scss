@@ -542,29 +542,31 @@
   color: #9CA3AF;
 }
 
-.formSelect {
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #D1D5DB;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #111827;
-  background: #FFFFFF;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 12px;
-  padding-right: 32px;
+.dropdownWrapper {
+  width: 100%;
 }
 
-.formSelect:focus {
-  border-color: #DD5117;
-  box-shadow: 0 0 0 3px rgba(221, 81, 23, 0.1);
+.dropdownTrigger {
+  height: 40px !important;
+  padding: 0 12px !important;
+  font-size: 13px !important;
+  color: #111827 !important;
+  background: #FFFFFF !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 8px !important;
+  outline: none !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.dropdownTrigger:focus {
+  border-color: #DD5117 !important;
+  box-shadow: 0 0 0 3px rgba(221, 81, 23, 0.1) !important;
+}
+
+.dropdownTrigger:hover {
+  border-color: #9CA3AF !important;
 }
 
 .formTextarea {
@@ -610,28 +612,6 @@
 
 .ageSelect {
   width: 100px;
-  height: 40px;
-  padding: 0 10px;
-  border: 1px solid #D1D5DB;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #111827;
-  background: #FFFFFF;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 12px;
-  padding-right: 28px;
-}
-
-.ageSelect:focus {
-  border-color: #DD5117;
-  box-shadow: 0 0 0 3px rgba(221, 81, 23, 0.1);
 }
 
 .modalBodyLog {

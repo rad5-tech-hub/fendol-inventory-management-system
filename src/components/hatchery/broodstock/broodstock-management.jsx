@@ -735,7 +735,8 @@ export default function BroodstockManagement() {
                         ]}
                         value={formData.gender}
                         onChange={(val) => handleFormChange('gender', val)}
-                        className={styles.formSelect}
+                        className={styles.dropdownWrapper}
+                        triggerClassName={styles.dropdownTrigger}
                       />
                     </div>
                   </div>
@@ -760,6 +761,7 @@ export default function BroodstockManagement() {
                           value={formData.ageUnit || 'weeks'}
                           onChange={(val) => handleFormChange('ageUnit', val)}
                           className={styles.ageSelect}
+                          triggerClassName={styles.dropdownTrigger}
                         />
                       </div>
                     </div>
@@ -787,7 +789,8 @@ export default function BroodstockManagement() {
                         ]}
                         value={formData.origin}
                         onChange={(val) => handleFormChange('origin', val)}
-                        className={styles.formSelect}
+                        className={styles.dropdownWrapper}
+                        triggerClassName={styles.dropdownTrigger}
                       />
                     </div>
                     <div className={styles.formGroup}>
@@ -799,7 +802,8 @@ export default function BroodstockManagement() {
                         ]}
                         value={formData.site}
                         onChange={(val) => handleFormChange('site', val)}
-                        className={styles.formSelect}
+                        className={styles.dropdownWrapper}
+                        triggerClassName={styles.dropdownTrigger}
                       />
                     </div>
                   </div>
