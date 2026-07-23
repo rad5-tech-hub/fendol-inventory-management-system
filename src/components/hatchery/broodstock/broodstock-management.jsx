@@ -915,6 +915,7 @@ export default function BroodstockManagement() {
                         value={logData.sex}
                         onChange={(val) => setLogData((p) => ({ ...p, sex: val }))}
                         className={styles.logSexSelect}
+                        triggerClassName={styles.logDropdownTrigger}
                       />
                     </div>
                   </div>
