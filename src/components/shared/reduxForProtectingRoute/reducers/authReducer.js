@@ -27,9 +27,6 @@ const getInitialUser = () => {
     const decoded = jwtDecode(token);
     const userSites = decoded.sites || decoded.userSites || decoded.assignedSites || decoded.siteIds || [];
     const sitesArr = Array.isArray(userSites) ? userSites : [];
-    console.log('[getInitialUser] decoded JWT fields:', { sites: decoded.sites, userSites: decoded.userSites, assignedSites: decoded.assignedSites, siteIds: decoded.siteIds });
-    console.log('[getInitialUser] resolved sitesArr:', sitesArr);
-    console.log('[getInitialUser] extractFirstSiteId result:', extractFirstSiteId(sitesArr));
     return {
       ...decoded,
       siteId: decoded.siteId || extractFirstSiteId(sitesArr),

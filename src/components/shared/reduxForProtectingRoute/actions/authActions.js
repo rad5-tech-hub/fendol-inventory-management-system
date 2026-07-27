@@ -22,10 +22,6 @@ export const loginUser = (token) => {
   const userSites = decoded.sites || decoded.userSites || decoded.assignedSites || decoded.siteIds || [];
   const sitesArr = Array.isArray(userSites) ? userSites : [];
 
-  console.log('[loginUser] decoded JWT fields:', { sites: decoded.sites, userSites: decoded.userSites, assignedSites: decoded.assignedSites, siteIds: decoded.siteIds });
-  console.log('[loginUser] resolved sitesArr:', sitesArr);
-  console.log('[loginUser] extractFirstSiteId result:', extractFirstSiteId(sitesArr));
-
   return {
     type: LOGIN_USER,
     payload: {

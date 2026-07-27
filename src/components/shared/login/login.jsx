@@ -56,16 +56,6 @@ export default function LogIn() {
                         return {};
                     }
                 })();
-                console.log('[login.jsx] raw login response:', response.data);
-                console.log('[login.jsx] decoded JWT payload:', decoded);
-                console.log('[login.jsx] JWT key fields:', {
-                    siteId: decoded.siteId,
-                    siteIds: decoded.siteIds,
-                    sites: decoded.sites,
-                    userSites: decoded.userSites,
-                    assignedSites: decoded.assignedSites,
-                    allKeys: Object.keys(decoded),
-                });
                 const userTypes = extractUserTypes(decoded);
 
                 // Clear form data
