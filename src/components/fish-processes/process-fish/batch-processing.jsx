@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, Breadcrumb } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast, ToastContainer } from 'react-toastify';
 import { MdOutlineRefresh } from "react-icons/md";
@@ -13,6 +13,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 export default function BatchProcessing() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const user = useSelector((store) => store.user);
   const activeSite = useSelector((store) => store.activeSite);
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
@@ -22,10 +23,7 @@ export default function BatchProcessing() {
   const [stages, setStages] = useState({ washing: null });
   const [checkStages, setCheckStages] = useState([]);
   const [fishType, setFishType] = useState([]);
-  const [processId, setProcessId] = useState(() => {
-    const saved = sessionStorage.getItem('batchProcessId');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [processId, setProcessId] = useState(id || null);
   const [moveFishData, setMoveFishData] = useState(() => {
     const saved = sessionStorage.getItem('batchMoveFishData');
     return saved ? JSON.parse(saved) : {
@@ -65,6 +63,7 @@ export default function BatchProcessing() {
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalData, setSuccessModalData] = useState(null);
+  const [message, setMessage] = useState('');
 
   const orderedStages = useMemo(() => {
     const stageOrder = ["Washing", "Smoking", "Drying"];

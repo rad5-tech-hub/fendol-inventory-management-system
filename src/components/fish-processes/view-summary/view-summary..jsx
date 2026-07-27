@@ -759,8 +759,7 @@ export default function ViewSummary() {
                   {status !== 'Completed' && (
                     <button style={menuItemStyle} onClick={() => {
                       setOpenActionMenu(null);
-                      sessionStorage.setItem('batchProcessId', JSON.stringify(row.id));
-                      navigate('/fish-processes/process-fish');
+                      navigate(`/fish-processes/batch-processing/${row.id}`);
                     }}>
                       <span style={{ marginRight: '8px', fontSize: '12px' }}>▶</span> Continue Progress
                     </button>
