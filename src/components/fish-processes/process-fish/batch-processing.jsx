@@ -76,11 +76,8 @@ export default function BatchProcessing() {
     setStagesLoading(true);
     try {
       const stageParams = {};
-      if (isSuperAdmin) {
-        if (activeSite?.id) stageParams.siteId = activeSite.id;
-      } else if (user?.siteId) {
-        stageParams.siteId = user.siteId;
-      }
+      const sid = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]);
+      if (sid) stageParams.siteId = sid;
       const response = await Api.get('/process-stages', { params: stageParams });
       if (Array.isArray(response.data.data)) {
         setCheckStages(response.data.data);
@@ -106,11 +103,8 @@ export default function BatchProcessing() {
     setShowLoading(true);
     try {
       const params = {};
-      if (isSuperAdmin) {
-        if (activeSite?.id) params.siteId = activeSite.id;
-      } else if (user?.siteId) {
-        params.siteId = user.siteId;
-      }
+      const batchSid = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]);
+      if (batchSid) params.siteId = batchSid;
       const response = await Api.get('/get-all-active-harvest-batch', { params });
       const quantity = Number(response.data.data) || 0;
       if (quantity > 0) {
@@ -322,7 +316,7 @@ export default function BatchProcessing() {
           processId,
           ...(isSuperAdmin
             ? (activeSite?.id ? { siteId: activeSite.id } : {})
-            : (user?.siteId ? { siteId: user.siteId } : {})
+            : ((user?.siteId || user?.userSites?.[0]) ? { siteId: user?.siteId || user?.userSites?.[0] } : {})
           ),
         };
         console.log('[handleNext] POST payload', payload);
