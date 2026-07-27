@@ -13,6 +13,12 @@ const loadActiveSite = () => {
   }
 };
 
+const extractFirstSiteId = (arr) => {
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  const first = arr[0];
+  return first?.id || (typeof first === 'string' ? first : null);
+};
+
 const token = sessionStorage.getItem('authToken');
 const getInitialUser = () => {
   if (!token) return { userTypes: [], userSites: [] };
@@ -20,10 +26,12 @@ const getInitialUser = () => {
   try {
     const decoded = jwtDecode(token);
     const userSites = decoded.sites || decoded.userSites || decoded.assignedSites || decoded.siteIds || [];
+    const sitesArr = Array.isArray(userSites) ? userSites : [];
     return {
       ...decoded,
+      siteId: decoded.siteId || extractFirstSiteId(sitesArr),
       userTypes: extractUserTypes(decoded),
-      userSites: Array.isArray(userSites) ? userSites : [],
+      userSites: sitesArr,
     };
   } catch {
     return { userTypes: [], userSites: [] };
