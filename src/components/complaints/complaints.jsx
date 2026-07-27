@@ -54,7 +54,7 @@ export default function Complaints() {
   const fetchStaff = async () => {
     setStaffLoading(true);
     try {
-      const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+      const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
       const res = await ApiV2.get('/api/v1/staff', { params: { siteId } });
       const data = Array.isArray(res.data?.data) ? res.data.data : [];
       setStaff(data);

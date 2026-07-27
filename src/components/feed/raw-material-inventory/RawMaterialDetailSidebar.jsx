@@ -43,11 +43,8 @@ export default function RawMaterialDetailSidebar({ material, onClose }) {
     setHistoryLoading(true);
     try {
       const params = {};
-      if (isSuperAdmin) {
-        if (activeSite?.id) params.siteId = activeSite.id;
-      } else if (user?.siteId) {
-        params.siteId = user.siteId;
-      }
+      const rawSid = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]);
+      if (rawSid) params.siteId = rawSid;
       if (cursor) params.cursor = cursor;
 
       const res = await ApiV2.get(`/v2/raw-material-history/${material.id}`, { params });

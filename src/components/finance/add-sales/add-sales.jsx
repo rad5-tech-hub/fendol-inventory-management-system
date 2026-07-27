@@ -43,7 +43,7 @@ const AddSales = () => {
     // Fetch stages
     const fetchStages = async () => {
         try {
-            const siteId = isSuperAdmin ? (activeSite?.id || 'all') : user?.siteId;
+            const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
             const params = {};
             if (siteId) params.siteId = siteId;
             const response = await Api.get('/fish-stages', { params });

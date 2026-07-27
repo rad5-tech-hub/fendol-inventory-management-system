@@ -20,7 +20,7 @@ export default function CreateProducts() {
     const [siteTypes, setSiteTypes] = useState([]);
     const user = useSelector((store) => store.user);
     const isSuperAdmin = user?.userTypes?.includes('super_admin');
-    const profileSiteId = user?.siteId || '';
+    const profileSiteId = user?.siteId || user?.userSites?.[0] || '';
 
     useEffect(() => {
         const fetchSiteTypes = async () => {

@@ -61,7 +61,7 @@ const ViewAllStages = () => {
     try {
       const siteParam = isSuperAdmin
         ? (siteIdFilter || 'all')
-        : (user?.siteId || '');
+        : (user?.siteId || user?.userSites?.[0] || '');
       const response = await Api.get(`/fish-stages?siteId=${siteParam}`);
       if (Array.isArray(response.data.data)) {
         setStages(response.data.data);

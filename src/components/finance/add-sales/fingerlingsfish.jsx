@@ -13,7 +13,7 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
   const user = useSelector((store) => store.user);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const isSuperAdmin = userTypes.includes('super_admin');
-  const resolvedSiteId = siteId || (isSuperAdmin ? activeSite?.id : user?.siteId);
+  const resolvedSiteId = siteId || (isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0] || ''));
   const [fingerlingsData, setFingerlingsData] = useState({
     products: [{ id: "", quantity: 0 }],
     category: "",

@@ -53,7 +53,7 @@ export default function ProcessingTeamModal({ show, processId, existingTeam, onC
     const fetchStaff = async () => {
       setLoading(true);
       try {
-        const siteParam = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+        const siteParam = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
         const res = await ApiV2.get('/api/v1/staff', { params: { siteId: siteParam } });
         const data = Array.isArray(res.data?.data) ? res.data.data : [];
         setStaff(data);

@@ -22,7 +22,7 @@ export default function CreateStages() {
     const navigate = useNavigate();
     const user = useSelector((store) => store.user);
     const isSuperAdmin = user?.userTypes?.includes('super_admin');
-    const profileSiteId = user?.siteId || '';
+    const profileSiteId = user?.siteId || user?.userSites?.[0] || '';
 
     // Auto-fill siteId for non-super-admin users from their profile
     useEffect(() => {

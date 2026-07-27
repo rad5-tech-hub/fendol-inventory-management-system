@@ -503,7 +503,7 @@ export default function ViewSummary() {
         const [historyRes, sitesRes, pondsRes] = await Promise.all([
           Api.get('/latest-completed'),
           ApiV2.get('/v2/all-site'),
-          Api.get(`/fish-stages?siteId=${isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all')}`),
+          Api.get(`/fish-stages?siteId=${isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '')}`),
         ]);
         const data = Array.isArray(historyRes.data.data) ? historyRes.data.data : [];
         setMoveFishHistory(data);

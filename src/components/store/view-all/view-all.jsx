@@ -142,7 +142,7 @@ export default function UpdateStoreInventory() {
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || 'all');
+        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
         const response = await Api.get(`/fish-stages?siteId=${siteId}`);
         if (Array.isArray(response.data.data)) {
           const filteredStages = response.data.data.filter(pond => pond.quantity >= 1);

@@ -23,7 +23,7 @@ export default function DamageLoss() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [pondMap, setPondMap] = useState({});
 
-  const siteId = isSuperAdmin ? (activeSite?.id || 'all') : user?.siteId;
+  const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
 
   // Fetch pond list to map pondId -> name
   useEffect(() => {

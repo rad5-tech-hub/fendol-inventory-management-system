@@ -58,7 +58,7 @@ export default function BatchDashboard() {
     setLoading(true);
     setError('');
     try {
-      const siteId = isSuperAdmin ? activeSite?.id : (user?.siteId || '');
+      const siteId = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0] || '');
       let cursor = null;
       const allData = [];
       do {

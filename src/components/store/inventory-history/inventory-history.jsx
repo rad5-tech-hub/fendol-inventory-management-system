@@ -15,7 +15,7 @@ export default function InventoryHistory() {
   const user = useSelector((store) => store.user);
   const activeSite = useSelector((store) => store.activeSite);
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
-  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || '');
+  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0] || '');
 
   const [inventoryHistory, setInventoryHistory] = useState([]);
   const [filteredData, setFilteredData] = useState([]);

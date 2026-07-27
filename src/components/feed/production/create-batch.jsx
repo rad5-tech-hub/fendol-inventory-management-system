@@ -245,7 +245,7 @@ export default function CreateFeedBatch() {
     setNewMaterialName('');
     setNewMaterialQty('');
     try {
-      const siteId = isSuperAdmin ? activeSite?.id : (user?.siteId || '');
+      const siteId = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0] || '');
       const params = {};
       if (siteId) params.siteId = siteId;
       const res = await ApiV2.get('/v2/raw-material', { params });

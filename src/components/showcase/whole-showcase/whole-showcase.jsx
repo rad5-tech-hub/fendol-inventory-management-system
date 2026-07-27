@@ -169,7 +169,7 @@ export default function ViewWholeHistory() {
 
     const siteId = isSuperAdmin
       ? (activeSite?.id || 'all')
-      : (user?.siteId || 'all');
+      : (user?.siteId || user?.userSites?.[0] || '');
 
     try {
       let endpoint, payload;

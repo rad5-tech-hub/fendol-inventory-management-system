@@ -72,7 +72,7 @@ export default function StaffAttendance() {
   const user = useSelector((state) => state.user);
   const activeSite = useSelector((state) => state.activeSite);
   const userTypes = user?.userTypes || [];
-  const userSiteId = user?.siteId || activeSite?.id || null;
+  const userSiteId = user?.siteId || user?.userSites?.[0] || activeSite?.id || null;
   const isSuperAdmin = userTypes.includes('super_admin');
 
   const [showSidebar, setShowSidebar] = useState(false);

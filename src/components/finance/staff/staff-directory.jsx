@@ -32,7 +32,7 @@ const formatDate = (isoDate) => {
 export default function StaffDirectory() {
   const user = useSelector((state) => state.user);
   const userTypes = user?.userTypes || [];
-  const userSiteId = user?.siteId || null;
+  const userSiteId = user?.siteId || user?.userSites?.[0] || null;
   const isSuperAdmin = userTypes.includes('super_admin');
 
   const [showSidebar, setShowSidebar] = useState(false);

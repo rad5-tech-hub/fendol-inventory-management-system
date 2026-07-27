@@ -30,8 +30,8 @@ const AddFish = () => {
   const user = useSelector((store) => store.user);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const isSuperAdmin = userTypes.includes('super_admin');
-  const effectiveSiteId = isSuperAdmin ? (activeSite?.id || 'all') : user?.siteId;
-  const effectiveSite = isSuperAdmin ? activeSite : (user?.siteId ? { id: user.siteId } : null);
+  const effectiveSiteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
+  const effectiveSite = isSuperAdmin ? activeSite : ((user?.siteId || user?.userSites?.[0]) ? { id: user?.siteId || user?.userSites?.[0] } : null);
 
   // Fetch Data with useEffect
   useEffect(() => {

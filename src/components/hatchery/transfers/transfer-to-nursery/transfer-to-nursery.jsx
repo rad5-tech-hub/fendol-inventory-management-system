@@ -64,7 +64,7 @@ export default function TransferToNursery() {
 
         setPondsLoading(true);
         try {
-          const siteParam = isSuperAdmin ? (data.siteId || 'all') : (user?.siteId || 'all');
+          const siteParam = isSuperAdmin ? (data.siteId || 'all') : (user?.siteId || user?.userSites?.[0] || '');
           const pondsRes = await Api.get(`/fish-stages?siteId=${siteParam}`);
           let list = Array.isArray(pondsRes.data?.data) ? pondsRes.data.data : [];
           if (list.length === 0 && siteParam !== 'all' && isSuperAdmin) {
