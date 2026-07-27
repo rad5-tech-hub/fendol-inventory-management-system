@@ -18,6 +18,7 @@ export default function CreateStages() {
         siteId: "",
     });
     const [showSidebar, setShowSidebar] = useState(false);
+
     const navigate = useNavigate();
     const user = useSelector((store) => store.user);
     const isSuperAdmin = user?.userTypes?.includes('super_admin');
