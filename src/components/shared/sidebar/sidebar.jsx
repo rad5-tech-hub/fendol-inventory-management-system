@@ -281,7 +281,7 @@ export default function SideBar({ show, handleClose }) {
                 </>
               )}
               {hasPermission(userTypes, 'hatchery') && renderDirectLink("Broodstock Management", "/hatchery/broodstock", <GiCirclingFish size={25} className="me-1" />)}
-              {hasPermission(userTypes, 'hatchery') && renderDirectLink("Fry Production Records", "/hatchery/fry-production/daily-records", <GiCirclingFish size={25} className="me-1" />)}
+              {/* Fry Production Records is covered by the Hatch dashboard */}
               {hasPermission(userTypes, 'hatchery') && renderDirectLink("Cost Analysis", "/hatchery/cost-analysis/expenses", <MdOutlinePointOfSale size={25} className="me-1" />)}
             </>
           )}
