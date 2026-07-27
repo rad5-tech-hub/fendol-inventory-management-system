@@ -52,7 +52,7 @@ export default function History() {
     setLoading(true);
     setError(null);
     try {
-      const siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || activeSite?.id || '');
+      const siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
       if (!siteId) {
         setError('No site selected. Please select a site from the header or contact an administrator.');
         setRecords([]);
@@ -112,7 +112,7 @@ export default function History() {
     } finally {
       setLoading(false);
     }
-  }, [activeSite?.id, user?.siteId]);
+  }, [activeSite?.id, user?.siteId, user?.userSites?.[0]?.id]);
 
   useEffect(() => {
     loadHistory();

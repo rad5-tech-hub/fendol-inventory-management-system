@@ -87,7 +87,7 @@ export default function ViewFish() {
   const activeSite = useSelector((store) => store.activeSite);
   const userTypes = user?.userTypes || [];
   const isSuperAdmin = userTypes.includes('super_admin');
-  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || activeSite?.id || '');
+  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
 
   /* ── Move to Pond modal ── */
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -256,7 +256,7 @@ export default function ViewFish() {
       if (!append) setLoading(false);
       setLoadingMore(false);
     }
-  }, [activeSite?.id, user?.siteId]);
+  }, [activeSite?.id, user?.siteId, user?.userSites?.[0]?.id]);
 
   useEffect(() => {
     loadTransfers();
