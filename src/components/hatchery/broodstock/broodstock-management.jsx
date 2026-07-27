@@ -90,7 +90,6 @@ export default function BroodstockManagement() {
   };
 
   useEffect(() => {
-    if (!showModal) return;
     let cancelled = false;
     const fetchSites = async () => {
       try {
@@ -103,44 +102,50 @@ export default function BroodstockManagement() {
     };
     fetchSites();
     return () => { cancelled = true; };
-  }, [showModal]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const fetchSites = async () => {
-      try {
-        const res = await ApiV2.get('/v2/all-site');
-        const data = Array.isArray(res.data?.data) ? res.data.data : [];
-        if (!cancelled) setSites((prev) => (prev.length ? prev : data));
-      } catch {
-        /* silent — sites only needed for modals, already handled */
-      }
-    };
-    fetchSites();
-    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
-    if (!selectedSite) {
-      setOverview(null);
-      setOverviewError(null);
-      return;
-    }
     let cancelled = false;
-    const fetchOverview = async () => {
+    const fetchData = async () => {
+      if (!selectedSite) {
+        setLoadingOverview(true);
+        setOverviewError(null);
+        try {
+          const res = await ApiV2.get('/v2/broodstock/overview/all');
+          if (!cancelled && res.data?.data) {
+            const d = res.data.data;
+            setOverview({ ...d.grandTotal, latestActivities: d.latestActivities || [] });
+            setAllSiteOverviews((d.sites || []).map(s => ({
+              siteName: s.siteName || 'Unknown',
+              totalFemales: s.femaleCount || 0,
+              totalMale: s.maleCount || 0,
+            })));
+          }
+        } catch (err) {
+          if (!cancelled) {
+            const data = err.response?.data || {};
+            const msg = data.response_message || data.message || 'Failed to load broodstock overview';
+            setOverviewError(msg);
+            setOverview(null);
+            setAllSiteOverviews([]);
+          }
+        } finally {
+          if (!cancelled) setLoadingOverview(false);
+        }
+        return;
+      }
       setLoadingOverview(true);
       setOverviewError(null);
       try {
         const res = await ApiV2.get(`/v2/broodstock/overview?siteId=${selectedSite}`);
-        if (!cancelled) setOverview(res.data?.data || null);
+        if (!cancelled) {
+          setOverview(res.data?.data || null);
+          setAllSiteOverviews([]);
+        }
       } catch (err) {
         if (!cancelled) {
           const data = err.response?.data || {};
-          const msg =
-            data.response_message ||
-            data.message ||
-            (typeof data.error === 'string' ? data.error : data.error?.message) ||
-            'Failed to load broodstock overview';
+          const msg = data.response_message || data.message || 'Failed to load broodstock overview';
           setOverviewError(msg);
           setOverview(null);
         }
@@ -148,36 +153,9 @@ export default function BroodstockManagement() {
         if (!cancelled) setLoadingOverview(false);
       }
     };
-    fetchOverview();
+    fetchData();
     return () => { cancelled = true; };
   }, [selectedSite, refreshKey]);
-
-  useEffect(() => {
-    if (selectedSite || sites.length === 0) return;
-    let cancelled = false;
-    const fetchAll = async () => {
-      setLoadingAllSites(true);
-      try {
-        const results = await Promise.allSettled(
-          sites.map((s) =>
-            ApiV2.get(`/v2/broodstock/overview?siteId=${s.id}`).then((r) => r.data?.data),
-          ),
-        );
-        if (!cancelled) {
-          const overviews = results
-            .filter((r) => r.status === 'fulfilled' && r.value)
-            .map((r) => r.value);
-          setAllSiteOverviews(overviews);
-        }
-      } catch {
-        if (!cancelled) setAllSiteOverviews([]);
-      } finally {
-        if (!cancelled) setLoadingAllSites(false);
-      }
-    };
-    fetchAll();
-    return () => { cancelled = true; };
-  }, [selectedSite, sites, refreshKey]);
 
   useEffect(() => {
     if (!overviewError) return;

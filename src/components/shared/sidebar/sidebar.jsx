@@ -11,7 +11,7 @@ const computeOpenFromPath = (path) => {
     open.hatchery = true;
     if (path.includes('/hatchery/hatch-batches')) open.hatch_batches = true;
     if (path.includes('/hatchery/broodstock')) open.broodstock = true;
-    if (path.includes('/hatchery/cost-analysis')) open.cost_analysis = true;
+    
   }
   if (path.includes("/ponds")) open.pond_management = true;
   if (path.includes("/manage-fish")) open.fish_activities = true;
@@ -56,7 +56,7 @@ import { LuClipboardCheck, LuClipboardPenLine } from "react-icons/lu";
 import { GiCannedFish, GiCirclingFish, GiFriedFish, GiChipsBag, GiDamagedHouse, GiPolarBear, GiFishingNet, GiFishing, GiDeadHead, GiFoodChain } from "react-icons/gi";
 import { TbFishOff } from "react-icons/tb";
 import { RiStoreFill, RiTeamFill } from "react-icons/ri";
-import { MdOutlinePointOfSale, MdOutlineBarChart, MdOutlineInventory2, MdOutlinePeople, MdAttachMoney, MdPersonAdd, MdPointOfSale } from "react-icons/md";
+import { MdOutlineBarChart, MdOutlineInventory2, MdOutlinePeople, MdAttachMoney, MdPersonAdd, MdPointOfSale } from "react-icons/md";
 import { SiGoogleanalytics } from "react-icons/si";
 import styles from "./siderbar.module.scss";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -82,7 +82,7 @@ export default function SideBar({ show, handleClose }) {
       updates.hatchery = true;
       if (path.includes('/hatchery/hatch-batches')) updates.hatch_batches = true;
       if (path.includes('/hatchery/broodstock')) updates.broodstock = true;
-      if (path.includes('/hatchery/cost-analysis')) updates.cost_analysis = true;
+      
     }
     if (path.includes("/ponds")) updates.pond_management = true;
     if (path.includes("/manage-fish")) updates.fish_activities = true;
@@ -282,7 +282,6 @@ export default function SideBar({ show, handleClose }) {
               )}
               {hasPermission(userTypes, 'hatchery') && renderDirectLink("Broodstock Management", "/hatchery/broodstock", <GiCirclingFish size={25} className="me-1" />)}
               {/* Fry Production Records is covered by the Hatch dashboard */}
-              {hasPermission(userTypes, 'hatchery') && renderDirectLink("Cost Analysis", "/hatchery/cost-analysis/expenses", <MdOutlinePointOfSale size={25} className="me-1" />)}
             </>
           )}
 
