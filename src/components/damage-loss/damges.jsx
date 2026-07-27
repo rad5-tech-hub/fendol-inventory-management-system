@@ -88,7 +88,11 @@ export default function DamageLoss() {
 
   const getPondName = (record) => {
     if (record.pondId && pondMap[record.pondId]) return pondMap[record.pondId];
-    if (record.sourcePond) return record.sourcePond;
+    if (record.sourcePond) {
+      if (typeof record.sourcePond === 'string') return record.sourcePond;
+      if (typeof record.sourcePond === 'object' && record.sourcePond?.title) return record.sourcePond.title;
+      if (typeof record.sourcePond === 'object' && record.sourcePond?.name) return record.sourcePond.name;
+    }
     return '\u2014';
   };
 

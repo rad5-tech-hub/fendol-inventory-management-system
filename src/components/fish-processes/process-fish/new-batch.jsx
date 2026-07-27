@@ -300,7 +300,10 @@ export default function NewBatchFish() {
         remarks: '',
       });
 
-      navigate('/fish-processes/batch-processing');
+      const targetId = newProcessId || response.data.data?.processId;
+      if (targetId) {
+        navigate(`/fish-processes/batch-processing/${targetId}`);
+      }
     } catch (error) {
       console.error(`[POST] /harvest-washing`, error);
       toast.update(loadingToast, {
