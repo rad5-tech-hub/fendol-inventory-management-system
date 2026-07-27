@@ -814,12 +814,11 @@
   font-weight: 600;
   color: #9CA3AF;
   text-align: left;
-  padding: 10px 12px;
+  padding: 14px 12px;
   border-bottom: 1px solid #F0F0F0;
   white-space: nowrap;
+  vertical-align: middle;
 }
-.topProductsTable thead th:nth-child(3),
-.topProductsTable thead th:nth-child(4),
 .topProductsTable thead th:nth-child(5),
 .topProductsTable thead th:nth-child(6) {
   text-align: right;
@@ -870,6 +869,7 @@
 }
 
 /* Right-aligned cells */
+.topProductsTable .cellRight,
 .cellRight {
   text-align: right;
 }
