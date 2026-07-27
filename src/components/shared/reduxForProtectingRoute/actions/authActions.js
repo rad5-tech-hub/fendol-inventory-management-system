@@ -13,7 +13,7 @@ export const loginUser = (token) => {
   })();
 
   const userTypes = extractUserTypes(decoded);
-  const userSites = decoded.sites || decoded.userSites || decoded.assignedSites || [];
+  const userSites = decoded.sites || decoded.userSites || decoded.assignedSites || decoded.siteIds || [];
 
   return {
     type: LOGIN_USER,

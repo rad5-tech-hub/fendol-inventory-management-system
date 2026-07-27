@@ -19,7 +19,7 @@ const getInitialUser = () => {
 
   try {
     const decoded = jwtDecode(token);
-    const userSites = decoded.sites || decoded.userSites || decoded.assignedSites || [];
+    const userSites = decoded.sites || decoded.userSites || decoded.assignedSites || decoded.siteIds || [];
     return {
       ...decoded,
       userTypes: extractUserTypes(decoded),
