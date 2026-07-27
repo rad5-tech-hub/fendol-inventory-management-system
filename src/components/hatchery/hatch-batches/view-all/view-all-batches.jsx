@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Pagination, Modal, Form } from 'react-bootstrap';
+import { Pagination } from 'react-bootstrap';
 import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
 import { toast } from 'react-toastify';
 import { IoSearchOutline, IoFilterOutline, IoRefreshOutline, IoEyeOutline, IoPencilOutline, IoSendOutline } from 'react-icons/io5';
 import { GiCirclingFish } from 'react-icons/gi';
-import { FaChartLine, FaCheckCircle, FaPlus, FaExchangeAlt, FaTruck } from 'react-icons/fa';
+import { FaChartLine, FaCheckCircle, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, ReferenceDot,
@@ -14,7 +14,7 @@ import {
 import SideBar from '../../../shared/sidebar/sidebar';
 import PortalDropdown from '../../../shared/portal-dropdown/PortalDropdown';
 import Header from '../../../shared/header/header';
-import Api, { ApiV2 } from '../../../shared/api/apiLink';
+import { ApiV2 } from '../../../shared/api/apiLink';
 import styles from '../../hatchery.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
@@ -118,14 +118,7 @@ export default function ViewAllBatches() {
   const [ponds, setPonds] = useState([]);
   const [pondsLoading, setPondsLoading] = useState(false);
 
-  const [moveBatch, setMoveBatch] = useState(null);
-  const [showMoveModal, setShowMoveModal] = useState(false);
-  const [movePondId, setMovePondId] = useState('');
-  const [moveQty, setMoveQty] = useState('');
-  const [moveSubmitting, setMoveSubmitting] = useState(false);
-  const [moveError, setMoveError] = useState('');
-  const [movePonds, setMovePonds] = useState([]);
-  const [movePondsLoading, setMovePondsLoading] = useState(false);
+
 
   const [summary, setSummary] = useState({ total: 0, totalFryProduced: 0, averageHatchability: 0, activeCount: 0, completedCount: 0 });
   const [cursor, setCursor] = useState(null);
@@ -138,45 +131,7 @@ export default function ViewAllBatches() {
     navigate(`/hatchery/transfers/transfer-to-nursery?batchId=${row.id}`);
   };
 
-  const openMoveModal = (row) => {
-    setMoveBatch(row);
-    setMovePondId('');
-    setMoveQty(String((row.fryProduced || 0) - (row.fryMoved || 0)));
-    setMoveError('');
-    setMovePondsLoading(true);
-    setMovePonds([]);
-    Api.get(`/fish-stages?siteId=${isSuperAdmin ? (row.siteId || 'all') : (user?.siteId || 'all')}`)
-      .then((res) => {
-        const list = Array.isArray(res.data?.data) ? res.data.data : [];
-        setMovePonds(list);
-      })
-      .catch(() => setMovePonds([]))
-      .finally(() => setMovePondsLoading(false));
-    setShowMoveModal(true);
-  };
 
-  const handleMoveSubmit = async () => {
-    if (!movePondId) { setMoveError('Please select a pond.'); return; }
-    if (!moveQty || Number(moveQty) <= 0) { setMoveError('Please enter a valid quantity.'); return; }
-    setMoveError('');
-    setMoveSubmitting(true);
-    try {
-      await ApiV2.patch(`/v2/hatch-batches-moved/${moveBatch.id}`, {
-        pondId: movePondId,
-        quantity: Number(moveQty),
-      });
-      toast.success('Hatch batch marked as moved!', { className: 'dark-toast' });
-      setShowMoveModal(false);
-      setMoveBatch(null);
-      fetchBatches(filterDateFrom, filterDateTo);
-    } catch (err) {
-      const d = err.response?.data;
-      const msg = d?.message || d?.error || 'Failed to mark as moved. Please try again.';
-      setMoveError(typeof msg === 'string' ? msg : 'Failed to mark as moved.');
-    } finally {
-      setMoveSubmitting(false);
-    }
-  };
 
   const handleTransfer = async () => {
     if (!selectedPondId) { setTransferError('Please select a pond.'); return; }
@@ -320,8 +275,6 @@ export default function ViewAllBatches() {
           { label: <><IoEyeOutline size={16} style={{ marginRight: 10 }} /> View Summary</>, onClick: () => navigate(`/hatchery/hatch-batches/summary/${row.id}`) },
           { label: <><IoPencilOutline size={16} style={{ marginRight: 10 }} /> Edit Batch</>, onClick: () => navigate('/hatchery/hatch-batches/create', { state: { batch: row } }) },
           { label: <><IoSendOutline size={16} style={{ marginRight: 10 }} /> Transfer to Nursery</>, onClick: () => openTransferModal(row) },
-          { label: <><FaTruck size={16} style={{ marginRight: 10 }} /> Mark as Moved</>, onClick: () => openMoveModal(row) },
-
         ]}
       />
     );
@@ -510,60 +463,7 @@ export default function ViewAllBatches() {
         </section>
       </div>
 
-      <Modal show={showMoveModal} onHide={() => setShowMoveModal(false)} centered backdrop>
-        <Modal.Header closeButton>
-          <Modal.Title style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1F2937' }}>
-            Mark as Moved
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {moveBatch && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: '0.8rem', color: '#9CA3AF', marginBottom: 4 }}>Batch</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1F2937' }}>{moveBatch.batchNo}</div>
-            </div>
-          )}
-          <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>
-            Select Pond
-          </Form.Label>
-          <CustomDropdown
-            options={movePonds.map(p => ({ value: p.id, label: p.title }))}
-            value={movePondId}
-            onChange={(val) => setMovePondId(val)}
-            placeholder={movePondsLoading ? 'Loading ponds...' : (movePonds.length === 0 ? 'No ponds available' : 'Select a pond')}
-            disabled={movePondsLoading}
-          />
-          <div style={{ marginTop: 16 }}>
-            <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>
-              Quantity to Move
-            </Form.Label>
-            <Form.Control
-              type="number"
-              value={moveQty}
-              onChange={(e) => setMoveQty(e.target.value)}
-              onWheel={(e) => e.target.blur()}
-            />
-          </div>
-          {moveBatch && (
-            <div style={{ marginTop: 8, fontSize: '0.78rem', color: '#9CA3AF' }}>
-              Available: {f((moveBatch.fryProduced || 0) - (moveBatch.fryMoved || 0))} fry
-            </div>
-          )}
-          {moveError && (
-            <div style={{ marginTop: 12, padding: '8px 12px', background: '#FEF2F2', borderRadius: 6, color: '#dc3545', fontSize: '0.85rem' }}>
-              {moveError}
-            </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer style={{ borderTop: 'none', paddingTop: 0 }}>
-          <button className={styles.outlineBtn} onClick={() => setShowMoveModal(false)} disabled={moveSubmitting}>
-            Cancel
-          </button>
-          <button className={styles.primaryBtn} onClick={handleMoveSubmit} disabled={moveSubmitting}>
-            {moveSubmitting ? '\u23F3 Moving...' : 'Mark as Moved'}
-          </button>
-        </Modal.Footer>
-      </Modal>
+
     </section>
   );
 }

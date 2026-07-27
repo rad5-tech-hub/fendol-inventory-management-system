@@ -405,7 +405,7 @@ export default function CreateFeedBatch() {
   };
 
   const handleAddCostItem = () => {
-    const newId = Math.max(...otherCostItems.map(c => c.id)) + 1;
+    const newId = otherCostItems.length === 0 ? 1 : Math.max(...otherCostItems.map(c => c.id)) + 1;
     const defaultType = costTypeOptions[0]?.id || '';
     setOtherCostItems([...otherCostItems, { id: newId, type: defaultType, desc: '', amount: 0 }]);
   };

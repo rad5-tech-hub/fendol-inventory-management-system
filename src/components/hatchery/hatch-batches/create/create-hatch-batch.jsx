@@ -149,7 +149,7 @@ export default function CreateHatchBatch() {
       toast.error('Please enter a valid number of fry produced.', { className: 'dark-toast' });
       return false;
     }
-    if (!form.fryPerGramRate || Number(form.fryPerGramRate) <= 0) {
+    if (!isEditing && (!form.fryPerGramRate || Number(form.fryPerGramRate) <= 0)) {
       toast.error('Please enter a valid fry per gram rate.', { className: 'dark-toast' });
       return false;
     }
@@ -162,8 +162,13 @@ export default function CreateHatchBatch() {
     try {
       const data = { ...serializeForm(form) };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-      const payload = buildPayload(null);
-      await ApiV2.post('/v2/hatch-batches', payload);
+      if (isEditing) {
+        const payload = buildPayload('active');
+        await ApiV2.put(`/v2/hatch-batches/${editData.id}`, payload);
+      } else {
+        const payload = buildPayload(null);
+        await ApiV2.post('/v2/hatch-batches', payload);
+      }
       toast.update(loadingToast, {
         render: 'Draft saved successfully!',
         type: 'success',
@@ -177,12 +182,22 @@ export default function CreateHatchBatch() {
       if (!err.response) {
         message = err.code === 'ECONNABORTED' ? 'Request timed out. Please try again.' : 'Network error. Please check your internet connection and try again.';
       } else {
-        const status = err.response.status;
-        const serverMsg = err.response.data?.message || err.response.data?.error || '';
-        if (status >= 400 && status < 500) {
-          message = serverMsg || (status === 400 ? 'Invalid input. Please check your form fields and try again.' : status === 401 ? 'Session expired. Please log in again.' : status === 403 ? 'Access denied.' : status === 409 ? 'A hatch batch with these details already exists.' : 'Validation error.');
-        } else if (status >= 500) {
-          message = serverMsg || 'Server error. Please try again later or contact support.';
+        const serverMsg = err.response.data?.message || '';
+        const serverErrors = err.response.data?.errors;
+        if (Array.isArray(serverErrors) && serverErrors.length) {
+          message = serverErrors.join('. ');
+        } else if (serverMsg) {
+          message = serverMsg;
+        } else if (err.response.status === 400) {
+          message = 'Invalid input. Please check your form fields and try again.';
+        } else if (err.response.status === 401) {
+          message = 'Session expired. Please log in again.';
+        } else if (err.response.status === 403) {
+          message = 'Access denied.';
+        } else if (err.response.status === 409) {
+          message = 'A hatch batch with these details already exists.';
+        } else if (err.response.status >= 500) {
+          message = 'Server error. Please try again later or contact support.';
         }
       }
       toast.update(loadingToast, { render: message, type: 'error', isLoading: false, autoClose: 5000, className: 'dark-toast' });
@@ -227,12 +242,22 @@ export default function CreateHatchBatch() {
       if (!err.response) {
         message = err.code === 'ECONNABORTED' ? 'Request timed out. Please try again.' : 'Network error. Please check your internet connection and try again.';
       } else {
-        const status = err.response.status;
-        const serverMsg = err.response.data?.message || err.response.data?.error || '';
-        if (status >= 400 && status < 500) {
-          message = serverMsg || (status === 400 ? 'Invalid input.' : status === 401 ? 'Session expired. Please log in again.' : status === 403 ? 'Access denied.' : status === 409 ? 'A hatch batch with these details already exists.' : 'Validation error.');
-        } else if (status >= 500) {
-          message = serverMsg || 'Server error. Please try again later or contact support.';
+        const serverMsg = err.response.data?.message || '';
+        const serverErrors = err.response.data?.errors;
+        if (Array.isArray(serverErrors) && serverErrors.length) {
+          message = serverErrors.join('. ');
+        } else if (serverMsg) {
+          message = serverMsg;
+        } else if (err.response.status === 400) {
+          message = 'Invalid input. Please check your form fields and try again.';
+        } else if (err.response.status === 401) {
+          message = 'Session expired. Please log in again.';
+        } else if (err.response.status === 403) {
+          message = 'Access denied.';
+        } else if (err.response.status === 409) {
+          message = 'A hatch batch with these details already exists.';
+        } else if (err.response.status >= 500) {
+          message = 'Server error. Please try again later or contact support.';
         }
       }
       toast.update(loadingToast, { render: message, type: 'error', isLoading: false, autoClose: 5000, className: 'dark-toast' });
@@ -503,13 +528,11 @@ export default function CreateHatchBatch() {
 
               {/* Action Buttons */}
               <div className={styles.createActions}>
-                {!isEditing && (
-                  <button className={styles.outlineBtn} onClick={handleSaveDraft} disabled={loading}>
-                    <IoSaveOutline size={16} /> Save Draft
-                  </button>
-                )}
-                <button className={styles.primaryBtn} onClick={() => handleSubmit(true)} disabled={loading}>
-                  {loading ? '\u23F3' : <IoCheckmarkCircle size={18} />} {loading ? 'Completing...' : 'Complete Hatch Batch'}
+                <button className={styles.outlineBtn} onClick={() => handleSubmit(true)} disabled={loading}>
+                  {loading ? '\u23F3' : <IoCheckmarkCircle size={18} />} {loading ? 'Completing...' : 'Complete When Done'}
+                </button>
+                <button className={styles.primaryBtn} onClick={handleSaveDraft} disabled={loading}>
+                  {loading ? '\u23F3' : <IoSaveOutline size={16} />} {loading ? 'Saving Draft...' : 'Save Draft'}
                 </button>
               </div>
               </div>

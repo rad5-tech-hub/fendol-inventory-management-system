@@ -36,12 +36,6 @@ export default function TransferToNursery() {
 
   const [selectedPondId, setSelectedPondId] = useState('');
   const [transferQty, setTransferQty] = useState('');
-  const [transferDate, setTransferDate] = useState('');
-  const [sourceTank, setSourceTank] = useState('');
-  const [avgSize, setAvgSize] = useState('');
-  const [recordedBy, setRecordedBy] = useState('');
-  const [remarks, setRemarks] = useState('');
-  const [shooterCount, setShooterCount] = useState('');
 
   const [transferStep, setTransferStep] = useState('form');
   const [transferSubmitting, setTransferSubmitting] = useState(false);
@@ -67,7 +61,6 @@ export default function TransferToNursery() {
         setBatchData(data);
         setSites(Array.isArray(sitesRes.data?.data) ? sitesRes.data.data : []);
         setTransferQty(data.fryProduced || '');
-        setTransferDate(new Date().toISOString().split('T')[0]);
 
         setPondsLoading(true);
         try {
@@ -103,7 +96,6 @@ export default function TransferToNursery() {
       const res = await ApiV2.post(`/v2/hatch-to-pond/${batchId}`, {
         pondId: selectedPondId,
         quantity: Number(transferQty),
-        shooterCount: shooterCount ? Number(shooterCount) : undefined,
       });
       setTransferResult(res.data?.data || res.data);
       if (isDraft) {
@@ -284,17 +276,6 @@ export default function TransferToNursery() {
                     </div>
                     <div className="col-md-6">
                       <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
-                        Source Hatchery Tank / Unit <span style={{ color: '#dc3545' }}>*</span>
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter tank / unit"
-                        value={sourceTank}
-                        onChange={(e) => setSourceTank(e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
                         Destination Nursery Pond <span style={{ color: '#dc3545' }}>*</span>
                       </Form.Label>
                       <CustomDropdown
@@ -307,16 +288,6 @@ export default function TransferToNursery() {
                     </div>
                     <div className="col-md-6">
                       <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
-                        Transfer Date <span style={{ color: '#dc3545' }}>*</span>
-                      </Form.Label>
-                      <Form.Control
-                        type="date"
-                        value={transferDate}
-                        onChange={(e) => setTransferDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
                         Transfer Quantity (pcs) <span style={{ color: '#dc3545' }}>*</span>
                       </Form.Label>
                       <Form.Control
@@ -324,52 +295,6 @@ export default function TransferToNursery() {
                         placeholder="0"
                         value={transferQty}
                         onChange={(e) => { setTransferQty(e.target.value); setTransferError(''); }}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
-                        Estimated Avg. Size
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="e.g. 0.45 g"
-                        value={avgSize}
-                        onChange={(e) => setAvgSize(e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
-                        Recorded By <span style={{ color: '#dc3545' }}>*</span>
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter your name"
-                        value={recordedBy}
-                        onChange={(e) => setRecordedBy(e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>Remarks</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={2}
-                        placeholder="Enter remarks (optional)"
-                        maxLength={300}
-                        value={remarks}
-                        onChange={(e) => setRemarks(e.target.value)}
-                      />
-                      <div className={styles.charCounter}>{remarks.length} / 300</div>
-                    </div>
-                    <div className="col-md-6">
-                      <Form.Label className="fw-semibold" style={{ fontSize: '0.82rem' }}>
-                        Number of Shooter
-                      </Form.Label>
-                      <Form.Control
-                        type="number"
-                        placeholder="Enter count (optional)"
-                        value={shooterCount}
-                        onChange={(e) => setShooterCount(e.target.value)}
-                        min="0"
                       />
                     </div>
                   </div>
@@ -401,10 +326,6 @@ export default function TransferToNursery() {
                     <div className={styles.detailRow}>
                       <span className={styles.detailLabel}>Total Fry Count (Current)</span>
                       <span className={styles.detailValue}>{batchData ? f(Number(batchData.fryProduced) || 0) : '—'} pcs</span>
-                    </div>
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>Number of Shooter</span>
-                      <span className={styles.detailValue}>{shooterCount ? f(Number(shooterCount)) : '—'}</span>
                     </div>
                     <div className={styles.detailRow}>
                       <span className={styles.detailLabel}>Available for Transfer</span>
