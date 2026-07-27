@@ -319,7 +319,7 @@ export default function CreateHatchBatch() {
                 <Row className="g-3">
                   <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Hatch Batch Number</Form.Label>
-                    <Form.Control type="text" value={form.hatchbatchNo} disabled className="bg-light" style={{ height: 38 }} />
+                    <Form.Control type="text" value={form.hatchbatchNo} onChange={e => setForm(prev => ({ ...prev, hatchbatchNo: e.target.value }))} style={{ height: 38 }} />
                   </Col>
                   <Col md style={{ display: 'flex', flexDirection: 'column' }}>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Site</Form.Label>
