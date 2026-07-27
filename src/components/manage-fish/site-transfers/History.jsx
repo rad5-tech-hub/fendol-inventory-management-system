@@ -52,7 +52,10 @@ export default function History() {
     setLoading(true);
     setError(null);
     try {
-      const siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
+      const userSiteId = user?.siteId;
+      const firstUserSite = user?.userSites?.[0];
+      const firstUserSiteId = firstUserSite ? (firstUserSite.id || (typeof firstUserSite === 'string' ? firstUserSite : null)) : null;
+      const siteId = isSuperAdmin ? (activeSite?.id || '') : (userSiteId || firstUserSiteId || '');
       if (!siteId) {
         setError('No site selected. Please select a site from the header or contact an administrator.');
         setRecords([]);
@@ -112,7 +115,7 @@ export default function History() {
     } finally {
       setLoading(false);
     }
-  }, [activeSite?.id, user?.siteId, user?.userSites?.[0]?.id]);
+  }, [isSuperAdmin, activeSite?.id, user?.siteId, user?.userSites?.[0]]);
 
   useEffect(() => {
     loadHistory();
