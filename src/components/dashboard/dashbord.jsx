@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import styles from './dashboard.module.scss';
-import Api from '../shared/api/apiLink';
+import Api, { ApiV2 } from '../shared/api/apiLink';
 import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
 import { useSelector } from 'react-redux';
@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [userSiteDetails, setUserSiteDetails] = useState([]);
   const user = useSelector((store) => store.user);
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
   const activeSite = useSelector((store) => store.activeSite);
@@ -48,6 +49,28 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  useEffect(() => {
+    const siteIds = user?.userSites?.filter(s => typeof s === 'string') || [];
+    if (siteIds.length === 0) {
+      setUserSiteDetails(user?.userSites?.filter(s => typeof s === 'object') || []);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        const allSites = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (!cancelled) {
+          const matched = allSites.filter(s => siteIds.includes(s.id));
+          setUserSiteDetails(matched.length ? matched : user?.userSites || []);
+        }
+      } catch {
+        if (!cancelled) setUserSiteDetails(user?.userSites || []);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.userSites]);
 
   if (loading && isSuperAdmin) {
     return (
@@ -419,57 +442,61 @@ const Dashboard = () => {
                     {(user?.userTypes?.[0] || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                   </span>
 
-                  {(user?.userSites?.length || user?.siteId) && (
+                  {(userSiteDetails.length > 0 || user?.siteId) && (
                     <div style={{ width: '100%', maxWidth: '480px' }}>
                       <p style={{ margin: '0 0 12px 0', fontSize: '0.85rem', fontWeight: 600, color: '#6C757D', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         Your Site
                       </p>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
-                        {user?.userSites?.length > 0
-                          ? user.userSites.map((site, i) => {
-                              const siteName = site?.name || (typeof site === 'string' ? '' : '');
-                              const siteId = site?.id || (typeof site === 'string' ? site : '');
-                              const initial = (siteName?.[0] || siteId?.[0] || 'S').toUpperCase();
-                              const displayName = siteName || siteId || '—';
-                              return (
-                                <div key={i} style={{
-                                  background: '#F8F9FA', border: '1px solid #EFEFEF',
-                                  borderRadius: '12px', padding: '12px 18px',
-                                  display: 'flex', alignItems: 'center', gap: '10px',
-                                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                                }}>
-                                  <div style={{
-                                    width: '32px', height: '32px', borderRadius: '8px',
-                                    background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: '#fff', fontSize: '14px', fontWeight: 700, flexShrink: 0,
-                                  }}>{initial}</div>
-                                  <div style={{ textAlign: 'left' }}>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#2E3135' }}>
-                                      {displayName}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })
-                          : user?.siteId && (
+                        {userSiteDetails.map((site, i) => {
+                          const siteName = site?.name || '';
+                          const siteId = site?.id || '';
+                          const initial = (siteName?.[0] || siteId?.[0] || 'S').toUpperCase();
+                          const displayName = siteName || siteId || '—';
+                          return (
+                            <div key={i} style={{
+                              background: '#F8F9FA', border: '1px solid #EFEFEF',
+                              borderRadius: '12px', padding: '12px 18px',
+                              display: 'flex', alignItems: 'center', gap: '10px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                            }}>
                               <div style={{
-                                background: '#F8F9FA', border: '1px solid #EFEFEF',
-                                borderRadius: '12px', padding: '12px 18px',
-                                display: 'flex', alignItems: 'center', gap: '10px',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                              }}>
-                                <div style={{
-                                  width: '32px', height: '32px', borderRadius: '8px',
-                                  background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  color: '#fff', fontSize: '14px', fontWeight: 700,
-                                }}>S</div>
-                                <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2E3135' }}>
-                                  Site ID: {user.siteId}
-                                </span>
+                                width: '32px', height: '32px', borderRadius: '8px',
+                                background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#fff', fontSize: '14px', fontWeight: 700, flexShrink: 0,
+                              }}>{initial}</div>
+                              <div style={{ textAlign: 'left' }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#2E3135' }}>
+                                  {displayName}
+                                </div>
+                                {siteName && site?.type?.name && (
+                                  <div style={{ fontSize: '0.72rem', color: '#8C949B' }}>
+                                    {site.type.name}
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            </div>
+                          );
+                        })}
+                        {userSiteDetails.length === 0 && user?.siteId && (
+                          <div style={{
+                            background: '#F8F9FA', border: '1px solid #EFEFEF',
+                            borderRadius: '12px', padding: '12px 18px',
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                          }}>
+                            <div style={{
+                              width: '32px', height: '32px', borderRadius: '8px',
+                              background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: '#fff', fontSize: '14px', fontWeight: 700,
+                            }}>S</div>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2E3135' }}>
+                              Site ID: {user.siteId}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
