@@ -59,7 +59,7 @@ function validateField(field, value, form) {
   }
 
   if (field === 'quantity') {
-    if (value === '' || value === null || value === undefined) return 'Quantity is required';
+    if (value === '' || value === null || value === undefined) return null;
     const num = Number(value);
     if (isNaN(num)) return 'Quantity must be a valid number';
     if (!Number.isFinite(num)) return 'Quantity must be a finite number';
@@ -71,7 +71,7 @@ function validateField(field, value, form) {
   }
 
   if (field === 'unitCost') {
-    if (value === '' || value === null || value === undefined) return 'Unit cost is required';
+    if (value === '' || value === null || value === undefined) return null;
     const num = Number(value);
     if (isNaN(num)) return 'Unit cost must be a valid number';
     if (!Number.isFinite(num)) return 'Unit cost must be a finite number';
@@ -240,10 +240,14 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
         name: form.name.trim(),
         category: form.category.trim(),
         unit: form.unit,
-        quantity: Number(form.quantity),
-        unitCost: Number(form.unitCost),
         threshold: Number(form.threshold),
       };
+      if (form.numberOfBags !== '' && form.numberOfBags !== null && form.numberOfBags !== undefined) {
+        payload.numberOfBags = Number(form.numberOfBags);
+      }
+      if (form.baseWeightPerBag !== '' && form.baseWeightPerBag !== null && form.baseWeightPerBag !== undefined) {
+        payload.weightPerBag = Number(form.baseWeightPerBag);
+      }
       const addSid = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]);
       if (addSid) payload.siteId = addSid;
 
