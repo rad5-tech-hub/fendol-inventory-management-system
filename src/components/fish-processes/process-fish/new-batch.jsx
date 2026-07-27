@@ -244,11 +244,12 @@ export default function NewBatchFish() {
     try {
       const payload = {
         ...moveFishData,
-          ...(isSuperAdmin
-            ? (activeSite?.id ? { siteId: activeSite.id } : {})
-            : ((user?.siteId || user?.userSites?.[0]) ? { siteId: user?.siteId || user?.userSites?.[0] } : {})
-          ),
-          const response = await Api.post('/harvest-washing', payload);
+        ...(isSuperAdmin
+          ? (activeSite?.id ? { siteId: activeSite.id } : {})
+          : ((user?.siteId || user?.userSites?.[0]) ? { siteId: user?.siteId || user?.userSites?.[0] } : {})
+        ),
+      };
+      const response = await Api.post('/harvest-washing', payload);
       const newProcessId = response.data.data?.id;
       if (newProcessId) setProcessId(newProcessId);
 
