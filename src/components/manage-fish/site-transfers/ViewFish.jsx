@@ -87,7 +87,7 @@ export default function ViewFish() {
   const activeSite = useSelector((store) => store.activeSite);
   const userTypes = user?.userTypes || [];
   const isSuperAdmin = userTypes.includes('super_admin');
-  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || '');
+  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || activeSite?.id || '');
 
   /* ── Move to Pond modal ── */
   const [showMoveModal, setShowMoveModal] = useState(false);

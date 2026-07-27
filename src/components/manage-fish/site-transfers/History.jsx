@@ -52,7 +52,7 @@ export default function History() {
     setLoading(true);
     setError(null);
     try {
-      const siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || '');
+      const siteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || activeSite?.id || '');
       if (!siteId) {
         setError('No site selected. Please select a site from the header or contact an administrator.');
         setRecords([]);
