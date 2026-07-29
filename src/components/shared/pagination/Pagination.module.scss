@@ -1,0 +1,19 @@
+@import '../style.scss';
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  padding-bottom: 0;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  margin-top: auto;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.showingText {
+  font-size: 13px;
+  color: #8C949B;
+}

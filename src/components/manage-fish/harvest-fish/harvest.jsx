@@ -28,6 +28,8 @@ const HarvestFish = () => {
   });
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [activeHarvestQuantity, setActiveHarvestQuantity] = useState(null);
+  const [activeHarvestLoading, setActiveHarvestLoading] = useState(true);
   const activeSite = useSelector((store) => store.activeSite);
   const user = useSelector((store) => store.user);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
@@ -72,6 +74,47 @@ const HarvestFish = () => {
     return () => { cancelled = true; };
   }, [activeSite?.id]);
 
+  // Titles that represent summary/processing stages rather than actual ponds
+  const NON_POND_TITLES = ['harvest', 'damage', 'loss', 'washing', 'smoking', 'drying', 'showcase', 'completed'];
+
+  const isHarvestablePond = (stage) => {
+    const title = String(stage.title ?? '').toLowerCase().trim();
+    if (!title) return false;
+    if (NON_POND_TITLES.includes(title)) return false;
+    const quantity = Number(stage.quantity ?? 0);
+    return quantity > 0;
+  };
+
+  // Fetch total quantity currently in active harvest / processing
+  useEffect(() => {
+    let cancelled = false;
+    const fetchActiveHarvest = async () => {
+      setActiveHarvestLoading(true);
+      try {
+        const siteParam = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]);
+        const params = {};
+        if (siteParam) params.siteId = siteParam;
+        const response = await Api.get('/get-all-active-harvest-batch', { params });
+        const quantity = Number(response.data?.data) || 0;
+        if (!cancelled) setActiveHarvestQuantity(quantity);
+      } catch (err) {
+        const status = err.response?.status;
+        const data = err.response?.data;
+        // 404 with "No harvest records" means there is simply no active harvest yet
+        if (status === 404 && data?.response_message?.includes('No harvest records')) {
+          if (!cancelled) setActiveHarvestQuantity(0);
+        } else {
+          console.error('[harvest] Active harvest fetch error:', err.response?.data || err.message);
+          if (!cancelled) setActiveHarvestQuantity(0);
+        }
+      } finally {
+        if (!cancelled) setActiveHarvestLoading(false);
+      }
+    };
+    fetchActiveHarvest();
+    return () => { cancelled = true; };
+  }, [activeSite?.id]);
+
   // Handle Input Changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -93,14 +136,14 @@ const HarvestFish = () => {
     setShowPondDropdown(false);
   };
 
-  // Filter Ponds for Dropdown
+  // Filter Ponds for Dropdown (only actual ponds with available fish)
   const filteredPonds = stages.filter((stage) => {
     const matchesSite = activeSite?.id
       ? String(stage.siteId ?? '').toLowerCase() === String(activeSite.id).toLowerCase()
       : activeSite?.name
         ? String(stage.site ?? '').toLowerCase() === String(activeSite.name).toLowerCase()
         : true;
-    return matchesSite && String(stage.title ?? '').toLowerCase().includes(pondSearch.toLowerCase());
+    return matchesSite && isHarvestablePond(stage) && String(stage.title ?? '').toLowerCase().includes(pondSearch.toLowerCase());
   });
 
   // Handle Form Submission
@@ -159,7 +202,16 @@ const HarvestFish = () => {
           <main>
             <ToastContainer />
             <Form className={styles.create_form} onSubmit={handleAddFish}>
-              <h4 className="mt-5 mb-5">Harvest Fish</h4>
+              <h4 className="mt-5 mb-4">Harvest Fish</h4>
+
+              <div className="alert alert-info d-flex justify-content-between align-items-center mb-4 py-2 px-3">
+                <span className="fw-semibold">Active Harvest / Processing</span>
+                <span>
+                  {activeHarvestLoading
+                    ? 'Loading...'
+                    : `${Number(activeHarvestQuantity ?? 0).toLocaleString()} fish already in active harvest / processing`}
+                </span>
+              </div>
 
               <Row>
                 <Col md={12} lg={6} className="mb-4">

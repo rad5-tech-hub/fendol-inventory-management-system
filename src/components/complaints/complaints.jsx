@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
 import 'bootstrap/dist/css/bootstrap.min.css';

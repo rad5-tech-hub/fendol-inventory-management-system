@@ -3,14 +3,13 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../product.module.scss';
-import { BsPlusLg, BsBarChartFill, BsChevronDown } from "react-icons/bs";
+import { BsPlusLg, BsBarChartFill, BsChevronDown, BsSearch, BsX } from "react-icons/bs";
 import { ApiV2 } from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Modal, Button } from 'react-bootstrap';
 import ErrorState from "../../shared/error-state/ErrorState";
 import EmptyState from "../../shared/empty-state/EmptyState";
-import ReactPaginate from 'react-paginate';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { hasPermission } from '../../shared/permissions/permissions';
@@ -18,29 +17,38 @@ import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
 import DataTable from '../../shared/data-table/DataTable';
+import Pagination from "../../shared/pagination/Pagination";
 
 const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick, isSuperAdmin }) => (
   <DataTable
     columns={[
-      { key: 'productName', label: 'Product Name' },
+      { key: 'productName', label: 'Product Name', render: (v) => <span style={{ fontWeight: 600, color: '#2E3135' }}>{v || '—'}</span> },
       { key: 'category', label: 'Category', render: (v) => v?.name || '—' },
-      { key: 'creator', label: 'Created By', render: (v, row) => (
+      { key: 'creator', label: 'Created By', render: (v, row, idx) => (
         v?.fullName ? (
-          <div className={styles.createdByCell}>
-            <div className={styles.createdByAvatar} style={{ background: avatarColors[rows.indexOf(row) % avatarColors.length] }}>
+          <div className="d-flex align-items-center gap-2">
+            <div
+              style={{
+                width: '34px', height: '34px', borderRadius: '50%',
+                background: avatarColors[idx % avatarColors.length], display: 'flex',
+                alignItems: 'center', justifyContent: 'center', fontSize: '12px',
+                fontWeight: 700, color: '#ffffff', flexShrink: 0,
+              }}
+            >
               {(() => {
                 const parts = v.fullName.trim().split(' ');
                 return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
               })()}
             </div>
-            <span>{v.fullName}</span>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: '#2E3135' }}>{v.fullName}</span>
           </div>
         ) : '—'
       )},
-      { key: 'createdAt', label: 'Date Created', render: (v) => {
-        const date = new Date(v);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      }},
+      { key: 'createdAt', label: 'Date Created', render: (v) => (
+        <span style={{ color: '#8C949B', whiteSpace: 'nowrap' }}>
+          {new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </span>
+      )},
     ]}
     data={rows}
     actions={(product) => {
@@ -77,6 +85,7 @@ export default function ViewAllProducts() {
   const [collapsedSites, setCollapsedSites] = useState(new Set());
   const [siteTypes, setSiteTypes] = useState([]);
   const [selectedSiteTypeFilter, setSelectedSiteTypeFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -117,14 +126,21 @@ export default function ViewAllProducts() {
 
   const resolveSiteTypeName = (product) => siteTypeMap[product.siteType] || 'Unassigned';
 
+  const filteredProducts = products.filter((p) => {
+    const q = searchQuery.toLowerCase();
+    if (!q) return true;
+    return (p.productName || '').toLowerCase().includes(q)
+      || (p.category?.name || '').toLowerCase().includes(q);
+  });
+
   const productsForSiteType = canAssignSite && viewMode === 'by-site-type' && selectedSiteTypeFilter
-    ? products.filter(p => resolveSiteTypeName(p) === selectedSiteTypeFilter)
-    : products;
+    ? filteredProducts.filter(p => resolveSiteTypeName(p) === selectedSiteTypeFilter)
+    : filteredProducts;
 
   const groupedBySiteType = canAssignSite && viewMode === 'by-site-type'
     ? (selectedSiteTypeFilter
         ? { [selectedSiteTypeFilter]: productsForSiteType }
-        : products.reduce((acc, product) => {
+        : filteredProducts.reduce((acc, product) => {
             const name = resolveSiteTypeName(product);
             if (!acc[name]) acc[name] = [];
             acc[name].push(product);
@@ -136,10 +152,10 @@ export default function ViewAllProducts() {
 
   useEffect(() => {
     if (viewMode === 'by-site-type') {
-      const names = new Set(products.map(p => resolveSiteTypeName(p)));
+      const names = new Set(filteredProducts.map(p => resolveSiteTypeName(p)));
       setCollapsedSites(names);
     }
-  }, [viewMode, products, siteTypes]);
+  }, [viewMode, filteredProducts, siteTypes]);
 
   const handleEditClick = (product) => {
     navigate('/products/create-products', { state: { editProduct: product } });
@@ -196,7 +212,7 @@ export default function ViewAllProducts() {
     setCurrentPage(data.selected);
   };
 
-  const currentProducts = products.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const currentProducts = filteredProducts.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
 
@@ -261,37 +277,70 @@ export default function ViewAllProducts() {
               )}
             </div>
 
-            {/* ── Admin view-mode toggle ── */}
-            {canAssignSite && (
-              <div className={styles.filterBar}>
-                <button
-                  className={viewMode === 'all' ? styles.filterBtnActive : styles.filterBtnOutline}
-                  onClick={() => setViewMode('all')}
-                >
-                  All Products
-                </button>
-                <button
-                  className={viewMode === 'by-site-type' ? styles.filterBtnActive : styles.filterBtnOutline}
-                  onClick={() => { setViewMode('by-site-type'); setSelectedSiteTypeFilter(''); }}
-                >
-                  By Site Type
-                </button>
-              </div>
-            )}
-
-            {/* ── Site type dropdown (only in by-site-type mode) ── */}
-            {canAssignSite && viewMode === 'by-site-type' && (
-              <div className={styles.filterBar}>
-                <CustomDropdown
-                  options={[
-                    { value: '', label: 'All Site Types' },
-                    ...siteTypes.map(st => ({ value: st.name, label: st.name })),
-                  ]}
-                  value={selectedSiteTypeFilter}
-                  onChange={(val) => setSelectedSiteTypeFilter(val)}
+            {/* ── Controls Bar ── */}
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+              {/* Search */}
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', background: '#ffffff',
+                  border: '1px solid #e5e7eb', borderRadius: '10px', padding: '0 14px',
+                  gap: '8px', minWidth: '280px', maxWidth: '400px', flex: '1 1 auto',
+                  transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = '#512728'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(81,39,40,0.1)'; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <BsSearch style={{ fontSize: '14px', color: '#8C949B', flexShrink: 0 }} />
+                <input
+                  type="text"
+                  placeholder="Search products by name or category..."
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(0); }}
+                  style={{
+                    border: 'none', outline: 'none', fontSize: '13px', color: '#2E3135',
+                    background: 'transparent', width: '100%', padding: '9px 0',
+                  }}
                 />
+                {searchQuery && (
+                  <span
+                    style={{ fontSize: '14px', color: '#8C949B', cursor: 'pointer', lineHeight: 1, padding: '2px' }}
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <BsX />
+                  </span>
+                )}
               </div>
-            )}
+
+              {/* Admin view-mode toggle */}
+              {canAssignSite && (
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <div className={styles.filterBar} style={{ marginBottom: 0 }}>
+                    <button
+                      className={viewMode === 'all' ? styles.filterBtnActive : styles.filterBtnOutline}
+                      onClick={() => setViewMode('all')}
+                    >
+                      All Products
+                    </button>
+                    <button
+                      className={viewMode === 'by-site-type' ? styles.filterBtnActive : styles.filterBtnOutline}
+                      onClick={() => { setViewMode('by-site-type'); setSelectedSiteTypeFilter(''); }}
+                    >
+                      By Site Type
+                    </button>
+                  </div>
+                  {canAssignSite && viewMode === 'by-site-type' && (
+                    <CustomDropdown
+                      options={[
+                        { value: '', label: 'All Site Types' },
+                        ...siteTypes.map(st => ({ value: st.name, label: st.name })),
+                      ]}
+                      value={selectedSiteTypeFilter}
+                      onChange={(val) => setSelectedSiteTypeFilter(val)}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* ── Loading ── */}
             {loading && <SkeletonTable cols={4} rows={5} />}
@@ -300,12 +349,15 @@ export default function ViewAllProducts() {
             {error && <ErrorState message={error} />}
 
             {/* ── Empty ── */}
-            {!loading && !error && products.length === 0 && (
-              <EmptyState title="No products available" description="Create new products to get started." />
+            {!loading && !error && filteredProducts.length === 0 && (
+              <EmptyState
+                title={searchQuery ? 'No matches found' : 'No products available'}
+                description={searchQuery ? 'Try adjusting your search query.' : 'Create new products to get started.'}
+              />
             )}
 
             {/* ── SUPER ADMIN: By Site Type (collapsible cards) ── */}
-            {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'by-site-type' && (
+            {!loading && !error && filteredProducts.length > 0 && canAssignSite && viewMode === 'by-site-type' && (
               <>
                 {siteTypeNames.length === 0 && selectedSiteTypeFilter && (
                   <EmptyState title={`No products found for "${selectedSiteTypeFilter}"`} />
@@ -356,7 +408,7 @@ export default function ViewAllProducts() {
             )}
 
             {/* ── SUPER ADMIN: All Products flat ── */}
-            {!loading && !error && products.length > 0 && canAssignSite && viewMode === 'all' && (
+            {!loading && !error && filteredProducts.length > 0 && canAssignSite && viewMode === 'all' && (
               <ProductTable
                 rows={currentProducts}
                 avatarColors={AVATAR_COLORS}
@@ -367,7 +419,7 @@ export default function ViewAllProducts() {
             )}
 
             {/* ── NON-SUPER-ADMIN: flat list, no site headers ── */}
-            {!loading && !error && products.length > 0 && !canAssignSite && (
+            {!loading && !error && filteredProducts.length > 0 && !canAssignSite && (
               <ProductTable
                 rows={currentProducts}
                 avatarColors={AVATAR_COLORS}
@@ -377,28 +429,15 @@ export default function ViewAllProducts() {
               />
             )}
             </div>
-            {!loading && !error && products.length > 0 && ((canAssignSite && viewMode === 'all') || !canAssignSite) && (
-              <div className="d-flex justify-content-center" style={{ marginTop: 'auto', paddingTop: 12, paddingBottom: 0, background: '#fff' }}>
-                <ReactPaginate
-                  previousLabel={"< "}
-                  nextLabel={" >"}
-                  breakLabel={"..."}
-                  pageCount={Math.ceil(products.length / itemsPerPage)}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={3}
-                  onPageChange={handlePageChange}
-                  containerClassName={"pagination"}
-                  pageClassName={"page-item"}
-                  pageLinkClassName={"page-link"}
-                  previousClassName={"page-item"}
-                  previousLinkClassName={"page-link"}
-                  nextClassName={"page-item"}
-                  nextLinkClassName={"page-link"}
-                  breakClassName={"page-item"}
-                  breakLinkClassName={"page-link"}
-                  activeClassName={"active"}
-                />
-              </div>
+            {!loading && !error && filteredProducts.length > 0 && ((canAssignSite && viewMode === 'all') || !canAssignSite) && (
+              <Pagination
+                currentPage={currentPage}
+                pageCount={Math.ceil(filteredProducts.length / itemsPerPage)}
+                totalItems={filteredProducts.length}
+                pageSize={itemsPerPage}
+                onPageChange={handlePageChange}
+                itemName="products"
+              />
             )}
           </main>
 

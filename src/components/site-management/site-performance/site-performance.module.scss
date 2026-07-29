@@ -90,7 +90,7 @@
   select {
     appearance: none;
     -webkit-appearance: none;
-    padding: 7px 28px 7px 12px;
+    padding: 7px 36px 7px 12px;
     border: 1px solid #D1D5DB;
     border-radius: 8px;
     background: #fff;
@@ -99,7 +99,7 @@
     outline: none;
     cursor: pointer;
     font-weight: 500;
-    min-width: 130px;
+    min-width: 150px;
     line-height: 1.4;
     transition: border-color 0.15s;
 
@@ -111,7 +111,7 @@
 
 .selectChevron {
   position: absolute;
-  right: 10px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: #9CA3AF;
@@ -257,15 +257,19 @@
 
 .statGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 
   @media (max-width: 1199px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 767px) {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 480px) {
     grid-template-columns: 1fr;
   }
 }
@@ -394,13 +398,13 @@
 
 .chartGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr;
+  grid-template-columns: minmax(320px, 420px) 1fr;
   gap: 16px;
   align-items: stretch;
   margin-bottom: 24px;
 
   @media (max-width: 1199px) {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   @media (max-width: 767px) {
@@ -563,13 +567,66 @@
 }
 
 .trendPeriod {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   color: #512728;
   font-size: 0.78rem;
   font-weight: 500;
-  cursor: default;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #F9F5F2;
+  }
+
+  svg {
+    transition: transform 0.2s ease;
+  }
+}
+
+.trendChevronOpen {
+  transform: rotate(180deg);
+}
+
+.trendDropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 150px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  z-index: 50;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.trendDropdownItem {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: #F9F5F2;
+    color: #512728;
+  }
+}
+
+.trendDropdownItemActive {
+  background: #F3F4F6;
+  color: #512728;
+  font-weight: 600;
 }
 
 .trendBody {

@@ -5,7 +5,7 @@ import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../customer.module.scss';
-import { BsCalendar3, BsPrinter } from "react-icons/bs";
+import { BsCalendar3, BsPlusLg, BsPrinter, BsX } from "react-icons/bs";
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -15,7 +15,7 @@ import EmptyState from "../../shared/empty-state/EmptyState";
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
-import ReactPaginate from 'react-paginate';
+import Pagination from "../../shared/pagination/Pagination";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import ReceiptModal from "../../finance/add-sales/receipt";
 
@@ -368,38 +368,35 @@ export default function PersonalLedger() {
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <ToastContainer />
 
-            {/* ── Breadcrumb ── */}
-            <div className="d-flex align-items-center gap-2 mb-1" style={{ fontSize: '12px' }}>
-              <span style={{ cursor: 'pointer', color: '#8C949B' }} onClick={() => navigate('/customer/view-all')}>
+            {/* ── Breadcrumb + Header Actions ── */}
+            <div className="d-flex align-items-center gap-2 mb-3" style={{ fontSize: '13px' }}>
+              <span className="text-muted" style={{ cursor: 'pointer' }} onClick={() => navigate('/customer/view-all')}>
                 Customers
               </span>
               <span className="text-muted">›</span>
               <span className="fw-semibold" style={{ color: '#2E3135' }}>Customer Ledger</span>
               <div className="ms-auto d-flex gap-2">
-                <Button
+                <button
+                  className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ backgroundColor: '#512728', color: '#fff', fontSize: '13px', padding: '6px 14px', borderRadius: '6px', border: 'none' }}
                   onClick={handleAddMoney}
-                  className={`border-0 btn-dark shadow py-2 px-4 fs-6 fw-semibold ${styles.submit}`}
-                  style={{ fontSize: '13px !important', padding: '6px 14px !important', borderRadius: '6px' }}
                 >
-                  Add Payment
-                </Button>
+                  <BsPlusLg /> Add Payment
+                </button>
               </div>
             </div>
 
             {/* ── Page Title ── */}
-            <div className="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#2E3135', marginBottom: 0 }}>
-                  Customer Ledger
-                </h2>
-              </div>
-            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#2E3135', marginBottom: '4px' }}>Customer Ledger</h2>
+            <p style={{ fontSize: '14px', color: '#8C949B', marginBottom: '20px' }}>
+              View all transactions and payments for this customer.
+            </p>
 
             {/* ── Loading ── */}
             {loading && <SkeletonTable cols={7} rows={5} />}
 
             {/* ── Error ── */}
-            {error && <ErrorState message={error} />}
+            {error && <ErrorState message={error} onRetry={() => customerId && fetchLedgerData()} />}
 
             {/* ── Content ── */}
             {!loading && !error && ledgerData.length > 0 && (
@@ -408,57 +405,89 @@ export default function PersonalLedger() {
                 <div
                   style={{
                     background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
-                    padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '10px',
+                    padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '16px',
                   }}
                 >
-                  <div className="d-flex flex-wrap align-items-center" style={{ gap: '10px', justifyContent: 'space-between' }}>
-                    <div className="d-flex align-items-center gap-2">
-                      <div
-                        style={{
-                          width: '44px', height: '44px', borderRadius: '50%',
-                          background: AVATAR_COLORS[0], display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', fontSize: '16px', fontWeight: 700,
-                          color: '#ffffff', flexShrink: 0,
-                        }}
-                      >
-                        {getInitials(fullName)}
+                  <div className="d-flex align-items-center gap-2">
+                    <div
+                      style={{
+                        width: '44px', height: '44px', borderRadius: '50%',
+                        background: AVATAR_COLORS[0], display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', fontSize: '16px', fontWeight: 700,
+                        color: '#ffffff', flexShrink: 0,
+                      }}
+                    >
+                      {getInitials(fullName)}
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1C1E', marginBottom: 0 }}>
+                        {fullName?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
+                      </h3>
+                      <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500, margin: 0 }}>
+                        {address || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Stat Cards ── */}
+                <div className="d-flex gap-3 mb-4 flex-wrap">
+                  <div
+                    className="d-flex align-items-center gap-3 flex-fill"
+                    style={{
+                      background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
+                      padding: '18px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', minWidth: '200px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '48px', height: '48px', borderRadius: '10px', background: '#F0FDF4',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '20px', color: '#16A34A', flexShrink: 0,
+                      }}
+                    >
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23" />
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#8C949B', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                        Total Credit
                       </div>
-                      <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1C1E', marginBottom: 0 }}>
-                          {fullName?.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
-                        </h3>
-                        <p style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500, margin: 0 }}>
-                          {address || 'N/A'}
-                        </p>
+                      <div style={{ fontSize: '26px', fontWeight: 700, color: '#16A34A', lineHeight: 1.2 }}>
+                        {formatCurrency(totalCredit)}
                       </div>
                     </div>
-
-                    {/* Metric Cards */}
-                    <div className="d-flex gap-2">
-                      <div style={{
-                        background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '8px', padding: '10px 16px',
-                      }}>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                          Total Credit
-                        </div>
-                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A', lineHeight: 1.2 }}>
-                          {formatCurrency(totalCredit)}
-                        </div>
+                  </div>
+                  <div
+                    className="d-flex align-items-center gap-3 flex-fill"
+                    style={{
+                      background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
+                      padding: '18px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', minWidth: '200px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '48px', height: '48px', borderRadius: '10px', background: '#FDF5F5',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '20px', color: balanceColor, flexShrink: 0,
+                      }}
+                    >
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23" />
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#8C949B', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                        Current Balance
                       </div>
-                      <div style={{
-                        background: '#FAFCFF', border: '1px solid #e5e7eb',
-                        borderRadius: '8px', padding: '10px 16px',
-                      }}>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                          Current Balance
-                        </div>
-                        <div style={{ fontSize: '16px', fontWeight: 700, color: balanceColor, lineHeight: 1.2 }}>
-                          {formatCurrency(balance)}
-                        </div>
-                        <div style={{ fontSize: '10px', color: balanceColor, opacity: 0.7, lineHeight: 1 }}>
-                          {balanceLabel}
-                        </div>
+                      <div style={{ fontSize: '26px', fontWeight: 700, color: balanceColor, lineHeight: 1.2 }}>
+                        {formatCurrency(balance)}
+                      </div>
+                      <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>
+                        {balanceLabel}
                       </div>
                     </div>
                   </div>
@@ -519,28 +548,16 @@ export default function PersonalLedger() {
                     </div>
 
                     <div className="d-flex gap-1" style={{ alignSelf: 'flex-end' }}>
-                      <button
-                        onClick={() => setCurrentPage(0)}
-                        style={{
-                          padding: '5px 12px', background: '#512728', color: '#ffffff',
-                          border: 'none', borderRadius: '5px', fontSize: '11px', fontWeight: 500,
-                          cursor: 'pointer', transition: 'background 0.12s ease',
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#714445'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = '#512728'; }}
-                      >
-                        Apply Filter
-                      </button>
                       {hasActiveFilters && (
                         <button
+                          className="btn btn-sm d-flex align-items-center gap-1"
                           onClick={resetFilters}
                           style={{
-                            padding: '5px 12px', background: '#ffffff', color: '#6B7280',
-                            border: '1px solid #e5e7eb', borderRadius: '5px', fontSize: '11px', fontWeight: 500,
-                            cursor: 'pointer',
+                            background: 'transparent', color: '#6B7280', border: '1px solid #e5e7eb',
+                            borderRadius: '8px', padding: '6px 10px', fontSize: '12px', cursor: 'pointer',
                           }}
                         >
-                          Reset
+                          <BsX style={{ fontSize: '14px' }} /> Reset
                         </button>
                       )}
                     </div>
@@ -556,7 +573,10 @@ export default function PersonalLedger() {
                   </div>
 
                   {filteredLedgerData.length === 0 ? (
-                    <EmptyState title="No transactions match your filters" />
+                    <EmptyState
+                      title={ledgerData.length === 0 ? "No transactions available" : "No matches found"}
+                      description={ledgerData.length === 0 ? "There are no transactions recorded for this customer yet." : "Try adjusting your date range or type filter."}
+                    />
                   ) : (
                     <DataTable
                       columns={ledgerColumns}
@@ -569,36 +589,22 @@ export default function PersonalLedger() {
             )}
 
             {!loading && !error && ledgerData.length < 1 && (
-              <EmptyState title="No Ledger found" />
+              <EmptyState
+                title="No transactions available"
+                description="There are no transactions recorded for this customer yet."
+              />
             )}
             </div>
             {/* ── Pagination ── */}
             {!loading && !error && ledgerData.length > 0 && filteredLedgerData.length > 0 && (
-              <div className="d-flex justify-content-between align-items-center px-4 pt-3 border-top" style={{ borderColor: '#e5e7eb', background: '#fff', paddingBottom: 0, marginTop: 'auto' }}>
-                <div style={{ fontSize: '13px', color: '#8C949B' }}>
-                  Showing {offset + 1}–{Math.min(offset + itemsPerPage, filteredLedgerData.length)} of {filteredLedgerData.length} records
-                </div>
-                <ReactPaginate
-                  previousLabel={"‹"}
-                  nextLabel={"›"}
-                  breakLabel="..."
-                  pageCount={pageCount}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={3}
-                  onPageChange={handlePageChange}
-                  containerClassName={"pagination mb-0"}
-                  pageClassName={"page-item"}
-                  pageLinkClassName={"page-link"}
-                  previousClassName={"page-item"}
-                  previousLinkClassName={"page-link"}
-                  nextClassName={"page-item"}
-                  nextLinkClassName={"page-link"}
-                  breakClassName={"page-item"}
-                  breakLinkClassName={"page-link"}
-                  activeClassName={"active"}
-                  forcePage={currentPage}
-                />
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                pageCount={pageCount}
+                totalItems={filteredLedgerData.length}
+                pageSize={itemsPerPage}
+                onPageChange={handlePageChange}
+                itemName="records"
+              />
             )}
           </main>
         </section>

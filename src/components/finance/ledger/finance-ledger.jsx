@@ -6,9 +6,9 @@ import styles from "../finance.module.scss";
 import Api from "../../shared/api/apiLink";
 import ErrorState from "../../shared/error-state/ErrorState";
 import EmptyState from "../../shared/empty-state/EmptyState";
-import ReactPaginate from "react-paginate";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import DataTable from "../../shared/data-table/DataTable";
+import Pagination from "../../shared/pagination/Pagination";
 
 const FinanceLedger = () => {
   const [ledgerData, setLedgerData] = useState([]);
@@ -58,10 +58,24 @@ const FinanceLedger = () => {
     setCurrentPage(0); // Reset to first page when filtering
   };
 
+  const formatDateInput = (isoDate) => {
+    if (!isoDate) return '';
+    const d = new Date(isoDate);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   // Filter ledger data based on selected date
   const filteredLedgerData = selectedDate
-    ? ledgerData.filter((record) => formatDate(record.date) === selectedDate)
+    ? ledgerData.filter((record) => formatDateInput(record.date) === selectedDate)
     : ledgerData;
+
+  const handleResetFilters = () => {
+    setSelectedDate('');
+    setCurrentPage(0);
+  };
 
   // Pagination logic
   const handlePageChange = ({ selected }) => {
@@ -97,16 +111,33 @@ const FinanceLedger = () => {
         <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-5 align-items-md-center">
-              <h4 className="mb-3 mb-md-0">Finance Ledger</h4>
-              <div className="d-flex gap-2">
+            <div className="d-flex flex-column flex-md-row justify-content-between mt-3 mb-4 align-items-md-center gap-3">
+              <div>
+                <h4 className="mb-1" style={{ fontSize: 22, fontWeight: 700, color: '#2E3135' }}>Finance Ledger</h4>
+                <p style={{ margin: 0, color: '#8C949B', fontSize: 13 }}>View and filter all financial records.</p>
+              </div>
+              <div className="d-flex align-items-center gap-2 flex-wrap">
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={handleDateChange}
                   className="form-control"
                   placeholder="Filter By Date"
+                  style={{ width: 'auto', minWidth: 160, border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, padding: '8px 12px' }}
                 />
+                {selectedDate && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    style={{
+                      padding: '8px 14px', background: '#ffffff', color: '#6B7280',
+                      border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Reset
+                  </button>
+                )}
               </div>
             </div>
 
@@ -116,12 +147,15 @@ const FinanceLedger = () => {
             {/* Error Message */}
             {error && <ErrorState message={error} />}
 
-            {!loading && !error && displayedLedgerData.length === 0 && (
-              <EmptyState title="No available data" />
+            {!loading && !error && filteredLedgerData.length === 0 && (
+              <EmptyState
+                title={selectedDate ? 'No matches found' : 'No available data'}
+                description={selectedDate ? 'Try adjusting the selected date.' : 'No finance ledger records are available.'}
+              />
             )}
 
             {/* Ledger Table */}
-            {!loading && !error && displayedLedgerData.length > 0 && (
+            {!loading && !error && filteredLedgerData.length > 0 && (
               <DataTable
                 className={`${styles.styled_table} ${styles.table_responsive}`}
                 columns={[
@@ -140,28 +174,15 @@ const FinanceLedger = () => {
             )}
             </div>
             {/* Pagination */}
-            {!loading && !error && displayedLedgerData.length > 0 && (
-              <div className="d-flex justify-content-center" style={{ padding: 0, background: '#fff' }}>
-                <ReactPaginate
-                  previousLabel={"< "}
-                  nextLabel={" >"}
-                  breakLabel={"..."}
-                  pageCount={Math.ceil(filteredLedgerData.length / itemsPerPage)}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={3}
-                  onPageChange={handlePageChange}
-                  containerClassName={"pagination"}
-                  pageClassName={"page-item"}
-                  pageLinkClassName={"page-link"}
-                  previousClassName={"page-item"}
-                  previousLinkClassName={"page-link"}
-                  nextClassName={"page-item"}
-                  nextLinkClassName={"page-link"}
-                  breakClassName={"page-item"}
-                  breakLinkClassName={"page-link"}
-                  activeClassName={"active"}
-                />
-              </div>
+            {!loading && !error && filteredLedgerData.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                pageCount={Math.ceil(filteredLedgerData.length / itemsPerPage)}
+                totalItems={filteredLedgerData.length}
+                pageSize={itemsPerPage}
+                onPageChange={handlePageChange}
+                itemName="records"
+              />
             )}
           </main>
         </section>

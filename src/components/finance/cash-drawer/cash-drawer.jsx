@@ -10,10 +10,10 @@ import ErrorState from "../../shared/error-state/ErrorState";
 import EmptyState from "../../shared/empty-state/EmptyState";
 import { toast, ToastContainer } from "react-toastify";
 import Api from "../../shared/api/apiLink";
-import ReactPaginate from "react-paginate";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import DataTable from "../../shared/data-table/DataTable";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import Pagination from "../../shared/pagination/Pagination";
 
 const extractError = (error, fallback) => {
   const data = error?.response?.data;
@@ -70,7 +70,6 @@ const CashDrawer = () => {
     try {
       const params = {};
       if (resolvedSiteId) params.siteId = resolvedSiteId;
-      if (typeFilter !== "all") params.type = typeFilter;
       if (dateFrom) params.startDate = dateFrom;
       if (dateTo) params.endDate = dateTo;
 
@@ -198,14 +197,22 @@ const CashDrawer = () => {
     setCurrentPage(0);
   };
 
+  const filteredEntries = useMemo(() => {
+    if (typeFilter === "all") return entries;
+    return entries.filter((r) => {
+      if (typeFilter === "withdrawal") return r.isWithdrawal === true || Number(r.debit) > 0;
+      return r.isWithdrawal === false || Number(r.credit) > 0;
+    });
+  }, [entries, typeFilter]);
+
   const displayedEntries = useMemo(() => {
     const start = currentPage * itemsPerPage;
-    return entries.slice(start, start + itemsPerPage);
-  }, [entries, currentPage]);
+    return filteredEntries.slice(start, start + itemsPerPage);
+  }, [filteredEntries, currentPage]);
 
-  const totalDeposits = entries.reduce((sum, r) => sum + (Number(r.credit) || 0), 0);
-  const totalWithdrawals = entries.reduce((sum, r) => sum + (Number(r.debit) || 0), 0);
-  const currentBalance = entries.length > 0 ? Number(entries[0]?.balance || 0) : 0;
+  const totalDeposits = filteredEntries.reduce((sum, r) => sum + (Number(r.credit) || 0), 0);
+  const totalWithdrawals = filteredEntries.reduce((sum, r) => sum + (Number(r.debit) || 0), 0);
+  const currentBalance = filteredEntries.length > 0 ? Number(filteredEntries[0]?.balance || 0) : 0;
   const balanceColor = currentBalance < 0 ? '#DC2626' : currentBalance > 0 ? '#16A34A' : '#6B7280';
   const balanceLabel = currentBalance < 0 ? 'Negative' : currentBalance > 0 ? 'Positive' : 'Zero';
 
@@ -380,7 +387,7 @@ const CashDrawer = () => {
               </div>
             )}
 
-            {!loading && !error && entries.length === 0 && (
+            {!loading && !error && filteredEntries.length === 0 && (
               <div style={{ padding: '20px 0' }}>
                 <EmptyState
                   title={dateFrom || dateTo || typeFilter !== "all" ? "No matches found" : "No cash drawer entries found"}
@@ -389,11 +396,11 @@ const CashDrawer = () => {
               </div>
             )}
 
-            {!loading && !error && entries.length > 0 && (
+            {!loading && !error && filteredEntries.length > 0 && (
               <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'visible' }}>
                 <div className="d-flex align-items-center justify-content-between px-3 pt-2 pb-1">
                   <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#2E3135', margin: 0 }}>
-                    Ledger ({entries.length})
+                    Ledger ({filteredEntries.length})
                   </h4>
                 </div>
                 <DataTable
@@ -447,32 +454,15 @@ const CashDrawer = () => {
               </div>
             )}
             </div>
-            {entries.length > 0 && !loading && !error && (
-              <div className="d-flex justify-content-between align-items-center px-4 pt-3 border-top" style={{ borderColor: '#e5e7eb', background: '#fff', paddingBottom: 0 }}>
-                <div style={{ fontSize: '13px', color: '#8C949B' }}>
-                  Showing {startIndex + 1}–{Math.min(startIndex + itemsPerPage, entries.length)} of {entries.length} records
-                </div>
-                <ReactPaginate
-                  previousLabel={"‹"}
-                  nextLabel={"›"}
-                  breakLabel="..."
-                  pageCount={Math.max(1, Math.ceil(entries.length / itemsPerPage))}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={3}
-                  onPageChange={handlePageChange}
-                  forcePage={currentPage}
-                  containerClassName={"pagination mb-0"}
-                  pageClassName={"page-item"}
-                  pageLinkClassName={"page-link"}
-                  previousClassName={"page-item"}
-                  previousLinkClassName={"page-link"}
-                  nextClassName={"page-item"}
-                  nextLinkClassName={"page-link"}
-                  breakClassName={"page-item"}
-                  breakLinkClassName={"page-link"}
-                  activeClassName={"active"}
-                />
-              </div>
+            {filteredEntries.length > 0 && !loading && !error && (
+              <Pagination
+                currentPage={currentPage}
+                pageCount={Math.max(1, Math.ceil(filteredEntries.length / itemsPerPage))}
+                totalItems={filteredEntries.length}
+                pageSize={itemsPerPage}
+                onPageChange={handlePageChange}
+                itemName="records"
+              />
             )}
           </main>
         </section>

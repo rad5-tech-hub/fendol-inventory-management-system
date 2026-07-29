@@ -7,14 +7,10 @@ import {
   BsHeartPulseFill,
   BsBoxSeam,
   BsCalendarRange,
-  BsArrowClockwise,
   BsEye,
   BsCloudArrowDown,
   BsChevronDown,
-  BsChevronLeft,
-  BsChevronRight,
   BsInfoCircleFill,
-  BsBarChart,
   BsSearch,
 } from 'react-icons/bs';
 import { GiCirclingFish } from 'react-icons/gi';
@@ -33,6 +29,11 @@ import {
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { ApiV2 } from '../../shared/api/apiLink';
+import { SkeletonTable, SkeletonStatGrid, SkeletonCard } from '../../shared/skeleton/Skeleton';
+import EmptyState from '../../shared/empty-state/EmptyState';
+import ErrorState from '../../shared/error-state/ErrorState';
+import DataTable from '../../shared/data-table/DataTable';
+import Pagination from '../../shared/pagination/Pagination';
 import styles from './site-performance.module.scss';
 
 const f = (n) => (n != null ? new Intl.NumberFormat().format(Number(n)) : '0');
@@ -63,20 +64,25 @@ const SitePerformance = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [siteTypeFilter, setSiteTypeFilter] = useState('All Site Types');
-  const [trendPeriod] = useState('This Month');
+  const [trendPeriod, setTrendPeriod] = useState('This Month');
+  const [trendDropdownOpen, setTrendDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTooltip, setActiveTooltip] = useState(null);
   const pageSize = 10;
   const tooltipRef = useRef(null);
+  const trendDropdownRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (tooltipRef.current && !tooltipRef.current.contains(e.target)) {
         setActiveTooltip(null);
       }
+      if (trendDropdownRef.current && !trendDropdownRef.current.contains(e.target)) {
+        setTrendDropdownOpen(false);
+      }
     };
-    if (activeTooltip !== null) {
+    if (activeTooltip !== null || trendDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
     }
@@ -84,7 +90,7 @@ const SitePerformance = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [activeTooltip]);
+  }, [activeTooltip, trendDropdownOpen]);
 
   const fetchData = useCallback(async (from, to) => {
     setLoading(true);
@@ -136,31 +142,24 @@ const SitePerformance = () => {
   const summaryTotals = useMemo(() => ({
     totalSites: summary?.totalSites ?? summary?.siteCount ?? 0,
     totalFishStock: summary?.totalFishStock ?? summary?.totalFishInPond ?? 0,
-    totalBiomass: summary?.totalBiomass ?? summary?.biomassKg ?? 0,
     totalMortality: summary?.totalMortality ?? summary?.mortality ?? 0,
     feedConversionRatio: summary?.feedConversionRatio ?? summary?.fcr ?? 0,
     totalRevenue: summary?.totalRevenue ?? summary?.revenue ?? 0,
   }), [summary]);
 
-  const siteTypeTotals = useMemo(() => {
-    const groups = {
-      Hatchery: { count: 0, biomass: 0 },
-      'Main Farm': { count: 0, biomass: 0 },
-    };
-
-    sites.forEach((site) => {
-      const type = normalizeSiteType(site.typeName);
-      if (!groups[type]) {
-        groups[type] = { count: 0, biomass: 0 };
-      }
-      groups[type].count += 1;
-      groups[type].biomass += Number(site.totalBiomass ?? site.biomass ?? 0);
-    });
-
-    return groups;
-  }, [sites]);
-
-  const hasData = sites.length > 0 && summary;
+  const computeScopedTotals = (list) => {
+    const totalSites = list.length;
+    const totalFishStock = list.reduce((s, site) => s + (Number(site.totalFishInPond ?? site.totalFishStock ?? 0) || 0), 0);
+    const totalMortality = list.reduce((s, site) => s + (Number(site.totalMortality ?? site.mortality ?? 0) || 0), 0);
+    const totalRevenue = list.reduce((s, site) => s + (Number(site.totalRevenue ?? site.revenue ?? 0) || 0), 0);
+    const fcrValues = list
+      .map((site) => Number(site.feedConversionRatio ?? site.fcr))
+      .filter((v) => !Number.isNaN(v) && v > 0);
+    const feedConversionRatio = fcrValues.length > 0
+      ? Number((fcrValues.reduce((a, b) => a + b, 0) / fcrValues.length).toFixed(2))
+      : 0;
+    return { totalSites, totalFishStock, totalMortality, feedConversionRatio, totalRevenue };
+  };
 
   const filteredSites = useMemo(() => {
     let result = sites;
@@ -177,6 +176,13 @@ const SitePerformance = () => {
     return result;
   }, [sites, siteTypeFilter, searchQuery]);
 
+  const displayTotals = useMemo(() => {
+    if (siteTypeFilter === 'All Site Types') return summaryTotals;
+    return computeScopedTotals(filteredSites);
+  }, [siteTypeFilter, summaryTotals, filteredSites]);
+
+  const hasData = sites.length > 0 && summary;
+
   useEffect(() => {
     setCurrentPage(1);
   }, [siteTypeFilter, searchQuery, sites.length]);
@@ -191,14 +197,13 @@ const SitePerformance = () => {
 
   const handleExportReport = () => {
     const headers = [
-      'Site Name', 'Site Type', 'Fish Stock (pcs)', 'Biomass (kg)',
+      'Site Name', 'Site Type', 'Fish Stock (pcs)',
       'Survival Rate', 'Mortality (pcs)', 'FCR', 'Revenue (₦)', 'Status',
     ];
     const rows = filteredSites.map((site) => [
       site.siteName || '—',
       normalizeSiteType(site.typeName),
       site.totalFishInPond != null ? f(site.totalFishInPond) : '—',
-      site.totalBiomass != null ? f(site.totalBiomass) : '—',
       site.survivalRate != null ? formatPercent(site.survivalRate) : '—',
       site.totalMortality != null ? f(site.totalMortality) : '—',
       site.feedConversionRatio != null ? Number(site.feedConversionRatio).toFixed(2) : '—',
@@ -222,56 +227,99 @@ const SitePerformance = () => {
   };
 
   const donutSiteTypeData = useMemo(() => {
-    const hatcheryCount = siteTypeTotals.Hatchery?.count ?? 0;
-    const mainFarmCount = siteTypeTotals['Main Farm']?.count ?? 0;
-    const total = hatcheryCount + mainFarmCount;
-    const fallback = total === 0;
-    return [
-      {
-        name: 'Hatchery Sites',
-        value: fallback ? 2 : hatcheryCount,
-        percentage: fallback ? 40 : total ? Math.round((hatcheryCount / total) * 100) : 0,
-        color: '#B06426',
-      },
-      {
-        name: 'Main Farm Sites',
-        value: fallback ? 3 : mainFarmCount,
-        percentage: fallback ? 60 : total ? Math.round((mainFarmCount / total) * 100) : 0,
-        color: '#512728',
-      },
-    ];
-  }, [siteTypeTotals]);
+    const source = siteTypeFilter === 'All Site Types' ? sites : filteredSites;
+    const groups = {};
+    source.forEach((site) => {
+      const type = normalizeSiteType(site.typeName);
+      groups[type] = (groups[type] || 0) + 1;
+    });
 
-  const donutBiomassData = useMemo(() => {
-    const hatcheryBiomass = siteTypeTotals.Hatchery?.biomass ?? 0;
-    const mainFarmBiomass = siteTypeTotals['Main Farm']?.biomass ?? 0;
-    const total = hatcheryBiomass + mainFarmBiomass;
-    const fallback = total === 0;
-    return [
-      {
-        name: 'Hatchery Sites',
-        value: fallback ? 12450 : hatcheryBiomass,
-        label: fallback ? '12,450 kg' : `${f(hatcheryBiomass)} kg`,
-        percentage: fallback ? 25.5 : total ? Number(((hatcheryBiomass / total) * 100).toFixed(1)) : 0,
-        color: '#B06426',
-      },
-      {
-        name: 'Main Farm Sites',
-        value: fallback ? 36310 : mainFarmBiomass,
-        label: fallback ? '36,310 kg' : `${f(mainFarmBiomass)} kg`,
-        percentage: fallback ? 74.5 : total ? Number(((mainFarmBiomass / total) * 100).toFixed(1)) : 0,
-        color: '#512728',
-      },
-    ];
-  }, [siteTypeTotals]);
+    const entries = Object.entries(groups);
+    const total = source.length;
 
-  const biomassTrendData = summary?.biomassTrend || [
-    { date: 'May 1', value: 26000 },
-    { date: 'May 8', value: 32000 },
-    { date: 'May 15', value: 36000 },
-    { date: 'May 22', value: 42000 },
-    { date: 'May 29', value: 48760 },
+    if (total === 0) {
+      return [
+        { name: 'Hatchery Sites', value: 2, percentage: 40, color: '#B06426' },
+        { name: 'Main Farm Sites', value: 3, percentage: 60, color: '#512728' },
+      ];
+    }
+
+    const colors = { Hatchery: '#B06426', 'Main Farm': '#512728' };
+    return entries.map(([name, count]) => ({
+      name: `${name} Sites`,
+      value: count,
+      percentage: Math.round((count / total) * 100),
+      color: colors[name] || '#6B7280',
+    }));
+  }, [siteTypeFilter, sites, filteredSites]);
+
+  const trendOptions = [
+    { label: 'Last 7 Days', key: '7D' },
+    { label: 'Last 30 Days', key: '30D' },
+    { label: 'This Month', key: 'THIS_MONTH' },
+    { label: 'Last 6 Months', key: '6M' },
+    { label: 'Last Year', key: '1Y' },
   ];
+
+  const getTrendDataForPeriod = useCallback((period) => {
+    const apiData = summary?.performanceTrend;
+    if (Array.isArray(apiData) && apiData.length > 0) {
+      // If API returns trend data, use it; future enhancement: filter by period client-side
+      return apiData;
+    }
+
+    // Fallback sample data that changes per period to demonstrate interactivity
+    const base = 240000;
+    switch (period) {
+      case '7D':
+        return [
+          { date: 'Mon', value: base + 12000 },
+          { date: 'Tue', value: base + 18000 },
+          { date: 'Wed', value: base + 15000 },
+          { date: 'Thu', value: base + 22000 },
+          { date: 'Fri', value: base + 26000 },
+          { date: 'Sat', value: base + 24000 },
+          { date: 'Sun', value: base + 30000 },
+        ];
+      case '30D':
+        return [
+          { date: 'Week 1', value: base + 20000 },
+          { date: 'Week 2', value: base + 45000 },
+          { date: 'Week 3', value: base + 70000 },
+          { date: 'Week 4', value: base + 95000 },
+        ];
+      case '6M':
+        return [
+          { date: 'Jan', value: base },
+          { date: 'Feb', value: base + 50000 },
+          { date: 'Mar', value: base + 90000 },
+          { date: 'Apr', value: base + 140000 },
+          { date: 'May', value: base + 190000 },
+          { date: 'Jun', value: base + 247000 },
+        ];
+      case '1Y':
+        return [
+          { date: 'Q1', value: base + 30000 },
+          { date: 'Q2', value: base + 100000 },
+          { date: 'Q3', value: base + 170000 },
+          { date: 'Q4', value: base + 247000 },
+        ];
+      case 'THIS_MONTH':
+      default:
+        return [
+          { date: 'May 1', value: base + 5000 },
+          { date: 'May 8', value: base + 72000 },
+          { date: 'May 15', value: base + 116000 },
+          { date: 'May 22', value: base + 181000 },
+          { date: 'May 29', value: base + 247000 },
+        ];
+    }
+  }, [summary]);
+
+  const performanceTrendData = useMemo(
+    () => getTrendDataForPeriod(trendOptions.find((o) => o.label === trendPeriod)?.key || 'THIS_MONTH'),
+    [trendPeriod, getTrendDataForPeriod],
+  );
 
   const metricCards = [
     {
@@ -280,9 +328,9 @@ const SitePerformance = () => {
       icon: BsBuilding,
       color: '#6366F1',
       bg: '#EEF2FF',
-      value: summaryTotals.totalSites,
-      caption: 'All active sites',
-      tooltip: `Total number of active sites: ${summaryTotals.totalSites}`,
+      value: displayTotals.totalSites,
+      caption: siteTypeFilter === 'All Site Types' ? 'All active sites' : `Filtered: ${siteTypeFilter}`,
+      tooltip: `Total number of active sites: ${displayTotals.totalSites}`,
     },
     {
       key: 'totalFishStock',
@@ -290,19 +338,9 @@ const SitePerformance = () => {
       icon: GiCirclingFish,
       color: '#0EA5E9',
       bg: '#F0F9FF',
-      value: summaryTotals.totalFishStock,
-      caption: 'Across all sites',
-      tooltip: `Total fish count across all sites: ${f(summaryTotals.totalFishStock)}`,
-    },
-    {
-      key: 'totalBiomass',
-      label: 'TOTAL BIOMASS',
-      icon: BsBarChart,
-      color: '#10B981',
-      bg: '#ECFDF5',
-      value: summaryTotals.totalBiomass,
-      caption: 'Live fish weight',
-      tooltip: `Total biomass: ${f(summaryTotals.totalBiomass)} kg`,
+      value: displayTotals.totalFishStock,
+      caption: siteTypeFilter === 'All Site Types' ? 'Across all sites' : `Filtered: ${siteTypeFilter}`,
+      tooltip: `Total fish count: ${f(displayTotals.totalFishStock)}`,
     },
     {
       key: 'totalMortality',
@@ -310,9 +348,9 @@ const SitePerformance = () => {
       icon: BsHeartPulseFill,
       color: '#EF4444',
       bg: '#FEF2F2',
-      value: summaryTotals.totalMortality,
+      value: displayTotals.totalMortality,
       caption: '↓ 2.8% vs last period',
-      tooltip: `Total mortality count: ${f(summaryTotals.totalMortality)}`,
+      tooltip: `Total mortality count: ${f(displayTotals.totalMortality)}`,
     },
     {
       key: 'feedConversionRatio',
@@ -320,10 +358,10 @@ const SitePerformance = () => {
       icon: BsBoxSeam,
       color: '#8B5CF6',
       bg: '#F5F3FF',
-      value: summaryTotals.feedConversionRatio,
-      caption: 'Avg across sites',
+      value: displayTotals.feedConversionRatio,
+      caption: siteTypeFilter === 'All Site Types' ? 'Avg across sites' : `Avg: ${siteTypeFilter}`,
       format: (value) => (value != null ? Number(value).toFixed(2) : '—'),
-      tooltip: `Average FCR: ${summaryTotals.feedConversionRatio != null ? Number(summaryTotals.feedConversionRatio).toFixed(2) : '—'}`,
+      tooltip: `Average FCR: ${displayTotals.feedConversionRatio != null ? Number(displayTotals.feedConversionRatio).toFixed(2) : '—'}`,
     },
     {
       key: 'totalRevenue',
@@ -331,12 +369,89 @@ const SitePerformance = () => {
       icon: BsCurrencyDollar,
       color: '#D97706',
       bg: '#FFFBEB',
-      value: summaryTotals.totalRevenue,
+      value: displayTotals.totalRevenue,
       caption: '↑ 12.5% vs last period',
       format: cf,
-      tooltip: `Total revenue: ${cf(summaryTotals.totalRevenue)}`,
+      tooltip: `Total revenue: ${cf(displayTotals.totalRevenue)}`,
     },
   ];
+
+  const siteColumns = [
+    {
+      key: 'siteName',
+      label: 'Site Name',
+      render: (_, site) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 32, height: 32, borderRadius: '50%', background: '#512728',
+              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, fontWeight: 600, flexShrink: 0,
+            }}
+          >
+            {(site.siteName || 'S')[0].toUpperCase()}
+          </div>
+          <span style={{ color: '#2E3135', fontWeight: 500 }}>{site.siteName || '—'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'typeName',
+      label: 'Site Type',
+      render: (_, site) => {
+        const siteType = normalizeSiteType(site.typeName);
+        return (
+          <span
+            style={{
+              display: 'inline-block', padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 500,
+              background: siteType === 'Hatchery' ? '#FEF3E2' : '#EEF2FF',
+              color: siteType === 'Hatchery' ? '#B06426' : '#6366F1',
+            }}
+          >
+            {siteType}
+          </span>
+        );
+      },
+    },
+    { key: 'totalFishInPond', label: 'Fish Stock', align: 'right', render: (v) => (v != null ? f(v) : '—') },
+    { key: 'survivalRate', label: 'Survival Rate', align: 'right', render: (v) => (v != null ? formatPercent(v) : '—') },
+    { key: 'totalMortality', label: 'Mortality', align: 'right', render: (v) => (v != null ? f(v) : '—') },
+    { key: 'feedConversionRatio', label: 'FCR', align: 'right', render: (v) => (v != null ? Number(v).toFixed(2) : '—') },
+    { key: 'totalRevenue', label: 'Revenue', align: 'right', render: (v) => (v != null ? cf(v) : '—') },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_, site) => (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#166534', fontWeight: 500, fontSize: 13 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E' }} />
+          {site.status || 'Active'}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Action',
+      align: 'right',
+      render: (_, site) => (
+        <button
+          type="button"
+          onClick={() => handleViewSite(site)}
+          aria-label={`View ${site.siteName || 'site'}`}
+          style={{
+            width: 28, height: 28, borderRadius: 6, border: '1px solid #E5E7EB', background: '#fff',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#512728',
+            cursor: 'pointer', transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#512728'; e.currentTarget.style.color = '#fff'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#512728'; }}
+        >
+          <BsEye size={15} />
+        </button>
+      ),
+    },
+  ];
+
+  const handlePageChange = ({ selected }) => setCurrentPage(selected + 1);
 
   return (
     <section className={styles.body}>
@@ -405,35 +520,37 @@ const SitePerformance = () => {
             </div>
 
             {loading && (
-              <div className={styles.centerState}>
-                <div className={styles.spinner} />
-                <p className={styles.centerStateText}>Loading site performance data...</p>
-              </div>
+              <>
+                <div style={{ marginBottom: 16 }}>
+                  <SkeletonStatGrid count={5} />
+                </div>
+                <div className={styles.chartGrid} style={{ marginBottom: 16 }}>
+                  <SkeletonCard style={{ height: 320, borderRadius: 12 }} />
+                  <SkeletonCard style={{ height: 320, borderRadius: 12 }} />
+                </div>
+                <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20 }}>
+                  <SkeletonTable rows={6} cols={9} />
+                </div>
+              </>
             )}
 
             {!loading && error && (
-              <div className={styles.centerState}>
-                <BsInfoCircleFill size={40} color="#EF4444" />
-                <div>
-                  <p className={styles.errorTitle}>Failed to load data</p>
-                  <p className={styles.errorMessage}>{error}</p>
-                </div>
-                <button type="button" className={styles.retryBtn} onClick={() => fetchData(dateFrom, dateTo)}>
-                  <BsArrowClockwise size={14} /> Retry
-                </button>
-              </div>
+              <ErrorState
+                title="Failed to load data"
+                message={error}
+                onRetry={() => fetchData(dateFrom, dateTo)}
+              />
             )}
 
             {!loading && !error && !hasData && (
-              <div className={styles.centerState}>
-                <BsInfoCircleFill size={40} color="#CBD5E1" />
-                <p className={styles.emptyTitle}>No site performance data available</p>
-                <p className={styles.emptySubtitle}>
-                  {dateFrom && dateTo
+              <EmptyState
+                title="No site performance data available"
+                description={
+                  dateFrom && dateTo
                     ? 'No data found for the selected date range. Try a different range.'
-                    : 'Data will appear here once sites are configured.'}
-                </p>
-              </div>
+                    : 'Data will appear here once sites are configured.'
+                }
+              />
             )}
 
             {!loading && !error && hasData && (
@@ -496,7 +613,7 @@ const SitePerformance = () => {
                             </PieChart>
                           </ResponsiveContainer>
                           <div className={styles.donutCenterLabel}>
-                            <span className={styles.donutCenterCount}>{f(summaryTotals.totalSites)}</span>
+                            <span className={styles.donutCenterCount}>{f(displayTotals.totalSites)}</span>
                             <span className={styles.donutCenterUnit}>Total Sites</span>
                           </div>
                         </div>
@@ -517,65 +634,44 @@ const SitePerformance = () => {
                     </div>
                   </section>
 
-                  <section className={styles.donutCard}>
-                    <div className={styles.donutCardHeader}>
-                      <span className={styles.donutCardTitle}>Biomass by Site Type</span>
-                    </div>
-                    <div className={styles.donutBody}>
-                      <div className={styles.donutCenter}>
-                        <div className={styles.donutRing}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={donutBiomassData}
-                                dataKey="value"
-                                nameKey="name"
-                                innerRadius={62}
-                                outerRadius={88}
-                                paddingAngle={3}
-                                stroke="transparent"
-                                startAngle={90}
-                                endAngle={-270}
-                              >
-                                {donutBiomassData.map((entry) => (
-                                  <Cell key={entry.name} fill={entry.color} />
-                                ))}
-                              </Pie>
-                            </PieChart>
-                          </ResponsiveContainer>
-                          <div className={styles.donutCenterLabel}>
-                            <span className={styles.donutCenterCount}>{f(summaryTotals.totalBiomass)}</span>
-                            <span className={styles.donutCenterUnit}>kg Biomass</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={styles.legendCol}>
-                        {donutBiomassData.map((entry) => (
-                          <div key={entry.name} className={styles.legendRow}>
-                            <span className={styles.legendDot} style={{ backgroundColor: entry.color }} />
-                            <span className={styles.legendName}>{entry.name}</span>
-                            <span className={styles.legendCount}>{entry.label}</span>
-                            <div className={styles.legendBarOuter}>
-                              <div className={styles.legendBarInner} style={{ width: `${entry.percentage}%`, backgroundColor: entry.color }} />
-                            </div>
-                            <span className={styles.legendPercent}>{entry.percentage}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </section>
-
                   <section className={styles.chartCard}>
                     <div className={styles.trendHeader}>
-                      <span className={styles.chartCardTitle}>Site Performance Trend (Biomass)</span>
-                      <div className={styles.trendPeriod}>
+                      <span className={styles.chartCardTitle}>Site Performance Trend</span>
+                      <div
+                        className={styles.trendPeriod}
+                        ref={trendDropdownRef}
+                        onClick={() => setTrendDropdownOpen((open) => !open)}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Select trend period"
+                        aria-expanded={trendDropdownOpen}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setTrendDropdownOpen((open) => !open); }}
+                      >
                         <span>{trendPeriod}</span>
-                        <BsChevronDown size={12} />
+                        <BsChevronDown size={12} className={trendDropdownOpen ? styles.trendChevronOpen : ''} />
+                        {trendDropdownOpen && (
+                          <div className={styles.trendDropdownMenu}>
+                            {trendOptions.map((option) => (
+                              <button
+                                key={option.key}
+                                type="button"
+                                className={`${styles.trendDropdownItem} ${option.label === trendPeriod ? styles.trendDropdownItemActive : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTrendPeriod(option.label);
+                                  setTrendDropdownOpen(false);
+                                }}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className={styles.trendBody}>
                       <ResponsiveContainer width="100%" height={260}>
-                        <AreaChart data={biomassTrendData} margin={{ top: 10, right: 0, left: -10, bottom: 0 }}>
+                        <AreaChart data={performanceTrendData} margin={{ top: 10, right: 0, left: -10, bottom: 0 }}>
                           <defs>
                             <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#512728" stopOpacity={0.12} />
@@ -599,7 +695,7 @@ const SitePerformance = () => {
                           />
                           <ReTooltip
                             contentStyle={{ borderRadius: 10, border: '1px solid #E5E7EB', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
-                            formatter={(value) => [`${f(value)} kg`, 'Biomass']}
+                            formatter={(value) => [`${f(value)}`, 'Fish Stock']}
                           />
                           <Area
                             type="monotone"
@@ -634,122 +730,22 @@ const SitePerformance = () => {
                       )}
                     </div>
                   </div>
-                  <div className={styles.scrollableTableContainer}>
-                    <div className={styles.topProductsTable}>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Site Name</th>
-                            <th>Site Type</th>
-                            <th className={styles.cellRight}>Fish Stock</th>
-                            <th className={styles.cellRight}>Biomass (kg)</th>
-                            <th className={styles.cellRight}>Survival Rate</th>
-                            <th className={styles.cellRight}>Mortality</th>
-                            <th className={styles.cellRight}>FCR</th>
-                            <th className={styles.cellRight}>Revenue</th>
-                            <th>Status</th>
-                            <th className={styles.cellRight}>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {paginatedSites.length > 0 ? paginatedSites.map((site) => {
-                            const siteType = normalizeSiteType(site.typeName);
-                            const siteStatus = site.status || 'Active';
-                            return (
-                              <tr key={site.siteId || site.id}>
-                                <td>
-                                  <div className={styles.siteNameCell}>
-                                    <div className={styles.siteAvatar}>
-                                      {(site.siteName || 'S')[0].toUpperCase()}
-                                    </div>
-                                    <span>{site.siteName || '—'}</span>
-                                  </div>
-                                </td>
-                                <td>
-                                  <span className={`${styles.badgeType} ${siteType === 'Hatchery' ? styles.badgeHatchery : styles.badgeFarm}`}>
-                                    {siteType}
-                                  </span>
-                                </td>
-                                <td className={styles.cellRight}>{site.totalFishInPond != null ? f(site.totalFishInPond) : '—'}</td>
-                                <td className={styles.cellRight}>{site.totalBiomass != null ? f(site.totalBiomass) : '—'}</td>
-                                <td className={styles.cellRight}>{site.survivalRate != null ? formatPercent(site.survivalRate) : '—'}</td>
-                                <td className={styles.cellRight}>
-                                  <span className={site.totalMortality > 0 ? styles.mortalityValue : ''}>
-                                    {site.totalMortality != null ? f(site.totalMortality) : '—'}
-                                  </span>
-                                </td>
-                                <td className={styles.cellRight}>{site.feedConversionRatio != null ? Number(site.feedConversionRatio).toFixed(2) : '—'}</td>
-                                <td className={styles.cellRight}>{site.totalRevenue != null ? cf(site.totalRevenue) : '—'}</td>
-                                <td>
-                                  <span className={styles.badgeStatus}>
-                                    <span className={styles.statusDot} />
-                                    {siteStatus}
-                                  </span>
-                                </td>
-                                <td className={styles.cellRight}>
-                                  <button
-                                    type="button"
-                                    className={styles.rowAction}
-                                    onClick={() => handleViewSite(site)}
-                                    aria-label={`View ${site.siteName || 'site'}`}
-                                  >
-                                    <BsEye size={15} />
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          }) : (
-                            <tr>
-                              <td colSpan={10} className={styles.noResults}>
-                                {searchQuery ? `No sites matching "${searchQuery}".` : 'No sites match this filter.'}
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                  <div style={{ maxHeight: 480, overflow: 'auto', border: '1px solid #E5E7EB', borderRadius: 12 }}>
+                    <DataTable
+                      columns={siteColumns}
+                      data={paginatedSites}
+                      emptyMessage={searchQuery ? `No sites matching "${searchQuery}".` : 'No sites match this filter.'}
+                    />
                   </div>
 
-                  <div className={styles.tableFooter}>
-                    <span className={styles.footerText}>
-                      Showing {pageStart} to {pageEnd} of {filteredSites.length} sites
-                    </span>
-                    <div className={styles.pagination}>
-                      <button
-                        type="button"
-                        className={styles.pageBtn}
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
-                        aria-label="Previous page"
-                      >
-                        <BsChevronLeft size={14} />
-                      </button>
-                      {Array.from({ length: Math.min(pageCount, 5) }, (_, i) => {
-                        const start = Math.max(1, Math.min(currentPage - 2, pageCount - 4));
-                        const page = start + i;
-                        if (page > pageCount) return null;
-                        return (
-                          <button
-                            key={page}
-                            type="button"
-                            className={`${styles.pageBtn} ${page === currentPage ? styles.pageBtnActive : ''}`}
-                            onClick={() => setCurrentPage(page)}
-                          >
-                            {page}
-                          </button>
-                        );
-                      })}
-                      <button
-                        type="button"
-                        className={styles.pageBtn}
-                        disabled={currentPage === pageCount}
-                        onClick={() => setCurrentPage((page) => Math.min(page + 1, pageCount))}
-                        aria-label="Next page"
-                      >
-                        <BsChevronRight size={14} />
-                      </button>
-                    </div>
-                  </div>
+                  <Pagination
+                    currentPage={currentPage - 1}
+                    pageCount={Math.max(1, Math.ceil(filteredSites.length / pageSize))}
+                    totalItems={filteredSites.length}
+                    pageSize={pageSize}
+                    onPageChange={handlePageChange}
+                    itemName="sites"
+                  />
                 </div>
 
                 <div className={styles.infoBanner}>

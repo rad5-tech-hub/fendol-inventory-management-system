@@ -120,11 +120,11 @@ const DamageFish = () => {
   // Handle form submission
   const handleAddFish = async (e) => {
     e.preventDefault();
-    const ok = await confirm({ message: "Are you sure you want to remove this damage record?", title: "Remove Damage Fish", variant: "danger" });
+    const ok = await confirm({ message: "Are you sure you want to record this mortality?", title: "Record Mortality", variant: "danger" });
     if (!ok) return;
 
     setLoader(true);
-    const loadingToast = toast.loading("Removing Damaged fish...", { className: 'dark-toast' });
+    const loadingToast = toast.loading("Recording mortality...", { className: 'dark-toast' });
 
     try {
       const response = await Api.post('/log-damage', formData);
@@ -137,7 +137,7 @@ const DamageFish = () => {
       setFishType('');
       setSelectedQuantity('');
       toast.update(loadingToast, {
-        render: "Removed Damage fish successfully!",
+        render: "Mortality recorded successfully!",
         type: "success",
         isLoading: false,
         autoClose: 5000,
@@ -148,7 +148,7 @@ const DamageFish = () => {
       await fetchStages();
     } catch (error) {
       toast.update(loadingToast, {
-        render: error.response?.data?.message || "Error removing damaged fish. Please try again.",
+        render: error.response?.data?.message || "Error recording mortality. Please try again.",
         type: "error",
         isLoading: false,
         autoClose: 3000,
@@ -186,7 +186,7 @@ const DamageFish = () => {
           <main>
             <ToastContainer />
             <Form className={styles.create_form} onSubmit={handleAddFish}>
-              <h4 className="mt-5 mb-5">Damaged Fish From Pond</h4>
+              <h4 className="mt-5 mb-5">Mortality From Pond</h4>
               <Row>
                 <Col md={12} lg={6} className="mb-4">
                   <Form.Label className="fw-semibold">Pond From</Form.Label>
@@ -263,7 +263,7 @@ const DamageFish = () => {
                   disabled={loader}
                   type="submit"
                 >
-                  {loader ? 'Removing Damage...' : 'Remove Damage Fish'}
+                  {loader ? 'Recording...' : 'Record Mortality'}
                 </Button>
               </div>
             </Form>

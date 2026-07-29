@@ -301,7 +301,7 @@ export default function SideBar({ show, handleClose }) {
                   {renderNavItem(activeSite?.type?.toLowerCase() === 'hatchery' ? "Transfer to Nursery" : "Add Fish", "/manage-fish/add-fish")}
                   {renderNavItem("Move/Sort Fish", "/manage-fish/move-fish")}
                   {renderNavItem("Harvest", "/manage-fish/harvest-fish")}
-                  {renderNavItem("Damage Fish", "/manage-fish/damage-fish")}
+                  {renderNavItem("Mortality", "/manage-fish/damage-fish")}
                 </>
               )}
               {hasPermission(userTypes, 'manage-fish') && renderCard("site_transfers", "Site Transfers", <GiFishingNet size={25} className="me-1" />,
