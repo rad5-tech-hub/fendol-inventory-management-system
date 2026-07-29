@@ -798,16 +798,40 @@
   line-height: 1;
 }
 
-/* Table wrapper — horizontal scroll on small viewports */
+/* Table wrapper */
 .topProductsTable {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
 }
 .topProductsTable table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 820px;
   font-size: 0.82rem;
+  table-layout: auto;
+}
+
+/* Scrollable table container for bounded height */
+.scrollableTableContainer {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: visible;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #F0F0F0;
+  border-radius: 8px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #F8F9FA;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 3px;
+    &:hover {
+      background: #9CA3AF;
+    }
+  }
 }
 .topProductsTable thead th {
   font-size: 0.78rem;

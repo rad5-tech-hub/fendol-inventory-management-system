@@ -11,7 +11,7 @@ import {
   IoHelpCircleOutline,
   IoEyeOutline,
 } from 'react-icons/io5';
-import { FaCheckCircle, FaSkull, FaDollarSign } from 'react-icons/fa';
+import { FaCheckCircle, FaSkull } from 'react-icons/fa';
 import { GiCirclingFish, GiCannedFish } from 'react-icons/gi';
 import { MdOutlinePointOfSale } from 'react-icons/md';
 import { BsThreeDotsVertical } from 'react-icons/bs';
@@ -46,6 +46,7 @@ export default function BatchDashboard() {
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
   const [showSidebar, setShowSidebar] = useState(false);
   const [data, setData] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,11 +70,15 @@ export default function BatchDashboard() {
         const body = response.data;
         const list = Array.isArray(body.data) ? body.data : [];
         allData.push(...list);
+        if (!cursor && body.summary) {
+          setSummary(body.summary);
+        }
         cursor = body.pagination?.hasMore ? body.pagination.nextCursor : null;
       } while (cursor);
       setData(allData);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch batches.');
+      setSummary(null);
     } finally {
       setLoading(false);
     }
@@ -111,14 +116,38 @@ export default function BatchDashboard() {
   const totalHarvestedAll = data.reduce((s, b) => s + totalHarvested(b.harvestLogs), 0);
   const totalDamagedAll = data.reduce((s, b) => s + totalDamaged(b.damagedFish), 0);
 
-  // TODO: wire totalRevenue with actual sales/pricing data
+  // Prefer backend summary when available; fall back to computed values from data array.
   const statCards = [
-    { label: 'Total Active Batches', value: f(activeBatches), icon: IoLayersOutline, color: '#3B82F6' },
-    { label: 'Total Completed Batches', value: f(completedBatches), icon: FaCheckCircle, color: '#22C55E' },
-    { label: 'Total Fish in Active Batches', value: f(totalFishActive), icon: GiCirclingFish, color: '#F97316' },
-    { label: 'Total Harvested Fish', value: f(totalHarvestedAll), icon: GiCannedFish, color: '#8B5CF6' },
-    { label: 'Total Mortality Events', value: f(totalDamagedAll), icon: FaSkull, color: '#EF4444' },
-    { label: 'Total Revenue Generated', value: f(0), icon: FaDollarSign, color: '#059669' },
+    {
+      label: 'Total Active Batches',
+      value: f(summary?.activeBatches ?? activeBatches),
+      icon: IoLayersOutline,
+      color: '#3B82F6',
+    },
+    {
+      label: 'Total Completed Batches',
+      value: f(summary?.completedBatches ?? completedBatches),
+      icon: FaCheckCircle,
+      color: '#22C55E',
+    },
+    {
+      label: 'Total Fish in Active Batches',
+      value: f(summary?.totalFishInActiveBatches ?? totalFishActive),
+      icon: GiCirclingFish,
+      color: '#F97316',
+    },
+    {
+      label: 'Total Harvested Fish',
+      value: f(summary?.totalHarvestedFish ?? totalHarvestedAll),
+      icon: GiCannedFish,
+      color: '#8B5CF6',
+    },
+    {
+      label: 'Total Damaged Fish',
+      value: f(summary?.totalDamagedFish ?? totalDamagedAll),
+      icon: FaSkull,
+      color: '#EF4444',
+    },
   ];
 
   const stages = [...new Set(data.map((b) => b.currentStage).filter(Boolean))];
