@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { createPortal } from 'react-dom';
 import { FiX, FiPackage, FiDollarSign, FiAlertTriangle } from 'react-icons/fi';
@@ -17,22 +17,34 @@ const defaultForm = {
   name: '',
   category: '',
   unit: '',
-  quantity: '',
-  unitCost: '',
   threshold: '',
   numberOfBags: '',
   baseWeightPerBag: '',
+  totalCostBought: '',
 };
 
 const FIELD_LABELS = {
   name: 'Material Name',
   category: 'Category',
   unit: 'Unit of Measurement',
-  quantity: 'Quantity (Kg)',
-  unitCost: 'Unit Cost',
   threshold: 'Low Stock Threshold',
   numberOfBags: 'Number of Bags',
   baseWeightPerBag: 'Base Weight per Bag (Kg)',
+  totalCostBought: 'Total Cost Bought (₦)',
+};
+
+const formatNumberWithCommas = (number) => {
+  if (number === '' || number === null || number === undefined) return '';
+  const raw = String(number).replace(/,/g, '');
+  if (isNaN(raw) || raw === '') return number;
+  const [whole, fraction] = raw.split('.');
+  const formattedWhole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return fraction !== undefined ? `${formattedWhole}.${fraction}` : formattedWhole;
+};
+
+const parseCommaNumber = (value) => {
+  if (value === '' || value === null || value === undefined) return '';
+  return String(value).replace(/,/g, '');
 };
 
 function validateField(field, value, form) {
@@ -58,30 +70,6 @@ function validateField(field, value, form) {
     return null;
   }
 
-  if (field === 'quantity') {
-    if (value === '' || value === null || value === undefined) return null;
-    const num = Number(value);
-    if (isNaN(num)) return 'Quantity must be a valid number';
-    if (!Number.isFinite(num)) return 'Quantity must be a finite number';
-    if (num < 0) return 'Quantity cannot be negative';
-    if (num === 0) return 'Quantity must be greater than 0';
-    if (num > 999999999) return 'Quantity exceeds maximum allowed';
-    if (value.includes('.') && value.split('.')[1]?.length > 3) return 'Quantity can have at most 3 decimal places';
-    return null;
-  }
-
-  if (field === 'unitCost') {
-    if (value === '' || value === null || value === undefined) return null;
-    const num = Number(value);
-    if (isNaN(num)) return 'Unit cost must be a valid number';
-    if (!Number.isFinite(num)) return 'Unit cost must be a finite number';
-    if (num < 0) return 'Unit cost cannot be negative';
-    if (num === 0) return 'Unit cost must be greater than 0';
-    if (num > 999999999) return 'Unit cost exceeds maximum allowed';
-    if (value.includes('.') && value.split('.')[1]?.length > 2) return 'Unit cost can have at most 2 decimal places';
-    return null;
-  }
-
   if (field === 'threshold') {
     if (value === '' || value === null || value === undefined) return 'Low stock threshold is required';
     const num = Number(value);
@@ -97,7 +85,7 @@ function validateField(field, value, form) {
     const num = Number(value);
     if (isNaN(num)) return 'Must be a valid number';
     if (!Number.isInteger(num)) return 'Must be a whole number';
-    if (num < 0) return 'Cannot be negative';
+    if (num <= 0) return 'Must be greater than 0';
     if (num > 999999) return 'Value too large';
     return null;
   }
@@ -106,9 +94,20 @@ function validateField(field, value, form) {
     if (value === '' || value === null || value === undefined) return null;
     const num = Number(value);
     if (isNaN(num)) return 'Must be a valid number';
-    if (num < 0) return 'Cannot be negative';
+    if (num <= 0) return 'Must be greater than 0';
     if (num > 999999) return 'Value too large';
-    if (value.includes('.') && value.split('.')[1]?.length > 2) return 'At most 2 decimal places';
+    if (value.includes('.') && value.split('.')[1]?.length > 3) return 'At most 3 decimal places';
+    return null;
+  }
+
+  if (field === 'totalCostBought') {
+    if (value === '' || value === null || value === undefined) return null;
+    const raw = parseCommaNumber(value);
+    const num = Number(raw);
+    if (isNaN(num)) return 'Must be a valid amount';
+    if (num <= 0) return 'Must be greater than 0';
+    if (num > 999999999) return 'Amount exceeds maximum allowed';
+    if (raw.includes('.') && raw.split('.')[1]?.length > 2) return 'At most 2 decimal places';
     return null;
   }
 
@@ -142,13 +141,24 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
   useEffect(() => {
     if (show) {
       if (editData) {
+        let totalCostBought = '';
+        if (editData.totalCostBought !== undefined && editData.totalCostBought !== null) {
+          totalCostBought = formatNumberWithCommas(String(editData.totalCostBought));
+        } else if (editData.unitCost !== undefined && editData.quantity !== undefined) {
+          const derived = Number(editData.unitCost) * Number(editData.quantity);
+          if (!isNaN(derived) && isFinite(derived) && derived > 0) {
+            totalCostBought = formatNumberWithCommas(String(derived));
+          }
+        }
+
         setForm({
           name: editData.name || '',
           category: editData.category || '',
           unit: editData.unit || '',
-          quantity: editData.quantity !== undefined ? String(Number(editData.quantity)) : '',
-          unitCost: editData.unitCost !== undefined ? String(Number(editData.unitCost)) : '',
           threshold: editData.threshold !== undefined ? String(Number(editData.threshold)) : '',
+          numberOfBags: editData.numberOfBags !== undefined ? String(Number(editData.numberOfBags)) : '',
+          baseWeightPerBag: editData.weightPerBag !== undefined ? String(Number(editData.weightPerBag)) : '',
+          totalCostBought,
         });
       } else {
         setForm(defaultForm);
@@ -186,15 +196,6 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
 
   const set = (field, value) => {
     const next = { ...form, [field]: value };
-
-    if ((field === 'numberOfBags' || field === 'baseWeightPerBag') && next.numberOfBags !== '' && next.baseWeightPerBag !== '') {
-      const bags = Number(next.numberOfBags);
-      const weight = Number(next.baseWeightPerBag);
-      if (!isNaN(bags) && !isNaN(weight) && bags >= 0 && weight >= 0) {
-        next.quantity = String(bags * weight);
-      }
-    }
-
     setForm(next);
 
     if (touched[field]) {
@@ -218,6 +219,22 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
       return copy;
     });
   };
+
+  const handleAmountChange = (value) => {
+    const raw = parseCommaNumber(value);
+    if (raw === '' || (!isNaN(raw) && raw !== '')) {
+      set('totalCostBought', formatNumberWithCommas(raw));
+    }
+  };
+
+  const totals = useMemo(() => {
+    const bags = Number(form.numberOfBags) || 0;
+    const weight = Number(form.baseWeightPerBag) || 0;
+    const cost = Number(parseCommaNumber(form.totalCostBought)) || 0;
+    const totalWeight = bags * weight;
+    const unitCost = totalWeight > 0 ? cost / totalWeight : 0;
+    return { totalWeight, unitCost };
+  }, [form]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -247,6 +264,10 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
       }
       if (form.baseWeightPerBag !== '' && form.baseWeightPerBag !== null && form.baseWeightPerBag !== undefined) {
         payload.weightPerBag = Number(form.baseWeightPerBag);
+      }
+      const rawCost = parseCommaNumber(form.totalCostBought);
+      if (rawCost !== '' && rawCost !== null && rawCost !== undefined) {
+        payload.totalCostBought = Number(rawCost);
       }
       const addSid = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]);
       if (addSid) payload.siteId = addSid;
@@ -292,7 +313,7 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
     return (
       <div className={styles.field}>
         <label className={styles.label}>
-          {label || FIELD_LABELS[field]}<span className={styles.required}>*</span>
+          {label || FIELD_LABELS[field]}{['numberOfBags', 'baseWeightPerBag', 'totalCostBought'].includes(field) ? null : <span className={styles.required}>*</span>}
         </label>
 
         {asType === 'select' ? (
@@ -328,7 +349,7 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
               placeholder={placeholder}
               type={type}
               min={type === 'number' ? 0 : undefined}
-              step={field === 'unitCost' ? '0.01' : field === 'quantity' ? '0.001' : field === 'numberOfBags' ? '1' : field === 'baseWeightPerBag' ? '0.01' : '1'}
+              step={field === 'numberOfBags' ? '1' : field === 'baseWeightPerBag' ? '0.001' : '1'}
               value={form[field]}
               onChange={(e) => set(field, type === 'number' ? e.target.value : e.target.value)}
               onBlur={() => handleBlur(field)}
@@ -346,6 +367,8 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
       </div>
     );
   };
+
+  const costErr = touched.totalCostBought ? errors.totalCostBought : null;
 
   return createPortal(
     <div
@@ -397,12 +420,72 @@ export default function AddRawMaterialModal({ show, onClose, onSuccess, editData
 
             <div className={styles.row}>
               {renderField('baseWeightPerBag', { label: 'Base Weight per Bag (Kg)', placeholder: 'e.g. 25', type: 'number' })}
-              {renderField('quantity', { label: 'Quantity (Kg)', placeholder: 'Calculated or manual', type: 'number' })}
+              <div className={styles.field}>
+                <label className={styles.label}>Total Cost Bought (₦)</label>
+                <div style={{ position: 'relative' }}>
+                  <FiDollarSign
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: 14,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: costErr ? '#DC2626' : '#9CA3AF',
+                      pointerEvents: 'none',
+                      zIndex: 1,
+                    }}
+                  />
+                  <input
+                    className={`${styles.input} ${costErr ? styles.inputError : ''}`}
+                    placeholder="e.g. 5000"
+                    type="text"
+                    inputMode="decimal"
+                    value={form.totalCostBought}
+                    onChange={(e) => handleAmountChange(e.target.value)}
+                    onBlur={() => handleBlur('totalCostBought')}
+                    autoComplete="off"
+                    style={{ paddingLeft: 40 }}
+                  />
+                </div>
+                {costErr && (
+                  <span className={styles.errorText}>
+                    <FiAlertTriangle size={11} style={{ marginRight: 4, flexShrink: 0 }} />
+                    {costErr}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className={styles.row}>
-              {renderField('unitCost', { label: 'Unit Cost (₦)', icon: FiDollarSign, placeholder: 'e.g. 4500', type: 'number' })}
               {renderField('threshold', { label: 'Low Stock Threshold', placeholder: 'e.g. 10', type: 'number' })}
+            </div>
+
+            <div
+              style={{
+                marginTop: 20,
+                padding: '14px 16px',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: 12,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B' }}>
+                <span>Total Weight</span>
+                <span style={{ fontWeight: 600, color: '#0F172A' }}>
+                  {totals.totalWeight > 0 ? `${totals.totalWeight.toLocaleString('en-US', { maximumFractionDigits: 3 })} Kg` : '—'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B' }}>
+                <span>Unit Cost</span>
+                <span style={{ fontWeight: 600, color: '#0F172A' }}>
+                  {totals.totalWeight > 0 && totals.unitCost > 0
+                    ? `₦${totals.unitCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : '—'}
+                </span>
+              </div>
             </div>
           </div>
 
