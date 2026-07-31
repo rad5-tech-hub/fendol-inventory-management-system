@@ -212,3 +212,325 @@
     display: block; // Visible by default on desktop
   }
 }
+
+/* ── Standard page header ── */
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #8C949B;
+
+  span {
+    color: #8C949B;
+  }
+}
+
+.breadcrumbActive {
+  color: #2E3135;
+  font-weight: 600;
+}
+
+.separator {
+  color: #D1D5DB;
+}
+
+.headingTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2E3135;
+  margin-bottom: 4px;
+}
+
+.headingSubtitle {
+  font-size: 0.875rem;
+  color: #8C949B;
+  margin-bottom: 24px;
+}
+
+/* ── Primary button ── */
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #512728;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #714445;
+  }
+}
+
+/* ── Controls bar ── */
+.controlsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 10px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  margin-bottom: 16px;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 0 14px;
+  gap: 8px;
+  min-width: 260px;
+  max-width: 360px;
+  flex: 1 1 auto;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-within {
+    border-color: #512728;
+    box-shadow: 0 0 0 3px rgba(81, 39, 40, 0.1);
+  }
+}
+
+.searchIcon {
+  color: #8C949B;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #2E3135;
+  background: transparent;
+  width: 100%;
+  padding: 9px 0;
+
+  &::placeholder {
+    color: #8C949B;
+  }
+}
+
+.clearSearch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #8C949B;
+  cursor: pointer;
+  padding: 2px;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #2E3135;
+  }
+}
+
+.dateRange {
+  flex: 1 1 140px;
+  min-width: 120px;
+}
+
+.filterLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #8C949B;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+
+.dateFields {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dateField {
+  position: relative;
+  flex: 1;
+
+  input {
+    width: 100%;
+    padding: 5px 8px 5px 24px;
+    border: 1px solid #E5E7EB;
+    border-radius: 5px;
+    font-size: 11px;
+    color: #374151;
+    outline: none;
+    background: #ffffff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:focus {
+      border-color: #512728;
+      box-shadow: 0 0 0 3px rgba(81, 39, 40, 0.1);
+    }
+  }
+}
+
+.dateIcon {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8C949B;
+  pointer-events: none;
+}
+
+.dateSep {
+  font-size: 11px;
+  color: #8C949B;
+}
+
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6B7280;
+  background: transparent;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: #F3F4F6;
+    color: #2E3135;
+  }
+}
+
+/* ── Table card ── */
+.tableCard {
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid #E5E7EB;
+
+  h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2E3135;
+    margin: 0;
+  }
+}
+
+.dataTable {
+  border: none;
+  border-radius: 0;
+
+  :global {
+    .tableWrapper {
+      border: none;
+      border-radius: 0;
+    }
+
+    .table {
+      th,
+      td {
+        padding: 14px 20px;
+      }
+    }
+  }
+}
+
+/* ── Load more ── */
+.loadMoreWrapper {
+  text-align: center;
+  padding: 16px 0;
+  border-top: 1px solid #E5E7EB;
+}
+
+.loadMoreBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #512728;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #714445;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* ── Table footer ── */
+.tableFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  border-top: 1px solid #E5E7EB;
+  background: #ffffff;
+  font-size: 13px;
+  color: #6B7280;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+/* ── Responsive tweaks ── */
+@media (max-width: 991px) {
+  .controlsBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchBox {
+    max-width: 100%;
+  }
+
+  .dateRange {
+    width: 100%;
+  }
+
+  .tableHeader {
+    padding: 12px 16px;
+  }
+
+  .tableFooter {
+    padding: 10px 16px;
+  }
+}
