@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+// Deployment trigger: ensure latest build is served on live link
 import { useSelector } from 'react-redux';
 import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
