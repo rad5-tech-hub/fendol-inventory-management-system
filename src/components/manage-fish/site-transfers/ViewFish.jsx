@@ -239,7 +239,7 @@ export default function ViewFish() {
         date: fmtISODate(t.createdAt),
         siteFrom: t.site?.name || t.siteFrom || 'Unknown',
         siteFromId: t.siteFrom,
-        quantity: t.total ?? t.quantity ?? 0,
+        quantity: t.quantity ?? 0,
         total: t.total ?? 0,
         description: null,
         raw: t,
