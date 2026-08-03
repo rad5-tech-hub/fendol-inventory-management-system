@@ -42,6 +42,55 @@ ChartJS.register(
   LineController,
 );
 
+/* ── Date helpers (local-time, no UTC-shift surprises) ── */
+const toISODate = (date) => {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const addDays = (date, days) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
+const addMonths = (date, months) => {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+};
+
+const daysBetween = (start, end) => {
+  const a = new Date(start);
+  const b = new Date(end);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.round((b - a) / msPerDay);
+};
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const formatRangeLabel = (startDate, endDate) => {
+  if (!startDate || !endDate) return '';
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return `${startDate} — ${endDate}`;
+
+  const startDay = `${MONTH_NAMES[start.getMonth()]} ${start.getDate()}`;
+  const endDay = `${MONTH_NAMES[end.getMonth()]} ${end.getDate()}`;
+
+  if (start.getFullYear() !== end.getFullYear()) {
+    return `${startDay}, ${start.getFullYear()} — ${endDay}, ${end.getFullYear()}`;
+  }
+  if (start.getMonth() === end.getMonth() && start.getDate() === end.getDate()) {
+    return startDay;
+  }
+  return `${startDay} — ${endDay}`;
+};
+
 const Dashboard = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
@@ -89,27 +138,32 @@ const Dashboard = () => {
 
   const getDateRangeParams = useCallback(() => {
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    const today = toISODate(now);
     let startDate, endDate, groupBy;
 
     switch (salesDateRange) {
       case '1W':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString().split('T')[0];
+        startDate = toISODate(addDays(now, -7));
         endDate = today;
         groupBy = 'day';
         break;
       case '1M':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).toISOString().split('T')[0];
-        endDate = today;
-        groupBy = 'day';
-        break;
-      case '6M':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).toISOString().split('T')[0];
+        startDate = toISODate(addMonths(now, -1));
         endDate = today;
         groupBy = 'week';
         break;
+      case '3M':
+        startDate = toISODate(addMonths(now, -3));
+        endDate = today;
+        groupBy = 'month';
+        break;
+      case '6M':
+        startDate = toISODate(addMonths(now, -6));
+        endDate = today;
+        groupBy = 'month';
+        break;
       case '1Y':
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+        startDate = toISODate(addMonths(now, -12));
         endDate = today;
         groupBy = 'month';
         break;
@@ -117,40 +171,70 @@ const Dashboard = () => {
         if (customDateFrom && customDateTo) {
           startDate = customDateFrom;
           endDate = customDateTo;
-          groupBy = 'day';
+          const spanDays = daysBetween(startDate, endDate) + 1;
+          if (spanDays <= 14) {
+            groupBy = 'day';
+          } else if (spanDays <= 90) {
+            groupBy = 'week';
+          } else if (spanDays <= 730) {
+            groupBy = 'month';
+          } else {
+            groupBy = 'year';
+          }
         } else {
           return null;
         }
         break;
       default:
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).toISOString().split('T')[0];
+        startDate = toISODate(addMonths(now, -1));
         endDate = today;
-        groupBy = 'day';
+        groupBy = 'week';
     }
 
     return { startDate, endDate, groupBy };
   }, [salesDateRange, customDateFrom, customDateTo]);
 
-  const formatPeriodLabel = useCallback((period, groupBy) => {
+  const formatPeriodLabel = useCallback((period, groupBy, index = 0, rangeStartDate = '') => {
     if (!period) return '';
-    
-    if (groupBy === 'week' && period.includes('-W')) {
-      const [year, week] = period.split('-W');
-      return `W${week}, ${year.slice(2)}`;
+
+    if (groupBy === 'year' && period.match(/^\d{4}$/)) {
+      return period;
     }
-    
+
+    if (groupBy === 'week') {
+      // Sequential week numbers within the selected range (Wk 1, Wk 2, ...)
+      if (period.includes('-W')) {
+        const [year, week] = period.split('-W').map(Number);
+        const start = rangeStartDate ? new Date(`${rangeStartDate}T00:00:00`) : null;
+        if (start && !Number.isNaN(start.getTime())) {
+          const startYear = start.getFullYear();
+          // Approximate ISO-week based offset; good enough for sequential labels in a contiguous range
+          const getISOWeek = (d) => {
+            const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            const dayNum = tmp.getUTCDay() || 7;
+            tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+            return Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+          };
+          const startWeek = getISOWeek(start);
+          const diff = (year - startYear) * 52 + (week - startWeek);
+          return `Wk ${Math.max(1, diff + 1)}`;
+        }
+        return `Wk ${week}`;
+      }
+      return `Wk ${index + 1}`;
+    }
+
     if (groupBy === 'month' && period.match(/^\d{4}-\d{2}$/)) {
       const [year, month] = period.split('-');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${monthNames[parseInt(month) - 1]} ${year.slice(2)}`;
+      return `${MONTH_NAMES[parseInt(month, 10) - 1]} '${year.slice(2)}`;
     }
-    
+
     if (period.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const date = new Date(period);
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${monthNames[date.getMonth()]} ${date.getDate()}`;
+      const date = new Date(`${period}T00:00:00`);
+      return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
     }
-    
+
     return period;
   }, []);
 
@@ -332,12 +416,13 @@ const Dashboard = () => {
 
   const buildSalesSummaryData = () => {
     if (!chartData.length) return { labels: [], datasets: [] };
-    
+
     const rangeParams = getDateRangeParams();
     const groupBy = rangeParams?.groupBy || 'day';
-    
+    const rangeStart = rangeParams?.startDate;
+
     return {
-      labels: chartData.map(item => formatPeriodLabel(item.period, groupBy)),
+      labels: chartData.map((item, idx) => formatPeriodLabel(item.period, groupBy, idx, rangeStart)),
       datasets: [{
         label: 'Sales',
         data: chartData.map(item => item.totalSales || 0),
@@ -352,42 +437,44 @@ const Dashboard = () => {
       }],
     };
   };
-  
+
   const salesSummaryData = buildSalesSummaryData();
-  const salesDateRangeLabel = chartData.length > 0
-    ? `${formatPeriodLabel(chartData[0].period, getDateRangeParams()?.groupBy || 'day')} — ${formatPeriodLabel(chartData[chartData.length - 1].period, getDateRangeParams()?.groupBy || 'day')}`
+  const salesRangeParams = getDateRangeParams();
+  const salesDateRangeLabel = salesRangeParams
+    ? formatRangeLabel(salesRangeParams.startDate, salesRangeParams.endDate)
     : '';
 
   const buildFinanceSummaryData = () => {
     if (!chartData.length) return { labels: [], datasets: [] };
-    
+
     const rangeParams = getDateRangeParams();
     const groupBy = rangeParams?.groupBy || 'day';
-    
+    const rangeStart = rangeParams?.startDate;
+
     return {
-      labels: chartData.map(item => formatPeriodLabel(item.period, groupBy)),
+      labels: chartData.map((item, idx) => formatPeriodLabel(item.period, groupBy, idx, rangeStart)),
       datasets: [
-        { 
-          label: 'Sales', 
-          data: chartData.map(item => item.totalSales || 0), 
-          backgroundColor: '#2E3135', 
-          barPercentage: 0.5, 
-          categoryPercentage: 0.7 
+        {
+          label: 'Sales',
+          data: chartData.map(item => item.totalSales || 0),
+          backgroundColor: '#2E3135',
+          barPercentage: 0.5,
+          categoryPercentage: 0.7
         },
-        { 
-          label: 'Expenses', 
-          data: chartData.map(item => item.totalExpenses || 0), 
-          backgroundColor: '#B06426', 
-          barPercentage: 0.5, 
-          categoryPercentage: 0.7 
+        {
+          label: 'Expenses',
+          data: chartData.map(item => item.totalExpenses || 0),
+          backgroundColor: '#B06426',
+          barPercentage: 0.5,
+          categoryPercentage: 0.7
         },
       ],
     };
   };
-  
+
   const financeSummaryData = buildFinanceSummaryData();
-  const financeDateRangeLabel = chartData.length > 0
-    ? `${formatPeriodLabel(chartData[0].period, getDateRangeParams()?.groupBy || 'day')} — ${formatPeriodLabel(chartData[chartData.length - 1].period, getDateRangeParams()?.groupBy || 'day')}`
+  const financeDateRangeLabel = salesRangeParams
+    ? formatRangeLabel(salesRangeParams.startDate, salesRangeParams.endDate)
     : '';
 
 
@@ -441,7 +528,15 @@ const Dashboard = () => {
           scales: {
             x: {
               grid: { display: false },
-              ticks: { display: false },
+              ticks: {
+                display: true,
+                color: '#9CA3AF',
+                font: { size: 10 },
+                maxRotation: 45,
+                minRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 10,
+              },
             },
             y: {
               beginAtZero: true,
@@ -487,7 +582,15 @@ const Dashboard = () => {
         scales: {
           x: {
             grid: { display: false },
-            ticks: { display: false },
+            ticks: {
+              display: true,
+              color: '#9CA3AF',
+              font: { size: 10 },
+              maxRotation: 45,
+              minRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 10,
+            },
           },
           y: {
             beginAtZero: true,
@@ -674,7 +777,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className={styles.dateRangeGroup}>
-                      {['1W', '1M', '6M', '1Y', 'Custom'].map((range) => (
+                      {['1W', '1M', '3M', '6M', '1Y', 'Custom'].map((range) => (
                         <button
                           key={range}
                           className={`${styles.dateRangeBtn} ${salesDateRange === range ? styles.dateRangeBtnActive : ''}`}
@@ -721,7 +824,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                     <div className={styles.dateRangeGroup}>
-                      {['1W', '1M', '6M', '1Y', 'Custom'].map((range) => (
+                      {['1W', '1M', '3M', '6M', '1Y', 'Custom'].map((range) => (
                         <button
                           key={range}
                           className={`${styles.dateRangeBtn} ${salesDateRange === range ? styles.dateRangeBtnActive : ''}`}
