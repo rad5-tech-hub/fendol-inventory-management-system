@@ -9,42 +9,9 @@ import { SkeletonStatGrid } from '../shared/skeleton/Skeleton';
 import { GiCirclingFish } from 'react-icons/gi';
 import { BsSearch, BsCalendarRange, BsExclamationTriangleFill, BsArrowClockwise } from 'react-icons/bs';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  BarController,
-  DoughnutController,
-  LineController,
-} from 'chart.js';
-import { Chart } from 'react-chartjs-2';
-import {
-  Bar, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
-  CartesianGrid, ComposedChart,
+  ComposedChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  BarController,
-  DoughnutController,
-  LineController,
-);
 
 /* ── Date helpers (local-time, no UTC-shift surprises) ── */
 const toISODate = (date) => {
@@ -112,6 +79,23 @@ const SalesTooltip = ({ active, payload, label }) => {
   );
 };
 
+const FinanceTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8,
+      padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    }}>
+      <p style={{ margin: 0, fontSize: '0.72rem', color: '#8C949B', fontWeight: 600, marginBottom: 4 }}>{label}</p>
+      {payload.map((entry, i) => (
+        <p key={i} style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: entry.color }}>
+          {entry.name}: ₦{Number(entry.value).toLocaleString()}
+        </p>
+      ))}
+    </div>
+  );
+};
+
 const getISOWeekString = (date) => {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -120,6 +104,19 @@ const getISOWeekString = (date) => {
   const yearStart = new Date(Date.UTC(year, 0, 1));
   const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   return `${year}-W${String(week).padStart(2, '0')}`;
+};
+
+const getISOWeekStart = (isoWeek) => {
+  const match = String(isoWeek).match(/^(\d{4})-W(\d{1,2})$/i);
+  if (!match) return null;
+  const year = parseInt(match[1], 10);
+  const week = parseInt(match[2], 10);
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const dayNum = jan4.getUTCDay() || 7;
+  const week1Monday = new Date(Date.UTC(year, 0, 4 - (dayNum - 1)));
+  const weekStart = new Date(week1Monday);
+  weekStart.setUTCDate(weekStart.getUTCDate() + (week - 1) * 7);
+  return weekStart;
 };
 
 const normalizePeriod = (period, groupBy) => {
@@ -283,7 +280,7 @@ const Dashboard = () => {
     return { startDate, endDate, groupBy };
   }, [salesDateRange, customDateFrom, customDateTo]);
 
-  const formatPeriodLabel = useCallback((period, groupBy, index = 0, rangeStartDate = '') => {
+  const formatPeriodLabel = useCallback((period, groupBy, showYear = false) => {
     if (!period) return '';
 
     if (groupBy === 'year' && period.match(/^\d{4}$/)) {
@@ -291,32 +288,22 @@ const Dashboard = () => {
     }
 
     if (groupBy === 'week') {
-      // Sequential week numbers within the selected range (Wk 1, Wk 2, ...)
-      if (period.includes('-W')) {
-        const [year, week] = period.split('-W').map(Number);
-        const start = rangeStartDate ? new Date(`${rangeStartDate}T00:00:00`) : null;
-        if (start && !Number.isNaN(start.getTime())) {
-          const startYear = start.getFullYear();
-          // Approximate ISO-week based offset; good enough for sequential labels in a contiguous range
-          const getISOWeek = (d) => {
-            const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-            const dayNum = tmp.getUTCDay() || 7;
-            tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
-            const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-            return Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
-          };
-          const startWeek = getISOWeek(start);
-          const diff = (year - startYear) * 52 + (week - startWeek);
-          return `Wk ${Math.max(1, diff + 1)}`;
-        }
-        return `Wk ${week}`;
+      // Show the actual date span of each week (e.g. "Jun 29 – Jul 5")
+      const weekStart = getISOWeekStart(period);
+      if (weekStart) {
+        const weekEnd = new Date(weekStart);
+        weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+        const startLabel = `${MONTH_NAMES[weekStart.getUTCMonth()]} ${weekStart.getUTCDate()}`;
+        const endLabel = `${MONTH_NAMES[weekEnd.getUTCMonth()]} ${weekEnd.getUTCDate()}`;
+        return startLabel === endLabel ? startLabel : `${startLabel} \u2013 ${endLabel}`;
       }
-      return `Wk ${index + 1}`;
+      return period;
     }
 
     if (groupBy === 'month' && period.match(/^\d{4}-\d{2}$/)) {
       const [year, month] = period.split('-');
-      return `${MONTH_NAMES[parseInt(month, 10) - 1]} '${year.slice(2)}`;
+      const monthName = MONTH_NAMES[parseInt(month, 10) - 1];
+      return showYear ? `${monthName} '${year.slice(2)}` : monthName;
     }
 
     if (period.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -512,191 +499,47 @@ const Dashboard = () => {
     if (!chartData.length) return [];
     const rangeParams = getDateRangeParams();
     const groupBy = rangeParams?.groupBy || 'day';
-    const rangeStart = rangeParams?.startDate;
+    const showYear = !!(rangeParams?.startDate && rangeParams?.endDate
+      && daysBetween(rangeParams.startDate, rangeParams.endDate) >= 365);
     const periods = generatePeriods(rangeParams?.startDate, rangeParams?.endDate, groupBy);
     const dataMap = new Map();
     chartData.forEach((item) => {
       dataMap.set(normalizePeriod(item.period, groupBy), item);
     });
-    return periods.map((period, idx) => ({
+    return periods.map((period) => ({
       period,
-      label: formatPeriodLabel(period, groupBy, idx, rangeStart),
+      label: formatPeriodLabel(period, groupBy, showYear),
       sales: dataMap.get(period)?.totalSales || 0,
     }));
   };
 
   const salesTrendData = buildSalesTrendData();
 
-  const buildFinanceSummaryData = () => {
-    if (!chartData.length) return { labels: [], datasets: [] };
+  const buildFinanceTrendData = () => {
+    if (!chartData.length) return [];
 
     const rangeParams = getDateRangeParams();
     const groupBy = rangeParams?.groupBy || 'day';
-    const rangeStart = rangeParams?.startDate;
+    const showYear = !!(rangeParams?.startDate && rangeParams?.endDate
+      && daysBetween(rangeParams.startDate, rangeParams.endDate) >= 365);
     const periods = generatePeriods(rangeParams?.startDate, rangeParams?.endDate, groupBy);
     const dataMap = new Map();
     chartData.forEach((item) => {
       dataMap.set(normalizePeriod(item.period, groupBy), item);
     });
 
-    return {
-      labels: periods.map((period, idx) => formatPeriodLabel(period, groupBy, idx, rangeStart)),
-      datasets: [
-        {
-          label: 'Sales',
-          data: periods.map(period => dataMap.get(period)?.totalSales || 0),
-          backgroundColor: '#2E3135',
-          barPercentage: 0.5,
-          categoryPercentage: 0.7
-        },
-        {
-          label: 'Expenses',
-          data: periods.map(period => dataMap.get(period)?.totalExpenses || 0),
-          backgroundColor: '#B06426',
-          barPercentage: 0.5,
-          categoryPercentage: 0.7
-        },
-      ],
-    };
+    return periods.map((period) => ({
+      period,
+      label: formatPeriodLabel(period, groupBy, showYear),
+      sales: dataMap.get(period)?.totalSales || 0,
+      expenses: dataMap.get(period)?.totalExpenses || 0,
+    }));
   };
 
-  const financeSummaryData = buildFinanceSummaryData();
+  const financeTrendData = buildFinanceTrendData();
   const financeDateRangeLabel = salesRangeParams
     ? formatRangeLabel(salesRangeParams.startDate, salesRangeParams.endDate)
     : '';
-
-
-  const chartOptions = (title, type) => {
-    const baseOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'top' },
-        title: { display: true, text: title },
-        tooltip: {
-          callbacks: {
-            label: (context) => {
-              const label = context.dataset.label || '';
-              let value = context.raw || 0;
-              if (
-                (title === 'Finance Summary' && (label === 'Sales' || label === 'Expenses')) ||
-                (title === 'Top Selling Products' && label === 'Total Revenue') ||
-                (title === 'Sales Summary' && label === 'Sales')
-              ) {
-                value = `₦${value.toLocaleString()}`;
-              }
-              return `${label}: ${value}`;
-            },
-          },
-        },
-      },
-    };
-
-    if (type === 'line') {
-      if (title === 'Sales Summary') {
-        return {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { intersect: false, mode: 'index' },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#1F2937',
-              titleFont: { size: 12, weight: '600' },
-              bodyFont: { size: 13 },
-              padding: 10,
-              cornerRadius: 8,
-              displayColors: false,
-              callbacks: {
-                title: (items) => items[0]?.label || '',
-                label: (ctx) => `₦${Number(ctx.raw).toLocaleString()}`,
-              },
-            },
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: {
-                display: true,
-                color: '#9CA3AF',
-                font: { size: 10 },
-                maxRotation: 45,
-                minRotation: 0,
-                autoSkip: true,
-                maxTicksLimit: 10,
-              },
-            },
-            y: {
-              beginAtZero: true,
-              grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
-              border: { display: false },
-              ticks: {
-                callback: (v) => `₦${(v / 1000).toFixed(0)}k`,
-                font: { size: 11 },
-                color: '#9CA3AF',
-                maxTicksLimit: 6,
-              },
-            },
-          },
-        };
-      }
-      return baseOptions;
-    }
-
-    if (title === 'Finance Summary') {
-      return {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { intersect: false, mode: 'index' },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#1F2937',
-            titleFont: { size: 12, weight: '600' },
-            bodyFont: { size: 13 },
-            padding: 10,
-            cornerRadius: 8,
-            displayColors: true,
-            boxPadding: 4,
-            callbacks: {
-              title: (items) => items[0]?.label || '',
-              label: (ctx) => {
-                const label = ctx.dataset.label || '';
-                return `${label}: ₦${Number(ctx.raw).toLocaleString()}`;
-              },
-            },
-          },
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: {
-              display: true,
-              color: '#9CA3AF',
-              font: { size: 10 },
-              maxRotation: 45,
-              minRotation: 0,
-              autoSkip: true,
-              maxTicksLimit: 10,
-            },
-          },
-          y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
-            border: { display: false },
-            ticks: {
-              callback: (v) => `₦${(v / 1000).toFixed(0)}k`,
-              font: { size: 11 },
-              color: '#9CA3AF',
-              maxTicksLimit: 6,
-            },
-          },
-        },
-      };
-    }
-
-    return baseOptions;
-  };
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -955,8 +798,7 @@ const Dashboard = () => {
                               width={50}
                             />
                             <RechartsTooltip content={<SalesTooltip />} cursor={{ fill: '#F9FAFB' }} />
-                            <Bar dataKey="sales" fill="url(#salesBarGradient)" radius={[3, 3, 0, 0]} barSize={salesTrendData.length > 60 ? 4 : 12} />
-                            <Line type="monotone" dataKey="sales" stroke="#2E3135" strokeWidth={2} dot={false} />
+                            <Bar dataKey="sales" fill="url(#salesBarGradient)" radius={[3, 3, 0, 0]} barSize={salesTrendData.length > 60 ? 4 : 8} />
                           </ComposedChart>
                         </ResponsiveContainer>
                       )}
@@ -990,6 +832,17 @@ const Dashboard = () => {
                       </div>
                     )}
                     {financeDateRangeLabel && <div className={styles.dateRangeLabel}>{financeDateRangeLabel}</div>}
+                    <div className={styles.legendRow}>
+                      <div className={styles.legendItem}>
+                        <span className={styles.legendSwatch} style={{ background: '#2E3135' }} />
+                        Sales
+                      </div>
+                      <div className={styles.legendItem}>
+                        <span className={styles.legendSwatch} style={{ background: '#B06426' }} />
+                        Expenses
+                      </div>
+                      <span className={styles.dataPointsBadge}>{financeTrendData.length} data points</span>
+                    </div>
                     <div style={{ position: 'relative', width: '100%', minWidth: '300px', height: '380px' }}>
                       {chartLoading ? (
                         <div className={styles.skeletonBlock} style={{ width: '100%', height: '100%' }} />
@@ -1000,12 +853,44 @@ const Dashboard = () => {
                             <div>{chartError}</div>
                           </div>
                         </div>
-                      ) : chartData.length === 0 ? (
+                      ) : financeTrendData.length === 0 ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#8C949B', fontSize: '0.85rem' }}>
                           No data available for this period
                         </div>
                       ) : (
-                        <Chart type="bar" data={financeSummaryData} options={chartOptions('Finance Summary', 'bar')} />
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart data={financeTrendData} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="financeSalesGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#2E3135" stopOpacity={0.35} />
+                                <stop offset="100%" stopColor="#2E3135" stopOpacity={0.04} />
+                              </linearGradient>
+                              <linearGradient id="financeExpensesGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#B06426" stopOpacity={0.35} />
+                                <stop offset="100%" stopColor="#B06426" stopOpacity={0.04} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="2 3" stroke="#F0F0F0" vertical={false} />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fill: '#8C949B', fontSize: 10 }}
+                              axisLine={{ stroke: '#E5E7EB', strokeWidth: 1 }}
+                              tickLine={false}
+                              interval={financeTrendData.length <= 12 ? 0 : Math.floor(financeTrendData.length / 10)}
+                            />
+                            <YAxis
+                              tick={{ fill: '#8C949B', fontSize: 10 }}
+                              axisLine={false}
+                              tickLine={false}
+                              domain={[0, 'auto']}
+                              tickFormatter={(v) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v >= 1000 ? (v / 1000) + 'K' : v}
+                              width={50}
+                            />
+                            <RechartsTooltip content={<FinanceTooltip />} cursor={{ fill: '#F9FAFB' }} />
+                            <Bar dataKey="sales" name="Sales" fill="url(#financeSalesGradient)" radius={[3, 3, 0, 0]} barSize={financeTrendData.length > 60 ? 4 : 8} />
+                            <Bar dataKey="expenses" name="Expenses" fill="url(#financeExpensesGradient)" radius={[3, 3, 0, 0]} barSize={financeTrendData.length > 60 ? 4 : 8} />
+                          </ComposedChart>
+                        </ResponsiveContainer>
                       )}
                     </div>
                   </div>

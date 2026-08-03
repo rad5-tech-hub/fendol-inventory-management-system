@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { IoCalendarOutline, IoClose } from "react-icons/io5";
 import { FiChevronLeft, FiChevronRight, FiArrowLeft } from "react-icons/fi";
 import { BsInfoCircle } from "react-icons/bs";
 import { FaExclamationTriangle } from "react-icons/fa";
@@ -10,6 +9,7 @@ import DataTable from "../../shared/data-table/DataTable";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
+import DateRangeFilter from "../../shared/date-range-filter/DateRangeFilter";
 import feedStyles from "../feed.module.scss";
 import styles from "./inventory-history.module.scss";
 import { useNavigate } from "react-router-dom";
@@ -33,7 +33,8 @@ export default function InventoryHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const itemsPerPage = 20;
 
@@ -44,6 +45,8 @@ export default function InventoryHistory() {
         const siteId = isSuperAdmin ? (activeSite?.id || "all") : (user?.siteId || user?.userSites?.[0]?.id || "");
         const params = {};
         if (siteId) params.siteId = siteId;
+        if (dateFrom) params.startDate = dateFrom;
+        if (dateTo) params.endDate = dateTo;
         const response = await Api.get("/feeds-histories", { params });
         if (response.data?.success) {
           setInventoryHistory(response.data.data || []);
@@ -60,28 +63,17 @@ export default function InventoryHistory() {
       }
     };
     fetchInventoryHistory();
-  }, [activeSite, isSuperAdmin, user]);
+  }, [activeSite, isSuperAdmin, user, dateFrom, dateTo]);
 
-  const handleDateChange = (event) => {
-    const date = event.target.value;
-    setSelectedDate(date);
+  const handleDateChange = (from, to) => {
+    setDateFrom(from);
+    setDateTo(to);
     setCurrentPage(0);
-
-    if (date) {
-      const filtered = inventoryHistory.filter((history) => {
-        const createdDate = new Date(history.createdAt);
-        const formattedDate = createdDate.toISOString().split("T")[0];
-        return formattedDate === date;
-      });
-      setFilteredData(filtered);
-    } else {
-      setFilteredData(inventoryHistory);
-    }
   };
 
   const clearFilter = () => {
-    setSelectedDate("");
-    setFilteredData(inventoryHistory);
+    setDateFrom("");
+    setDateTo("");
     setCurrentPage(0);
   };
 
@@ -163,36 +155,17 @@ export default function InventoryHistory() {
                   <p className={styles.pageSubtitle}>Track all feed additions, usage, and sales.</p>
                 </div>
                 <div className={styles.headerRight}>
+                  <DateRangeFilter
+                    dateFrom={dateFrom}
+                    dateTo={dateTo}
+                    onChange={handleDateChange}
+                    onClear={clearFilter}
+                    label="Filter by Date"
+                  />
                   <button className={styles.backBtn} onClick={() => navigate(-1)}>
                     <FiArrowLeft size={14} />
                     Back
                   </button>
-                </div>
-              </div>
-
-              <div className={styles.filterRow}>
-                <div className={styles.filterLeft}>
-                  <div className={styles.filterField}>
-                    <span className={styles.filterCaption}>Filter by Date</span>
-                    <div className={styles.filterControl}>
-                      <IoCalendarOutline size={15} className={styles.ctrlIcon} />
-                      <input
-                        type="date"
-                        className={styles.filterDateInput}
-                        value={selectedDate}
-                        onChange={handleDateChange}
-                      />
-                      {selectedDate && (
-                        <IoClose size={15} className={styles.ctrlClear} onClick={clearFilter} />
-                      )}
-                    </div>
-                  </div>
-                  {selectedDate && (
-                    <button className={styles.filterClearBtn} onClick={clearFilter}>
-                      <IoClose size={14} />
-                      Clear filters
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -214,10 +187,10 @@ export default function InventoryHistory() {
                 <div className={styles.emptyState}>
                   <BsInfoCircle size={36} className={styles.emptyStateIcon} />
                   <span className={styles.emptyStateText}>
-                    {selectedDate ? "No records for this date" : "No inventory history available"}
+                    {(dateFrom || dateTo) ? "No records for this date range" : "No inventory history available"}
                   </span>
                   <span className={styles.emptyStateSub}>
-                    {selectedDate ? "Try selecting a different date." : "Feed transactions will appear here once recorded."}
+                    {(dateFrom || dateTo) ? "Try selecting a different date range." : "Feed transactions will appear here once recorded."}
                   </span>
                 </div>
               ) : (

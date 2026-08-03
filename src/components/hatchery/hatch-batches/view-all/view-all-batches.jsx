@@ -15,6 +15,7 @@ import SideBar from '../../../shared/sidebar/sidebar';
 import PortalDropdown from '../../../shared/portal-dropdown/PortalDropdown';
 import Header from '../../../shared/header/header';
 import { ApiV2 } from '../../../shared/api/apiLink';
+import DateRangeFilter from '../../../shared/date-range-filter/DateRangeFilter';
 import styles from '../../hatchery.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
@@ -244,6 +245,11 @@ export default function ViewAllBatches() {
     setFilterDateTo('');
   };
 
+  const handleDateChange = (from, to) => {
+    setFilterDateFrom(from);
+    setFilterDateTo(to);
+  };
+
   const statCards = summary.total > 0
     ? [
         { label: 'Active Batches', value: String(summary.activeCount), icon: GiCirclingFish, color: '#F97316' },
@@ -303,6 +309,12 @@ export default function ViewAllBatches() {
               <div className={styles.pageHeader}>
                 <h4>Hatchery Dashboard</h4>
                 <div className={styles.headerActions}>
+                  <DateRangeFilter
+                    dateFrom={filterDateFrom}
+                    dateTo={filterDateTo}
+                    onChange={handleDateChange}
+                    onClear={() => handleDateChange('', '')}
+                  />
                   <button className={styles.primaryBtn} onClick={() => navigate('/hatchery/hatch-batches/create')}>
                     <FaPlus size={12} /> New Hatch Batch
                   </button>

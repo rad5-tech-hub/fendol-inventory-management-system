@@ -34,6 +34,7 @@ import { SkeletonTable, SkeletonStatGrid, SkeletonCard } from '../../shared/skel
 import EmptyState from '../../shared/empty-state/EmptyState';
 import ErrorState from '../../shared/error-state/ErrorState';
 import DataTable from '../../shared/data-table/DataTable';
+import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import Pagination from '../../shared/pagination/Pagination';
 import styles from './site-performance.module.scss';
 
@@ -434,20 +435,14 @@ const SitePerformance = () => {
       label: 'Action',
       align: 'right',
       render: (_, site) => (
-        <button
-          type="button"
-          onClick={() => handleViewSite(site)}
-          aria-label={`View ${site.siteName || 'site'}`}
-          style={{
-            width: 28, height: 28, borderRadius: 6, border: '1px solid #E5E7EB', background: '#fff',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#512728',
-            cursor: 'pointer', transition: 'all 0.15s ease',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#512728'; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#512728'; }}
-        >
-          <BsEye size={15} />
-        </button>
+        <PortalDropdown
+          btnClass={styles.threeDotBtn}
+          menuStyle={{ minWidth: 210 }}
+          stopPropagation
+          items={[
+            { label: <><BsEye size={16} style={{ marginRight: 10 }} /> View Site</>, onClick: () => handleViewSite(site) },
+          ]}
+        />
       ),
     },
   ];

@@ -22,6 +22,7 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { SkeletonTable, SkeletonStatGrid } from '../../shared/skeleton/Skeleton';
 import { ApiV2 } from '../../shared/api/apiLink';
+import DateRangeFilter from '../../shared/date-range-filter/DateRangeFilter';
 import styles from '../batch-dashboard.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
@@ -53,6 +54,8 @@ export default function BatchDashboard() {
   const [stageFilter, setStageFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const itemsPerPage = 35;
 
   const fetchBatches = useCallback(async () => {
@@ -66,6 +69,8 @@ export default function BatchDashboard() {
         const params = { limit: 50 };
         if (siteId) params.siteId = siteId;
         if (cursor) params.cursor = cursor;
+        if (dateFrom) params.startDate = dateFrom;
+        if (dateTo) params.endDate = dateTo;
         const response = await ApiV2.get('/v2/batches', { params });
         const body = response.data;
         const list = Array.isArray(body.data) ? body.data : [];
@@ -82,7 +87,7 @@ export default function BatchDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [isSuperAdmin, activeSite, user]);
+  }, [isSuperAdmin, activeSite, user, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchBatches();
@@ -104,6 +109,14 @@ export default function BatchDashboard() {
   const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handlePageChange = (page) => setCurrentPage(page);
+  const handleDateChange = (from, to) => {
+    setDateFrom(from);
+    setDateTo(to);
+  };
+  const handleClearDates = () => {
+    setDateFrom('');
+    setDateTo('');
+  };
 
   const totalFish = (stocks) => (stocks || []).reduce((s, x) => s + (Number(x.quantity) || 0), 0);
   const totalProcessed = (processes) => (processes || []).reduce((s, x) => s + (Number(x.wholeFishQuantity) || 0) + (Number(x.brokenFishQuantity) || 0) + (Number(x.damageOrLoss) || 0), 0);
@@ -180,6 +193,12 @@ export default function BatchDashboard() {
             <div className={styles.pageHeader}>
               <h4>Batch Dashboard</h4>
               <div className={styles.headerActions}>
+                <DateRangeFilter
+                  dateFrom={dateFrom}
+                  dateTo={dateTo}
+                  onChange={handleDateChange}
+                  onClear={handleClearDates}
+                />
                 <button className={styles.howItWorksBtn} onClick={() => {}}>
                   <IoHelpCircleOutline size={18} /> How it works
                 </button>

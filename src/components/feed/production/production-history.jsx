@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  IoCalendarOutline, IoChevronDown,
-} from 'react-icons/io5';
-import {
   FiDownload, FiSearch, FiRefreshCw,
   FiChevronLeft, FiChevronRight,
   FiEye, FiCheckCircle, FiXCircle, FiEdit2,
@@ -17,6 +14,7 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import DataTable from "../../shared/data-table/DataTable";
+import DateRangeFilter from '../../shared/date-range-filter/DateRangeFilter';
 import { ApiV2 } from '../../shared/api/apiLink';
 import feedStyles from '../feed.module.scss';
 import styles from './production-history.module.scss';
@@ -84,6 +82,8 @@ export default function FeedProductionHistory() {
   const [feedTypeFilter, setFeedTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [siteFilter, setSiteFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   /* ----- pagination ----- */
   const [page, setPage] = useState(1);
@@ -98,6 +98,8 @@ export default function FeedProductionHistory() {
     try {
       const params = {};
       if (cursor) params.cursor = cursor;
+      if (dateFrom) params.startDate = dateFrom;
+      if (dateTo) params.endDate = dateTo;
       const res = await ApiV2.get('/v2/feed-production-batch', { params });
       if (res.data?.success) {
         const newData = Array.isArray(res.data.data) ? res.data.data : [];
@@ -121,7 +123,7 @@ export default function FeedProductionHistory() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateFrom, dateTo]);
 
   useEffect(() => {
     fetchBatches();
@@ -290,6 +292,18 @@ export default function FeedProductionHistory() {
     setPage(1);
   };
 
+  const handleDateChange = (from, to) => {
+    setDateFrom(from);
+    setDateTo(to);
+    setPage(1);
+  };
+
+  const handleDateClear = () => {
+    setDateFrom('');
+    setDateTo('');
+    setPage(1);
+  };
+
   /* ----- pagination helpers ----- */
   const goToPage = (p) => {
     if (p >= 1 && p <= totalPages) setPage(p);
@@ -337,11 +351,13 @@ export default function FeedProductionHistory() {
                 <p className={styles.pageSubtitle}>View and track all feed production batches.</p>
               </div>
               <div className={styles.headerRight}>
-                <button className={styles.secBtn}>
-                  <IoCalendarOutline size={14} />
-                  May 1, 2025 - May 31, 2025
-                  <IoChevronDown size={12} />
-                </button>
+                <DateRangeFilter
+                  dateFrom={dateFrom}
+                  dateTo={dateTo}
+                  onChange={handleDateChange}
+                  onClear={handleDateClear}
+                  label="Filter by Date"
+                />
                 <button className={styles.secBtn} onClick={() => fetchBatches()}>
                   <FiRefreshCw size={14} />
                   Refresh
