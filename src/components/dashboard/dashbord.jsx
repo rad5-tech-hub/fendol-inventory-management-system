@@ -174,7 +174,7 @@ const Dashboard = () => {
           const spanDays = daysBetween(startDate, endDate) + 1;
           if (spanDays <= 14) {
             groupBy = 'day';
-          } else if (spanDays <= 90) {
+          } else if (spanDays <= 60) {
             groupBy = 'week';
           } else if (spanDays <= 730) {
             groupBy = 'month';
