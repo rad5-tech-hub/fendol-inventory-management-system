@@ -25,6 +25,10 @@ import {
   LineController,
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
+import {
+  Bar, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
+  CartesianGrid, ComposedChart,
+} from 'recharts';
 
 ChartJS.register(
   CategoryScale,
@@ -89,6 +93,23 @@ const formatRangeLabel = (startDate, endDate) => {
     return startDay;
   }
   return `${startDay} — ${endDay}`;
+};
+
+const SalesTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8,
+      padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    }}>
+      <p style={{ margin: 0, fontSize: '0.72rem', color: '#8C949B', fontWeight: 600, marginBottom: 4 }}>{label}</p>
+      {payload.map((entry, i) => (
+        <p key={i} style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: entry.color }}>
+          Sales: ₦{Number(entry.value).toLocaleString()}
+        </p>
+      ))}
+    </div>
+  );
 };
 
 const getISOWeekString = (date) => {
@@ -482,9 +503,13 @@ const Dashboard = () => {
       )
     : topProducts;
 
-  const buildSalesSummaryData = () => {
-    if (!chartData.length) return { labels: [], datasets: [] };
+  const salesRangeParams = getDateRangeParams();
+  const salesDateRangeLabel = salesRangeParams
+    ? formatRangeLabel(salesRangeParams.startDate, salesRangeParams.endDate)
+    : '';
 
+  const buildSalesTrendData = () => {
+    if (!chartData.length) return [];
     const rangeParams = getDateRangeParams();
     const groupBy = rangeParams?.groupBy || 'day';
     const rangeStart = rangeParams?.startDate;
@@ -493,29 +518,14 @@ const Dashboard = () => {
     chartData.forEach((item) => {
       dataMap.set(normalizePeriod(item.period, groupBy), item);
     });
-
-    return {
-      labels: periods.map((period, idx) => formatPeriodLabel(period, groupBy, idx, rangeStart)),
-      datasets: [{
-        label: 'Sales',
-        data: periods.map(period => dataMap.get(period)?.totalSales || 0),
-        borderColor: '#2E3135',
-        backgroundColor: 'rgba(46, 49, 53, 0.06)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        pointBackgroundColor: '#2E3135',
-        borderWidth: 1.5,
-      }],
-    };
+    return periods.map((period, idx) => ({
+      period,
+      label: formatPeriodLabel(period, groupBy, idx, rangeStart),
+      sales: dataMap.get(period)?.totalSales || 0,
+    }));
   };
 
-  const salesSummaryData = buildSalesSummaryData();
-  const salesRangeParams = getDateRangeParams();
-  const salesDateRangeLabel = salesRangeParams
-    ? formatRangeLabel(salesRangeParams.startDate, salesRangeParams.endDate)
-    : '';
+  const salesTrendData = buildSalesTrendData();
 
   const buildFinanceSummaryData = () => {
     if (!chartData.length) return { labels: [], datasets: [] };
@@ -854,26 +864,58 @@ const Dashboard = () => {
                         </span>
                       </div>
                     </div>
-                    <div className={styles.dateRangeGroup}>
-                      {['1W', '1M', '3M', '6M', '1Y', 'Custom'].map((range) => (
-                        <button
-                          key={range}
-                          className={`${styles.dateRangeBtn} ${salesDateRange === range ? styles.dateRangeBtnActive : ''}`}
-                          onClick={() => setSalesDateRange(range)}
-                        >
-                          {range}
-                        </button>
-                      ))}
+                    <div className={styles.trendHeader}>
+                      <div className={styles.timeSelector}>
+                        {[
+                          { key: '1W', label: '1 Week' },
+                          { key: '1M', label: '1 Month' },
+                          { key: '3M', label: '3 Months' },
+                          { key: '6M', label: '6 Months' },
+                          { key: '1Y', label: '1 Year' },
+                          { key: 'CUSTOM', label: 'Custom' },
+                        ].map((r) => (
+                          <button
+                            key={r.key}
+                            className={`${styles.timeBtn} ${salesDateRange === r.key ? styles.timeBtnActive : ''}`}
+                            onClick={() => setSalesDateRange(r.key)}
+                          >
+                            {r.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    {salesDateRange === 'Custom' && (
+                    {salesDateRange === 'CUSTOM' && (
                       <div className={styles.customDateRow}>
-                        <input type="date" value={customDateFrom} onChange={(e) => setCustomDateFrom(e.target.value)} className={styles.customDateInput} />
-                        <span className={styles.customDateSep}>to</span>
-                        <input type="date" value={customDateTo} onChange={(e) => setCustomDateTo(e.target.value)} className={styles.customDateInput} />
+                        <div className={styles.dateField}>
+                          <BsCalendarRange size={14} color="#6B7280" />
+                          <input
+                            type="date"
+                            value={customDateFrom}
+                            onChange={(e) => setCustomDateFrom(e.target.value)}
+                            className={styles.dateInput}
+                          />
+                        </div>
+                        <span className={styles.dateSep}>—</span>
+                        <div className={styles.dateField}>
+                          <BsCalendarRange size={14} color="#6B7280" />
+                          <input
+                            type="date"
+                            value={customDateTo}
+                            onChange={(e) => setCustomDateTo(e.target.value)}
+                            className={styles.dateInput}
+                          />
+                        </div>
                       </div>
                     )}
                     {salesDateRangeLabel && <div className={styles.dateRangeLabel}>{salesDateRangeLabel}</div>}
-                    <div style={{ position: 'relative', width: '100%', minWidth: '300px', height: '380px' }}>
+                    <div className={styles.legendRow}>
+                      <div className={styles.legendItem}>
+                        <span className={styles.legendSwatch} style={{ background: '#2E3135' }} />
+                        Sales (₦)
+                      </div>
+                      <span className={styles.dataPointsBadge}>{salesTrendData.length} data points</span>
+                    </div>
+                    <div className={styles.chartContainer}>
                       {chartLoading ? (
                         <div className={styles.skeletonBlock} style={{ width: '100%', height: '100%' }} />
                       ) : chartError ? (
@@ -883,12 +925,40 @@ const Dashboard = () => {
                             <div>{chartError}</div>
                           </div>
                         </div>
-                      ) : chartData.length === 0 ? (
+                      ) : salesTrendData.length === 0 ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#8C949B', fontSize: '0.85rem' }}>
                           No data available for this period
                         </div>
                       ) : (
-                        <Chart type="line" data={salesSummaryData} options={chartOptions('Sales Summary', 'line')} />
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart data={salesTrendData} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="salesBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#2E3135" stopOpacity={0.35} />
+                                <stop offset="100%" stopColor="#2E3135" stopOpacity={0.04} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="2 3" stroke="#F0F0F0" vertical={false} />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fill: '#8C949B', fontSize: 10 }}
+                              axisLine={{ stroke: '#E5E7EB', strokeWidth: 1 }}
+                              tickLine={false}
+                              interval={salesTrendData.length <= 12 ? 0 : Math.floor(salesTrendData.length / 10)}
+                            />
+                            <YAxis
+                              tick={{ fill: '#8C949B', fontSize: 10 }}
+                              axisLine={false}
+                              tickLine={false}
+                              domain={[0, 'auto']}
+                              tickFormatter={(v) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v >= 1000 ? (v / 1000) + 'K' : v}
+                              width={50}
+                            />
+                            <RechartsTooltip content={<SalesTooltip />} cursor={{ fill: '#F9FAFB' }} />
+                            <Bar dataKey="sales" fill="url(#salesBarGradient)" radius={[3, 3, 0, 0]} barSize={salesTrendData.length > 60 ? 4 : 12} />
+                            <Line type="monotone" dataKey="sales" stroke="#2E3135" strokeWidth={2} dot={false} />
+                          </ComposedChart>
+                        </ResponsiveContainer>
                       )}
                     </div>
                   </div>
