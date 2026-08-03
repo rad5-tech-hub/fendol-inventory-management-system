@@ -91,6 +91,74 @@ const formatRangeLabel = (startDate, endDate) => {
   return `${startDay} — ${endDay}`;
 };
 
+const getISOWeekString = (date) => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const year = d.getUTCFullYear();
+  const yearStart = new Date(Date.UTC(year, 0, 1));
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${year}-W${String(week).padStart(2, '0')}`;
+};
+
+const normalizePeriod = (period, groupBy) => {
+  if (!period) return '';
+  if (groupBy === 'day') return period;
+  if (groupBy === 'week') {
+    if (period.includes('-W')) return period;
+    if (period.match(/^\d{4}-\d{2}-\d{2}$/)) return getISOWeekString(new Date(`${period}T00:00:00`));
+  }
+  if (groupBy === 'month') {
+    if (period.match(/^\d{4}-\d{2}$/)) return period;
+    if (period.match(/^\d{4}-\d{2}-\d{2}$/)) return period.slice(0, 7);
+  }
+  if (groupBy === 'year') {
+    if (period.match(/^\d{4}$/)) return period;
+    if (period.match(/^\d{4}-\d{2}-\d{2}$/)) return period.slice(0, 4);
+    if (period.match(/^\d{4}-\d{2}$/)) return period.slice(0, 4);
+  }
+  return period;
+};
+
+const generatePeriods = (startDate, endDate, groupBy) => {
+  if (!startDate || !endDate) return [];
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [];
+
+  const periods = [];
+  if (groupBy === 'day') {
+    let current = new Date(start);
+    while (current <= end) {
+      periods.push(toISODate(current));
+      current.setDate(current.getDate() + 1);
+    }
+  } else if (groupBy === 'week') {
+    let current = new Date(start);
+    while (current <= end) {
+      periods.push(getISOWeekString(current));
+      current.setDate(current.getDate() + 7);
+    }
+  } else if (groupBy === 'month') {
+    let current = new Date(start.getFullYear(), start.getMonth(), 1);
+    const endYear = end.getFullYear();
+    const endMonth = end.getMonth();
+    while (current.getFullYear() < endYear || (current.getFullYear() === endYear && current.getMonth() <= endMonth)) {
+      const year = current.getFullYear();
+      const month = String(current.getMonth() + 1).padStart(2, '0');
+      periods.push(`${year}-${month}`);
+      current.setMonth(current.getMonth() + 1);
+    }
+  } else if (groupBy === 'year') {
+    let year = start.getFullYear();
+    while (year <= end.getFullYear()) {
+      periods.push(String(year));
+      year += 1;
+    }
+  }
+  return periods;
+};
+
 const Dashboard = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
@@ -420,12 +488,17 @@ const Dashboard = () => {
     const rangeParams = getDateRangeParams();
     const groupBy = rangeParams?.groupBy || 'day';
     const rangeStart = rangeParams?.startDate;
+    const periods = generatePeriods(rangeParams?.startDate, rangeParams?.endDate, groupBy);
+    const dataMap = new Map();
+    chartData.forEach((item) => {
+      dataMap.set(normalizePeriod(item.period, groupBy), item);
+    });
 
     return {
-      labels: chartData.map((item, idx) => formatPeriodLabel(item.period, groupBy, idx, rangeStart)),
+      labels: periods.map((period, idx) => formatPeriodLabel(period, groupBy, idx, rangeStart)),
       datasets: [{
         label: 'Sales',
-        data: chartData.map(item => item.totalSales || 0),
+        data: periods.map(period => dataMap.get(period)?.totalSales || 0),
         borderColor: '#2E3135',
         backgroundColor: 'rgba(46, 49, 53, 0.06)',
         fill: true,
@@ -450,20 +523,25 @@ const Dashboard = () => {
     const rangeParams = getDateRangeParams();
     const groupBy = rangeParams?.groupBy || 'day';
     const rangeStart = rangeParams?.startDate;
+    const periods = generatePeriods(rangeParams?.startDate, rangeParams?.endDate, groupBy);
+    const dataMap = new Map();
+    chartData.forEach((item) => {
+      dataMap.set(normalizePeriod(item.period, groupBy), item);
+    });
 
     return {
-      labels: chartData.map((item, idx) => formatPeriodLabel(item.period, groupBy, idx, rangeStart)),
+      labels: periods.map((period, idx) => formatPeriodLabel(period, groupBy, idx, rangeStart)),
       datasets: [
         {
           label: 'Sales',
-          data: chartData.map(item => item.totalSales || 0),
+          data: periods.map(period => dataMap.get(period)?.totalSales || 0),
           backgroundColor: '#2E3135',
           barPercentage: 0.5,
           categoryPercentage: 0.7
         },
         {
           label: 'Expenses',
-          data: chartData.map(item => item.totalExpenses || 0),
+          data: periods.map(period => dataMap.get(period)?.totalExpenses || 0),
           backgroundColor: '#B06426',
           barPercentage: 0.5,
           categoryPercentage: 0.7
