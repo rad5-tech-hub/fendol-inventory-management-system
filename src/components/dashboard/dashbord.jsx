@@ -569,7 +569,7 @@ const Dashboard = () => {
             padding: 10,
             cornerRadius: 8,
             displayColors: true,
-            boxPadding: { x: 4, y: 2 },
+            boxPadding: 4,
             callbacks: {
               title: (items) => items[0]?.label || '',
               label: (ctx) => {
