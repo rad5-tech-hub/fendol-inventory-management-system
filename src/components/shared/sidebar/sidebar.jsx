@@ -62,6 +62,7 @@ import styles from "./siderbar.module.scss";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { hasPermission } from "../permissions/permissions";
+import { ApiV2 } from "../api/apiLink";
 
 export default function SideBar({ show, handleClose }) {
   const location = useLocation();
@@ -72,6 +73,36 @@ export default function SideBar({ show, handleClose }) {
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const user = useSelector((store) => store.user);
   const activeSite = useSelector((store) => store.activeSite);
+  const [userSiteDetails, setUserSiteDetails] = useState([]);
+
+  const isSuperAdmin = userTypes.includes('super_admin');
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      setUserSiteDetails([]);
+      return;
+    }
+    const sites = user?.userSites || [];
+    const siteIds = sites.filter(s => typeof s === 'string');
+    if (siteIds.length === 0) {
+      setUserSiteDetails(sites.filter(s => typeof s === 'object'));
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        const allSites = Array.isArray(res.data?.data) ? res.data.data : [];
+        if (!cancelled) {
+          const matched = allSites.filter(s => siteIds.includes(s.id));
+          setUserSiteDetails(matched.length ? matched : user?.userSites || []);
+        }
+      } catch {
+        if (!cancelled) setUserSiteDetails(user?.userSites || []);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.userSites, isSuperAdmin]);
 
   useLayoutEffect(() => {
     const path = location.pathname;
@@ -262,15 +293,11 @@ export default function SideBar({ show, handleClose }) {
 
           {/* --- HATCHERY --- */}
           {(() => {
-            const hasHatcheryPermission = hasPermission(userTypes, 'hatchery');
-            const isSuperAdmin = userTypes.includes('super_admin');
-            const sites = user?.userSites || [];
-            const hasHatcherySite = sites.some(s =>
-              (typeof s === 'string' ? s : (s.name || s.siteName || ''))
-                .toLowerCase() === 'hatchery'
-            );
-            const isActiveSiteHatchery = !activeSite || activeSite.type?.toLowerCase() === 'hatchery';
-            return hasHatcheryPermission && (isSuperAdmin || hasHatcherySite) && isActiveSiteHatchery;
+            const siteTypeName = (s) => s?.type?.name || s?.type || s?.description || s?.typeName || s?.name || '';
+            const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
+            const hasHatcherySite = userSiteDetails.some(s => isHatcheryType(siteTypeName(s)));
+            const isActiveSiteHatchery = !activeSite || isHatcheryType(activeSite.type);
+            return (isSuperAdmin || hasHatcherySite) && isActiveSiteHatchery;
           })() && (
             <>
               <span className={styles.sectionLabel}>HATCHERY</span>
