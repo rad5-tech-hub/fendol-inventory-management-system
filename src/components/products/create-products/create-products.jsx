@@ -154,7 +154,7 @@ export default function CreateProducts() {
 
             let response;
             if (isEditing) {
-                response = await ApiV2.put(`/api/v1/product/${editProduct.id}`, formDataToSubmit);
+                response = await ApiV2.patch(`/api/v1/product/${editProduct.id}`, formDataToSubmit);
             } else {
                 response = await ApiV2.post('/api/v1/product', formDataToSubmit);
             }
