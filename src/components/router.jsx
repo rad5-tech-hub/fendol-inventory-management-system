@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import LogIn from "./shared/login/login";
@@ -8,26 +8,27 @@ import ProtectedRoute from "./protect-routes";
 import { Provider } from "react-redux";
 import store from "./shared/reduxForProtectingRoute/store";
 import { hasPermission } from "./shared/permissions/permissions";
-import AdminNavigations from "./admin/adminRoutes";
-import CustomerNavigations from "./customer/customerRoute";
-import FeedNavigations from "./feed/feedRouter";
-import ProcessNavigations from "./fish-processes/processRouter";
-import ProductNavigations from "./products/productRouter";
-import ProductStagesNavigations from "./ponds/productStagesRouter";
-import StoreNavigations from "./store/storeRouter";
-import FinanceNavigations from "./finance/financeRouter";
-import DamageLoss from "./damage-loss/damges";
-import Complaints from "./complaints/complaints";
-import AllComplaints from "./complaints/all-complaints";
-import ShowcaseNavigations from "./showcase/showcaseRoute";
-import SiteManagementNavigations from "./site-management/siteManagementRouter";
-import ManageNavigations from "./manage-fish/manageRoute";
-import BatchDashboardNavigations from "./batch-dashboard/batchDashboardRouter";
-import HatcheryNavigations from "./hatchery/hatcheryRouter";
-import ReferralNavigations from "./referral/referralRouter";
-import MlmNavigations from "./mlm/mlmRouter";
 import { ToastContainer } from "react-toastify";
-import Dashboard from "./dashboard/dashbord";
+
+const AdminNavigations = lazy(() => import("./admin/adminRoutes"));
+const CustomerNavigations = lazy(() => import("./customer/customerRoute"));
+const FeedNavigations = lazy(() => import("./feed/feedRouter"));
+const ProcessNavigations = lazy(() => import("./fish-processes/processRouter"));
+const ProductNavigations = lazy(() => import("./products/productRouter"));
+const ProductStagesNavigations = lazy(() => import("./ponds/productStagesRouter"));
+const StoreNavigations = lazy(() => import("./store/storeRouter"));
+const FinanceNavigations = lazy(() => import("./finance/financeRouter"));
+const DamageLoss = lazy(() => import("./damage-loss/damges"));
+const Complaints = lazy(() => import("./complaints/complaints"));
+const AllComplaints = lazy(() => import("./complaints/all-complaints"));
+const ShowcaseNavigations = lazy(() => import("./showcase/showcaseRoute"));
+const SiteManagementNavigations = lazy(() => import("./site-management/siteManagementRouter"));
+const ManageNavigations = lazy(() => import("./manage-fish/manageRoute"));
+const BatchDashboardNavigations = lazy(() => import("./batch-dashboard/batchDashboardRouter"));
+const HatcheryNavigations = lazy(() => import("./hatchery/hatcheryRouter"));
+const ReferralNavigations = lazy(() => import("./referral/referralRouter"));
+const MlmNavigations = lazy(() => import("./mlm/mlmRouter"));
+const Dashboard = lazy(() => import("./dashboard/dashbord"));
 
 /**
  * Role-protected route wrapper.
@@ -55,11 +56,20 @@ const RoleRoute = ({ children, resource }) => {
   return children;
 };
 
+const PageLoader = () => (
+  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+    <div className="spinner-border text-primary" role="status">
+      <span className="visually-hidden">Loading...</span>
+    </div>
+  </div>
+);
+
 export default function RouterSwitch() {
   return (
     <Provider store={store}>
       <Router>
         <ToastContainer />
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<LogIn />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -256,6 +266,7 @@ export default function RouterSwitch() {
             }
           />
         </Routes>
+        </Suspense>
       </Router>
     </Provider>
   );

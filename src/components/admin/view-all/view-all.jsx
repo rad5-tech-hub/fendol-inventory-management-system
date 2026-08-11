@@ -99,7 +99,7 @@ export default function ViewAll() {
       ),
     },
     { key: 'email', label: 'E-mail Address' },
-    { key: 'role', label: 'Role', render: (value, row) => formatRole(row.roleRef?.name || row.role) },
+    { key: 'role', label: 'Role', render: (value, row) => formatRole(row.roles?.[0]?.name || row.role) },
     { key: 'UserSites', label: 'Assigned Site', render: (value) =>
       value?.length ? value.map(us => us.Site?.name).filter(Boolean).join(', ') : '-'
     },
