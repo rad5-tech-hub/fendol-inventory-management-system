@@ -90,6 +90,13 @@ const mapApiBatchToRow = (item) => ({
   siteId: item.siteId,
   status: item.status,
   comments: item.comments,
+  noOfFemaleBroodstock: item.noOfFemaleBroodstock,
+  avgWeightOfFemale: item.avgWeightOfFemale,
+  maleBroodStock: item.maleBroodStock,
+  avgWeightOfMaleBroodstock: item.avgWeightOfMaleBroodstock,
+  weightOfEgg: item.weightOfEgg,
+  hatchabilityPercentage: item.hatchabilityPercentage,
+  estimatedFryCount: item.estimatedFryCount,
 });
 
 export default function ViewAllBatches() {
@@ -394,7 +401,7 @@ export default function ViewAllBatches() {
                     <th className="text-start">Date Hatched <span style={{ cursor: 'pointer' }}>↕</span></th>
                     <th className="text-end">Females</th>
                     <th className="text-end">Males</th>
-                    <th className="text-end">Egg Wt (kg)</th>
+                    <th className="text-end">Egg Wt (g)</th>
                     <th className="text-end">Hatchability</th>
                     <th className="text-end">Fry Produced</th>
                     <th className="text-end">Fry Moved</th>

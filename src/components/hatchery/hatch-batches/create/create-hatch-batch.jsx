@@ -30,6 +30,7 @@ export default function CreateHatchBatch() {
   const [successData, setSuccessData] = useState(null);
   const [sites, setSites] = useState([]);
   const [sitesLoaded, setSitesLoaded] = useState(false);
+  const [weightInput, setWeightInput] = useState('');
 
   const [form, setForm] = useState(() => {
     if (!editData) {
@@ -48,30 +49,36 @@ export default function CreateHatchBatch() {
         dateStripped: null,
         dateHatched: null,
         numFemales: '',
-        avgWeightFemale: '',
+        femaleWeights: [],
         numMales: '',
-        avgWeightMale: '',
+        maleTotalWeight: '',
         eggWeight: '',
-        fryProduced: '',
+        hatchability: '',
         fryPerGramRate: '',
         notes: '',
       };
     }
     const e = editData;
+    const rawEggKg = e.weightOfEgg ?? e.eggWeight;
+    const eggKg = rawEggKg !== '' && rawEggKg != null ? Number(rawEggKg) / 1000 : '';
+    const prefillWeights = (() => {
+      const v = e.avgWeightOfFemale ?? e.avgWeightFemale;
+      return v !== '' && v != null ? [String(v)] : [];
+    })();
     return {
       hatchbatchNo: e.hatchbatchNo || e.batchNo || generateBatchNo(),
       site: e.siteId || activeSite?.id || '',
       siteId: e.siteId || activeSite?.id || '',
-      dateInjected: parseDate(e.dateInjected),
-      dateStripped: parseDate(e.dateStripped),
-      dateHatched: parseDate(e.dateHatched),
+      dateInjected: parseDate(e._dateInjected || e.dateInjected),
+      dateStripped: parseDate(e._dateStripped || e.dateStripped),
+      dateHatched: parseDate(e._dateHatched || e.dateHatched),
       numFemales: e.noOfFemaleBroodstock ?? e.females ?? '',
-      avgWeightFemale: e.avgWeightOfFemale ?? e.avgWeightFemale ?? '',
+      femaleWeights: prefillWeights,
       numMales: e.maleBroodStock ?? e.males ?? '',
-      avgWeightMale: e.avgWeightOfMaleBroodstock ?? e.avgWeightMale ?? '',
-      eggWeight: e.weightOfEgg ?? e.eggWeight ?? '',
-      fryProduced: e.fryProduced ?? '',
-      fryPerGramRate: e.estimatedFryCount && e.weightOfEgg ? Math.round(e.estimatedFryCount / e.weightOfEgg) : '',
+      maleTotalWeight: e.avgWeightOfMaleBroodstock ?? e.avgWeightMale ?? '',
+      eggWeight: eggKg,
+      hatchability: e.hatchabilityPercentage ?? e.hatchability ?? '',
+      fryPerGramRate: e.estimatedFryCount && rawEggKg ? Math.round(e.estimatedFryCount / rawEggKg) : '',
       notes: e.comments ?? e.notes ?? '',
     };
   });
@@ -89,10 +96,35 @@ export default function CreateHatchBatch() {
     setForm((prev) => ({ ...prev, [name]: date }));
   };
 
-  const estimatedFryCount = Math.round(Number(form.eggWeight) * Number(form.fryPerGramRate));
-  const computedHatchability = Number(form.fryProduced) && estimatedFryCount > 0
-    ? ((Number(form.fryProduced) / estimatedFryCount) * 100).toFixed(2)
-    : '0.00';
+  const addFemaleWeight = () => {
+    const v = weightInput.trim();
+    if (!v) return;
+    setForm((prev) => ({ ...prev, femaleWeights: [...prev.femaleWeights, v] }));
+    setWeightInput('');
+  };
+
+  const removeFemaleWeight = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      femaleWeights: prev.femaleWeights.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleWeightKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addFemaleWeight();
+    }
+  };
+
+  const eggWeightGrams = Math.round(Number(form.eggWeight) * 1000);
+  const estimatedFryCount = Math.round(eggWeightGrams * Number(form.fryPerGramRate || 0));
+  const femaleAvgWeight = form.femaleWeights.length
+    ? form.femaleWeights.reduce((sum, w) => sum + (Number(w) || 0), 0) / form.femaleWeights.length
+    : 0;
+  const computedFryProduced = form.hatchability && estimatedFryCount > 0
+    ? Math.round(estimatedFryCount * (Number(form.hatchability) / 100))
+    : '';
   const notesLength = form.notes.length;
 
   const buildPayload = (status) => {
@@ -103,11 +135,12 @@ export default function CreateHatchBatch() {
       dateStripped: formatDate(form.dateStripped),
       dateHatched: formatDate(form.dateHatched),
       noOfFemaleBroodstock: Number(form.numFemales),
-      avgWeightOfFemale: Number(form.avgWeightFemale),
+      avgWeightOfFemale: form.femaleWeights.join(', '),
       maleBroodStock: Number(form.numMales),
-      avgWeightOfMaleBroodstock: Number(form.avgWeightMale),
-      weightOfEgg: Number(form.eggWeight),
-      fryProduced: Number(form.fryProduced) || 0,
+      avgWeightOfMaleBroodstock: Number(form.maleTotalWeight),
+      weightOfEgg: eggWeightGrams || 0,
+      hatchabilityPercentage: Number(form.hatchability) || 0,
+      fryProduced: Number(computedFryProduced) || 0,
       estimatedFryCount: estimatedFryCount || 0,
       comments: form.notes || '',
     };
@@ -141,12 +174,12 @@ export default function CreateHatchBatch() {
       toast.error('Please enter a valid number of male broodstock.', { className: 'dark-toast' });
       return false;
     }
-    if (!form.eggWeight || Number(form.eggWeight) <= 0) {
-      toast.error('Please enter a valid egg weight.', { className: 'dark-toast' });
+    if (form.eggWeight === '' || Number(form.eggWeight) <= 0) {
+      toast.error('Please enter a valid egg weight (kg).', { className: 'dark-toast' });
       return false;
     }
-    if (!form.fryProduced || Number(form.fryProduced) <= 0) {
-      toast.error('Please enter a valid number of fry produced.', { className: 'dark-toast' });
+    if (form.hatchability === '' || Number(form.hatchability) <= 0) {
+      toast.error('Please enter a valid hatchability percentage.', { className: 'dark-toast' });
       return false;
     }
     if (!isEditing && (!form.fryPerGramRate || Number(form.fryPerGramRate) <= 0)) {
@@ -417,8 +450,57 @@ export default function CreateHatchBatch() {
                         <Form.Control type="number" name="numFemales" value={form.numFemales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                       <Col xs={6}>
-                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135', lineHeight: 1.3 }}>Average Weight (kg)</Form.Label>
-                        <Form.Control type="number" step="0.01" name="avgWeightFemale" value={form.avgWeightFemale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
+                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135', lineHeight: 1.3 }}>
+                          Average Weight (kg)
+                        </Form.Label>
+                        <div style={{ background: '#F8FAFC', border: '1px solid #E9EDF2', borderRadius: 10, padding: 10 }}>
+                          {form.femaleWeights.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                              {form.femaleWeights.map((w, i) => (
+                                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F3ECEC', color: '#512728', border: '1px solid #E8DCDC', borderRadius: 8, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600 }}>
+                                  {w} <span style={{ fontWeight: 400, color: '#9A8A8B' }}>kg</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeFemaleWeight(i)}
+                                    title="Remove weight"
+                                    style={{ width: 16, height: 16, borderRadius: 4, border: 'none', background: 'rgba(81,39,40,0.14)', color: '#512728', fontSize: '0.72rem', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0, transition: 'background 0.15s' }}
+                                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(81,39,40,0.28)'; }}
+                                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(81,39,40,0.14)'; }}
+                                  >×</button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ position: 'relative', flex: 1 }}>
+                              <Form.Control
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={weightInput}
+                                onChange={(e) => setWeightInput(e.target.value)}
+                                onKeyDown={handleWeightKeyDown}
+                                onWheel={(e) => e.target.blur()}
+                                placeholder="e.g. 3.10"
+                                style={{ height: 36, paddingRight: 34, fontSize: '0.875rem' }}
+                              />
+                              <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', color: '#AAB0B7', fontSize: '0.72rem', fontWeight: 600, pointerEvents: 'none', lineHeight: 1 }}>kg</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={addFemaleWeight}
+                              title="Add weight"
+                              style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: '#512728', color: '#fff', fontSize: '1.1rem', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
+                              onMouseOver={e => { e.currentTarget.style.background = '#6B3536'; }}
+                              onMouseOut={e => { e.currentTarget.style.background = '#512728'; }}
+                            >+</button>
+                          </div>
+                        </div>
+                        {femaleAvgWeight > 0 && (
+                          <small style={{ display: 'block', marginTop: 8, color: '#512728', fontSize: '0.75rem', fontWeight: 600, background: '#F3ECEC', border: '1px solid #E8DCDC', borderRadius: 6, padding: '4px 8px' }}>
+                            Average: {femaleAvgWeight.toFixed(2)} kg
+                          </small>
+                        )}
                       </Col>
                     </Row>
                   </div>
@@ -435,8 +517,8 @@ export default function CreateHatchBatch() {
                         <Form.Control type="number" name="numMales" value={form.numMales} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                       <Col xs={6}>
-                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135', lineHeight: 1.3 }}>Average Weight (kg)</Form.Label>
-                        <Form.Control type="number" step="0.01" name="avgWeightMale" value={form.avgWeightMale} onChange={handleChange} onWheel={(e) => e.target.blur()} />
+                        <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135', lineHeight: 1.3 }}>Total Weight (kg)</Form.Label>
+                        <Form.Control type="number" step="0.01" name="maleTotalWeight" value={form.maleTotalWeight} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       </Col>
                     </Row>
                   </div>
@@ -451,19 +533,23 @@ export default function CreateHatchBatch() {
                 </div>
                 <Row className="g-3">
                   <Col md>
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Weight of Eggs (g)</Form.Label>
-                    <Form.Control type="number" step="0.01" name="eggWeight" value={form.eggWeight} onChange={handleChange} onWheel={(e) => e.target.blur()} />
+                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Weight of Eggs (kg)</Form.Label>
+                    <div style={{ position: 'relative' }}>
+                      <Form.Control type="number" step="0.01" min="0" name="eggWeight" value={form.eggWeight} onChange={handleChange} onWheel={(e) => e.target.blur()} />
+                      <span style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 4, padding: '1px 8px', color: '#8C949B', fontSize: '0.8rem', fontWeight: 600, pointerEvents: 'none', lineHeight: '1.5' }}>kg</span>
+                    </div>
+                    <small className="text-muted">{eggWeightGrams > 0 ? `= ${f(eggWeightGrams)} g` : 'Enter weight in kg'}</small>
                   </Col>
                   <Col md>
                     <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Hatchability Percentage (%)</Form.Label>
                     <div style={{ position: 'relative' }}>
-                      <Form.Control type="number" step="0.1" value={computedHatchability} disabled />
+                      <Form.Control type="number" step="0.1" min="0" max="100" name="hatchability" value={form.hatchability} onChange={handleChange} onWheel={(e) => e.target.blur()} />
                       <span style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 4, padding: '1px 8px', color: '#8C949B', fontSize: '0.8rem', fontWeight: 600, pointerEvents: 'none', lineHeight: '1.5' }}>%</span>
                     </div>
                   </Col>
                   <Col md>
-                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Fry Produced</Form.Label>
-                    <Form.Control type="number" name="fryProduced" value={form.fryProduced} onChange={handleChange} onWheel={(e) => e.target.blur()} />
+                    <Form.Label className="fw-semibold" style={{ fontSize: '0.85rem', color: '#2E3135' }}>Fingerlings Produced</Form.Label>
+                    <Form.Control type="text" value={computedFryProduced ? f(computedFryProduced) : ''} readOnly placeholder="Auto-calculated" />
                   </Col>
                 </Row>
               </div>
@@ -588,7 +674,7 @@ export default function CreateHatchBatch() {
                   </div>
                   {/* Highlight: Fry Produced */}
                   <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #E5E7EB', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.7rem', color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fry Produced</span>
+                    <span style={{ fontSize: '0.7rem', color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fingerlings Produced</span>
                     <p style={{ fontSize: '1.6rem', fontWeight: 700, color: '#22C55E', margin: '4px 0 0' }}>
                       {successData.fryProduced != null ? f(successData.fryProduced) : f(estimatedFryCount)}
                       <span style={{ fontSize: '0.85rem', fontWeight: 400, color: '#6B7280', marginLeft: 6 }}>pcs</span>

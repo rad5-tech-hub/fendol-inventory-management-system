@@ -9,6 +9,7 @@ import { Provider } from "react-redux";
 import store from "./shared/reduxForProtectingRoute/store";
 import { hasPermission } from "./shared/permissions/permissions";
 import { ToastContainer } from "react-toastify";
+import { SkeletonTable, SkeletonFilterBar } from "./shared/skeleton/Skeleton";
 
 const AdminNavigations = lazy(() => import("./admin/adminRoutes"));
 const CustomerNavigations = lazy(() => import("./customer/customerRoute"));
@@ -57,10 +58,9 @@ const RoleRoute = ({ children, resource }) => {
 };
 
 const PageLoader = () => (
-  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-    <div className="spinner-border text-primary" role="status">
-      <span className="visually-hidden">Loading...</span>
-    </div>
+  <div style={{ padding: "20px" }}>
+    <SkeletonFilterBar />
+    <SkeletonTable rows={5} cols={5} />
   </div>
 );
 

@@ -373,7 +373,9 @@ const ViewAllStages = () => {
                   columns={[
                     { key: 'createdAt', label: 'DATE CREATED', render: (value) => <span style={{ color: '#8C949B' }}>{formatDate(value)}</span> },
                     { key: 'title', label: 'POND NAME', render: (value) => <span style={{ color: '#512728', fontWeight: 600 }}>{value}</span> },
-                    { key: 'description', label: 'DESCRIPTION', render: (value) => <span style={{ color: '#2E3135' }}>{value}</span> },
+                    { key: 'description', label: 'DESCRIPTION', width: '28%', render: (value) => (
+                      <span style={{ color: '#2E3135', display: 'block', maxWidth: '100%', wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'normal' }}>{value}</span>
+                    ) },
                     { key: 'site', label: 'SITE', render: (_, row) => {
                       const siteName = row.site?.name;
                       if (!siteName) return <span style={{ color: '#8C949B' }}>--</span>;

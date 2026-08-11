@@ -104,7 +104,7 @@ export default function HatchBatchSummary() {
         const updated = { ...card };
         if (i === 0) {
           updated.value = f(batchData.estimatedFryCount);
-          updated.sub = `${batchData.weightOfEgg} kg`;
+          updated.sub = `${f(batchData.weightOfEgg)} g`;
         }
         if (i === 1) {
           updated.value = `${batchData.hatchabilityPercentage}%`;
@@ -293,8 +293,8 @@ export default function HatchBatchSummary() {
                 <div className={styles.colCard}>
                   <h5>Production Details</h5>
                   <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Weight of Eggs (kg)</span>
-                    <span className={styles.detailValue}>{batchData ? batchData.weightOfEgg : '1.20'}</span>
+                    <span className={styles.detailLabel}>Weight of Eggs (g)</span>
+                    <span className={styles.detailValue}>{batchData ? f(batchData.weightOfEgg) : '1,200'}</span>
                   </div>
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Estimated Fry Count</span>
