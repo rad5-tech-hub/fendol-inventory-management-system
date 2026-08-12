@@ -103,10 +103,10 @@ describe('hasPermission', () => {
     expect(hasPermission(['sales_manager'], 'finance:ledger')).toBe(false)
     expect(hasPermission(['super_admin'], 'supplier')).toBe(true)
     expect(hasPermission(['farm_manager'], 'supplier')).toBe(true)
+    expect(hasPermission(['farm_manager'], 'complaints')).toBe(true)
     expect(hasPermission(['finance'], 'supplier')).toBe(true)
     expect(hasPermission(['farm_manager'], 'referral')).toBe(false)
     expect(hasPermission(['farm_manager'], 'mlm')).toBe(false)
-    expect(hasPermission(['farm_manager'], 'complaints')).toBe(false)
   })
 
   it('checks scoped resources with action', () => {
