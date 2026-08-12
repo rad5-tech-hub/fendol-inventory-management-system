@@ -93,6 +93,7 @@ describe('hasPermission', () => {
     expect(hasPermission(['sales_manager'], 'finance:cash-drawer')).toBe(true)
     expect(hasPermission(['sales_manager'], 'supplier')).toBe(true)
     expect(hasPermission(['sales_manager'], 'complaints')).toBe(true)
+    expect(hasPermission(['sales_manager'], 'customer')).toBe(true)
   })
 
   it('returns false when user type does not have access', () => {

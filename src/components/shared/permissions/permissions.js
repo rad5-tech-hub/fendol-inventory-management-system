@@ -43,7 +43,7 @@ const ACCESS = {
 	'site-management:delete': ['super_admin'],
 
 	// ── Customer / CRM ──
-	customer: ['super_admin', 'farm_manager'],
+	customer: ['super_admin', 'farm_manager', 'sales_manager'],
 
 	// ── Ponds ──
 	ponds: ['super_admin', 'farm_manager'],
