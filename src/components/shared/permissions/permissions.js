@@ -15,7 +15,8 @@
  *   super_admin   – MD / full access
  *   farm_manager  – Everything except admin/site CRUD + no finance:ledger
  *   store_keeper  – Store, Feed, Showcase only
- *   sales_manager – Customer, Sales-related finance, Supplier
+ *   sales_manager – Sales (all except finance ledger), Showcase, Supplier,
+ *                    Cash Drawer, Complaints
  *   finance       – Finance modules (excl. ledger) + Supplier
  */
 
@@ -42,7 +43,7 @@ const ACCESS = {
 	'site-management:delete': ['super_admin'],
 
 	// ── Customer / CRM ──
-	customer: ['super_admin', 'farm_manager', 'sales_manager'],
+	customer: ['super_admin', 'farm_manager'],
 
 	// ── Ponds ──
 	ponds: ['super_admin', 'farm_manager'],
@@ -64,31 +65,31 @@ const ACCESS = {
 	store: ['super_admin', 'farm_manager', 'store_keeper'],
 
 	// ── Showcase ──
-	showcase: ['super_admin', 'farm_manager', 'store_keeper'],
+	showcase: ['super_admin', 'farm_manager', 'store_keeper', 'sales_manager'],
 
 	// ── Finance ──
 	'finance:add-sales': ['super_admin', 'farm_manager', 'sales_manager', 'finance'],
-	'finance:add-expenses': ['super_admin', 'farm_manager', 'finance'],
+	'finance:add-expenses': ['super_admin', 'farm_manager', 'sales_manager', 'finance'],
 	'finance:ledger': ['super_admin'],
-	'finance:cash-drawer': ['super_admin', 'farm_manager', 'finance'],
+	'finance:cash-drawer': ['super_admin', 'farm_manager', 'finance', 'sales_manager'],
 
 	// ── Damage / Loss ──
 	'damage-loss': ['super_admin', 'farm_manager'],
 
 	// ── Supplier (reused under Finance) ──
-	supplier: ['super_admin', 'farm_manager', 'sales_manager', 'finance'],
+	supplier: ['super_admin', 'farm_manager', 'finance', 'sales_manager'],
 
 	// ── Staff (under Finance) ──
 	staff: ['super_admin', 'farm_manager', 'finance'],
 
 	// ── Referral System ──
-	referral: ['super_admin', 'farm_manager', 'sales_manager'],
+	referral: ['super_admin', 'farm_manager'],
 
 	// ── MLM ──
-	mlm: ['super_admin', 'farm_manager', 'sales_manager'],
+	mlm: ['super_admin', 'farm_manager'],
 
 	// ── Complaints ──
-	complaints: ['super_admin', 'farm_manager', 'store_keeper', 'sales_manager', 'finance'],
+	complaints: ['super_admin', 'farm_manager', 'store_keeper', 'finance', 'sales_manager'],
 	'complaints:view-all': ['super_admin'],
 };
 

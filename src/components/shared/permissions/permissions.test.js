@@ -87,12 +87,19 @@ describe('hasPermission', () => {
     expect(hasPermission(['super_admin'], 'admin')).toBe(true)
     expect(hasPermission(['farm_manager'], 'hatchery')).toBe(true)
     expect(hasPermission(['store_keeper'], 'store')).toBe(true)
+    expect(hasPermission(['sales_manager'], 'showcase')).toBe(true)
+    expect(hasPermission(['sales_manager'], 'finance:add-sales')).toBe(true)
+    expect(hasPermission(['sales_manager'], 'finance:add-expenses')).toBe(true)
+    expect(hasPermission(['sales_manager'], 'finance:cash-drawer')).toBe(true)
+    expect(hasPermission(['sales_manager'], 'supplier')).toBe(true)
+    expect(hasPermission(['sales_manager'], 'complaints')).toBe(true)
   })
 
   it('returns false when user type does not have access', () => {
     expect(hasPermission(['store_keeper'], 'admin')).toBe(false)
     expect(hasPermission(['finance'], 'admin')).toBe(false)
     expect(hasPermission(['sales_manager'], 'ponds')).toBe(false)
+    expect(hasPermission(['sales_manager'], 'finance:ledger')).toBe(false)
   })
 
   it('checks scoped resources with action', () => {
