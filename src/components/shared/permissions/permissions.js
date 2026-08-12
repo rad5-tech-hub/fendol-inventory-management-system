@@ -15,8 +15,8 @@
  *   super_admin   – MD / full access
  *   farm_manager  – Everything except admin/site CRUD + no finance:ledger
  *   store_keeper  – Store, Feed, Showcase only
- *   sales_manager – Sales (all except finance ledger), Showcase, Supplier,
- *                    Cash Drawer, Complaints
+ *   sales_manager – Sales (all except finance ledger), Showcase, Cash Drawer,
+ *                    Customers
  *   finance       – Finance modules (excl. ledger) + Supplier
  */
 
@@ -76,17 +76,17 @@ const ACCESS = {
 	// ── Damage / Loss ──
 	'damage-loss': ['super_admin', 'farm_manager'],
 
-	// ── Supplier (reused under Finance) ──
-	supplier: ['super_admin', 'farm_manager', 'finance', 'sales_manager'],
+	// ── Supplier (super admin only for now) ──
+	supplier: ['super_admin'],
 
 	// ── Staff (under Finance) ──
 	staff: ['super_admin', 'farm_manager', 'finance'],
 
-	// ── Referral System ──
-	referral: ['super_admin', 'farm_manager'],
+	// ── Referral System (super admin only for now) ──
+	referral: ['super_admin'],
 
-	// ── MLM ──
-	mlm: ['super_admin', 'farm_manager'],
+	// ── MLM (super admin only for now) ──
+	mlm: ['super_admin'],
 
 	// ── Complaints ──
 	complaints: ['super_admin'],
