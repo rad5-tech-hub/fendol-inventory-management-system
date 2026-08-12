@@ -174,6 +174,7 @@ export default function StaffAttendance() {
           status: STATUS_API_MAP[latest?.status] || '\u2014',
           comment: latest?.comment || null,
           siteId: s.UserSites?.[0]?.Site?.id || null,
+          phone: s.phoneNumber || s.phone || '',
           avatar: null,
         };
       }));
@@ -391,6 +392,9 @@ export default function StaffAttendance() {
           <div className={styles.skeletonCell} style={{ width: '20%' }}>
             <div className={styles.skeletonBar} style={{ width: '45%', height: 12 }} />
           </div>
+          <div className={styles.skeletonCell} style={{ width: '16%' }}>
+            <div className={styles.skeletonBar} style={{ width: '55%', height: 12 }} />
+          </div>
           <div className={styles.skeletonCell} style={{ width: '24%' }}>
             <div className={styles.skeletonBar} style={{ width: '50%', height: 12 }} />
           </div>
@@ -553,6 +557,7 @@ export default function StaffAttendance() {
                               );
                             }},
                             { key: 'comment', label: 'Comment', render: (val) => <span className={styles.commentCell}>{val || '\u2014'}</span> },
+                            { key: 'phone', label: 'Phone', render: (val) => <span className={styles.phoneCell}>{val || '\u2014'}</span> },
                             { key: 'position', label: 'Position' },
                             { key: 'status', label: 'Status', render: (val) => {
                               const statusStyle = STATUS_STYLES[val] || {};

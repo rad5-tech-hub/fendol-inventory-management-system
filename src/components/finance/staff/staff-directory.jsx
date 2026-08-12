@@ -217,6 +217,9 @@ export default function StaffDirectory() {
           </div>
         )},
         { key: 'role', label: 'Role', render: (val) => <span className={styles.rolePill}>{val}</span> },
+        { key: '_phone', label: 'Phone', render: (_v, row) => (
+          <span className={styles.phoneCell}>{row.phoneNumber || row.phone || '\u2014'}</span>
+        )},
         { key: '_siteName', label: 'Site', render: (val) => (
           <span className={styles.sitePill}>
             <FaMapMarkerAlt size={10} />
@@ -250,6 +253,9 @@ export default function StaffDirectory() {
             </div>
           </div>
           <div className={styles.skeletonCell} style={{ width: '25%' }}>
+            <div className={styles.skeletonBar} style={{ width: '50%', height: 12 }} />
+          </div>
+          <div className={styles.skeletonCell} style={{ width: '17%' }}>
             <div className={styles.skeletonBar} style={{ width: '50%', height: 12 }} />
           </div>
           <div className={styles.skeletonCell} style={{ width: '25%' }}>
