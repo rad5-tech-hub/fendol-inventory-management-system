@@ -207,7 +207,7 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
       }
 
       const res = isEditing
-        ? await Api.patch(`/api/v1/update-feed/${editData.id}`, payload)
+        ? await Api.patch(`/update-feed/${editData.id}`, payload)
         : await Api.post('/create-feed', payload);
 
       const msg =

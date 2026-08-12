@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Row, Col, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import { IoArrowBackOutline, IoInformationCircleOutline, IoCheckmarkCircle, IoCalendarOutline, IoSaveOutline, IoClose } from 'react-icons/io5';
 import CustomDropdown from "../../../shared/custom-dropdown/CustomDropdown";
@@ -339,6 +339,7 @@ export default function CreateHatchBatch() {
 
   return (
     <section className={`${styles.body}`}>
+      <ToastContainer position="top-right" newestOnTop closeOnClick pauseOnHover={false} theme="light" />
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>

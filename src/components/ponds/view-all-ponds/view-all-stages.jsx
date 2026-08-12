@@ -243,6 +243,15 @@ const ViewAllStages = () => {
     URL.revokeObjectURL(url);
   };
 
+  /* ── Last activity derived from the same source as Recent Activity ── */
+  const lastActivity = pondDetail?.recentActivities?.[0] || null;
+  const lastActivityText = lastActivity
+    ? (lastActivity.action || lastActivity.note || '')
+    : '';
+  const displayLastActivity = lastActivityText
+    ? (lastActivityText.length > 26 ? `${lastActivityText.slice(0, 26)}…` : lastActivityText)
+    : '—';
+
   return (
     <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 0 }}>
       <div className="sticky-top">
@@ -566,7 +575,7 @@ const ViewAllStages = () => {
                 { label: 'Current Stock', value: selectedStage ? new Intl.NumberFormat().format(selectedStage.quantity ?? 0) : '0', suffix: 'pcs', valueColor: '#1A5276' },
                 { label: 'Mortality Count', value: pondDetail?.totalDamages != null ? new Intl.NumberFormat().format(pondDetail.totalDamages) : '--', suffix: 'pcs', valueColor: '#C0392B' },
                 { label: 'Feed Consumed', value: selectedStage?.feedConsumed != null ? new Intl.NumberFormat().format(selectedStage.feedConsumed) : '--', suffix: 'kg', valueColor: '#2E3135' },
-                { label: 'Last Activity', value: '—', suffix: '', valueColor: '#2E3135' },
+                { label: 'Last Activity', value: displayLastActivity, suffix: '', valueColor: '#2E3135', title: lastActivityText || undefined, valueFontSize: '0.78rem' },
               ].map((stat, i) => (
                 <div key={i} style={{
                   background: '#FAFAFA',
@@ -575,7 +584,7 @@ const ViewAllStages = () => {
                   padding: '14px 16px',
                 }}>
                   <p style={{ margin: '0 0 8px 0', fontSize: '0.72rem', color: '#9AA0A6', fontWeight: 500 }}>{stat.label}</p>
-                  <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: stat.valueColor, lineHeight: 1.1 }}>
+                  <p style={{ margin: 0, fontSize: stat.valueFontSize || '1.25rem', fontWeight: 800, color: stat.valueColor, lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={stat.title}>
                     {stat.value}
                     {stat.suffix && (
                       <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#AAB0B7', marginLeft: '4px' }}>{stat.suffix}</span>
@@ -601,18 +610,15 @@ const ViewAllStages = () => {
                           <span key={h} style={{ fontSize: '0.68rem', fontWeight: 700, color: '#9AA0A6', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</span>
                         ))}
                       </div>
-                      {pondDetail.outgoingMovements.slice(0, 5).map((m, i) => (
-                        <div key={m.id || i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', padding: '10px 14px', borderBottom: i < Math.min(pondDetail.outgoingMovements.length, 5) - 1 ? '1px solid #F5F5F5' : 'none', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.78rem', color: '#6C757D' }}>{formatDate(m.createdAt).slice(0, 10)}</span>
-                          <span style={{ fontSize: '0.78rem', color: '#C0392B', fontWeight: 600 }}>{new Intl.NumberFormat().format(m.actual_quantity || 0)}</span>
-                          <span style={{ fontSize: '0.78rem', color: '#2E3135' }}>{m.reason || m.remarks || '—'}</span>
-                        </div>
-                      ))}
-                      {pondDetail.outgoingMovements.length > 5 && (
-                        <div style={{ padding: '8px 14px', textAlign: 'center', fontSize: '0.75rem', color: '#8C949B', borderTop: '1px solid #F5F5F5' }}>
-                          +{pondDetail.outgoingMovements.length - 5} more
-                        </div>
-                      )}
+                      <div className={styles.movementScroll}>
+                        {pondDetail.outgoingMovements.map((m, i) => (
+                          <div key={m.id || i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', padding: '10px 14px', borderBottom: i < pondDetail.outgoingMovements.length - 1 ? '1px solid #F5F5F5' : 'none', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.78rem', color: '#6C757D' }}>{formatDate(m.createdAt).slice(0, 10)}</span>
+                            <span style={{ fontSize: '0.78rem', color: '#C0392B', fontWeight: 600 }}>{new Intl.NumberFormat().format(m.actual_quantity || 0)}</span>
+                            <span style={{ fontSize: '0.78rem', color: '#2E3135' }}>{m.reason || m.remarks || '—'}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -623,18 +629,15 @@ const ViewAllStages = () => {
                           <span key={h} style={{ fontSize: '0.68rem', fontWeight: 700, color: '#9AA0A6', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</span>
                         ))}
                       </div>
-                      {pondDetail.incomingMovements.slice(0, 5).map((m, i) => (
-                        <div key={m.id || i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', padding: '10px 14px', borderBottom: i < Math.min(pondDetail.incomingMovements.length, 5) - 1 ? '1px solid #F5F5F5' : 'none', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.78rem', color: '#6C757D' }}>{formatDate(m.createdAt).slice(0, 10)}</span>
-                          <span style={{ fontSize: '0.78rem', color: '#2E7D32', fontWeight: 600 }}>{new Intl.NumberFormat().format(m.actual_quantity || 0)}</span>
-                          <span style={{ fontSize: '0.78rem', color: '#2E3135' }}>{m.reason || m.remarks || '—'}</span>
-                        </div>
-                      ))}
-                      {pondDetail.incomingMovements.length > 5 && (
-                        <div style={{ padding: '8px 14px', textAlign: 'center', fontSize: '0.75rem', color: '#8C949B', borderTop: '1px solid #F5F5F5' }}>
-                          +{pondDetail.incomingMovements.length - 5} more
-                        </div>
-                      )}
+                      <div className={styles.movementScroll}>
+                        {pondDetail.incomingMovements.map((m, i) => (
+                          <div key={m.id || i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', padding: '10px 14px', borderBottom: i < pondDetail.incomingMovements.length - 1 ? '1px solid #F5F5F5' : 'none', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.78rem', color: '#6C757D' }}>{formatDate(m.createdAt).slice(0, 10)}</span>
+                            <span style={{ fontSize: '0.78rem', color: '#2E7D32', fontWeight: 600 }}>{new Intl.NumberFormat().format(m.actual_quantity || 0)}</span>
+                            <span style={{ fontSize: '0.78rem', color: '#2E3135' }}>{m.reason || m.remarks || '—'}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
