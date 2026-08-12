@@ -92,7 +92,7 @@ describe('hasPermission', () => {
     expect(hasPermission(['sales_manager'], 'finance:add-expenses')).toBe(true)
     expect(hasPermission(['sales_manager'], 'finance:cash-drawer')).toBe(true)
     expect(hasPermission(['sales_manager'], 'supplier')).toBe(true)
-    expect(hasPermission(['sales_manager'], 'complaints')).toBe(true)
+    expect(hasPermission(['sales_manager'], 'complaints')).toBe(false)
     expect(hasPermission(['sales_manager'], 'customer')).toBe(true)
   })
 

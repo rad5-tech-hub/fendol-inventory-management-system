@@ -89,7 +89,7 @@ const ACCESS = {
 	mlm: ['super_admin', 'farm_manager'],
 
 	// ── Complaints ──
-	complaints: ['super_admin', 'farm_manager', 'store_keeper', 'finance', 'sales_manager'],
+	complaints: ['super_admin'],
 	'complaints:view-all': ['super_admin'],
 };
 
