@@ -205,22 +205,26 @@ export default function ViewBrokenHistory() {
       key: 'quantity', label: 'Quantity added', align: 'right',
       render: (value, row) => (
         <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
-          {row.kgRemoved ? '' : (value ? new Intl.NumberFormat().format(value) : '')}
+          {row.kgRemoved || row.isSale ? '' : (value ? new Intl.NumberFormat().format(value) : '')}
         </span>
       ),
     },
     {
       key: 'kgRemoved', label: 'Removed (kg)', align: 'right',
-      render: (value) => (
-        <span style={{ fontWeight: 600, color: '#DC2626', fontSize: '13px' }}>
-          {value ? `${Number(value).toFixed(3)}` : ''}
-        </span>
-      ),
+      render: (value, row) => {
+        const kg = row.kgRemoved ? Number(row.kgRemoved).toFixed(3) : (row.isSale && row.quantityInKg ? Number(row.quantityInKg).toFixed(3) : '');
+        return (
+          <span style={{ fontWeight: 600, color: '#DC2626', fontSize: '13px' }}>
+            {kg}
+          </span>
+        );
+      },
     },
     {
       key: '_actions', label: '', width: '100px',
       render: (_value, row) => {
-        if (!row.quantity || row.kgRemoved || row.isConverted) return null;
+        const hasKg = row.quantityInKg != null && row.quantityInKg !== '' && Number(row.quantityInKg) > 0;
+        if (!row.quantity || row.kgRemoved || row.isConverted || row.isSale || hasKg) return null;
         return (
           <button
             onClick={(e) => { e.stopPropagation(); handleKgModal(row); }}
