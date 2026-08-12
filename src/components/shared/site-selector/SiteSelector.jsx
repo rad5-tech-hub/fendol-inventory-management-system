@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { FaMapMarkerAlt, FaGlobe } from "react-icons/fa";
 import CustomDropdown from "../custom-dropdown/CustomDropdown";
@@ -9,6 +9,7 @@ export default function SiteSelector({ value, onChange, allSitesLabel = "All Sit
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
   const activeSite = useSelector((store) => store.activeSite);
+  const emittedSiteIdRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,9 +41,11 @@ export default function SiteSelector({ value, onChange, allSitesLabel = "All Sit
   };
 
   useEffect(() => {
-    if (isDisabled && onChange && activeSite) {
-      onChange(activeSite.id, activeSite.name);
-    }
+    if (!isDisabled || !onChange || !activeSite) return;
+    const siteId = activeSite.id;
+    if (emittedSiteIdRef.current === siteId) return;
+    emittedSiteIdRef.current = siteId;
+    onChange(siteId, activeSite.name);
   }, [isDisabled, activeSite, onChange]);
 
   if (loading) {

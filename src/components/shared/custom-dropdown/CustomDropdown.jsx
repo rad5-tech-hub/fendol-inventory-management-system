@@ -14,10 +14,15 @@ const CustomDropdown = forwardRef(({
   id,
   required = false,
   isInvalid = false,
+  searchable = false,
+  searchPlaceholder = 'Search...',
+  noResultsText = 'No options available',
 }, ref) => {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -54,6 +59,7 @@ const CustomDropdown = forwardRef(({
     if (!open) {
       const rect = e.currentTarget.getBoundingClientRect();
       setCoords({ top: rect.bottom + 2, left: rect.left, width: rect.width });
+      if (searchable) setSearch('');
     }
     setOpen(!open);
   };
@@ -62,9 +68,27 @@ const CustomDropdown = forwardRef(({
     const optValue = opt.value !== undefined ? opt.value : opt.id;
     onChange(optValue);
     setOpen(false);
+    if (searchable) setSearch('');
   };
 
   const optionsArray = !Array.isArray(options) ? [] : options;
+
+  const filteredOptions = searchable
+    ? optionsArray.filter((opt) => {
+        const optValue = opt.value !== undefined ? opt.value : opt.id;
+        const optLabel = opt.label !== undefined ? opt.label : opt.name;
+        const query = search.trim().toLowerCase();
+        if (!query) return true;
+        return String(optValue).toLowerCase().includes(query)
+          || String(optLabel).toLowerCase().includes(query);
+      })
+    : optionsArray;
+
+  useEffect(() => {
+    if (open && searchable) {
+      searchInputRef.current?.focus();
+    }
+  }, [open, searchable]);
 
   return (
     <div
@@ -103,12 +127,24 @@ const CustomDropdown = forwardRef(({
           style={{ top: coords.top, left: coords.left, width: coords.width }}
           role="listbox"
         >
-          {optionsArray.length === 0 && (
-            <div className={styles.selectOption} style={{ color: '#8C949B', fontStyle: 'italic' }}>
-              No options available
+          {searchable && (
+            <div className={styles.searchBox} onMouseDown={(e) => e.stopPropagation()}>
+              <input
+                ref={searchInputRef}
+                type="text"
+                className={styles.searchInput}
+                placeholder={searchPlaceholder}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
           )}
-          {optionsArray.map((opt) => {
+          {filteredOptions.length === 0 && (
+            <div className={styles.selectOption} style={{ color: '#8C949B', fontStyle: 'italic' }}>
+              {search ? 'No results found' : noResultsText}
+            </div>
+          )}
+          {filteredOptions.map((opt) => {
             const optValue = opt.value !== undefined ? opt.value : opt.id;
             const optLabel = opt.label !== undefined ? opt.label : opt.name;
             const isActive = String(optValue) === String(value);

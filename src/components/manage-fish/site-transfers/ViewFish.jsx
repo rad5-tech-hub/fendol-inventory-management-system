@@ -452,6 +452,8 @@ export default function ViewFish() {
                 onChange={(value) => setMoveForm(p => ({ ...p, pondId: value }))}
                 disabled={!moveSiteId}
                 loading={pondsLoading}
+                searchable
+                searchPlaceholder="Search ponds..."
                 placeholder={pondsLoading ? 'Loading ponds...' : 'Select a pond'}
                 options={pondOptions.map(p => ({ value: p.id, label: p.title || p.name }))}
               />
