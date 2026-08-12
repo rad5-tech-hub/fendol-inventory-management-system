@@ -10,6 +10,8 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
+import PhoneInput from "../../shared/phone-input/PhoneInput";
+import { normalizePhone } from "../../shared/phoneUtils";
 import styles from './staff-directory.module.scss';
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
@@ -47,7 +49,7 @@ export default function StaffDirectory() {
 
   const [showModal, setShowModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-  const [form, setForm] = useState({ name: '', role: '', siteId: '' });
+  const [form, setForm] = useState({ name: '', role: '', siteId: '', phone: '' });
   const [formErrors, setFormErrors] = useState({});
 
   const [staffBySite, setStaffBySite] = useState({});
@@ -149,7 +151,7 @@ export default function StaffDirectory() {
   };
 
   const openModal = () => {
-    setForm({ name: '', role: '', siteId: isSuperAdmin ? '' : userSiteId || '' });
+    setForm({ name: '', role: '', siteId: isSuperAdmin ? '' : userSiteId || '', phone: '' });
     setFormErrors({});
     setShowModal(true);
   };
@@ -157,7 +159,7 @@ export default function StaffDirectory() {
   const closeModal = () => {
     if (modalLoading) return;
     setShowModal(false);
-    setForm({ name: '', role: '', siteId: '' });
+    setForm({ name: '', role: '', siteId: '', phone: '' });
     setFormErrors({});
   };
 
@@ -180,6 +182,7 @@ export default function StaffDirectory() {
         name: form.name.trim(),
         role: form.role.trim(),
         siteId: form.siteId || undefined,
+        phoneNumber: form.phone ? normalizePhone(form.phone) : '',
       };
       await ApiV2.post('/api/v1/create-staff', payload);
       toast.success('Staff created successfully!', { className: 'dark-toast' });
@@ -472,6 +475,19 @@ export default function StaffDirectory() {
                       disabled={modalLoading}
                     />
                     {formErrors.role && <div className={styles.fieldError}><FaExclamationCircle /> {formErrors.role}</div>}
+                  </div>
+
+                  <div>
+                    <label className={styles.formLabel}>
+                      Phone Number
+                    </label>
+                    <PhoneInput
+                      value={form.phone}
+                      onChange={(val) => setForm({ ...form, phone: val })}
+                      placeholder="801 234 5678"
+                      required={false}
+                      disabled={modalLoading}
+                    />
                   </div>
 
                   {isSuperAdmin && (

@@ -445,8 +445,8 @@ export default function SideBar({ show, handleClose }) {
             </>
           )}
 
-          {/* --- REFERRAL SYSTEM --- */}
-          {hasPermission(userTypes, 'referral') && (
+          {/* --- REFERRAL SYSTEM (super admins only for now) --- */}
+          {isSuperAdmin && hasPermission(userTypes, 'referral') && (
             <>
               <span className={styles.sectionLabel}>REFERRAL SYSTEM</span>
               {renderCard("referral", "Referral System", <FaUsers size={25} className="me-1" />,
@@ -459,8 +459,8 @@ export default function SideBar({ show, handleClose }) {
             </>
           )}
 
-          {/* --- MLM --- */}
-          {hasPermission(userTypes, 'mlm') && (
+          {/* --- MLM (super admins only for now) --- */}
+          {isSuperAdmin && hasPermission(userTypes, 'mlm') && (
             <>
               <span className={styles.sectionLabel}>MLM</span>
               {renderCard("mlm", "MLM", <FaTree size={25} className="me-1" />,
