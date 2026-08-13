@@ -231,6 +231,247 @@
   pointer-events: none;
 }
 
+// ── Multi-select Staff Picker (Produced By) ──
+.staffPicker {
+  position: relative;
+  width: 100%;
+}
+
+.staffPickerTrigger {
+  min-height: 40px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 12px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #111827;
+  font-family: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  text-align: left;
+}
+
+.staffPickerTrigger:focus,
+.staffPickerTrigger:focus-visible {
+  outline: none;
+  border-color: #512728;
+  box-shadow: 0 0 0 3px rgba(81, 39, 40, 0.1);
+}
+
+.staffPickerPlaceholder {
+  color: #9CA3AF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staffPickerChevron {
+  color: #6B7280;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.staffChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.staffChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 6px 0 5px;
+  background: #F6EEEC;
+  border: 1px solid #E4D4D1;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #512728;
+  white-space: nowrap;
+}
+
+.staffChipAvatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #512728;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.staffChipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.staffChipRemove {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #8A5A5B;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.staffChipRemove:hover {
+  background: #E2CDCA;
+  color: #3D1E1F;
+}
+
+.staffPickerPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 9500;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+}
+
+.staffPickerSearchWrap {
+  position: relative;
+  padding: 12px 12px 8px;
+}
+
+.staffPickerSearchIcon {
+  position: absolute;
+  left: 24px;
+  top: 22px;
+  color: #9CA3AF;
+  pointer-events: none;
+}
+
+.staffPickerSearch {
+  height: 38px;
+  width: 100%;
+  padding: 0 12px 0 34px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #111827;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.staffPickerSearch:focus {
+  border-color: #512728;
+  box-shadow: 0 0 0 3px rgba(81, 39, 40, 0.08);
+  background: #fff;
+}
+
+.staffPickerList {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px 8px 8px;
+}
+
+.staffPickerItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.staffPickerItem:hover {
+  background: #F9FAFB;
+}
+
+.staffPickerItemActive {
+  background: #F6EEEC;
+}
+
+.staffPickerItemActive:hover {
+  background: #F1E5E2;
+}
+
+.staffPickerAvatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #512728;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.staffPickerName {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staffPickerCheck {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.staffPickerCheckEmpty {
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid #D1D5DB;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.staffPickerEmpty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #9CA3AF;
+}
+
+.staffPickerFooter {
+  padding: 10px 14px;
+  border-top: 1px solid #F3F4F6;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6B7280;
+  background: #FCFCFD;
+}
+
 .textareaInput {
   min-height: 80px;
   padding: 10px 12px;

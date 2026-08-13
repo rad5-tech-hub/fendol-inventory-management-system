@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { FiArrowLeft, FiPlus, FiUploadCloud, FiInfo, FiTrash2, FiX } from 'react-icons/fi';
-import { BsBoxSeam } from 'react-icons/bs';
+import { FiArrowLeft, FiPlus, FiUploadCloud, FiInfo, FiTrash2, FiX, FiSearch, FiChevronDown } from 'react-icons/fi';
+import { BsBoxSeam, BsCheckCircleFill } from 'react-icons/bs';
 import { createPortal } from 'react-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import SideBar from '../../shared/sidebar/sidebar';
@@ -18,6 +18,9 @@ const formatCurrency = (n) =>
   '\u20A6' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const f = (n) => new Intl.NumberFormat().format(n);
+
+const getInitials = (name) =>
+  (name || '').trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
 const FEED_TYPE_OPTIONS = [
   'Starter (0-1mm)', 'Grower (1-3mm)', 'Finisher (3-5mm)',
@@ -116,7 +119,10 @@ export default function CreateFeedBatch() {
   const [feedTypeDisplay, setFeedTypeDisplay] = useState('');
   const [rawMaterialOptions, setRawMaterialOptions] = useState([]);
   const [staffOptions, setStaffOptions] = useState([]);
-  const [staffId, setStaffId] = useState('');
+  const [staffIds, setStaffIds] = useState([]);
+  const [staffPickerOpen, setStaffPickerOpen] = useState(false);
+  const [staffSearch, setStaffSearch] = useState('');
+  const staffPickerRef = useRef(null);
   const [costTypeOptions, setCostTypeOptions] = useState([]);
   const [costTypeDropdownOpen, setCostTypeDropdownOpen] = useState(null);
   const [costTypeDropdownMode, setCostTypeDropdownMode] = useState('list');
@@ -134,7 +140,11 @@ export default function CreateFeedBatch() {
     setFeedTypeDisplay(editBatch.feed?.feedType || '');
     setFeedTypeId(editBatch.feedTypeId || '');
     setSiteTypeId(editBatch.siteTypeId || '');
-    setStaffId(editBatch.staffId || '');
+    setStaffIds(
+      Array.isArray(editBatch.staffIds)
+        ? editBatch.staffIds.map(String)
+        : (editBatch.staffId ? [String(editBatch.staffId)] : [])
+    );
     setStartDate(editBatch.productionStartDate ? editBatch.productionStartDate.slice(0, 10) : '');
     setEndDate(editBatch.productionEndDate ? editBatch.productionEndDate.slice(0, 10) : '');
     setMachineUsed(editBatch.machineUsed || '');
@@ -454,6 +464,32 @@ export default function CreateFeedBatch() {
     setOtherCostItems(otherCostItems.filter(c => c.id !== id));
   };
 
+  // ── Multi-select staff picker helpers ──
+  const toggleStaff = (id) => {
+    setStaffIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const removeStaff = (id) => {
+    setStaffIds(prev => prev.filter(x => x !== id));
+  };
+
+  const filteredStaff = staffOptions.filter(s =>
+    staffSearch.trim() ? (s.name || '').toLowerCase().includes(staffSearch.trim().toLowerCase()) : true
+  );
+
+  /* ── Click-outside for staff picker ── */
+  useEffect(() => {
+    if (!staffPickerOpen) return;
+    const onClickOutside = (e) => {
+      if (staffPickerRef.current && !staffPickerRef.current.contains(e.target)) {
+        setStaffPickerOpen(false);
+        setStaffSearch('');
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [staffPickerOpen]);
+
   // ── Computed values ──
   const otherCostTotal = otherCostItems.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
   const totalProductionCost = totalRawMaterialCost + otherCostTotal;
@@ -465,7 +501,7 @@ export default function CreateFeedBatch() {
     if (!isEditing) {
       if (!feedId) missing.push('Feed Name');
       if (!siteTypeId) missing.push('Site');
-      if (!staffId) missing.push('Staff');
+      if (staffIds.length === 0) missing.push('Staff');
       if (!startDate) missing.push('Production Start Date');
     }
     if (rawMaterials.length === 0) missing.push('at least one Raw Material');
@@ -492,7 +528,7 @@ export default function CreateFeedBatch() {
       const payload = {
         feedId: feedId || undefined,
         siteTypeId: siteTypeId || undefined,
-        staffId: staffId || undefined,
+        staffIds: staffIds.length ? staffIds.map(String) : undefined,
         siteId: isSuperAdmin ? (activeSite?.id || user?.siteId || undefined) : undefined,
         machineUsed,
         comments: batchNotes || undefined,
@@ -713,14 +749,79 @@ export default function CreateFeedBatch() {
                 {/* Row 2 */}
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Produced By <span className={styles.required}>*</span></label>
-                  <CustomDropdown
-                    options={staffOptions.map(s => ({ value: s.id, label: s.name }))}
-                    value={staffId}
-                    onChange={(val) => setStaffId(val)}
-                    placeholder="— Select Staff —"
-                    className={styles.fieldDropdown}
-                    triggerClassName={styles.fieldTrigger}
-                  />
+                  <div className={styles.staffPicker} ref={staffPickerRef}>
+                    <button
+                      type="button"
+                      className={styles.staffPickerTrigger}
+                      onClick={() => setStaffPickerOpen(o => !o)}
+                    >
+                      {staffIds.length > 0 ? (
+                        <div className={styles.staffChips}>
+                          {staffIds.map(id => {
+                            const st = staffOptions.find(s => s.id === id);
+                            return st ? (
+                              <span key={id} className={styles.staffChip}>
+                                <span className={styles.staffChipAvatar}>{getInitials(st.name)}</span>
+                                <span className={styles.staffChipName}>{st.name}</span>
+                                <button
+                                  type="button"
+                                  className={styles.staffChipRemove}
+                                  onClick={(e) => { e.stopPropagation(); removeStaff(id); }}
+                                  aria-label={`Remove ${st.name}`}
+                                >
+                                  <FiX size={11} />
+                                </button>
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      ) : (
+                        <span className={styles.staffPickerPlaceholder}>— Select Staff —</span>
+                      )}
+                      <FiChevronDown size={15} className={styles.staffPickerChevron} />
+                    </button>
+                    {staffPickerOpen && (
+                      <div className={styles.staffPickerPanel}>
+                        <div className={styles.staffPickerSearchWrap}>
+                          <FiSearch size={14} className={styles.staffPickerSearchIcon} />
+                          <input
+                            type="text"
+                            className={styles.staffPickerSearch}
+                            placeholder="Search staff..."
+                            value={staffSearch}
+                            onChange={e => setStaffSearch(e.target.value)}
+                          />
+                        </div>
+                        <div className={styles.staffPickerList}>
+                          {filteredStaff.length === 0 ? (
+                            <div className={styles.staffPickerEmpty}>No staff found.</div>
+                          ) : (
+                            filteredStaff.map(st => {
+                              const checked = staffIds.includes(st.id);
+                              return (
+                                <div
+                                  key={st.id}
+                                  className={`${styles.staffPickerItem} ${checked ? styles.staffPickerItemActive : ''}`}
+                                  onClick={() => toggleStaff(st.id)}
+                                >
+                                  <span className={styles.staffPickerAvatar}>{getInitials(st.name)}</span>
+                                  <span className={styles.staffPickerName}>{st.name}</span>
+                                  <span className={styles.staffPickerCheck}>
+                                    {checked ? <BsCheckCircleFill size={17} color="#512728" /> : <span className={styles.staffPickerCheckEmpty} />}
+                                  </span>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                        <div className={styles.staffPickerFooter}>
+                          {staffIds.length > 0
+                            ? <span>{staffIds.length} staff selected</span>
+                            : <span>Select one or more staff</span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Machine Used <span className={styles.optional}>(Optional)</span></label>

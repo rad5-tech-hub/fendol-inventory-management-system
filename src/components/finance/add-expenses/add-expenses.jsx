@@ -38,8 +38,16 @@ const AddExpense = () => {
     const [siteOptions, setSiteOptions] = useState([]);
     const [ConfirmDialog, confirm] = useConfirm();
     const userTypes = useSelector((store) => store.user?.userTypes || []);
+    const user = useSelector((store) => store.user);
     const activeSite = useSelector((store) => store.activeSite);
     const isAdmin = userTypes.includes('super_admin');
+
+    const resolvedUserSiteId = (() => {
+        if (isAdmin) return '';
+        if (user?.siteId) return user.siteId;
+        const firstSite = user?.userSites?.[0];
+        return typeof firstSite === 'string' ? firstSite : (firstSite?.id || '');
+    })();
 
     useEffect(() => {
         const fetchSites = async () => {
@@ -55,10 +63,10 @@ const AddExpense = () => {
     }, [isAdmin]);
 
     useEffect(() => {
-        if (!isAdmin && activeSite?.id) {
-            setFormData(prev => ({ ...prev, siteId: activeSite.id }));
+        if (!isAdmin) {
+            setFormData(prev => ({ ...prev, siteId: prev.siteId || resolvedUserSiteId }));
         }
-    }, [isAdmin, activeSite]);
+    }, [isAdmin, resolvedUserSiteId]);
 
     // Handle input changes
     const handleInputChange = (e) => {
@@ -88,7 +96,7 @@ const AddExpense = () => {
             toast.error("Please enter a description.", { className: 'dark-toast' });
             return;
         }
-        const resolvedSiteId = formData.siteId || activeSite?.id;
+        const resolvedSiteId = formData.siteId || (isAdmin ? activeSite?.id : resolvedUserSiteId) || activeSite?.id;
         if (!resolvedSiteId) {
             toast.error("No site selected. Please select a site.", { className: 'dark-toast' });
             return;
@@ -118,7 +126,7 @@ const AddExpense = () => {
                 price: '',
                 description: '',
                 paymentType: '',
-                siteId: isAdmin ? '' : (activeSite?.id || '')
+                siteId: isAdmin ? '' : (activeSite?.id || resolvedUserSiteId)
             });
             setUnformattedPrice(0);
         } catch (error) {
