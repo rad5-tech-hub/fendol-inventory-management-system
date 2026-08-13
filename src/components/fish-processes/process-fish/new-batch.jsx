@@ -382,6 +382,7 @@ export default function NewBatchFish() {
       }
 
       const endpoint = getEndpoint(currentStage.title) || getEndpointByIndex(currentStage.id);
+      const isShowcaseMove = endpoint === "/add-fish-to-show-glass";
       console.log('[handleNext] endpoint', endpoint);
 
       if (endpoint) {
@@ -443,10 +444,12 @@ export default function NewBatchFish() {
           }
         };
 
-        if (newProcessId) {
-          await fetchProcessData(newProcessId);
-        } else if (processId) {
-          await fetchProcessData(processId);
+        if (!isShowcaseMove) {
+          if (newProcessId) {
+            await fetchProcessData(newProcessId);
+          } else if (processId) {
+            await fetchProcessData(processId);
+          }
         }
 
         setMoveData(prev => ({

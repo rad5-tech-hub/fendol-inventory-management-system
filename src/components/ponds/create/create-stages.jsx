@@ -73,8 +73,12 @@ export default function CreateStages() {
                 navigate('/ponds/view-all-ponds');
             }, 4000);
         } catch (error) {
+            const serverMsg = error.response?.data?.response_message
+                || error.response?.data?.message
+                || error.response?.data?.error?.message
+                || error.message;
             toast.update(loadingToast, {
-                render: error.response?.data?.message || "Error creating pond. Please try again.",
+                render: serverMsg || "Error creating pond. Please try again.",
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,

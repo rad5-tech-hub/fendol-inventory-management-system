@@ -293,6 +293,7 @@ export default function BatchProcessing() {
       }
 
       const endpoint = getEndpoint(currentStage.title) || getEndpointByIndex(currentStage.id);
+      const isShowcaseMove = endpoint === "/add-fish-to-show-glass";
 
       if (endpoint) {
         const wholeFish = parseFloat(moveData.wholeFishQuantity);
@@ -353,10 +354,12 @@ export default function BatchProcessing() {
           }
         };
 
-        if (newProcessId) {
-          await fetchProcessData(newProcessId);
-        } else if (processId) {
-          await fetchProcessData(processId);
+        if (!isShowcaseMove) {
+          if (newProcessId) {
+            await fetchProcessData(newProcessId);
+          } else if (processId) {
+            await fetchProcessData(processId);
+          }
         }
 
         setMoveData(prev => ({

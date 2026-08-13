@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import LogIn from "./shared/login/login";
@@ -9,7 +9,6 @@ import { Provider } from "react-redux";
 import store from "./shared/reduxForProtectingRoute/store";
 import { hasPermission } from "./shared/permissions/permissions";
 import { ToastContainer } from "react-toastify";
-import { SkeletonTable, SkeletonFilterBar } from "./shared/skeleton/Skeleton";
 
 const AdminNavigations = lazy(() => import("./admin/adminRoutes"));
 const CustomerNavigations = lazy(() => import("./customer/customerRoute"));
@@ -57,14 +56,31 @@ const RoleRoute = ({ children, resource }) => {
   return children;
 };
 
-const PageLoader = () => (
-  <div style={{ padding: "20px" }}>
-    <SkeletonFilterBar />
-    <SkeletonTable rows={5} cols={5} />
-  </div>
-);
+const PageLoader = () => null;
+
+/**
+ * Warm up every lazy route chunk in the background once the app has mounted,
+ * so navigating between routes never hits a blank Suspense gap.
+ */
+const routeLoaders = [
+  AdminNavigations, CustomerNavigations, FeedNavigations, ProcessNavigations,
+  ProductNavigations, ProductStagesNavigations, StoreNavigations, FinanceNavigations,
+  DamageLoss, Complaints, AllComplaints, ShowcaseNavigations, SiteManagementNavigations,
+  ManageNavigations, BatchDashboardNavigations, HatcheryNavigations, ReferralNavigations,
+  MlmNavigations, Dashboard,
+];
+
+function usePrefetchRoutes() {
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      routeLoaders.forEach((loader) => loader().catch(() => {}));
+    }, 800);
+    return () => window.clearTimeout(id);
+  }, []);
+}
 
 export default function RouterSwitch() {
+  usePrefetchRoutes();
   return (
     <Provider store={store}>
       <Router>

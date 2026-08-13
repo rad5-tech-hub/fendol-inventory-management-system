@@ -24,6 +24,14 @@ const formatCurrency = (value) => {
   return `₦${Math.abs(Number(value)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+const getPendingNetPrice = (sale) => {
+  const totalPrice = Number(sale.totalPrice) || 0;
+  if (sale.priceWithoutDiscount != null) return totalPrice;
+  return totalPrice - (Number(sale.discount) || 0);
+};
+
+const getPendingBalance = (sale) => getPendingNetPrice(sale) - (Number(sale.totalPaid) || 0);
+
 const extractError = (error, fallback) => {
   const data = error?.response?.data;
   if (data?.errors?.length) return data.errors.join('. ');
@@ -275,10 +283,10 @@ export default function PersonalLedger() {
   const handlePendingSelect = (sale) => {
     setSelectedPendingSale(sale.id || "");
     setTransactionId(sale.transactionId || "");
-    setTotalAmount((Number(sale.totalPrice) || 0) - (Number(sale.totalPaid) || 0) - (Number(sale.discount) || 0));
+    setTotalAmount(getPendingBalance(sale));
     setAmountPaidB(sale.totalPaid || 0);
     setSalesType(sale.paymentType || "");
-    setPendingSearch(`${sale.transactionId} - ${sale.salesCategory || 'Unknown'} - ₦${((Number(sale.totalPrice) || 0) - (Number(sale.discount) || 0)).toLocaleString()}`);
+    setPendingSearch(`${sale.transactionId} - ${sale.salesCategory || 'Unknown'} - ₦${getPendingNetPrice(sale).toLocaleString()}`);
     setShowPendingDropdown(false);
     setAmountPaid("");
   };
@@ -647,7 +655,7 @@ export default function PersonalLedger() {
                           <li key={i} onClick={() => handlePendingSelect(sale)}>
                             <div style={{ fontWeight: 500, color: '#2E3135' }}>{sale.transactionId}</div>
                             <div style={{ fontSize: '12px', color: '#6B7280' }}>
-                              {sale.salesCategory || 'Sale'} — Balance: {formatCurrency((Number(sale.totalPrice) || 0) - (Number(sale.totalPaid) || 0) - (Number(sale.discount) || 0))}
+                              {sale.salesCategory || 'Sale'} — Balance: {formatCurrency(getPendingBalance(sale))}
                             </div>
                           </li>
                         ))}
