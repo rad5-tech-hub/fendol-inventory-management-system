@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { createStore } from 'redux'
 import SiteSelector from './SiteSelector'
@@ -42,6 +42,7 @@ it('renders sites after loading', async () => {
   await waitFor(() => {
     expect(screen.getByText('All Sites')).toBeInTheDocument()
   })
+  fireEvent.click(screen.getByRole('button', { name: /all sites/i }))
   expect(screen.getByText('Farm A')).toBeInTheDocument()
   expect(screen.getByText('Farm B')).toBeInTheDocument()
 })
@@ -52,8 +53,8 @@ it('renders empty state when no sites returned', async () => {
   await waitFor(() => {
     expect(screen.getByText('All Sites')).toBeInTheDocument()
   })
-  const options = screen.getAllByRole('option')
-  expect(options).toHaveLength(1)
+  fireEvent.click(screen.getByRole('button', { name: /all sites/i }))
+  expect(screen.getByText('No options available')).toBeInTheDocument()
 })
 
 it('is disabled and shows lock hint when activeSite is set', async () => {
@@ -65,7 +66,7 @@ it('is disabled and shows lock hint when activeSite is set', async () => {
     expect(screen.getByText('Header site active')).toBeInTheDocument()
   })
 
-  const select = screen.getByRole('combobox')
+  const select = screen.getByRole('button', { name: /farm a/i })
   expect(select).toBeDisabled()
 })
 
@@ -91,12 +92,11 @@ it('calls onChange when site selection changes', async () => {
   renderWithStore(<SiteSelector onChange={onChange} />)
 
   await waitFor(() => {
-    expect(screen.getByText('Farm A')).toBeInTheDocument()
+    expect(screen.getByText('All Sites')).toBeInTheDocument()
   })
 
-  const select = screen.getByRole('combobox')
-  select.value = 'site-1'
-  select.dispatchEvent(new Event('change', { bubbles: true }))
+  fireEvent.click(screen.getByRole('button', { name: /all sites/i }))
+  fireEvent.click(screen.getByText('Farm A'))
 
   expect(onChange).toHaveBeenCalledWith('site-1', 'Farm A')
 })

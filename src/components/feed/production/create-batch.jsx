@@ -750,10 +750,12 @@ export default function CreateFeedBatch() {
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Produced By <span className={styles.required}>*</span></label>
                   <div className={styles.staffPicker} ref={staffPickerRef}>
-                    <button
-                      type="button"
+                    <div
+                      role="button"
+                      tabIndex={0}
                       className={styles.staffPickerTrigger}
                       onClick={() => setStaffPickerOpen(o => !o)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStaffPickerOpen(o => !o); } }}
                     >
                       {staffIds.length > 0 ? (
                         <div className={styles.staffChips}>
@@ -779,7 +781,7 @@ export default function CreateFeedBatch() {
                         <span className={styles.staffPickerPlaceholder}>— Select Staff —</span>
                       )}
                       <FiChevronDown size={15} className={styles.staffPickerChevron} />
-                    </button>
+                    </div>
                     {staffPickerOpen && (
                       <div className={styles.staffPickerPanel}>
                         <div className={styles.staffPickerSearchWrap}>

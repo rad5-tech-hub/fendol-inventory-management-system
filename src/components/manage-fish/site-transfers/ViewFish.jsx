@@ -53,7 +53,7 @@ const fmtISODate = (iso) => {
 
 export default function ViewFish() {
   const [transfers, setTransfers] = useState([]);
-  const [summary, setSummary] = useState({ totalReceived: 0 });
+  const [summary, setSummary] = useState({ totalReceived: 0, totalMovedToPond: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
@@ -100,6 +100,12 @@ export default function ViewFish() {
   const [moveSiteId, setMoveSiteId] = useState(resolvedSiteId);
   const [submittingMove, setSubmittingMove] = useState(false);
   const [moveError, setMoveError] = useState('');
+
+  /* ── Harvest modal ── */
+  const [showHarvestModal, setShowHarvestModal] = useState(false);
+  const [harvestForm, setHarvestForm] = useState({ siteId: resolvedSiteId, quantity: '', remarks: '' });
+  const [submittingHarvest, setSubmittingHarvest] = useState(false);
+  const [harvestError, setHarvestError] = useState('');
 
   const fetchPonds = async (siteId) => {
     if (!siteId) { setPondOptions([]); return; }
@@ -190,6 +196,75 @@ export default function ViewFish() {
     }
   };
 
+  const openHarvestModal = () => {
+    const id = resolvedSiteId;
+    setHarvestForm({ siteId: id, quantity: '', remarks: '' });
+    setHarvestError('');
+    setShowHarvestModal(true);
+  };
+
+  const handleHarvestSubmit = async (e) => {
+    e.preventDefault();
+    setHarvestError('');
+
+    const siteId = harvestForm.siteId || resolvedSiteId;
+    if (!siteId) {
+      setHarvestError('No site selected. Please select a site first.');
+      return;
+    }
+    const qty = Number(harvestForm.quantity);
+    if (!qty || qty <= 0) {
+      setHarvestError('Please enter a valid quantity greater than 0.');
+      return;
+    }
+
+    setSubmittingHarvest(true);
+    try {
+      const res = await ApiV2.post(`/v2/fish-transfer/harvest?siteId=${siteId}`, {
+        quantity: qty,
+        remarks: harvestForm.remarks?.trim() || 'Harvested directly from received transfer stock',
+        siteId,
+      });
+      const body = res.data;
+      if (!body || body.success !== true) {
+        throw new Error(body?.response_message || 'Failed to harvest fish.');
+      }
+      toast.success(body.response_message || 'Fish harvested successfully!');
+      setShowHarvestModal(false);
+      setHarvestForm({ siteId, quantity: '', remarks: '' });
+      loadTransfers();
+    } catch (err) {
+      const serverMsg = err?.response?.data?.response_message;
+      const fallbackMsg = err?.response?.data?.message;
+      const networkMsg = err?.message;
+      const finalMsg = serverMsg || fallbackMsg || networkMsg || 'An unexpected error occurred. Please try again.';
+
+      if (err?.response?.status === 400) {
+        setHarvestError(finalMsg || 'Invalid request. Please check your input.');
+      } else if (err?.response?.status === 401) {
+        setHarvestError('Session expired. Please log in again.');
+      } else if (err?.response?.status === 403) {
+        setHarvestError('You do not have permission to harvest fish.');
+      } else if (err?.response?.status === 404) {
+        setHarvestError('The transfer record or site was not found.');
+      } else if (err?.response?.status === 409) {
+        setHarvestError(finalMsg || 'The requested quantity exceeds available stock.');
+      } else if (err?.response?.status === 422) {
+        setHarvestError(finalMsg || 'Validation failed. Please check the quantity.');
+      } else if (err?.code === 'ECONNABORTED') {
+        setHarvestError('Request timed out. Please try again.');
+      } else if (!err?.response) {
+        setHarvestError('Network error. Please check your connection and try again.');
+      } else if (err?.response?.status >= 500) {
+        setHarvestError('Server error. Please try again later.');
+      } else {
+        setHarvestError(typeof finalMsg === 'string' ? finalMsg : 'An unexpected error occurred.');
+      }
+    } finally {
+      setSubmittingHarvest(false);
+    }
+  };
+
   /* ── Click-outside for tooltips ── */
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -216,7 +291,7 @@ export default function ViewFish() {
       if (!siteId) {
         setError('No site selected. Please select a site from the header or contact an administrator.');
         setTransfers([]);
-        setSummary({ totalReceived: 0 });
+        setSummary({ totalReceived: 0, totalMovedToPond: 0 });
         if (!append) setLoading(false);
         return;
       }
@@ -230,7 +305,10 @@ export default function ViewFish() {
       const list = body?.data?.transfers;
       if (!Array.isArray(list)) {
         if (!append) setTransfers([]);
-        setSummary({ totalReceived: body?.summary?.totalReceived ?? 0 });
+        setSummary({
+          totalReceived: body?.pagination?.summary?.totalReceived ?? 0,
+          totalMovedToPond: body?.pagination?.summary?.totalMovedToPond ?? 0,
+        });
         if (!append) setLoading(false);
         return;
       }
@@ -245,7 +323,10 @@ export default function ViewFish() {
         raw: t,
       }));
       setTransfers(prev => append ? [...prev, ...mapped] : mapped);
-      setSummary({ totalReceived: body?.summary?.totalReceived ?? 0 });
+      setSummary({
+        totalReceived: body?.pagination?.summary?.totalReceived ?? 0,
+        totalMovedToPond: body?.pagination?.summary?.totalMovedToPond ?? 0,
+      });
       cursorRef.current = body?.pagination?.nextCursor || null;
       setHasMore(body?.pagination?.hasMore ?? false);
     } catch (err) {
@@ -254,7 +335,7 @@ export default function ViewFish() {
         || err?.message
         || 'Failed to load incoming transfers. Please try again.';
       setError(typeof msg === 'string' ? msg : 'An unexpected error occurred.');
-      if (!append) { setTransfers([]); setSummary({ totalReceived: 0 }); }
+      if (!append) { setTransfers([]); setSummary({ totalReceived: 0, totalMovedToPond: 0 }); }
     } finally {
       if (!append) setLoading(false);
       setLoadingMore(false);
@@ -291,6 +372,7 @@ export default function ViewFish() {
   });
 
   const totalFish = summary.totalReceived;
+  const stockRemaining = Math.max(0, totalFish - (summary.totalMovedToPond || 0));
   const pageCount = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const offset = page * ITEMS_PER_PAGE;
   const pageItems = filtered.slice(offset, offset + ITEMS_PER_PAGE);
@@ -329,11 +411,11 @@ export default function ViewFish() {
     },
     {
       label: 'STOCK REMAINING',
-      value: `${formatNumber(totalFish)} pcs`,
+      value: `${formatNumber(stockRemaining)} pcs`,
       sub: 'Awaiting pond assignment',
       icon: <FaExchangeAlt size={16} />,
       iconClass: styles.statIconBlue,
-      tooltipText: `${formatNumber(totalFish)} fish are still awaiting pond assignment.`,
+      tooltipText: `${formatNumber(stockRemaining)} fish are still awaiting pond assignment.`,
     },
   ];
 
@@ -520,6 +602,158 @@ export default function ViewFish() {
         </div>
       </Modal>
 
+      {/* ── Harvest Modal ── */}
+      <Modal show={showHarvestModal} onHide={() => setShowHarvestModal(false)} centered size="md">
+        <div style={{
+          background: '#ffffff', borderRadius: '16px', overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+        }}>
+          {/* Gradient Header */}
+          <div style={{
+            background: 'linear-gradient(135deg, #6B3536 0%, #8A4B4C 100%)',
+            padding: '24px 28px', position: 'relative',
+          }}>
+            <button
+              onClick={() => setShowHarvestModal(false)}
+              style={{
+                position: 'absolute', top: '16px', right: '16px',
+                background: 'rgba(255,255,255,0.15)', border: 'none',
+                borderRadius: '50%', width: '32px', height: '32px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#ffffff', cursor: 'pointer', fontSize: '18px',
+              }}
+            >
+              <BsX />
+            </button>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '12px',
+              background: 'rgba(255,255,255,0.15)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              marginBottom: '14px', fontSize: '22px', color: '#ffffff',
+            }}>
+              <GiFishingNet />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+              Harvest Fish
+            </h3>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '4px 0 0 0' }}>
+              Harvest fish directly from received transfer stock.
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleHarvestSubmit} style={{ padding: '28px' }}>
+            {harvestError && (
+              <div style={{
+                background: '#FEF2F2', border: '1px solid #FECACA',
+                borderRadius: '8px', padding: '10px 14px', marginBottom: '16px',
+                fontSize: '0.82rem', color: '#B91C1C', lineHeight: 1.4,
+              }}>
+                {harvestError}
+              </div>
+            )}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                textTransform: 'uppercase', letterSpacing: '0.3px',
+                marginBottom: '6px', display: 'block',
+              }}>
+                Site
+              </label>
+              <CustomDropdown
+                value={harvestForm.siteId}
+                onChange={(value) => setHarvestForm(p => ({ ...p, siteId: value }))}
+                placeholder="Select a site..."
+                options={transferSites.map(s => ({ value: s.id, label: s.name }))}
+              />
+            </div>
+
+            {/* Quantity */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                textTransform: 'uppercase', letterSpacing: '0.3px',
+                marginBottom: '6px', display: 'block',
+              }}>
+                Quantity (pcs)
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Enter quantity"
+                  value={harvestForm.quantity}
+                  onChange={(e) => setHarvestForm(p => ({ ...p, quantity: e.target.value }))}
+                  required
+                  style={{
+                    width: '100%', padding: '12px 14px', fontSize: '14px',
+                    border: '1px solid #e5e7eb', borderRadius: '10px',
+                    outline: 'none', color: '#2E3135', background: '#FAFCFF',
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = '#8A4B4C'; e.target.style.boxShadow = '0 0 0 3px rgba(138,75,76,0.08)'; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; }}
+                />
+              </div>
+            </div>
+
+            {/* Remarks */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                fontSize: '12px', fontWeight: 600, color: '#8C949B',
+                textTransform: 'uppercase', letterSpacing: '0.3px',
+                marginBottom: '6px', display: 'block',
+              }}>
+                Remarks <span style={{ textTransform: 'none', fontWeight: 400, color: '#B0B7BE' }}>(Optional)</span>
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Add any notes about this harvest..."
+                value={harvestForm.remarks}
+                onChange={(e) => setHarvestForm(p => ({ ...p, remarks: e.target.value }))}
+                style={{
+                  width: '100%', padding: '12px 14px', fontSize: '14px',
+                  border: '1px solid #e5e7eb', borderRadius: '10px',
+                  outline: 'none', color: '#2E3135', background: '#FAFCFF',
+                  resize: 'vertical', fontFamily: 'inherit',
+                }}
+                onFocus={(e) => { e.target.style.borderColor = '#8A4B4C'; e.target.style.boxShadow = '0 0 0 3px rgba(138,75,76,0.08)'; }}
+                onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; }}
+              />
+            </div>
+
+            <div style={{ height: '1px', background: '#F3F4F6', marginBottom: '20px' }} />
+
+            <div className="d-flex gap-2 justify-content-end">
+              <button
+                type="button"
+                onClick={() => setShowHarvestModal(false)}
+                style={{
+                  padding: '10px 24px', fontSize: '14px', fontWeight: 500,
+                  border: '1px solid #e5e7eb', borderRadius: '10px',
+                  background: '#ffffff', color: '#6B7280', cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submittingHarvest || !harvestForm.quantity}
+                style={{
+                  padding: '10px 24px', fontSize: '14px', fontWeight: 600,
+                  border: 'none', borderRadius: '10px',
+                  background: (submittingHarvest || !harvestForm.quantity) ? '#9CA3AF' : 'linear-gradient(135deg, #6B3536 0%, #8A4B4C 100%)',
+                  color: '#ffffff', cursor: (submittingHarvest || !harvestForm.quantity) ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  boxShadow: (submittingHarvest || !harvestForm.quantity) ? 'none' : '0 4px 12px rgba(138,75,76,0.25)',
+                }}
+              >
+                <GiFishingNet size={14} /> {submittingHarvest ? 'Harvesting...' : 'Harvest Fish'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
@@ -602,8 +836,23 @@ export default function ViewFish() {
                   ))}
                 </div>
 
-                {/* ── Move to Pond button (right-aligned) ── */}
-                <div className="d-flex justify-content-end" style={{ marginBottom: '16px' }}>
+                {/* ── Move to Pond / Harvest buttons (right-aligned) ── */}
+                <div className="d-flex justify-content-end" style={{ marginBottom: '16px', gap: '10px' }}>
+                  <button
+                    onClick={openHarvestModal}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '8px',
+                      background: 'linear-gradient(135deg, #6B3536 0%, #8A4B4C 100%)',
+                      color: '#ffffff', border: 'none', borderRadius: '10px',
+                      padding: '10px 22px', fontSize: '14px', fontWeight: 600,
+                      cursor: 'pointer', boxShadow: '0 4px 14px rgba(138,75,76,0.25)',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(138,75,76,0.35)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(138,75,76,0.25)'; }}
+                  >
+                    <GiFishingNet size={18} /> Harvest
+                  </button>
                   <button
                     onClick={openMoveModal}
                     style={{
