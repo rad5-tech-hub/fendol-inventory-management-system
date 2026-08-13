@@ -521,6 +521,16 @@
   transition: width 0.3s ease;
 }
 
+.removedCell {
+  color: #DC2626;
+  font-weight: 500;
+}
+
+.totalCell {
+  color: #111827;
+  font-weight: 700;
+}
+
 /* ── Three-dot button ── */
 .threeDotBtn {
   border: none;

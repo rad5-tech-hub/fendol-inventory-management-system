@@ -318,6 +318,7 @@ export default function ViewFish() {
         siteFrom: t.site?.name || t.siteFrom || 'Unknown',
         siteFromId: t.siteFrom,
         quantity: t.quantity ?? 0,
+        removed: t.quantityRemoved ?? 0,
         total: t.total ?? 0,
         description: null,
         raw: t,
@@ -442,8 +443,16 @@ export default function ViewFish() {
                   <span className={styles.modalValue}>{selectedTransfer.date}</span>
                 </div>
                 <div className={styles.modalDetailRow}>
-                  <span className={styles.modalLabel}>Quantity</span>
+                  <span className={styles.modalLabel}>Added</span>
                   <span className={styles.modalValue}>{formatNumber(selectedTransfer.quantity)} pcs</span>
+                </div>
+                <div className={styles.modalDetailRow}>
+                  <span className={styles.modalLabel}>Removed</span>
+                  <span className={styles.modalValue}>{formatNumber(selectedTransfer.removed)} pcs</span>
+                </div>
+                <div className={styles.modalDetailRow}>
+                  <span className={styles.modalLabel}>Total</span>
+                  <span className={styles.modalValue}>{formatNumber(selectedTransfer.total)} pcs</span>
                 </div>
               </>
             );
@@ -1022,7 +1031,7 @@ export default function ViewFish() {
                         },
                         {
                           key: 'quantity',
-                          label: 'QUANTITY',
+                          label: 'ADDED',
                           render: (value) => (
                             <>
                               {formatNumber(value)}
@@ -1030,6 +1039,22 @@ export default function ViewFish() {
                                 <div className={styles.qtyBarFill} style={{ width: `${(value / pageMaxQty) * 100}%` }} />
                               </div>
                             </>
+                          )
+                        },
+                        {
+                          key: 'removed',
+                          label: 'REMOVED',
+                          render: (value) => (
+                            <span className={styles.removedCell}>
+                              {value > 0 ? `−${formatNumber(value)}` : formatNumber(value)}
+                            </span>
+                          )
+                        },
+                        {
+                          key: 'total',
+                          label: 'TOTAL',
+                          render: (value) => (
+                            <span className={styles.totalCell}>{formatNumber(value)}</span>
                           )
                         },
                       ]}
