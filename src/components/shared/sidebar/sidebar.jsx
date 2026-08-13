@@ -325,9 +325,9 @@ export default function SideBar({ show, handleClose }) {
               {hasPermission(userTypes, 'batch-dashboard') && renderDirectLink("Batch Dashboard", "/batch-dashboard", <MdOutlineBarChart size={25} className="me-1" />)}
               {hasPermission(userTypes, 'manage-fish') && renderCard("fish_activities", "Fish Activities", <GiCirclingFish size={25} className="me-1" />,
                 <>
-                  {!(isSuperAdmin && activeSite?.type?.toLowerCase() === 'hatchery') && renderNavItem(activeSite?.type?.toLowerCase() === 'hatchery' ? "Transfer to Nursery" : "Add Fish", "/manage-fish/add-fish")}
+                  {activeSite?.type?.toLowerCase() !== 'hatchery' && renderNavItem(activeSite?.type?.toLowerCase() === 'hatchery' ? "Transfer to Nursery" : "Add Fish", "/manage-fish/add-fish")}
                   {renderNavItem("Move/Sort Fish", "/manage-fish/move-fish")}
-                  {!(isSuperAdmin && activeSite?.type?.toLowerCase() === 'hatchery') && renderNavItem("Harvest", "/manage-fish/harvest-fish")}
+                  {activeSite?.type?.toLowerCase() !== 'hatchery' && renderNavItem("Harvest", "/manage-fish/harvest-fish")}
                   {renderNavItem("Mortality", "/manage-fish/damage-fish")}
                 </>
               )}
