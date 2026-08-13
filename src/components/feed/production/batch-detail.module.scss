@@ -375,6 +375,64 @@
   }
 }
 
+/* Person avatar chips */
+.personChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FAFBFC;
+  border: 1px solid #F0F1F2;
+  border-radius: 999px;
+  padding: 4px 12px 4px 4px;
+}
+
+.personAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.personMeta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.personName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2E3135;
+}
+
+.personEmail {
+  font-size: 0.72rem;
+  color: #8C949B;
+}
+
+/* Staff list inside detail rows */
+.staffList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.mutedValue {
+  color: #9CA3AF;
+}
+
+/* Audit user block */
+.auditUser {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 /* Loading / Error states */
 .loadingState {
   text-align: center;

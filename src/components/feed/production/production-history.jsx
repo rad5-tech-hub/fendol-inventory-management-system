@@ -46,6 +46,66 @@ const getFeedColor = (feedName) => {
   return FEED_COLORS[Math.abs(hash) % FEED_COLORS.length];
 };
 
+const STAFF_AVATAR_COLORS = [
+  '#512728', '#2563EB', '#7C3AED', '#0D9488',
+  '#D97706', '#BE185D', '#16A34A', '#DC2626',
+];
+
+const getInitials = (name) =>
+  (name || '').trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+
+const getStaffColor = (name) => {
+  if (!name) return '#9CA3AF';
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return STAFF_AVATAR_COLORS[Math.abs(hash) % STAFF_AVATAR_COLORS.length];
+};
+
+const StaffAvatar = ({ name, size = 26, showName = false }) => {
+  const color = getStaffColor(name);
+  return (
+    <div className={styles.staffAvatarGroup}>
+      <span
+        className={styles.staffAvatar}
+        style={{ width: size, height: size, background: color + '1A', color, fontSize: Math.max(10, size * 0.38) }}
+      >
+        {getInitials(name)}
+      </span>
+      {showName && <span className={styles.staffAvatarName}>{name}</span>}
+    </div>
+  );
+};
+
+const StaffStack = ({ staff = [], max = 3, showName = false }) => {
+  const list = Array.isArray(staff) ? staff : [];
+  if (list.length === 0) return <span className={styles.mutedCell}>--</span>;
+  const visible = list.slice(0, max);
+  const extra = list.length - visible.length;
+  return (
+    <div className={styles.staffStack} title={showName ? undefined : list.map(s => s.name).join(', ')}>
+      <div className={styles.staffAvatars}>
+        {visible.map((s, i) => (
+          <span key={s.id || i} className={styles.staffAvatarOverlap} title={s.name}>
+            <StaffAvatar name={s.name} size={26} />
+          </span>
+        ))}
+        {extra > 0 && (
+          <span className={styles.staffExtra} title={list.slice(max).map(s => s.name).join(', ')}>
+            +{extra}
+          </span>
+        )}
+      </div>
+      {showName && (
+        <span className={styles.staffStackNames}>
+          {list.map(s => s.name).join(', ')}
+        </span>
+      )}
+    </div>
+  );
+};
+
 const STATUS_STYLES = {
   completed: { bg: '#DCFCE7', color: '#15803D' },
   'in progress': { bg: '#DBEAFE', color: '#1D4ED8' },
@@ -159,7 +219,7 @@ export default function FeedProductionHistory() {
       result = result.filter(b =>
         String(b.batchNumber).includes(q) ||
         (b.feed?.feedName || '').toLowerCase().includes(q) ||
-        (b.staff?.name || '').toLowerCase().includes(q) ||
+        (Array.isArray(b.staff) ? b.staff.some(s => (s.name || '').toLowerCase().includes(q)) : (b.staff?.name || '').toLowerCase().includes(q)) ||
         (b.siteType?.name || '').toLowerCase().includes(q) ||
         (b.machineUsed || '').toLowerCase().includes(q)
       );
@@ -202,7 +262,7 @@ export default function FeedProductionHistory() {
       unit: 'kg',
       totalCost: batchTotalCost(b),
       costPerKg: Number(b.costPerKg || 0),
-      producedBy: b.staff?.name || '--',
+      producedBy: b.staff || null,
       status: b.status || 'unknown',
       _raw: b,
     }));
@@ -560,7 +620,11 @@ export default function FeedProductionHistory() {
                       label: 'Cost per Kg (₦)',
                       render: (value) => <span className={styles.numCell}>{formatCurrency(value)}</span>,
                     },
-                    { key: 'producedBy', label: 'Produced By' },
+                    {
+                      key: 'producedBy',
+                      label: 'Produced By',
+                      render: (value) => <StaffStack staff={value} />,
+                    },
                     {
                       key: 'status',
                       label: 'Status',

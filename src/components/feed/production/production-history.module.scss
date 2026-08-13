@@ -417,6 +417,86 @@ select.filterDropdown:focus {
   white-space: nowrap;
 }
 
+/* ── Staff avatars / stack ── */
+.staffStack {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.staffAvatars {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.staffAvatarOverlap {
+  display: inline-flex;
+  margin-right: -8px;
+  transition: transform 0.15s ease;
+}
+
+.staffAvatarOverlap:last-child {
+  margin-right: 0;
+}
+
+.staffAvatarOverlap:hover {
+  transform: translateY(-2px);
+  z-index: 2;
+  position: relative;
+}
+
+.staffAvatarGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.staffAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
+.staffAvatarName {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.staffExtra {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #F3F4F6;
+  border: 2px solid #FFFFFF;
+  color: #6B7280;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.staffStackNames {
+  font-size: 13px;
+  color: #111827;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.mutedCell {
+  color: #9CA3AF;
+}
+
 .tableFooter {
   display: flex;
   justify-content: space-between;

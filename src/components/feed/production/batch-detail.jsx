@@ -48,6 +48,53 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+const STAFF_AVATAR_COLORS = [
+  '#512728', '#2563EB', '#7C3AED', '#0D9488',
+  '#D97706', '#BE185D', '#16A34A', '#DC2626',
+];
+
+const getInitials = (name) =>
+  (name || '').trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+
+const getStaffColor = (name) => {
+  if (!name) return '#9CA3AF';
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return STAFF_AVATAR_COLORS[Math.abs(hash) % STAFF_AVATAR_COLORS.length];
+};
+
+const PersonAvatar = ({ name, size = 30, email = null }) => {
+  const color = getStaffColor(name);
+  return (
+    <div className={styles.personChip}>
+      <span
+        className={styles.personAvatar}
+        style={{ width: size, height: size, background: color + '1A', color, fontSize: Math.max(10, size * 0.38) }}
+      >
+        {getInitials(name)}
+      </span>
+      <div className={styles.personMeta}>
+        <span className={styles.personName}>{name || '--'}</span>
+        {email && <span className={styles.personEmail}>{email}</span>}
+      </div>
+    </div>
+  );
+};
+
+const StaffList = ({ staff = [] }) => {
+  const list = Array.isArray(staff) ? staff : [];
+  if (list.length === 0) return <span className={styles.mutedValue}>--</span>;
+  return (
+    <div className={styles.staffList}>
+      {list.map((s, i) => (
+        <PersonAvatar key={s.id || i} name={s.name} />
+      ))}
+    </div>
+  );
+};
+
 export default function FeedProductionBatchDetail() {
   const { batchNumber } = useParams();
   const navigate = useNavigate();
@@ -287,7 +334,7 @@ export default function FeedProductionBatchDetail() {
                       </div>
                       <div className={styles.detailRow}>
                         <span className={styles.detailLabel}>Produced By</span>
-                        <span className={styles.detailValue}>{batch.staff?.name || '--'}</span>
+                        <div className={styles.detailValue}>{batch.staff ? <StaffList staff={batch.staff} /> : '--'}</div>
                       </div>
                       <div className={styles.detailDivider} />
                       <div className={styles.detailRow}>
@@ -318,13 +365,17 @@ export default function FeedProductionBatchDetail() {
                       <h5>Audit Information</h5>
                       <div className={styles.auditRow}>
                         <span className={styles.auditLabel}>Created By</span>
-                        <span className={styles.auditName}>{batch.staff?.name || '--'}</span>
-                        <span className={styles.auditDate}>{formatDateTime(batch.createdAt)}</span>
+                        <div className={styles.auditUser}>
+                          <PersonAvatar name={batch.creator?.fullName} email={batch.creator?.email} />
+                          <span className={styles.auditDate}>{formatDateTime(batch.createdAt)}</span>
+                        </div>
                       </div>
                       <div className={styles.auditRow}>
                         <span className={styles.auditLabel}>Last Updated By</span>
-                        <span className={styles.auditName}>{batch.staff?.name || '--'}</span>
-                        <span className={styles.auditDate}>{batch.updatedAt ? formatDateTime(batch.updatedAt) : '--'}</span>
+                        <div className={styles.auditUser}>
+                          <PersonAvatar name={batch.updater?.fullName} email={batch.updater?.email} />
+                          <span className={styles.auditDate}>{batch.updatedAt ? formatDateTime(batch.updatedAt) : '--'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
