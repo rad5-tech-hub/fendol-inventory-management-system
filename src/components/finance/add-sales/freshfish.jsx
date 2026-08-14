@@ -130,13 +130,12 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
   };
 
   const handleSelectCustomer = (selectedCustomer) => {
-    const discount = selectedCustomer.category === "Marketer" ? 10 : 0; // 10% for Marketer, 0 for Customer
     setFreshData((prevData) => ({
       ...prevData,
       fullName: selectedCustomer.fullName,
       customerId: selectedCustomer.id,
       category: selectedCustomer.category,
-      discount: discount,
+      discount: 0,
     }));
     setBalance(selectedCustomer.balance);
     setCustomerSearch(`${selectedCustomer.fullName}`);
@@ -226,7 +225,7 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
         }],
         customerId: freshData.customerId,
         paymentType: freshData.paymentType?.toLowerCase(),
-        discount: freshData.discount || 0,
+        discount: freshData.category === "Marketer" ? 0 : (Number(freshData.discount) || 0),
         description: freshData.description,
         amountPaid: freshData.amountPaid,
         salesCategoryId: freshFishTypeId,

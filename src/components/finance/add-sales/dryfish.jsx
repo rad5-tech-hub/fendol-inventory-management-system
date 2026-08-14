@@ -199,13 +199,12 @@ const SalesForm = ({ customers, stages, products, siteId, productTypes }) => {
     };
 
     const handleSelectCustomer = (selectedCustomer) => {
-        const discount = selectedCustomer.category === "Marketer" ? '10%' : 0; // Set discount based on category
         setDryData(prevData => ({
             ...prevData,
             customerId: selectedCustomer.id,
             fullName: selectedCustomer.fullName,
             category: selectedCustomer.category,
-            discount: discount
+            discount: 0
         }));
         setFilteredCustomer([]);
         setBalance(selectedCustomer.balance)
@@ -261,7 +260,7 @@ const SalesForm = ({ customers, stages, products, siteId, productTypes }) => {
                     })),
                 customerId: dryData.customerId,
                 paymentType: dryData.paymentType?.toLowerCase(),
-                discount: dryData.discount || 0,
+                discount: dryData.category === 'Marketer' ? 0 : (Number(dryData.discount) || 0),
                 description: dryData.description,
                 amountPaid: dryData.amountPaid,
                 salesCategoryId: dryFishTypeId,

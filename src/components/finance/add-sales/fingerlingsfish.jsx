@@ -136,13 +136,12 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
 
   // Handle customer selection
   const handleSelectCustomer = (selectedCustomer) => {
-    const discount = selectedCustomer.category === "Marketer" ? 10 : 0;
     setFingerlingsData((prevData) => ({
       ...prevData,
       customerId: selectedCustomer.id,
       fullName: selectedCustomer.fullName,
       category: selectedCustomer.category,
-      discount: discount,
+      discount: 0,
     }));
     setBalance(selectedCustomer.balance);
     setCustomerSearch(`${selectedCustomer.fullName}`);
@@ -229,7 +228,7 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
         }],
         customerId: fingerlingsData.customerId,
         paymentType: fingerlingsData.paymentType?.toLowerCase(),
-        discount: fingerlingsData.discount || 0,
+        discount: fingerlingsData.category === "Marketer" ? 0 : (Number(fingerlingsData.discount) || 0),
         description: fingerlingsData.description,
         amountPaid: fingerlingsData.amountPaid,
         salesCategoryId: fingerlingsTypeId,

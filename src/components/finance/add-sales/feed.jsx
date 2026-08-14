@@ -224,13 +224,12 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
     };
 
     const handleSelectCustomer = (selectedCustomer) => {
-        const discount = selectedCustomer.category === "Marketer" ? '10%' : 0;
         setFeedData(prevData => ({
             ...prevData,
             customerId: selectedCustomer.id,
             fullName: selectedCustomer.fullName,
             category: selectedCustomer.category,
-            discount: discount
+            discount: 0
         }));
         setFilteredCustomer([]);
         setBalance(selectedCustomer.balance);
@@ -287,7 +286,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                     })),
                 customerId: feedData.customerId,
                 paymentType: feedData.paymentType?.toLowerCase(),
-                discount: feedData.discount || 0,
+                discount: feedData.category === 'Marketer' ? 0 : (Number(feedData.discount) || 0),
                 description: feedData.description,
                 amountPaid: feedData.amountPaid,
                 salesCategoryId: feedTypeId,
