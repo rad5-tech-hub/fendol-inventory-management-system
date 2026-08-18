@@ -27,7 +27,7 @@ const FEED_TYPE_OPTIONS = [
   'Broodstock Feed', 'Special / Others',
 ];
 
-const PACKAGE_UNIT_OPTIONS = ['kg', 'g', 'bags', 'units', 'L'];
+const PACKAGE_UNIT_OPTIONS = ['kg', 'g', 'bags', 'pieces', 'packs', 'sachets', 'units', 'L'];
 
 const MATERIAL_CATALOG = {
   'Maize': { unit: 'kg', unitCost: 220, swatch: '#F59E0B' },

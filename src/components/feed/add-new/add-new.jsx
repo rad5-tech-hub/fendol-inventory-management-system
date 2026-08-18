@@ -119,7 +119,14 @@ const AddFeed = () => {
                                 <Col md={12} lg={6} className="mb-4">
                                     <Form.Label className="fw-semibold">Unit</Form.Label>
                                     <CustomDropdown
-                                        options={[{ value: 'kg', label: 'Kg' }]}
+                                        options={[
+                                            { value: 'kg', label: 'Kg' },
+                                            { value: 'g', label: 'Gram' },
+                                            { value: 'bags', label: 'Bags' },
+                                            { value: 'pieces', label: 'Pieces' },
+                                            { value: 'packs', label: 'Packs' },
+                                            { value: 'sachets', label: 'Sachets' },
+                                        ]}
                                         value={formData.unit}
                                         onChange={(val) => handleInputChange({ target: { name: 'unit', value: val } })}
                                         placeholder="Select Unit"

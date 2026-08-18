@@ -11,6 +11,10 @@ import styles from './AddRawMaterialModal.module.scss';
 const UNIT_OPTIONS = [
   { value: 'kg', label: 'Kilogram (kg)' },
   { value: 'g', label: 'Gram (g)' },
+  { value: 'bags', label: 'Bags' },
+  { value: 'pieces', label: 'Pieces' },
+  { value: 'packs', label: 'Packs' },
+  { value: 'sachets', label: 'Sachets' },
 ];
 
 const defaultForm = {

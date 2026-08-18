@@ -243,6 +243,10 @@ export default function CreateProducts() {
                                         options={[
                                             { value: 'kg', label: 'Kilogram' },
                                             { value: 'g', label: 'Gram' },
+                                            { value: 'bags', label: 'Bags' },
+                                            { value: 'pieces', label: 'Pieces' },
+                                            { value: 'packs', label: 'Packs' },
+                                            { value: 'sachets', label: 'Sachets' },
                                         ]}
                                         value={formData.unit}
                                         onChange={(val) => handleInputChange({ target: { name: 'unit', value: val } })}

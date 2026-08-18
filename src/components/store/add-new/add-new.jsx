@@ -104,6 +104,10 @@ const AddStock = () => {
                                         options={[
                                             { value: 'kg', label: 'Kg (Kilogram)' },
                                             { value: 'g', label: 'G (Grams)' },
+                                            { value: 'bags', label: 'Bags' },
+                                            { value: 'pieces', label: 'Pieces' },
+                                            { value: 'packs', label: 'Packs' },
+                                            { value: 'sachets', label: 'Sachets' },
                                         ]}
                                     />
                                 </Col>

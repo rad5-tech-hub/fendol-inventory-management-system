@@ -40,7 +40,7 @@ export default function TransferFish() {
     const fetchPonds = async () => {
       setPondsLoading(true);
       try {
-        const res = await Api.get(`/fish-stages?siteId=all`);
+        const res = await Api.get(`/fish-stages`);
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setPondOptions(list);
       } catch {

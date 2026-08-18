@@ -314,6 +314,10 @@ export default function AddFeedModal({ show, onClose, onSuccess, editData }) {
                 options={[
                   { value: 'kg', label: 'Kg' },
                   { value: 'g', label: 'Gram' },
+                  { value: 'bags', label: 'Bags' },
+                  { value: 'pieces', label: 'Pieces' },
+                  { value: 'packs', label: 'Packs' },
+                  { value: 'sachets', label: 'Sachets' },
                 ]}
                 value={unit}
                 onChange={(val) => setUnit(val)}

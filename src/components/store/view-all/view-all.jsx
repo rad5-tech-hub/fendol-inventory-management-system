@@ -325,6 +325,10 @@ export default function UpdateStoreInventory() {
                   options={[
                     { value: 'kg', label: 'Kg (Kilogram)' },
                     { value: 'g', label: 'G (Grams)' },
+                    { value: 'bags', label: 'Bags' },
+                    { value: 'pieces', label: 'Pieces' },
+                    { value: 'packs', label: 'Packs' },
+                    { value: 'sachets', label: 'Sachets' },
                   ]}
                 />
               </Form.Group>
@@ -491,6 +495,10 @@ export default function UpdateStoreInventory() {
                       options={[
                         { value: 'kg', label: 'Kg (Kilogram)' },
                         { value: 'g', label: 'G (Grams)' },
+                        { value: 'bags', label: 'Bags' },
+                        { value: 'pieces', label: 'Pieces' },
+                        { value: 'packs', label: 'Packs' },
+                        { value: 'sachets', label: 'Sachets' },
                       ]}
                     />
                   </div>
