@@ -77,6 +77,13 @@ export default function SideBar({ show, handleClose }) {
 
   const isSuperAdmin = userTypes.includes('super_admin');
 
+  const siteTypeName = (s) => s?.type?.name || s?.type || s?.description || s?.typeName || s?.name || '';
+  const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
+  const hasHatcherySite = userSiteDetails.some(s => isHatcheryType(siteTypeName(s)));
+  const isHatcheryContext = isSuperAdmin
+    ? !!activeSite && isHatcheryType(siteTypeName(activeSite))
+    : hasHatcherySite;
+
   useEffect(() => {
     if (isSuperAdmin) {
       setUserSiteDetails([]);
@@ -293,10 +300,7 @@ export default function SideBar({ show, handleClose }) {
 
           {/* --- HATCHERY --- */}
           {(() => {
-            const siteTypeName = (s) => s?.type?.name || s?.type || s?.description || s?.typeName || s?.name || '';
-            const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
-            const hasHatcherySite = userSiteDetails.some(s => isHatcheryType(siteTypeName(s)));
-            const isActiveSiteHatchery = !activeSite || isHatcheryType(activeSite.type);
+            const isActiveSiteHatchery = !activeSite || isHatcheryType(siteTypeName(activeSite));
             return (isSuperAdmin || hasHatcherySite) && isActiveSiteHatchery;
           })() && (
             <>
@@ -325,9 +329,9 @@ export default function SideBar({ show, handleClose }) {
               {hasPermission(userTypes, 'batch-dashboard') && renderDirectLink("Batch Dashboard", "/batch-dashboard", <MdOutlineBarChart size={25} className="me-1" />)}
               {hasPermission(userTypes, 'manage-fish') && renderCard("fish_activities", "Fish Activities", <GiCirclingFish size={25} className="me-1" />,
                 <>
-                  {activeSite?.type?.toLowerCase() !== 'hatchery' && renderNavItem(activeSite?.type?.toLowerCase() === 'hatchery' ? "Transfer to Nursery" : "Add Fish", "/manage-fish/add-fish")}
+                  {!isHatcheryContext && renderNavItem("Add Fish", "/manage-fish/add-fish")}
                   {renderNavItem("Move/Sort Fish", "/manage-fish/move-fish")}
-                  {activeSite?.type?.toLowerCase() !== 'hatchery' && renderNavItem("Harvest", "/manage-fish/harvest-fish")}
+                  {!isHatcheryContext && renderNavItem("Harvest", "/manage-fish/harvest-fish")}
                   {renderNavItem("Mortality", "/manage-fish/damage-fish")}
                 </>
               )}
