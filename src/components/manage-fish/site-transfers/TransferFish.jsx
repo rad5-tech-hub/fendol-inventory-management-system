@@ -34,18 +34,13 @@ export default function TransferFish() {
   const otherSites = siteOptions.filter((s) => s.id !== activeSite?.id);
   const selectedSite = otherSites.find((s) => s.id === selectedSiteId) || null;
 
-  /* ── Fetch ponds from backend by specific siteId (never siteId=all) ── */
+  /* ── Fetch ponds across all sites so transfers can originate from any pond ── */
   useEffect(() => {
     let cancelled = false;
     const fetchPonds = async () => {
       setPondsLoading(true);
       try {
-        const siteId = activeSite?.id;
-        if (!siteId) {
-          if (!cancelled) { setPondOptions([]); setPondsLoading(false); setLoading(false); }
-          return;
-        }
-        const res = await Api.get(`/fish-stages?siteId=${siteId}`);
+        const res = await Api.get(`/fish-stages?siteId=all`);
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setPondOptions(list);
       } catch {
@@ -56,7 +51,7 @@ export default function TransferFish() {
     };
     fetchPonds();
     return () => { cancelled = true; };
-  }, [activeSite?.id]);
+  }, []);
 
   /* ── Fetch all sites from backend ── */
   useEffect(() => {

@@ -106,6 +106,32 @@ export default function ViewFish() {
   const [harvestForm, setHarvestForm] = useState({ siteId: resolvedSiteId, quantity: '', remarks: '' });
   const [submittingHarvest, setSubmittingHarvest] = useState(false);
   const [harvestError, setHarvestError] = useState('');
+  const [isHatcherySite, setIsHatcherySite] = useState(false);
+
+  /* ── Detect if the user's site is a hatchery (harvest/processing/feed hidden) ── */
+  useEffect(() => {
+    let cancelled = false;
+    const detectHatchery = async () => {
+      const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
+      if (isSuperAdmin) {
+        const type = activeSite?.type?.name || activeSite?.type || activeSite?.description || '';
+        if (!cancelled) setIsHatcherySite(isHatcheryType(type));
+        return;
+      }
+      try {
+        const res = await ApiV2.get('/v2/all-site');
+        const allSites = Array.isArray(res.data?.data) ? res.data.data : [];
+        const siteId = userSiteId || firstUserSiteId;
+        const match = allSites.find((s) => s.id === siteId);
+        const type = match?.type?.name || match?.type || match?.description || '';
+        if (!cancelled) setIsHatcherySite(isHatcheryType(type));
+      } catch {
+        if (!cancelled) setIsHatcherySite(false);
+      }
+    };
+    detectHatchery();
+    return () => { cancelled = true; };
+  }, [isSuperAdmin, activeSite?.id, userSiteId, firstUserSiteId]);
 
   const fetchPonds = async (siteId) => {
     if (!siteId) { setPondOptions([]); return; }
@@ -395,12 +421,12 @@ export default function ViewFish() {
   /* ── Stat card definitions ── */
   const statCards = [
     {
-      label: 'TOTAL RECEIVED',
-      value: `${formatNumber(totalFish)} pcs`,
-      sub: 'All incoming fish across transfers',
-      icon: <GiFishingNet size={18} />,
-      iconClass: styles.statIconMaroon,
-      tooltipText: `Total of ${formatNumber(totalFish)} fish transferred to your site across all incoming transfers.`,
+      label: 'STOCK REMAINING',
+      value: `${formatNumber(stockRemaining)} pcs`,
+      sub: 'Awaiting pond assignment',
+      icon: <FaExchangeAlt size={16} />,
+      iconClass: styles.statIconBlue,
+      tooltipText: `${formatNumber(stockRemaining)} fish are still awaiting pond assignment.`,
     },
     {
       label: 'TRANSFER RECORDS',
@@ -411,12 +437,12 @@ export default function ViewFish() {
       tooltipText: `${formatNumber(totalTransferRecords)} incoming transfer record${totalTransferRecords !== 1 ? 's' : ''} received.`,
     },
     {
-      label: 'STOCK REMAINING',
-      value: `${formatNumber(stockRemaining)} pcs`,
-      sub: 'Awaiting pond assignment',
-      icon: <FaExchangeAlt size={16} />,
-      iconClass: styles.statIconBlue,
-      tooltipText: `${formatNumber(stockRemaining)} fish are still awaiting pond assignment.`,
+      label: 'TOTAL RECEIVED',
+      value: `${formatNumber(totalFish)} pcs`,
+      sub: 'All incoming fish across transfers',
+      icon: <GiFishingNet size={18} />,
+      iconClass: styles.statIconMaroon,
+      tooltipText: `Total of ${formatNumber(totalFish)} fish transferred to your site across all incoming transfers.`,
     },
   ];
 
@@ -847,7 +873,8 @@ export default function ViewFish() {
 
                 {/* ── Move to Pond / Harvest buttons (right-aligned) ── */}
                 <div className="d-flex justify-content-end" style={{ marginBottom: '16px', gap: '10px' }}>
-                  <button
+                  {!isHatcherySite && (
+                    <button
                     onClick={openHarvestModal}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -862,6 +889,7 @@ export default function ViewFish() {
                   >
                     <GiFishingNet size={18} /> Harvest
                   </button>
+                  )}
                   <button
                     onClick={openMoveModal}
                     style={{
