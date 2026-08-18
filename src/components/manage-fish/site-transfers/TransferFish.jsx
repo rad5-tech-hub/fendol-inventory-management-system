@@ -13,6 +13,7 @@ import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 export default function TransferFish() {
   const [ConfirmDialog, confirm] = useConfirm();
   const activeSite = useSelector((store) => store.activeSite);
+  const isSuperAdmin = useSelector((store) => store.user?.userTypes?.includes('super_admin'));
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [pondsLoading, setPondsLoading] = useState(true);
@@ -34,13 +35,14 @@ export default function TransferFish() {
   const otherSites = siteOptions.filter((s) => s.id !== activeSite?.id);
   const selectedSite = otherSites.find((s) => s.id === selectedSiteId) || null;
 
-  /* ── Fetch ponds across all sites so transfers can originate from any pond ── */
+  /* ── Fetch ponds across all sites (super admins only) or scoped to user's site ── */
   useEffect(() => {
     let cancelled = false;
     const fetchPonds = async () => {
       setPondsLoading(true);
       try {
-        const res = await Api.get(`/fish-stages`);
+        const url = isSuperAdmin ? `/fish-stages?siteId=all` : `/fish-stages`;
+        const res = await Api.get(url);
         const list = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setPondOptions(list);
       } catch {
@@ -51,7 +53,7 @@ export default function TransferFish() {
     };
     fetchPonds();
     return () => { cancelled = true; };
-  }, []);
+  }, [isSuperAdmin]);
 
   /* ── Fetch all sites from backend ── */
   useEffect(() => {
