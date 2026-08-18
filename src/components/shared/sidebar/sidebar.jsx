@@ -25,16 +25,12 @@ const computeOpenFromPath = (path) => {
   }
   if (path.includes("/store")) open.store = true;
   if (path.includes("/products")) open.product = true;
-  if (path.includes("/showcase")) open.showcase = true;
   if (path.includes("/finance")) {
     open.finance = true;
     open.sales = true;
-    if (path.includes('/finance/supplier')) open.supplier = true;
     if (path.includes('/finance/staff')) open.staff = true;
   }
   if (path.includes("/customer")) open.customer = true;
-  if (path.includes("/referral")) open.referral = true;
-  if (path.includes("/mlm")) open.mlm = true;
   if (path.includes("/complaints")) open.complaints = true;
   return open;
 };
@@ -49,9 +45,8 @@ const scrollActiveIntoView = (containerEl) => {
     activeEl.scrollIntoView({ block: 'center', behavior: 'auto' });
   }
 };
-import { FaChevronRight, FaChevronDown, FaMapMarkerAlt, FaCircle, FaHouseUser, FaExchangeAlt, FaUsers, FaTrophy, FaTree, FaHandHoldingUsd, FaUserTie, FaMoneyCheckAlt, FaClock, FaClipboardList, FaExclamationTriangle } from "react-icons/fa";
+import { FaChevronRight, FaChevronDown, FaMapMarkerAlt, FaCircle, FaHouseUser, FaExchangeAlt, FaTrophy, FaUserTie, FaMoneyCheckAlt, FaClock, FaClipboardList, FaExclamationTriangle } from "react-icons/fa";
 import { IoGridOutline } from "react-icons/io5";
-import { BsShopWindow } from "react-icons/bs";
 import { LuClipboardCheck, LuClipboardPenLine } from "react-icons/lu";
 import { GiCannedFish, GiCirclingFish, GiFriedFish, GiChipsBag, GiDamagedHouse, GiPolarBear, GiFishingNet, GiFishing, GiDeadHead, GiFoodChain } from "react-icons/gi";
 import { TbFishOff } from "react-icons/tb";
@@ -134,16 +129,12 @@ export default function SideBar({ show, handleClose }) {
     }
     if (path.includes("/store")) updates.store = true;
     if (path.includes("/products")) updates.product = true;
-    if (path.includes("/showcase")) updates.showcase = true;
     if (path.includes("/finance")) {
       updates.finance = true;
       updates.sales = true;
-      if (path.includes('/finance/supplier')) updates.supplier = true;
       if (path.includes('/finance/staff')) updates.staff = true;
     }
     if (path.includes("/customer")) updates.customer = true;
-    if (path.includes("/referral")) updates.referral = true;
-    if (path.includes("/mlm")) updates.mlm = true;
     if (path.includes("/complaints")) updates.complaints = true;
 
     const expandingKey = Object.keys(updates).find(k => updates[k] && !open[k]);
@@ -384,7 +375,7 @@ export default function SideBar({ show, handleClose }) {
           )}
 
           {/* --- INVENTORY --- */}
-          {(hasPermission(userTypes, 'store') || hasPermission(userTypes, 'products') || hasPermission(userTypes, 'showcase')) && (
+          {(hasPermission(userTypes, 'store') || hasPermission(userTypes, 'products')) && (
             <>
               <span className={styles.sectionLabel}>INVENTORY</span>
               {hasPermission(userTypes, 'store') && renderCard("store", "Store", <RiStoreFill size={25} className="me-1" />,
@@ -399,12 +390,6 @@ export default function SideBar({ show, handleClose }) {
                   {renderNavItem("View", "/products/view-all")}
                 </>
               )}
-              {hasPermission(userTypes, 'showcase') && renderCard("showcase", "Showcase", <BsShopWindow size={25} className="me-1" />,
-                <>
-                  {renderNavItem("Whole Showcase", "/showcase/whole-showcase")}
-                  {renderNavItem("Broken Showcase", "/showcase/broken-showcase")}
-                </>
-              )}
             </>
           )}
 
@@ -414,7 +399,6 @@ export default function SideBar({ show, handleClose }) {
             hasPermission(userTypes, 'finance:ledger') ||
             hasPermission(userTypes, 'finance:cash-drawer') ||
             hasPermission(userTypes, 'customer') ||
-            hasPermission(userTypes, 'supplier') ||
             hasPermission(userTypes, 'staff')) && (
             <>
               <span className={styles.sectionLabel}>FINANCE</span>
@@ -433,46 +417,11 @@ export default function SideBar({ show, handleClose }) {
                   {renderNavItem("All Customer", "/customer/view-all")}
                 </>
               )}
-              {hasPermission(userTypes, 'supplier') && renderCard("supplier", "Supplier", <FaHandHoldingUsd size={25} className="me-1" />,
-                <>
-                  {renderNavItem("New Supplier", "/finance/supplier/new")}
-                  {renderNavItem("All Supplier", "/finance/supplier/view-all")}
-                </>
-              )}
               {hasPermission(userTypes, 'finance:cash-drawer') && renderDirectLink("Cash Drawer", "/finance/cash-drawer", <MdAttachMoney size={25} className="me-1" />)}
               {hasPermission(userTypes, 'staff') && renderCard("staff", "Staff", <RiTeamFill size={25} className="me-1" />,
                 <>
                   {renderNavItem("Staff Directory", "/finance/staff/directory")}
                   {renderNavItem("Attendance", "/finance/staff/attendance")}
-                </>
-              )}
-            </>
-          )}
-
-          {/* --- REFERRAL SYSTEM (super admins only for now) --- */}
-          {isSuperAdmin && hasPermission(userTypes, 'referral') && (
-            <>
-              <span className={styles.sectionLabel}>REFERRAL SYSTEM</span>
-              {renderCard("referral", "Referral System", <FaUsers size={25} className="me-1" />,
-                <>
-                  {renderNavItem("Dashboard", "/referral/dashboard")}
-                  {renderNavItem("All Agents", "/referral/agents")}
-                  {renderNavItem("Payout requests and Histories", "/referral/payouts")}
-                </>
-              )}
-            </>
-          )}
-
-          {/* --- MLM (super admins only for now) --- */}
-          {isSuperAdmin && hasPermission(userTypes, 'mlm') && (
-            <>
-              <span className={styles.sectionLabel}>MLM</span>
-              {renderCard("mlm", "MLM", <FaTree size={25} className="me-1" />,
-                <>
-                  {renderNavItem("Network Tree (Dashboard)", "/mlm/tree")}
-                  {renderNavItem("Leaders, Downlines and commissions", "/mlm/leaders")}
-                  {renderNavItem("Payout Requests", "/mlm/payouts")}
-                  {renderNavItem("Earning report", "/mlm/earnings")}
                 </>
               )}
             </>
