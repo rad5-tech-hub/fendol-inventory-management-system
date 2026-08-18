@@ -5,7 +5,7 @@ import {
   IoChevronDown,
 } from 'react-icons/io5';
 import {
-  FiDownload, FiFilter, FiSearch, FiRefreshCw, FiPlus,
+  FiFilter, FiSearch, FiRefreshCw, FiPlus,
   FiChevronLeft, FiChevronRight, FiEdit2,
 } from 'react-icons/fi';
 import { GiChipsBag, GiCycle } from 'react-icons/gi';
@@ -235,10 +235,6 @@ export default function FeedInventory() {
                 <button className={styles.exportBtn} onClick={() => { setEditFeed(null); setShowAddFeedModal(true); }}>
                   <FiPlus size={14} />
                   Add Feed
-                </button>
-                <button className={styles.secBtn}>
-                  <FiDownload size={14} />
-                  Stock In (Purchase)
                 </button>
               </div>
             </div>
