@@ -17,6 +17,7 @@ const computeOpenFromPath = (path) => {
   if (path.includes("/manage-fish")) open.fish_activities = true;
   if (path.includes("/site-transfers")) open.site_transfers = true;
   if (path.includes("/fish-processes")) open.processing = true;
+  if (path.includes("/showcase")) open.showcase = true;
   if (path.includes("/feed")) {
     open.feed_management = true;
     if (path.includes('/feed/production')) open.feed_production = true;
@@ -50,6 +51,7 @@ import { IoGridOutline } from "react-icons/io5";
 import { LuClipboardCheck, LuClipboardPenLine } from "react-icons/lu";
 import { GiCannedFish, GiCirclingFish, GiFriedFish, GiChipsBag, GiDamagedHouse, GiPolarBear, GiFishingNet, GiFishing, GiDeadHead, GiFoodChain } from "react-icons/gi";
 import { TbFishOff } from "react-icons/tb";
+import { GiTropicalFish } from "react-icons/gi";
 import { RiStoreFill, RiTeamFill } from "react-icons/ri";
 import { MdOutlineBarChart, MdOutlineInventory2, MdOutlinePeople, MdAttachMoney, MdPersonAdd, MdPointOfSale } from "react-icons/md";
 import { SiGoogleanalytics } from "react-icons/si";
@@ -121,6 +123,7 @@ export default function SideBar({ show, handleClose }) {
     if (path.includes("/manage-fish")) updates.fish_activities = true;
     if (path.includes("/site-transfers")) updates.site_transfers = true;
     if (path.includes("/fish-processes")) updates.processing = true;
+    if (path.includes("/showcase")) updates.showcase = true;
     if (path.includes("/feed")) {
       updates.feed_management = true;
       if (path.includes('/feed/production')) updates.feed_production = true;
@@ -344,6 +347,19 @@ export default function SideBar({ show, handleClose }) {
                 <>
                   {renderNavItem("Create Process Batch", "/fish-processes/process-fish")}
                   {renderNavItem("Process records", "/fish-processes/view-summary")}
+                </>
+              )}
+            </>
+          )}
+
+          {/* --- SHOWCASE (main farm admins only) --- */}
+          {hasPermission(userTypes, 'showcase') && (
+            <>
+              <span className={styles.sectionLabel}>SHOWCASE</span>
+              {renderCard("showcase", "Showcase", <GiTropicalFish size={25} className="me-1" />,
+                <>
+                  {renderNavItem("Whole Showcase", "/showcase/whole-showcase")}
+                  {renderNavItem("Broken Showcase", "/showcase/broken-showcase")}
                 </>
               )}
             </>

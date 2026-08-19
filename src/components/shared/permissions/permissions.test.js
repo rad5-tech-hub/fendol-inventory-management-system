@@ -87,7 +87,7 @@ describe('hasPermission', () => {
     expect(hasPermission(['super_admin'], 'admin')).toBe(true)
     expect(hasPermission(['farm_manager'], 'hatchery')).toBe(true)
     expect(hasPermission(['store_keeper'], 'store')).toBe(true)
-    expect(hasPermission(['sales_manager'], 'showcase')).toBe(true)
+    expect(hasPermission(['farm_manager'], 'showcase')).toBe(true)
     expect(hasPermission(['sales_manager'], 'finance:add-sales')).toBe(true)
     expect(hasPermission(['sales_manager'], 'finance:add-expenses')).toBe(true)
     expect(hasPermission(['sales_manager'], 'finance:cash-drawer')).toBe(true)

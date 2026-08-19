@@ -64,8 +64,8 @@ const ACCESS = {
 	// ── Store / Inventory ──
 	store: ['super_admin', 'farm_manager', 'store_keeper'],
 
-	// ── Showcase ──
-	showcase: ['super_admin', 'farm_manager', 'store_keeper', 'sales_manager'],
+	// ── Showcase (main farm admins only) ──
+	showcase: ['super_admin', 'farm_manager'],
 
 	// ── Finance ──
 	'finance:add-sales': ['super_admin', 'farm_manager', 'sales_manager', 'finance'],
