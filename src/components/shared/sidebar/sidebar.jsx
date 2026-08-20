@@ -353,7 +353,7 @@ export default function SideBar({ show, handleClose }) {
           )}
 
           {/* --- SHOWCASE (main farm admins only) --- */}
-          {hasPermission(userTypes, 'showcase') && (
+          {!isHatcheryContext && hasPermission(userTypes, 'showcase') && (
             <>
               <span className={styles.sectionLabel}>SHOWCASE</span>
               {renderCard("showcase", "Showcase", <GiTropicalFish size={25} className="me-1" />,
