@@ -103,7 +103,7 @@ export default function UpdateStoreInventory() {
     try {
       let response;
       if (modalType === 'add') {
-        const resolvedSiteId = user?.siteId || user?.userSites?.[0]?.id || '';
+        const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
         const payload = { price: Number(price), quantity: Number(quantity) };
         if (resolvedSiteId) payload.siteId = resolvedSiteId;
         response = await Api.post(`/store/${id}`, payload);
