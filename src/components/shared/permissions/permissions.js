@@ -65,7 +65,7 @@ const ACCESS = {
 	store: ['super_admin', 'farm_manager', 'store_keeper'],
 
 	// ── Showcase (main farm admins only) ──
-	showcase: ['super_admin', 'farm_manager'],
+	showcase: ['super_admin', 'farm_manager', 'sales_manager'],
 
 	// ── Finance ──
 	'finance:add-sales': ['super_admin', 'farm_manager', 'sales_manager', 'finance'],
