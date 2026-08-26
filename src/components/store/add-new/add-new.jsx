@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 import styles from '../store.module.scss'; // Adjust the import as needed
 import { toast, ToastContainer } from 'react-toastify';
@@ -14,14 +15,23 @@ const AddStock = () => {
         name: '',
         unit: '',
         threshold: '', // Changed to empty string for controlled input
+        weightPerItem: '',
     });
+    const user = useSelector((store) => store.user);
+    const activeSite = useSelector((store) => store.activeSite);
+    const userTypes = user?.userTypes || [];
+    const isSuperAdmin = userTypes.includes('super_admin');
     const navigate = useNavigate();
     const [loader, setLoader] = useState(false);
     const [showSidebar, setShowSidebar] = useState(false); // Added for sidebar toggle
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: name === 'threshold' ? (value === '' ? '' : Number(value)) : value });
+        if (name === 'threshold' || name === 'weightPerItem') {
+            setFormData({ ...formData, [name]: value === '' ? '' : Number(value) });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleAddStock = async (e) => {
@@ -32,12 +42,15 @@ const AddStock = () => {
         });
 
         try {
-            const response = await Api.post('/create-store', formData);
+            const payload = { ...formData };
+            if (isSuperAdmin && activeSite?.id) payload.siteId = activeSite.id;
+            const response = await Api.post('/create-store', payload);
 
             setFormData({
                 name: '',
                 unit: '',
                 threshold: '',
+                weightPerItem: '',
             });
 
             toast.update(loadingToast, {

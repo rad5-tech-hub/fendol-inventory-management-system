@@ -43,7 +43,7 @@ export default function UpdateStoreInventory() {
   const [pondSearch, setPondSearch] = useState('');
   const [showPondDropdown, setShowPondDropdown] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newStock, setNewStock] = useState({ name: '', unit: '', threshold: '', siteId: '' });
+  const [newStock, setNewStock] = useState({ name: '', unit: '', threshold: '', siteId: '', weightPerItem: '' });
   const [sites, setSites] = useState([]);
   const [sitesLoading, setSitesLoading] = useState(false);
 
@@ -81,9 +81,17 @@ export default function UpdateStoreInventory() {
     setAddLoader(true);
     const loadingToast = toast.loading("Adding stock...", { className: 'dark-toast' });
     try {
-      await Api.post('/create-store', newStock);
+      const payload = {
+        name: newStock.name,
+        unit: newStock.unit,
+        threshold: Number(newStock.threshold),
+        weightPerItem: Number(newStock.weightPerItem),
+      };
+      if (isSuperAdmin && newStock.siteId) payload.siteId = newStock.siteId;
+
+      await Api.post('/create-store', payload);
       toast.update(loadingToast, { render: "Stock added successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
-      setNewStock({ name: '', unit: '', threshold: '', siteId: '' });
+      setNewStock({ name: '', unit: '', threshold: '', siteId: '', weightPerItem: '' });
       setShowAddModal(false);
       fetchData();
     } catch (error) {
@@ -223,53 +231,55 @@ export default function UpdateStoreInventory() {
         <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0 }}>
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
-              <h4 className="m-0">View All</h4>
-              <button className={`fw-semibold ${styles.addStoreBtn}`} onClick={() => setShowAddModal(true)}>Add store</button>
-            </div>
-            <ToastContainer />
+              <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
+                <h4 className="m-0">View All</h4>
+                <button className={`fw-semibold ${styles.addStoreBtn}`} onClick={() => setShowAddModal(true)}>Add store</button>
+              </div>
+              <ToastContainer />
 
-            {loading && <SkeletonTable cols={6} rows={5} />}
+              {loading && <SkeletonTable cols={6} rows={5} />}
 
-            {error && <ErrorState message={error} />}
+              {error && <ErrorState message={error} />}
 
-            {!loading && !error && products.length === 0 && (
-              <EmptyState title="No store available" description="Add new stock to get started." />
-            )}
+              {!loading && !error && products.length === 0 && (
+                <EmptyState title="No store available" description="Add new stock to get started." />
+              )}
 
-            {!loading && !error && products.length > 0 && (
-              <DataTable
-                columns={[
-                  { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
-                  { key: 'name', label: 'NAME' },
-                  { key: 'unit', label: 'UNIT' },
-                  { key: 'quantity', label: 'QUANTITY', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
-                  { key: 'threshold', label: 'THRESHOLD VALUE', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
-                  { key: 'status', label: 'STATUS', render: (value) => (
-                    <span className={
-                      value === 'in stock'
-                        ? 'text-success text-uppercase fw-semibold'
-                        : value === 'out of stock'
-                        ? 'text-danger text-uppercase fw-semibold'
-                        : value === 'low stock'
-                        ? 'text-warning text-uppercase fw-semibold'
-                        : ''
-                    }>
-                      {value}
-                    </span>
-                  )},
-                ]}
-                data={currentProducts}
-                actions={(row) => (
-                  <PortalDropdown btnClass={styles.threeDotBtn} items={[
-                    { label: 'Restock Store', onClick: () => handleAddClick(row) },
-                    { label: 'Use', onClick: () => handleRemoveClick(row) },
-                    { divider: true },
-                    { label: 'Edit', onClick: () => handleEditClick(row) },
-                  ]} />
-                )}
-              />
-            )}
+              {!loading && !error && products.length > 0 && (
+                <DataTable
+                  columns={[
+                    { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
+                    { key: 'name', label: 'NAME' },
+                    { key: 'unit', label: 'UNIT' },
+                    { key: 'quantity', label: 'QUANTITY', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
+                    { key: 'threshold', label: 'THRESHOLD VALUE', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
+                    {
+                      key: 'status', label: 'STATUS', render: (value) => (
+                        <span className={
+                          value === 'in stock'
+                            ? 'text-success text-uppercase fw-semibold'
+                            : value === 'out of stock'
+                              ? 'text-danger text-uppercase fw-semibold'
+                              : value === 'low stock'
+                                ? 'text-warning text-uppercase fw-semibold'
+                                : ''
+                        }>
+                          {value}
+                        </span>
+                      )
+                    },
+                  ]}
+                  data={currentProducts}
+                  actions={(row) => (
+                    <PortalDropdown btnClass={styles.threeDotBtn} items={[
+                      { label: 'Restock Store', onClick: () => handleAddClick(row) },
+                      { label: 'Use', onClick: () => handleRemoveClick(row) },
+                      { divider: true },
+                      { label: 'Edit', onClick: () => handleEditClick(row) },
+                    ]} />
+                  )}
+                />
+              )}
             </div>
             {!loading && !error && products.length > 0 && (
               <div className="d-flex justify-content-center" style={{ background: '#fff', borderTop: '1px solid #e5e7eb' }}>
@@ -345,18 +355,32 @@ export default function UpdateStoreInventory() {
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Site</Form.Label>
-                <CustomDropdown
+                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Weight Per Item</Form.Label>
+                <Form.Control
+                  placeholder="Enter weight per item"
+                  type="number"
                   required
-                  value={newStock.siteId}
-                  onChange={(value) => setNewStock({ ...newStock, siteId: value })}
+                  min="0"
+                  value={newStock.weightPerItem}
+                  onChange={(e) => setNewStock({ ...newStock, weightPerItem: e.target.value === '' ? '' : Number(e.target.value) })}
                   className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  disabled={sitesLoading}
-                  loading={sitesLoading}
-                  placeholder="Select Site"
-                  options={sites.map(site => ({ value: site.id, label: site.name }))}
                 />
               </Form.Group>
+              {isSuperAdmin && (
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Site</Form.Label>
+                  <CustomDropdown
+                    required
+                    value={newStock.siteId}
+                    onChange={(value) => setNewStock({ ...newStock, siteId: value })}
+                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                    disabled={sitesLoading}
+                    loading={sitesLoading}
+                    placeholder="Select Site"
+                    options={sites.map(site => ({ value: site.id, label: site.name }))}
+                  />
+                </Form.Group>
+              )}
             </Modal.Body>
             <Modal.Footer className="border-0 pt-0">
               <button type="button" className="btn btn-secondary shadow-none fw-semibold" onClick={() => setShowAddModal(false)} disabled={addLoader}>Cancel</button>
