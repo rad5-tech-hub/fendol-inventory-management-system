@@ -13,6 +13,7 @@ import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 export default function TransferFish() {
   const [ConfirmDialog, confirm] = useConfirm();
   const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
   const isSuperAdmin = useSelector((store) => store.user?.userTypes?.includes('super_admin'));
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -32,7 +33,8 @@ export default function TransferFish() {
   const [description, setDescription] = useState("");
 
   const selectedPond = pondOptions.find((p) => p.id === selectedPondId) || null;
-  const otherSites = siteOptions.filter((s) => s.id !== activeSite?.id);
+  const userSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || user?.userSites?.[0] || '');
+  const otherSites = siteOptions.filter((s) => s.id !== userSiteId && String(s.id) !== String(userSiteId));
   const selectedSite = otherSites.find((s) => s.id === selectedSiteId) || null;
 
   /* ── Fetch ponds across all sites (super admins only) or scoped to user's site ── */
@@ -61,7 +63,7 @@ export default function TransferFish() {
     const fetchSites = async () => {
       setSitesLoading(true);
       try {
-        const res = await ApiV2.get('/v2/all-site');
+        const res = await ApiV2.get('/v2/fish-transfer/all-site');
         const data = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) setSiteOptions(data);
       } catch {
@@ -74,10 +76,10 @@ export default function TransferFish() {
     return () => { cancelled = true; };
   }, []);
 
-  /* ── Clear destination site if it matches the pond's site ── */
+  /* ── Clear destination site if it matches the user's own site ── */
   useEffect(() => {
-    if (selectedSiteId === activeSite?.id) setSelectedSiteId('');
-  }, [selectedSiteId, activeSite?.id, siteOptions]);
+    if (selectedSiteId && (selectedSiteId === userSiteId || String(selectedSiteId) === String(userSiteId))) setSelectedSiteId('');
+  }, [selectedSiteId, userSiteId, siteOptions]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
