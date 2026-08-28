@@ -1,548 +1,420 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from 'react-redux';
+import {
+  FiChevronLeft, FiChevronRight, FiSearch, FiRefreshCw, FiPlus,
+} from 'react-icons/fi';
+import { FaExclamationTriangle } from 'react-icons/fa';
+import { GiCardboardBox } from 'react-icons/gi';
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
-import 'bootstrap/dist/css/bootstrap.min.css';
-import styles from '../store.module.scss';
-import Api, { ApiV2 } from "../../shared/api/apiLink";
-import { Modal, Form, Button, Spinner } from 'react-bootstrap';
-import ErrorState from "../../shared/error-state/ErrorState";
-import EmptyState from "../../shared/empty-state/EmptyState";
 import PortalDropdown from "../../shared/portal-dropdown/PortalDropdown";
-import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
-import ReactPaginate from 'react-paginate';
+import AddStockModal from './AddStockModal';
+import RestockStoreModal from './RestockStoreModal';
+import UseStoreModal from './UseStoreModal';
+import EditStoreModal from './EditStoreModal';
+import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import feedStyles from '../../feed/feed.module.scss';
+import styles from './store-view-all.module.scss';
+
+const f = (n) => new Intl.NumberFormat().format(n);
+
+const STATUS_STYLES = {
+  'in stock': { bg: '#DCFCE7', color: '#15803D' },
+  'low stock': { bg: '#FEF3C7', color: '#B45309' },
+  'out of stock': { bg: '#FEE2E2', color: '#DC2626' },
+};
+
+const nameIconColors = [
+  '#16A34A', '#F97316', '#2563EB', '#7C3AED', '#0D9488',
+  '#EAB308', '#DC2626', '#8B5CF6', '#EC4899', '#14B8A6',
+];
 
 export default function UpdateStoreInventory() {
   const activeSite = useSelector((store) => store.activeSite);
   const user = useSelector((store) => store.user);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const isSuperAdmin = userTypes.includes('super_admin');
+  const [showSidebar, setShowSidebar] = useState(false);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [fetchError, setFetchError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 45;
-  const [stages, setStages] = useState([]);
-  const [quantity, setQuantity] = useState(null);
-  const [quantityUsed, setQuantityUsed] = useState(null);
-  const [price, setPrice] = useState(null);
-  const [pondId, setPondId] = useState('');
-  const [stage, setStage] = useState('');
-  const [threshold, setThreshold] = useState(null);
-  const [unit, setUnit] = useState('');
-  const [disabled, setDisabled] = useState(false);
-  const [addLoader, setAddLoader] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [pondSearch, setPondSearch] = useState('');
-  const [showPondDropdown, setShowPondDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newStock, setNewStock] = useState({ name: '', unit: '', threshold: '', siteId: '', weightPerItem: '' });
-  const [sites, setSites] = useState([]);
-  const [sitesLoading, setSitesLoading] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [restockProduct, setRestockProduct] = useState(null);
+  const [showUseModal, setShowUseModal] = useState(false);
+  const [useProduct, setUseProduct] = useState(null);
 
-  const formatWithCommas = (value) => {
-    if (value === null || value === '') return '';
-    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
+  const toggleSidebar = () => setShowSidebar(!showSidebar);
+  const handleCloseSidebar = () => setShowSidebar(false);
 
-  const fetchData = async () => {
+  const fetchProducts = async () => {
+    setLoading(true);
+    setFetchError(null);
     try {
-      const response = await Api.get('/stores');
-      setProducts(response.data.data);
+      const res = await Api.get('/stores');
+      const data = res.data?.data;
+      if (Array.isArray(data)) {
+        setProducts(data);
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (err) {
-      setError('Failed to fetch data. Please try again.');
+      if (!err.response) {
+        setFetchError('Network error. Please check your internet connection and try again.');
+      } else {
+        setFetchError(
+          err.response?.data?.response_message ||
+          err.response?.data?.message ||
+          'Failed to load store items. Please try again.'
+        );
+      }
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSites = async () => {
-    setSitesLoading(true);
-    try {
-      const res = await ApiV2.get('/v2/all-site');
-      const data = Array.isArray(res.data?.data) ? res.data.data : [];
-      setSites(data);
-    } catch {
-      setSites([]);
-    } finally {
-      setSitesLoading(false);
-    }
-  };
-
-  const handleAddNewStock = async (e) => {
-    e.preventDefault();
-    setAddLoader(true);
-    const loadingToast = toast.loading("Adding stock...", { className: 'dark-toast' });
-    try {
-      const payload = {
-        name: newStock.name,
-        unit: newStock.unit,
-        threshold: Number(newStock.threshold),
-        weightPerItem: Number(newStock.weightPerItem),
-      };
-      if (isSuperAdmin && newStock.siteId) payload.siteId = newStock.siteId;
-
-      await Api.post('/create-store', payload);
-      toast.update(loadingToast, { render: "Stock added successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
-      setNewStock({ name: '', unit: '', threshold: '', siteId: '', weightPerItem: '' });
-      setShowAddModal(false);
-      fetchData();
-    } catch (error) {
-      toast.update(loadingToast, { render: error.response?.data?.message || "Error adding stock. Please try again.", type: "error", isLoading: false, autoClose: 3000, className: 'dark-toast' });
-    } finally {
-      setAddLoader(false);
-    }
-  };
-
-  const handleSaveClick = async () => {
-    const feedName = selectedProduct?.name;
-    const id = selectedProduct?.id;
-    setDisabled(true);
-
-    const loadingToast = toast.loading("Processing your request...", { className: 'dark-toast' });
-
-    try {
-      let response;
-      if (modalType === 'add') {
-        const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0]?.id || '');
-        const payload = { price: Number(price), quantity: Number(quantity) };
-        if (resolvedSiteId) payload.siteId = resolvedSiteId;
-        response = await Api.post(`/store/${id}`, payload);
-        toast.update(loadingToast, { render: "Store topped up successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
-      } else if (modalType === 'remove') {
-        response = await Api.put(`/use-store-item/${id}`, { pondId, quantityUsed: Number(quantityUsed) });
-        toast.update(loadingToast, { render: "Store removed successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
-      } else if (modalType === 'edit') {
-        if (!unit) {
-          toast.update(loadingToast, { render: "Please select a unit.", type: "error", isLoading: false, autoClose: 3000, className: 'dark-toast' });
-          setDisabled(false);
-          return;
-        }
-        response = await Api.patch(`/edit-store-threshold/${id}`, { name: selectedProduct?.name, unit, threshold: Number(threshold) });
-        toast.update(loadingToast, { render: "Store edited successfully!", type: "success", isLoading: false, autoClose: 3000, className: 'dark-toast' });
-      }
-
-      setQuantity(null);
-      setQuantityUsed(null);
-      setPrice(null);
-      setPondId('');
-      setStage('');
-      setThreshold(null);
-      setUnit('');
-      setPondSearch('');
-      fetchData();
-      setShowModal(false);
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || "Error processing the request. Please try again.";
-      toast.update(loadingToast, { render: errorMessage, type: "error", isLoading: false, autoClose: 6000, className: 'dark-toast' });
-    } finally {
-      setDisabled(false);
-    }
-  };
-
   useEffect(() => {
-    const fetchStages = async () => {
-      try {
-        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
-        const response = await Api.get(`/fish-stages?siteId=${siteId}`);
-        if (Array.isArray(response.data.data)) {
-          const filteredStages = response.data.data.filter(pond => pond.quantity >= 1);
-          setStages(filteredStages);
-        } else {
-          throw new Error('Expected an array of stages');
-        }
-      } catch (err) {
-        console.log(err.response?.data?.message || 'Failed to fetch stages.');
-      }
-    };
-
-    fetchStages();
-    fetchSites();
-    fetchData();
+    fetchProducts();
   }, []);
 
-  const handleAddClick = (product) => {
-    setSelectedProduct(product);
-    setModalType('add');
-    setShowModal(true);
+  const filteredRows = products.filter((r) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (query) {
+      const nameMatch = (r.name || '').toLowerCase().includes(query);
+      const unitMatch = (r.unit || '').toLowerCase().includes(query);
+      if (!nameMatch && !unitMatch) return false;
+    }
+    return true;
+  });
+
+  const totalQuantity = products.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
+  const filteredQuantity = filteredRows.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
+
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
   };
 
-  const handleRemoveClick = (product) => {
-    setSelectedProduct(product);
-    setModalType('remove');
-    setShowModal(true);
+  const resetFilters = () => {
+    setSearchQuery('');
+    setCurrentPage(0);
   };
 
-  const handleEditClick = (product) => {
-    setSelectedProduct(product);
-    setModalType('edit');
-    setUnit(product?.unit || '');
-    setThreshold(product?.threshold ?? null);
-    setShowModal(true);
-  };
-
-  const formatDate = (isoDate) => {
-    const date = new Date(isoDate);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-  };
-
-  const handlePageChange = (data) => {
-    setCurrentPage(data.selected);
-  };
-
-  const handlePondSearchChange = (e) => {
-    setPondSearch(e.target.value);
-    setShowPondDropdown(true);
-  };
-
-  const handlePondSelect = (pond) => {
-    setPondId(pond.id);
-    setStage(pond.title);
-    setPondSearch(pond.title);
-    setShowPondDropdown(false);
-  };
-
-  const filteredPonds = stages.filter(stage =>
-    stage.title.toLowerCase().includes(pondSearch.toLowerCase())
-  );
-
-  const currentProducts = products.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-
-  const toggleSidebar = () => setShowSidebar(!showSidebar);
-  const handleCloseSidebar = () => setShowSidebar(false);
+  const currentProducts = filteredRows.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const pageCount = Math.ceil(filteredRows.length / itemsPerPage);
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <section className={`${feedStyles.body}`}>
       <div className="sticky-top">
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
-        <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
-          <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
+      <div className="d-flex gap-2">
+        <div className={`${feedStyles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
+          <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
+        <section className={`${feedStyles.content} flex-grow-1`}>
+          <main className={styles.pageWrapper}>
+            <ToastContainer />
 
-        <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0 }}>
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-              <div className="d-flex justify-content-between align-items-center mt-3 mb-5">
-                <h4 className="m-0">View All</h4>
-                <button className={`fw-semibold ${styles.addStoreBtn}`} onClick={() => setShowAddModal(true)}>Add store</button>
-              </div>
-              <ToastContainer />
-
-              {loading && <SkeletonTable cols={6} rows={5} />}
-
-              {error && <ErrorState message={error} />}
-
-              {!loading && !error && products.length === 0 && (
-                <EmptyState title="No store available" description="Add new stock to get started." />
-              )}
-
-              {!loading && !error && products.length > 0 && (
-                <DataTable
-                  columns={[
-                    { key: 'createdAt', label: 'DATE CREATED', render: (value) => formatDate(value) },
-                    { key: 'name', label: 'NAME' },
-                    { key: 'unit', label: 'UNIT' },
-                    { key: 'quantity', label: 'QUANTITY', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
-                    { key: 'threshold', label: 'THRESHOLD VALUE', render: (value) => value != null ? Number(value).toLocaleString() : '—' },
-                    {
-                      key: 'status', label: 'STATUS', render: (value) => (
-                        <span className={
-                          value === 'in stock'
-                            ? 'text-success text-uppercase fw-semibold'
-                            : value === 'out of stock'
-                              ? 'text-danger text-uppercase fw-semibold'
-                              : value === 'low stock'
-                                ? 'text-warning text-uppercase fw-semibold'
-                                : ''
-                        }>
-                          {value}
-                        </span>
-                      )
-                    },
-                  ]}
-                  data={currentProducts}
-                  actions={(row) => (
-                    <PortalDropdown btnClass={styles.threeDotBtn} items={[
-                      { label: 'Restock Store', onClick: () => handleAddClick(row) },
-                      { label: 'Use', onClick: () => handleRemoveClick(row) },
-                      { divider: true },
-                      { label: 'Edit', onClick: () => handleEditClick(row) },
-                    ]} />
-                  )}
-                />
-              )}
+            {/* ── Breadcrumb ── */}
+            <div className={styles.breadcrumb}>
+              <span className={styles.breadcrumbItem}>Inventory</span>
+              <span className={styles.breadcrumbSep}>&gt;</span>
+              <span className={styles.breadcrumbActive}>Store Inventory</span>
             </div>
-            {!loading && !error && products.length > 0 && (
-              <div className="d-flex justify-content-center" style={{ background: '#fff', borderTop: '1px solid #e5e7eb' }}>
-                <ReactPaginate
-                  previousLabel={"< "}
-                  nextLabel={" >"}
-                  breakLabel={"..."}
-                  pageCount={Math.ceil(products.length / itemsPerPage)}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={3}
-                  onPageChange={handlePageChange}
-                  containerClassName={"pagination"}
-                  pageClassName={"page-item"}
-                  pageLinkClassName={"page-link"}
-                  previousClassName={"page-item"}
-                  previousLinkClassName={"page-link"}
-                  nextClassName={"page-item"}
-                  nextLinkClassName={"page-link"}
-                  breakClassName={"page-item"}
-                  breakLinkClassName={"page-link"}
-                  activeClassName={"active"}
+
+            {/* ── Page Header ── */}
+            <div className={styles.headerRow}>
+              <div className={styles.headerLeft}>
+                <h1 className={styles.pageTitle}>Store Inventory</h1>
+                <p className={styles.pageSubtitle}>View and manage store stock items.</p>
+              </div>
+              <div className={styles.headerRight}>
+                <button className={styles.exportBtn} onClick={() => { setEditProduct(null); setShowAddModal(true); }}>
+                  <FiPlus size={14} />
+                  Add Store
+                </button>
+              </div>
+            </div>
+
+            {/* ── Stat Cards Row ── */}
+            <div className={styles.statCardsRow}>
+              <div className={styles.statCard}>
+                <div className={styles.statCardTop}>
+                  <div className={styles.statIconCircle} style={{ background: '#DBEAFE' }}>
+                    <GiCardboardBox size={20} color="#2563EB" />
+                  </div>
+                  <div className={styles.statInfo}>
+                    <p className={styles.statLabel}>Store Items</p>
+                    <div className={styles.statNumber}>
+                      {searchQuery ? filteredRows.length : products.length}
+                    </div>
+                  </div>
+                </div>
+                <p className={styles.statSecondary}>
+                  {searchQuery ? 'Filtered count' : 'All store items'}
+                </p>
+              </div>
+
+              <div className={styles.statCard}>
+                <div className={styles.statCardTop}>
+                  <div className={styles.statIconCircle} style={{ background: '#DCFCE7' }}>
+                    <GiCardboardBox size={20} color="#16A34A" />
+                  </div>
+                  <div className={styles.statInfo}>
+                    <p className={styles.statLabel}>Total Stock Quantity</p>
+                    <div className={styles.statNumber}>
+                      {f(searchQuery ? filteredQuantity : totalQuantity)}
+                    </div>
+                  </div>
+                </div>
+                <p className={styles.statSecondary}>
+                  {searchQuery ? 'Filtered total' : 'Across all items'}
+                </p>
+              </div>
+            </div>
+
+            {/* ── Filter Bar ── */}
+            <div className={styles.filterBar}>
+              <div className={styles.searchWrapper}>
+                <FiSearch size={15} className={styles.searchIcon} />
+                <input
+                  type="text"
+                  className={styles.searchInput}
+                  placeholder="Search by name or unit..."
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(0); }}
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    style={{ background: 'none', border: 'none', padding: 0, color: '#9CA3AF', cursor: 'pointer', lineHeight: 1 }}
+                    type="button"
+                  >
+                    <FiRefreshCw size={12} />
+                  </button>
+                )}
+              </div>
+
+              <button className={styles.resetBtn} onClick={resetFilters} type="button">
+                <FiRefreshCw size={13} />
+                Reset
+              </button>
+            </div>
+
+            {/* ── Loading State ── */}
+            {loading && (
+              <div className={styles.tableCard}>
+                <div className="text-center py-5">
+                  <div className="spinner-border text-secondary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p className="mt-2 text-muted" style={{ fontSize: '14px' }}>Loading store inventory...</p>
+                </div>
               </div>
             )}
+
+            {/* ── Error State ── */}
+            {!loading && fetchError && (
+              <div className={styles.tableCard}>
+                <div className="text-center py-5 px-3">
+                  <FaExclamationTriangle size={32} color="#DC2626" />
+                  <p className="mt-2" style={{ fontSize: '14px', color: '#DC2626', fontWeight: 500 }}>{fetchError}</p>
+                  <button className="btn btn-outline-dark btn-sm mt-2" onClick={fetchProducts}>
+                    <FiRefreshCw size={13} style={{ marginRight: 6 }} />
+                    Retry
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Empty State ── */}
+            {!loading && !fetchError && products.length === 0 && (
+              <div className={styles.tableCard}>
+                <div className="text-center py-5">
+                  <GiCardboardBox size={40} color="#9CA3AF" />
+                  <p className="mt-2 text-muted" style={{ fontSize: '14px' }}>No store items found. Add a new stock item to get started.</p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Store Stock Table ── */}
+            {!loading && !fetchError && products.length > 0 && (
+              <div className={styles.tableCard}>
+                <div className={styles.tableHeader}>
+                  <h3 className={styles.cardTitle}>Store Stock Overview</h3>
+                  <span className={styles.tableBadge}>
+                    {searchQuery ? `${filteredRows.length} / ${products.length}` : products.length} Items
+                  </span>
+                </div>
+                <div className={styles.tableWrapper}>
+                  <DataTable
+                    className={styles.table}
+                    columns={[
+                      {
+                        key: 'name',
+                        label: 'Name',
+                        render: (value, row, i) => {
+                          const iconColor = nameIconColors[i % nameIconColors.length];
+                          return (
+                            <div className={styles.nameCell}>
+                              <span className={styles.nameIcon} style={{ background: iconColor }} />
+                              {value}
+                            </div>
+                          );
+                        },
+                      },
+                      { key: 'unit', label: 'Unit' },
+                      {
+                        key: 'quantity',
+                        label: 'Quantity',
+                        align: 'right',
+                        render: (value) => <span className={styles.numCell}>{value != null ? f(value) : '—'}</span>,
+                      },
+                      {
+                        key: 'threshold',
+                        label: 'Threshold',
+                        align: 'right',
+                        render: (value) => <span className={styles.numCell}>{value != null ? f(value) : '—'}</span>,
+                      },
+                      {
+                        key: 'weightPerItem',
+                        label: 'Weight/Item',
+                        align: 'right',
+                        render: (value) => <span className={styles.numCell}>{value != null ? f(value) : '—'}</span>,
+                      },
+                      {
+                        key: 'status',
+                        label: 'Status',
+                        render: (value) => {
+                          const statusKey = value?.toLowerCase()?.replace(/\s+/g, ' ');
+                          const matchedStatus = Object.keys(STATUS_STYLES).find(
+                            (k) => k.toLowerCase().replace(/\s+/g, ' ') === statusKey
+                          );
+                          const statusStyle = matchedStatus ? STATUS_STYLES[matchedStatus] : { bg: '#F3F4F6', color: '#374151' };
+                          return (
+                            <span className={styles.statusPill} style={{ background: statusStyle.bg, color: statusStyle.color }}>
+                              {value}
+                            </span>
+                          );
+                        },
+                      },
+                    ]}
+                    data={currentProducts}
+                    actions={(row) => (
+                      <PortalDropdown
+                        btnClass={feedStyles.threeDotBtn}
+                        menuStyle={{
+                          background: '#fff',
+                          color: '#374151',
+                          border: '1px solid #E5E7EB',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                          borderRadius: 8,
+                          padding: '4px 0',
+                        }}
+                        items={[
+                          { label: 'Edit', onClick: () => { setEditProduct(row); setShowAddModal(true); } },
+                          { divider: true },
+                          { label: 'Restock', onClick: () => { setRestockProduct(row); setShowRestockModal(true); } },
+                          { label: 'Use', onClick: () => { setUseProduct(row); setShowUseModal(true); } },
+                        ]}
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* ── Table Footer ── */}
+                <div className={styles.tableFooter}>
+                  <span className={styles.footerInfo}>
+                    Showing {currentProducts.length > 0 ? currentPage * itemsPerPage + 1 : 0} to{' '}
+                    {Math.min((currentPage + 1) * itemsPerPage, filteredRows.length)} of {filteredRows.length}
+                    {searchQuery ? ` (filtered from ${products.length})` : ''} items
+                  </span>
+                  <div className={styles.pagination}>
+                    <button
+                      className={styles.pageArrow}
+                      onClick={() => handlePageChange({ selected: currentPage - 1 })}
+                      disabled={currentPage === 0}
+                      style={{ opacity: currentPage === 0 ? 0.4 : 1 }}
+                    >
+                      <FiChevronLeft size={15} />
+                    </button>
+                    {Array.from({ length: pageCount }, (_, i) => (
+                      <button
+                        key={i}
+                        className={`${styles.pageBtn} ${currentPage === i ? styles.pageBtnActive : ''}`}
+                        onClick={() => handlePageChange({ selected: i })}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button
+                      className={styles.pageArrow}
+                      onClick={() => handlePageChange({ selected: currentPage + 1 })}
+                      disabled={currentPage >= pageCount - 1}
+                      style={{ opacity: currentPage >= pageCount - 1 ? 0.4 : 1 }}
+                    >
+                      <FiChevronRight size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </main>
         </section>
-
-        <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
-          <Modal.Header closeButton className="border-0">
-            <Modal.Title className="fw-semibold fs-5">Add New Stock</Modal.Title>
-          </Modal.Header>
-          <Form onSubmit={handleAddNewStock}>
-            <Modal.Body className="pt-0">
-              <Form.Group className="mb-3">
-                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Name</Form.Label>
-                <Form.Control
-                  placeholder="Enter stock name"
-                  type="text"
-                  required
-                  value={newStock.name}
-                  onChange={(e) => setNewStock({ ...newStock, name: e.target.value })}
-                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Unit</Form.Label>
-                <CustomDropdown
-                  required
-                  value={newStock.unit}
-                  onChange={(value) => setNewStock({ ...newStock, unit: value })}
-                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                  placeholder="Select Unit"
-                  options={[
-                    { value: 'kg', label: 'Kg (Kilogram)' },
-                    { value: 'g', label: 'G (Grams)' },
-                    { value: 'bags', label: 'Bags' },
-                    { value: 'pieces', label: 'Pieces' },
-                    { value: 'packs', label: 'Packs' },
-                    { value: 'sachets', label: 'Sachets' },
-                  ]}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Threshold Value</Form.Label>
-                <Form.Control
-                  placeholder="Enter threshold value"
-                  type="number"
-                  required
-                  min="0"
-                  value={newStock.threshold}
-                  onChange={(e) => setNewStock({ ...newStock, threshold: e.target.value === '' ? '' : Number(e.target.value) })}
-                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Weight Per Item</Form.Label>
-                <Form.Control
-                  placeholder="Enter weight per item"
-                  type="number"
-                  required
-                  min="0"
-                  value={newStock.weightPerItem}
-                  onChange={(e) => setNewStock({ ...newStock, weightPerItem: e.target.value === '' ? '' : Number(e.target.value) })}
-                  className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                />
-              </Form.Group>
-              {isSuperAdmin && (
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Site</Form.Label>
-                  <CustomDropdown
-                    required
-                    value={newStock.siteId}
-                    onChange={(value) => setNewStock({ ...newStock, siteId: value })}
-                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                    disabled={sitesLoading}
-                    loading={sitesLoading}
-                    placeholder="Select Site"
-                    options={sites.map(site => ({ value: site.id, label: site.name }))}
-                  />
-                </Form.Group>
-              )}
-            </Modal.Body>
-            <Modal.Footer className="border-0 pt-0">
-              <button type="button" className="btn btn-secondary shadow-none fw-semibold" onClick={() => setShowAddModal(false)} disabled={addLoader}>Cancel</button>
-              <button type="submit" className="btn fw-semibold text-white border-0 shadow-none" style={{ backgroundColor: '#512728' }} disabled={addLoader}>
-                {addLoader ? <><Spinner size="sm" animation="border" className="me-2" />Adding...</> : 'Add'}
-              </button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
-
-        <Modal show={showModal} onHide={() => setShowModal(false)} className="rounded-0">
-          <Modal.Header closeButton className="border-0">
-            <Modal.Title className="fw-semibold mx-2">
-              {modalType === 'add' ? 'Restock Store' : modalType === 'remove' ? 'Use' : 'Edit'}
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body className="mt-5 mx-2">
-            <Form.Group className="mb-3 row">
-              <Form.Label className="col-4 fw-semibold">Name</Form.Label>
-              <div className="col-8">
-                <Form.Control
-                  type="text"
-                  readOnly
-                  defaultValue={selectedProduct?.name}
-                  className={`py-2 shadow-none border-1 ${styles.inputs}`}
-                />
-              </div>
-            </Form.Group>
-
-            {modalType === 'add' && (
-              <>
-                <Form.Group className="mb-3 row">
-                  <Form.Label className="col-4 fw-semibold">Quantity {`(${selectedProduct?.unit})`}</Form.Label>
-                  <div className="col-8">
-                    <Form.Control
-                      type="number"
-                      required
-                      value={quantity ?? ''}
-                      onChange={(e) => setQuantity(Number(e.target.value) || null)}
-                      className={`py-2 shadow-none border-1 ${styles.inputs}`}
-                      placeholder="Enter Quantity"
-                    />
-                  </div>
-                </Form.Group>
-                <Form.Group className="mb-3 row">
-                  <Form.Label className="col-4 fw-semibold">Price Bought (₦)</Form.Label>
-                  <div className="col-8">
-                    <Form.Control
-                      type="text"
-                      required
-                      value={price !== null ? formatWithCommas(price) : ''}
-                      onChange={(e) => setPrice(e.target.value.replace(/,/g, '') || null)}
-                      placeholder="Price Bought"
-                      className={`py-2 shadow-none border-1 ${styles.inputs}`}
-                    />
-                  </div>
-                </Form.Group>
-              </>
-            )}
-
-            {modalType === 'remove' && (
-              <>
-                <Form.Group className="mb-3 row">
-                  <Form.Label className="col-4 fw-semibold">Pond To</Form.Label>
-                  <div className="col-8" style={{ position: 'relative' }}>
-                    <Form.Control
-                      type="text"
-                      placeholder="Search Pond..."
-                      value={pondSearch}
-                      onChange={handlePondSearchChange}
-                      onFocus={() => setShowPondDropdown(true)}
-                      className={`py-2 shadow-none border-1 ${styles.inputs}`}
-                      autoComplete="off"
-                    />
-                    {showPondDropdown && (
-                      <div className={styles.suggestions_box} style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                          {filteredPonds.length > 0 ? (
-                            filteredPonds.map((pond, index) => (
-                              <li
-                                key={index}
-                                onClick={() => handlePondSelect(pond)}
-                                style={{ cursor: 'pointer', padding: '8px' }}
-                                className={styles.menuItem}
-                              >
-                                {pond.title || 'No Data Yet'}
-                              </li>
-                            ))
-                          ) : (
-                            <li style={{ padding: '8px' }}>No ponds found</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </Form.Group>
-                <Form.Group className="mb-4 row">
-                  <Form.Label className="col-4 fw-semibold">Quantity {`(${selectedProduct?.unit})`}</Form.Label>
-                  <div className="col-8 d-flex align-items-center">
-                    <Form.Control
-                      type="number"
-                      value={quantityUsed ?? ''}
-                      onChange={(e) => setQuantityUsed(Number(e.target.value) || null)}
-                      className={`py-2 shadow-none border-1 ${styles.inputs}`}
-                      placeholder="Enter Quantity"
-                    />
-                  </div>
-                </Form.Group>
-              </>
-            )}
-
-            {modalType === 'edit' && (
-              <>
-                <Form.Group className="mb-3 row fw-semibold">
-                  <Form.Label className="col-4">Threshold Value</Form.Label>
-                  <div className="col-8">
-                    <Form.Control
-                      type="number"
-                      placeholder="Threshold Value"
-                      required
-                      value={threshold ?? ''}
-                      onChange={(e) => setThreshold(Number(e.target.value) || null)}
-                      className={`py-2 shadow-none border-1 ${styles.inputs}`}
-                    />
-                  </div>
-                </Form.Group>
-                <Form.Group className="mb-3 row">
-                  <Form.Label className="col-4 fw-semibold">Unit</Form.Label>
-                  <div className="col-8">
-                    <CustomDropdown
-                      value={unit}
-                      onChange={(val) => setUnit(val)}
-                      className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                      placeholder="Select Unit"
-                      required
-                      options={[
-                        { value: 'kg', label: 'Kg (Kilogram)' },
-                        { value: 'g', label: 'G (Grams)' },
-                        { value: 'bags', label: 'Bags' },
-                        { value: 'pieces', label: 'Pieces' },
-                        { value: 'packs', label: 'Packs' },
-                        { value: 'sachets', label: 'Sachets' },
-                      ]}
-                    />
-                  </div>
-                </Form.Group>
-              </>
-            )}
-          </Modal.Body>
-
-          <Modal.Footer className="mt-5 mb-3 border-0" style={{ height: '200px' }}>
-            <Button
-              className={`border-0 btn-dark shadow py-2 px-5 fs-6 mb-5 fw-semibold ${styles.submit}`}
-              onClick={handleSaveClick}
-              disabled={disabled}
-            >
-              {modalType === 'add' ? 'Restock' : modalType === 'remove' ? 'Remove' : 'Edit'}
-            </Button>
-          </Modal.Footer>
-        </Modal>
       </div>
+
+      <AddStockModal
+        show={showAddModal}
+        onClose={() => { setShowAddModal(false); setEditProduct(null); }}
+        onSuccess={fetchProducts}
+        isSuperAdmin={isSuperAdmin}
+      />
+
+      {showRestockModal && (
+        <RestockStoreModal
+          show={showRestockModal}
+          store={restockProduct}
+          onClose={() => { setShowRestockModal(false); setRestockProduct(null); }}
+          onSuccess={(success, msg) => {
+            if (success) {
+              toast.success(msg, { className: 'dark-toast', autoClose: 3000 });
+              fetchProducts();
+            } else {
+              toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
+            }
+            setShowRestockModal(false);
+            setRestockProduct(null);
+          }}
+        />
+      )}
+
+      {showUseModal && (
+        <UseStoreModal
+          show={showUseModal}
+          store={useProduct}
+          onClose={() => { setShowUseModal(false); setUseProduct(null); }}
+          onSuccess={(success, msg) => {
+            if (success) {
+              toast.success(msg, { className: 'dark-toast', autoClose: 3000 });
+              fetchProducts();
+            } else {
+              toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
+            }
+            setShowUseModal(false);
+            setUseProduct(null);
+          }}
+        />
+      )}
     </section>
   );
 }
-

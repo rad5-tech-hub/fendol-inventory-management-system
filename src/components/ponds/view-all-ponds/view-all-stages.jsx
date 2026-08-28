@@ -574,7 +574,7 @@ const ViewAllStages = () => {
               {[
                 { label: 'Current Stock', value: selectedStage ? new Intl.NumberFormat().format(selectedStage.quantity ?? 0) : '0', suffix: 'pcs', valueColor: '#1A5276' },
                 { label: 'Mortality Count', value: pondDetail?.totalDamages != null ? new Intl.NumberFormat().format(pondDetail.totalDamages) : '--', suffix: 'pcs', valueColor: '#C0392B' },
-                { label: 'Feed Consumed', value: selectedStage?.feedConsumed != null ? new Intl.NumberFormat().format(selectedStage.feedConsumed) : '--', suffix: 'kg', valueColor: '#2E3135' },
+                { label: 'Feed Consumed', value: pondDetail?.totalFeedConsumed != null ? new Intl.NumberFormat().format(pondDetail.totalFeedConsumed) : '--', suffix: 'kg', valueColor: '#2E3135' },
                 { label: 'Last Activity', value: displayLastActivity, suffix: '', valueColor: '#2E3135', title: lastActivityText || undefined, valueFontSize: '0.78rem' },
               ].map((stat, i) => (
                 <div key={i} style={{

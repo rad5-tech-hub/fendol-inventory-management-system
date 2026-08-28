@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 import styles from '../store.module.scss'; // Adjust the import as needed
@@ -6,7 +6,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import { useNavigate } from 'react-router-dom';
 
@@ -16,6 +16,7 @@ const AddStock = () => {
         unit: '',
         threshold: '', // Changed to empty string for controlled input
         weightPerItem: '',
+        siteId: '',
     });
     const user = useSelector((store) => store.user);
     const activeSite = useSelector((store) => store.activeSite);
@@ -24,6 +25,25 @@ const AddStock = () => {
     const navigate = useNavigate();
     const [loader, setLoader] = useState(false);
     const [showSidebar, setShowSidebar] = useState(false); // Added for sidebar toggle
+    const [sites, setSites] = useState([]);
+    const [sitesLoading, setSitesLoading] = useState(false);
+
+    useEffect(() => {
+        if (!isSuperAdmin) return;
+        const fetchSites = async () => {
+            setSitesLoading(true);
+            try {
+                const res = await ApiV2.get('/v2/all-site');
+                const data = Array.isArray(res.data?.data) ? res.data.data : [];
+                setSites(data);
+            } catch {
+                setSites([]);
+            } finally {
+                setSitesLoading(false);
+            }
+        };
+        fetchSites();
+    }, [isSuperAdmin]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -43,7 +63,7 @@ const AddStock = () => {
 
         try {
             const payload = { ...formData };
-            if (isSuperAdmin && activeSite?.id) payload.siteId = activeSite.id;
+            if (isSuperAdmin && formData.siteId) payload.siteId = formData.siteId;
             const response = await Api.post('/create-store', payload);
 
             setFormData({
@@ -51,6 +71,7 @@ const AddStock = () => {
                 unit: '',
                 threshold: '',
                 weightPerItem: '',
+                siteId: '',
             });
 
             toast.update(loadingToast, {
@@ -137,6 +158,35 @@ const AddStock = () => {
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                                     />
                                 </Col>
+                                <Col className="mb-4">
+                                    <Form.Label className="fw-semibold">Weight per store item</Form.Label>
+                                    <Form.Control
+                                        placeholder="Enter weight per item"
+                                        type="number"
+                                        name="weightPerItem"
+                                        value={formData.weightPerItem}
+                                        required
+                                        min="0"
+                                        onChange={handleInputChange}
+                                        className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                    />
+                                </Col>
+                                {isSuperAdmin && (
+                                    <Col className="mb-4">
+                                        <Form.Label className="fw-semibold">Site</Form.Label>
+                                        <CustomDropdown
+                                            name="siteId"
+                                            required
+                                            value={formData.siteId}
+                                            onChange={(value) => setFormData({ ...formData, siteId: value })}
+                                            className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                                            disabled={sitesLoading}
+                                            loading={sitesLoading}
+                                            placeholder="Select Site"
+                                            options={sites.map(site => ({ value: site.id, label: site.name }))}
+                                        />
+                                    </Col>
+                                )}
                             </Row>
                             <div className="d-flex justify-content-end my-4">
                                 <Button

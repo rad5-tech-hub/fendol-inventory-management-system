@@ -51,6 +51,7 @@ export default function FeedLedger() {
   const [fetchError, setFetchError] = useState(null);
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
+  const [filterApplied, setFilterApplied] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 20;
 
@@ -60,12 +61,15 @@ export default function FeedLedger() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchHistory = async (startDate, endDate) => {
       try {
         setLoading(true);
         const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '');
+        const params = { siteId };
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
         const [histRes, siteRes, feedsRes, pondsRes] = await Promise.all([
-          Api.get(`/feed-history/${feedName}`, { params: { siteId } }),
+          Api.get('/feeds-histories', { params }),
           ApiV2.get('/v2/site-types'),
           Api.get('/feeds', { params: { siteId } }).catch(() => null),
           Api.get(`/fish-stages?siteId=${isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '')}`).catch(() => null),
@@ -125,7 +129,7 @@ export default function FeedLedger() {
         setFetchError(finalMsg);
         toast.error(finalMsg, { className: 'dark-toast', autoClose: 8000 });
         console.error('[FeedLedger] Fetch failed:', {
-          endpoint: `/feed-history/${feedName}`,
+          endpoint: '/feeds-histories',
           status,
           statusText: err?.response?.statusText,
           responseData: err?.response?.data,
@@ -135,24 +139,53 @@ export default function FeedLedger() {
         setLoading(false);
       }
     };
-    fetchHistory();
+    fetchHistory('', '');
   }, [feedName]);
 
   const filteredHistory = useMemo(() => {
-    if (!filterStartDate && !filterEndDate) return historyData;
-    return historyData.filter((h) => {
-      const d = new Date(h.createdAt);
-      if (filterStartDate && d < new Date(filterStartDate + 'T00:00:00')) return false;
-      if (filterEndDate && d > new Date(filterEndDate + 'T23:59:59')) return false;
-      return true;
-    });
-  }, [historyData, filterStartDate, filterEndDate]);
+    return historyData;
+  }, [historyData]);
 
   const pageCount = Math.ceil(filteredHistory.length / itemsPerPage);
   const paginatedData = filteredHistory.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
   const handlePageChange = ({ selected }) => {
     setCurrentPage(selected);
+  };
+
+  const handleApplyFilter = async () => {
+    setFilterApplied(true);
+    setCurrentPage(0);
+    try {
+      setLoading(true);
+      const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '');
+      const params = { siteId };
+      if (filterStartDate) params.startDate = filterStartDate;
+      if (filterEndDate) params.endDate = filterEndDate;
+      const histRes = await Api.get('/feeds-histories', { params });
+      if (histRes.data?.success) {
+        setHistoryData(histRes.data.data || []);
+        setServerSummary(histRes.data.summary || null);
+        setFetchError(null);
+      } else {
+        const msg = histRes.data?.response_message || 'Failed to load feed history.';
+        setFetchError(msg);
+        toast.error(msg, { className: 'dark-toast', autoClose: 8000 });
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.response_message || err?.response?.data?.message || 'Error fetching filtered history.';
+      setFetchError(msg);
+      toast.error(msg, { className: 'dark-toast', autoClose: 8000 });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearFilter = () => {
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setFilterApplied(false);
+    setCurrentPage(0);
   };
 
   const sum = (arr, key) => arr.reduce((s, h) => s + Number(h[key] || 0), 0);
@@ -314,11 +347,18 @@ export default function FeedLedger() {
                   </div>
                 </div>
                 {(filterStartDate || filterEndDate) && (
-                  <button className={styles.filterClearBtn} onClick={() => { setFilterStartDate(''); setFilterEndDate(''); }}>
+                  <button className={styles.filterClearBtn} onClick={handleClearFilter}>
                     <IoClose size={14} />
                     Clear filters
                   </button>
                 )}
+                <button
+                  className={styles.applyBtn}
+                  onClick={handleApplyFilter}
+                  disabled={!filterStartDate && !filterEndDate}
+                >
+                  Apply
+                </button>
               </div>
             </div>
 
@@ -391,7 +431,7 @@ export default function FeedLedger() {
                   ]}
                   data={paginatedData}
                   loading={loading}
-                  emptyMessage="No records found."
+                  emptyMessage={filterApplied ? "No records for this date range." : "No records found."}
                 />
               </div>
 

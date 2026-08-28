@@ -178,6 +178,32 @@
   }
 }
 
+.applyBtn {
+  height: 38px;
+  padding: 0 16px;
+  background: #512728;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #FFFFFF;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #714445;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .ctrlText {
   font-size: 13px;
   color: #374151;
