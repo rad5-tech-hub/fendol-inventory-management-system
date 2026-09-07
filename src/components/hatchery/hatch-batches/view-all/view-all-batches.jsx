@@ -29,7 +29,7 @@ const hatchabilityColor = (v) => {
 const FALLBACK_STATS = [
   { label: 'Active Batches', value: '—', icon: GiCirclingFish, color: '#F97316' },
   { label: 'Completed Batches', value: '—', icon: FaCheckCircle, color: '#22C55E' },
-  { label: 'Total Fry Produced', value: '—', icon: GiCirclingFish, color: '#3B82F6' },
+  { label: 'Total Fingerlings Produced', value: '—', icon: GiCirclingFish, color: '#3B82F6' },
   { label: 'Average Hatchability', value: '—', icon: FaChartLine, color: '#8B5CF6' },
 ];
 
@@ -261,7 +261,7 @@ export default function ViewAllBatches() {
     ? [
         { label: 'Active Batches', value: String(summary.activeCount), icon: GiCirclingFish, color: '#F97316' },
         { label: 'Completed Batches', value: String(summary.completedCount), icon: FaCheckCircle, color: '#22C55E' },
-        { label: 'Total Fry Produced', value: f(summary.totalFryProduced), icon: GiCirclingFish, color: '#3B82F6' },
+        { label: 'Total Fingerlings Produced', value: f(summary.totalFryProduced), icon: GiCirclingFish, color: '#3B82F6' },
         { label: 'Average Hatchability', value: summary.averageHatchability.toFixed(1) + '%', icon: FaChartLine, color: '#8B5CF6' },
       ]
     : FALLBACK_STATS;
@@ -353,7 +353,7 @@ export default function ViewAllBatches() {
               </div>
               <div className={styles.chartCard}>
                 <div className={styles.chartHeader}>
-                  <h5>Fry Production Trend (pcs)</h5>
+                  <h5>Fingerlings Production Trend (pcs)</h5>
                   <span className={styles.chartDropdown}>This Month ▾</span>
                 </div>
                 {renderChart(chartData.map(d => ({ name: d.name, value: d.fryProduced })), '#3B82F6', '', [0, 'auto'])}
@@ -403,8 +403,8 @@ export default function ViewAllBatches() {
                     <th className="text-end">Males</th>
                     <th className="text-end">Egg Wt (g)</th>
                     <th className="text-end">Hatchability</th>
-                    <th className="text-end">Fry Produced</th>
-                    <th className="text-end">Fry Moved</th>
+                    <th className="text-end">Fingerlings Produced</th>
+                    <th className="text-end">Fingerlings Moved</th>
                     <th className="text-start">Actions</th>
                   </tr>
                 </thead>

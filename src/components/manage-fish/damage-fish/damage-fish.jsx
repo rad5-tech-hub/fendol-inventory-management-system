@@ -6,7 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useSelector } from 'react-redux';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
+import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
 import { useNavigate } from 'react-router-dom';
 import { useConfirm } from '../../shared/confirm-modal';
 
@@ -22,6 +23,10 @@ const DamageFish = () => {
     actual_quantity: '',
     remarks: ''
   });
+  const [targetType, setTargetType] = useState('pond');
+  const [hatchBatchId, setHatchBatchId] = useState('');
+  const [hatchBatches, setHatchBatches] = useState([]);
+  const [hatchLoading, setHatchLoading] = useState(false);
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
   const navigate = useNavigate();
@@ -60,6 +65,21 @@ const DamageFish = () => {
 
   useEffect(() => {
     fetchStages();
+  }, [activeSite?.id]);
+
+  useEffect(() => {
+    const fetchHatch = async () => {
+      setHatchLoading(true);
+      try {
+        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
+        const params = siteId ? { siteId } : {};
+        const res = await ApiV2.get('/v2/hatch-batches', { params });
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        const active = data.filter(b => !b.status || String(b.status).toLowerCase() === 'active');
+        setHatchBatches(active.length ? active : data);
+      } catch { setHatchBatches([]); } finally { setHatchLoading(false); }
+    };
+    fetchHatch();
   }, [activeSite?.id]);
 
   // Handle input changes
@@ -120,6 +140,14 @@ const DamageFish = () => {
   // Handle form submission
   const handleAddFish = async (e) => {
     e.preventDefault();
+    if (targetType === 'pond' && !formData.stageId_from) {
+      toast.error('Please select a pond.', { className: 'dark-toast' });
+      return;
+    }
+    if (targetType === 'hatchery' && !hatchBatchId) {
+      toast.error('Please select a hatch batch.', { className: 'dark-toast' });
+      return;
+    }
     const ok = await confirm({ message: "Are you sure you want to record this mortality?", title: "Record Mortality", variant: "danger" });
     if (!ok) return;
 
@@ -127,7 +155,10 @@ const DamageFish = () => {
     const loadingToast = toast.loading("Recording mortality...", { className: 'dark-toast' });
 
     try {
-      const response = await Api.post('/log-damage', formData);
+      const payload = targetType === 'hatchery'
+        ? { hatchBatchId, actual_quantity: formData.actual_quantity, remarks: formData.remarks }
+        : formData;
+      const response = await Api.post('/log-damage', payload);
       setFormData({
         stageId_from: '',
         actual_quantity: '',
@@ -186,8 +217,19 @@ const DamageFish = () => {
           <main>
             <ToastContainer />
             <Form className={styles.create_form} onSubmit={handleAddFish}>
-              <h4 className="mt-5 mb-5">Mortality From Pond</h4>
+              <h4 className="mt-5 mb-5">Mortality {targetType === 'hatchery' ? 'From Hatchery Batch' : 'From Pond'}</h4>
               <Row>
+                <Col md={12} lg={6} className="mb-4">
+                  <Form.Label className="fw-semibold">Record for</Form.Label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button type="button" onClick={() => setTargetType('pond')} className={`btn btn-sm ${targetType === 'pond' ? 'btn-dark' : 'btn-outline-secondary'}`} style={targetType === 'pond' ? { backgroundColor: '#512728', borderColor: '#512728' } : {}}>Pond</button>
+                    <button type="button" onClick={() => setTargetType('hatchery')} className={`btn btn-sm ${targetType === 'hatchery' ? 'btn-dark' : 'btn-outline-secondary'}`} style={targetType === 'hatchery' ? { backgroundColor: '#512728', borderColor: '#512728' } : {}}>Hatchery Batch</button>
+                  </div>
+                </Col>
+              </Row>
+              <Row>
+                {targetType === 'pond' ? (
+                <>
                 <Col md={12} lg={6} className="mb-4">
                   <Form.Label className="fw-semibold">Pond From</Form.Label>
                   <div style={{ position: 'relative' }}>
@@ -256,6 +298,47 @@ const DamageFish = () => {
                     className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                   />
                 </Col>
+                </>
+                ) : (
+                <>
+                <Col md={12} lg={6} className="mb-4">
+                  <Form.Label className="fw-semibold">Hatch Batch</Form.Label>
+                  {hatchLoading ? (
+                    <div className="py-2 text-muted" style={{ fontSize: '14px' }}>Loading hatch batches...</div>
+                  ) : (
+                    <CustomDropdown
+                      value={hatchBatchId}
+                      onChange={(val) => setHatchBatchId(val)}
+                      placeholder={hatchBatches.length === 0 ? 'No active hatch batches' : 'Select Hatch Batch'}
+                      options={hatchBatches.map(b => ({ value: b.id, label: `${b.hatchbatchNo || b.batchNo || b.id} — ${b.status || 'active'}` }))}
+                    />
+                  )}
+                </Col>
+                <Col md={6} lg={6} className="mb-4">
+                  <Form.Label className="fw-semibold">Quantity</Form.Label>
+                  <Form.Control
+                    placeholder="Enter Quantity"
+                    type="number"
+                    name="actual_quantity"
+                    value={formData.actual_quantity}
+                    onChange={handleInputChange}
+                    required
+                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                  />
+                </Col>
+                <Col md={12} lg={6} className="mb-4">
+                  <Form.Label className="fw-semibold">Remark</Form.Label>
+                  <Form.Control
+                    placeholder="Enter remarks"
+                    as="textarea"
+                    name="remarks"
+                    value={formData.remarks}
+                    onChange={handleInputChange}
+                    className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
+                  />
+                </Col>
+                </>
+                )}
               </Row>
               <div className="d-flex justify-content-end py-5">
                 <Button

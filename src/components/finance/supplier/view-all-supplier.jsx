@@ -485,8 +485,6 @@ export default function ViewAllSupplier() {
                       menuStyle={{ minWidth: 180 }}
                       items={[
                         { label: 'Edit', onClick: () => navigate('/finance/supplier/new', { state: { supplier } }) },
-                        { divider: true },
-                        { label: 'View Ledger', onClick: () => navigate(`/finance/supplier/ledger?id=${supplier.id}`) },
                       ]}
                     />
                   )}

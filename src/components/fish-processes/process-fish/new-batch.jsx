@@ -156,7 +156,6 @@ export default function NewBatchFish() {
         } catch (err) {
           console.error(`[GET] /fish-process/${pid}`, err);
           if (err.response?.status === 404) {
-            toast.warn(getErrorMessage(err, 'restoring previous process'), { autoClose: 5000 });
             clearBatchStorage();
           } else {
             toast.error(getErrorMessage(err, 'restoring process data'), { autoClose: 6000 });
@@ -277,6 +276,15 @@ export default function NewBatchFish() {
           }
         } catch (err) {
           console.error(`[GET] /fish-process/${newProcessId}`, err);
+          // Showcase (add-fish-to-show-glass) is not a process — skip misleading error
+          if (err.response?.status === 404) {
+            setQuantity({
+              wholeFish: response.data.data?.actual_quantity || 0,
+              brokenFish: 0,
+              damage: 0,
+            });
+            return;
+          }
           toast.error(getErrorMessage(err, 'fetching updated process data'), { autoClose: 6000 });
           setQuantity({
             wholeFish: response.data.data?.actual_quantity || 0,

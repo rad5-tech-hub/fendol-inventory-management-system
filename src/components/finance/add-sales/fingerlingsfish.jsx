@@ -47,6 +47,11 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
   const [showPondDropdown, setShowPondDropdown] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const siteTypeName = (s) => s?.type?.name || s?.type || s?.description || s?.typeName || s?.name || '';
+  const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
+  const isHatcheryContext = !!activeSite && isHatcheryType(siteTypeName(activeSite));
+  const [isWalkIn, setIsWalkIn] = useState(false);
+  const [walkInName, setWalkInName] = useState('');
   const [ConfirmDialog, confirm] = useConfirm();
 
   // Initialize data from props
@@ -220,13 +225,17 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
     const salesToast = toast.loading("Adding sale...", { className: "dark-toast" });
 
     try {
-      const payload = {
+      if (isHatcheryContext && isWalkIn && !walkInName.trim()) {
+        toast.error("Please enter walk-in customer name.", { className: 'dark-toast' });
+        setLoader(false);
+        return;
+      }
+      const basePayload = {
         products: [{
           id: fingerlingsData.products[0]?.id,
           quantityCount: fingerlingsData.products[0]?.quantity || 0,
           packCount: 0
         }],
-        customerId: fingerlingsData.customerId,
         paymentType: fingerlingsData.paymentType?.toLowerCase(),
         discount: fingerlingsData.category === "Marketer" ? 0 : (Number(fingerlingsData.discount) || 0),
         description: fingerlingsData.description,
@@ -235,6 +244,9 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
         pondId: fingerlingsData.pondId || undefined,
         siteId: resolvedSiteId
       };
+      const payload = (isHatcheryContext && isWalkIn)
+        ? { ...basePayload, customerName: walkInName.trim() }
+        : { ...basePayload, customerId: fingerlingsData.customerId };
       const saleResponse = await Api.post("/sales", payload);
       if (saleResponse.status < 200 || saleResponse.status >= 300) {
         throw new Error(saleResponse.data?.message || "Sale failed!");
@@ -298,6 +310,8 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
       });
       setPondSearch("");
       setCustomerSearch("");
+      setIsWalkIn(false);
+      setWalkInName('');
       setFilteredPonds(stage);
       fetchCustomers();
     } catch (error) {
@@ -413,7 +427,13 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
 
           {/* Searchable Customer Input */}
           <Col className="mb-4">
-            <Form.Label className="fw-semibold">Customer Name</Form.Label>
+            <Form.Label className="fw-semibold">Customer {isHatcheryContext && isWalkIn ? '(Walk-in)' : ''}</Form.Label>
+            {isHatcheryContext && (
+              <Form.Check type="checkbox" label="Walk-in customer (no ledger entry)" checked={isWalkIn} onChange={(e) => { setIsWalkIn(e.target.checked); if (e.target.checked) { setFingerlingsData(prev => ({ ...prev, customerId: '', fullName: '' })); setCustomerSearch(''); setBalance(undefined); } else setWalkInName(''); }} className="mb-2" />
+            )}
+            {isHatcheryContext && isWalkIn ? (
+              <Form.Control type="text" placeholder="Enter walk-in customer name" value={walkInName} onChange={(e) => setWalkInName(e.target.value)} className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`} required />
+            ) : (
             <div style={{ position: "relative" }}>
               <Form.Control
                 type="text"
@@ -445,6 +465,7 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
                 </div>
               )}
             </div>
+            )}
           </Col>
 
           {/* Discount */}

@@ -158,7 +158,6 @@ export default function BatchProcessing() {
       } catch (err) {
         console.error(`[GET] /fish-process/${processId}`, err);
         if (err.response?.status === 404) {
-          toast.warn(getErrorMessage(err, 'restoring previous process'), { autoClose: 5000 });
           clearBatchStorage();
         } else {
           toast.error(getErrorMessage(err, 'restoring process data'), { autoClose: 6000 });

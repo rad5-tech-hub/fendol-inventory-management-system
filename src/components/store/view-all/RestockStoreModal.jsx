@@ -210,12 +210,12 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
 
             <div className={styles.field}>
               <label className={styles.label}>
-                Price ({`\u20A6`})<span className={styles.required}>*</span>
+                Total Price for all packs — ₦ (not per pack)<span className={styles.required}>*</span>
               </label>
               <input
                 ref={priceRef}
                 className={`${styles.input} ${priceErr ? styles.inputError : ''}`}
-                placeholder="e.g. 45,600"
+                placeholder="e.g. 20,000 — total cost for all packs"
                 type="text"
                 min={0}
                 step="0.01"
@@ -224,6 +224,7 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
                 onBlur={() => handleBlur('price')}
                 autoComplete="off"
               />
+              <small className="text-muted" style={{ fontSize: '11px' }}>Total price for the whole purchase (e.g. 5 packs for ₦20,000). Not price per pack.</small>
               {priceErr && (
                 <span className={styles.errorText}>
                   <FiAlertTriangle size={11} style={{ marginRight: 4, flexShrink: 0 }} />
@@ -234,11 +235,11 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
 
             <div className={styles.field}>
               <label className={styles.label}>
-                Number of Items ({store?.unit || 'units'})<span className={styles.required}>*</span>
+                Quantity — number of packs to add ({store?.unit || 'units'})<span className={styles.required}>*</span>
               </label>
               <input
                 className={`${styles.input} ${qtyErr ? styles.inputError : ''}`}
-                placeholder="e.g. 10"
+                placeholder={`e.g. 5 — number of ${store?.unit || 'packs'} being added`}
                 type="text"
                 min={0}
                 step="1"
@@ -247,11 +248,17 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
                 onBlur={() => handleBlur('quantity')}
                 autoComplete="off"
               />
+              <small className="text-muted" style={{ fontSize: '11px' }}>Number of packs being added (e.g. 5 packs). This is pack count, not weight.</small>
               {qtyErr && (
                 <span className={styles.errorText}>
                   <FiAlertTriangle size={11} style={{ marginRight: 4, flexShrink: 0 }} />
                   {qtyErr}
                 </span>
+              )}
+              {quantity && !qtyErr && store?.weightPerItem && (
+                <small className="text-muted" style={{ fontSize: '11px', color: '#512728' }}>
+                  Total weight: {new Intl.NumberFormat().format(Number(stripCommas(quantity)) * Number(store.weightPerItem))} ( {stripCommas(quantity)} × {store.weightPerItem} per {store?.unit || 'pack'})
+                </small>
               )}
             </div>
           </div>

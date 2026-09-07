@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Row, Col, Button, InputGroup } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import styles from '../customer.module.scss';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
-import Api from '../../shared/api/apiLink';
+import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
 import PhoneInput from '../../shared/phone-input/PhoneInput';
 
@@ -14,12 +15,29 @@ const AddCustomer = () => {
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
   const navigate = useNavigate();
+  const userTypes = useSelector((store) => store.user?.userTypes || []);
+  const isSuperAdmin = userTypes.includes('super_admin');
+  const [sites, setSites] = useState([]);
+  const [sitesLoading, setSitesLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
     category: "",
-    address: ""
+    address: "",
+    siteId: ""
   });
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    setSitesLoading(true);
+    ApiV2.get('/v2/all-site')
+      .then((res) => {
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        setSites(data);
+      })
+      .catch(() => setSites([]))
+      .finally(() => setSitesLoading(false));
+  }, [isSuperAdmin]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -28,6 +46,10 @@ const AddCustomer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSuperAdmin && !formData.siteId) {
+      toast.error('Please select a site.', { className: 'dark-toast' });
+      return;
+    }
     setLoader(true);
 
     const loadingToast = toast.loading("Adding New Customer...", {
@@ -35,7 +57,9 @@ const AddCustomer = () => {
     });
 
     try {
-      const payload = { ...formData, phone: formData.phone || '' };
+      const { siteId, ...rest } = formData;
+      const payload = { ...rest, phone: rest.phone || '' };
+      if (isSuperAdmin && siteId) payload.siteId = siteId;
       const response = await Api.post('/customers', payload);
       const { message } = response.data;
 
@@ -43,7 +67,8 @@ const AddCustomer = () => {
         fullName: "",
         phone: "",
         category: "",
-        address: ""
+        address: "",
+        siteId: ""
       });
 
       toast.update(loadingToast, {
@@ -137,6 +162,18 @@ const AddCustomer = () => {
                     required
                   />
                 </Col>
+                {isSuperAdmin && (
+                  <Col className="mb-4">
+                    <Form.Label className="fw-semibold">Site<span className="text-danger">*</span></Form.Label>
+                    <CustomDropdown
+                      value={formData.siteId}
+                      onChange={(val) => handleInputChange({ target: { name: 'siteId', value: val } })}
+                      required
+                      placeholder={sitesLoading ? 'Loading sites...' : 'Select Site'}
+                      options={sites.map(s => ({ value: s.id, label: s.name }))}
+                    />
+                  </Col>
+                )}
               </Row>
               <div className="d-flex justify-content-end my-5">
                 <Button

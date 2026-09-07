@@ -77,8 +77,15 @@ export default function RawMaterialInventory() {
 
     try {
       const params = {};
-      const rawSid = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]);
-      if (rawSid) params.siteId = rawSid;
+      let rawSid;
+      if (isSuperAdmin) {
+        rawSid = activeSite?.id || 'all';
+      } else {
+        const firstSite = Array.isArray(user?.userSites) ? user.userSites[0] : null;
+        const firstSiteId = typeof firstSite === 'object' ? firstSite?.id : firstSite;
+        rawSid = user?.siteId || firstSiteId || 'all';
+      }
+      params.siteId = rawSid;
 
       const res = await ApiV2.get('/v2/raw-material', { params });
       if (res.data?.success && res.data?.data) {

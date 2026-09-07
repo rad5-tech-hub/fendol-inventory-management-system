@@ -15,7 +15,7 @@ const f = (n) => new Intl.NumberFormat().format(n);
 const FALLBACK_INFO_CARDS = [
   { label: 'Eggs Produced', value: f(120000), sub: '1.20 kg', icon: GiEggClutch, color: '#8B5CF6' },
   { label: 'Hatchability Rate', value: '75.4%', sub: '90,480 hatched', icon: FaChartLine, color: '#22C55E' },
-  { label: 'Fry Produced', value: f(87360), sub: 'Estimated', icon: GiCirclingFish, color: '#F97316' },
+  { label: 'Fingerlings Produced', value: f(87360), sub: 'Estimated', icon: GiCirclingFish, color: '#F97316' },
   { label: 'Survival Rate', value: '89.2%', sub: 'After 7 Days', icon: FaHeartbeat, color: '#F43F5E' },
   { label: 'Total Mortality', value: f(10720), sub: '11.8%', icon: FaSkull, color: '#dc3545' },
   { label: 'Transferred to Nursery', value: f(66500), sub: 'Last: May 24, 2025', icon: FaExchangeAlt, color: '#3B82F6' },
@@ -305,16 +305,16 @@ export default function HatchBatchSummary() {
                     <span className={`${styles.detailValue} ${styles.successValue}`}>{batchData ? `${batchData.hatchabilityPercentage}%` : '75.4%'}</span>
                   </div>
                   <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Fry Produced (Est.)</span>
+                    <span className={styles.detailLabel}>Fingerlings Produced (Est.)</span>
                     <span className={styles.detailValue}>{batchData ? f(batchData.fryProduced) : f(87360)}</span>
                   </div>
                   <div className={styles.detailDivider} />
                   <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Fry Produced</span>
+                    <span className={styles.detailLabel}>Fingerlings Produced</span>
                     <span className={styles.detailValue}>{batchData ? f(batchData.fryProduced) : f(87360)}</span>
                   </div>
                   <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Fry Moved</span>
+                    <span className={styles.detailLabel}>Fingerlings Moved</span>
                     <span className={styles.detailValue}>{batchData ? f(batchData.fryMoved || 0) : '—'}</span>
                   </div>
                   <div className={styles.detailRow}>

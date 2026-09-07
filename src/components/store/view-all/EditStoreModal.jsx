@@ -34,6 +34,8 @@ export default function EditStoreModal({ show, store, onClose, onSuccess }) {
 
     try {
       const payload = {
+        name,
+        unit,
         threshold: Number(threshold),
         weightPerItem: Number(weightPerItem),
       };

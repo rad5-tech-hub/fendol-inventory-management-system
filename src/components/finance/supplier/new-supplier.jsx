@@ -7,6 +7,7 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { normalizePhone } from '../../shared/phoneUtils';
 import PhoneInput from '../../shared/phone-input/PhoneInput';
 
@@ -15,6 +16,9 @@ export default function NewSupplier() {
   const location = useLocation();
   const editSupplier = location.state?.supplier || null;
   const isEditing = !!editSupplier;
+  const activeSite = useSelector((store) => store.activeSite);
+  const user = useSelector((store) => store.user);
+  const isSuperAdmin = useSelector((store) => store.user?.userTypes?.includes('super_admin'));
 
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -23,6 +27,12 @@ export default function NewSupplier() {
     phone: editSupplier?.phone || "",
     address: editSupplier?.address || "",
     supplierType: editSupplier?.supplierTypeId || "",
+    rawMaterialIds: (() => {
+      if (!editSupplier) return [];
+      if (Array.isArray(editSupplier.rawMaterialIds)) return editSupplier.rawMaterialIds;
+      if (Array.isArray(editSupplier.rawMaterials)) return editSupplier.rawMaterials.map(r => r.id || r.rawMaterialId || r).filter(Boolean);
+      return [];
+    })(),
   });
 
   const [supplierTypes, setSupplierTypes] = useState([]);
@@ -33,9 +43,47 @@ export default function NewSupplier() {
   const [creatingType, setCreatingType] = useState(false);
   const typeRef = useRef(null);
 
+  const extractRawIds = (s) => {
+    if (!s) return [];
+    if (Array.isArray(s.rawMaterialIds)) return s.rawMaterialIds;
+    if (Array.isArray(s.rawMaterials)) return s.rawMaterials.map(r => r.id || r.rawMaterialId || r).filter(Boolean);
+    if (Array.isArray(s.materials)) return s.materials.map(r => r.id || r).filter(Boolean);
+    return [];
+  };
+
+  const [rawMaterials, setRawMaterials] = useState([]);
+  const [rawLoading, setRawLoading] = useState(true);
+  const [showRawDropdown, setShowRawDropdown] = useState(false);
+  const rawRef = useRef(null);
+
   useEffect(() => {
     fetchSupplierTypes();
   }, []);
+
+  const fetchRawMaterials = async () => {
+    setRawLoading(true);
+    try {
+      let rawSid;
+      if (isSuperAdmin) {
+        rawSid = activeSite?.id || 'all';
+      } else {
+        const firstSite = Array.isArray(user?.userSites) ? user.userSites[0] : null;
+        const firstSiteId = typeof firstSite === 'object' ? firstSite?.id : firstSite;
+        rawSid = user?.siteId || firstSiteId || 'all';
+      }
+      const res = await ApiV2.get('/v2/raw-material', { params: { siteId: rawSid } });
+      const data = Array.isArray(res.data?.data) ? res.data.data : [];
+      setRawMaterials(data);
+    } catch {
+      setRawMaterials([]);
+    } finally {
+      setRawLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRawMaterials();
+  }, [activeSite?.id, isSuperAdmin, user?.siteId]);
 
   const fetchSupplierTypes = async () => {
     setTypesLoading(true);
@@ -57,6 +105,9 @@ export default function NewSupplier() {
     const handleClickOutside = (e) => {
       if (typeRef.current && !typeRef.current.contains(e.target)) {
         setShowTypeDropdown(false);
+      }
+      if (rawRef.current && !rawRef.current.contains(e.target)) {
+        setShowRawDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -110,6 +161,7 @@ export default function NewSupplier() {
         phone: formData.phone ? normalizePhone(formData.phone) : '',
         supplierTypeId: selectedType?.id || formData.supplierType,
         address: formData.address,
+        rawMaterialIds: formData.rawMaterialIds || [],
       };
 
       if (isEditing) {
@@ -351,6 +403,60 @@ export default function NewSupplier() {
                                 Cancel
                               </Button>
                             </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </Col>
+                <Col className="mb-4">
+                  <Form.Label className="fw-semibold">Raw Materials Supplied</Form.Label>
+                  <div ref={rawRef} className="position-relative">
+                    <div
+                      className={`py-2 px-3 bg-light-subtle d-flex justify-content-between align-items-center ${styles.inputs}`}
+                      style={{ borderRadius: '0.375rem', cursor: 'pointer', minHeight: '48px' }}
+                      onClick={() => !rawLoading && setShowRawDropdown(!showRawDropdown)}
+                    >
+                      <span style={{ opacity: formData.rawMaterialIds?.length ? 1 : 0.5, color: formData.rawMaterialIds?.length ? '#212529' : '#6c757d', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {rawLoading
+                          ? 'Loading materials...'
+                          : formData.rawMaterialIds?.length
+                            ? rawMaterials.filter(m => formData.rawMaterialIds.includes(m.id)).map(m => m.name).join(', ') || `${formData.rawMaterialIds.length} selected`
+                            : 'Select raw materials'}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: '#6c757d', transition: 'transform 0.25s', transform: showRawDropdown ? 'rotate(180deg)' : 'none' }}>▾</span>
+                    </div>
+                    {showRawDropdown && (
+                      <div className="position-absolute w-100 bg-white shadow-sm" style={{ zIndex: 1050, borderRadius: '10px', marginTop: '6px', border: '1px solid #e0e0e0', overflow: 'hidden', boxShadow: '0 8px 25px rgba(0,0,0,0.1)' }}>
+                        <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                          {rawMaterials.length === 0 ? (
+                            <div style={{ padding: '16px', fontSize: '13px', color: '#8C949B', textAlign: 'center' }}>No raw materials available.</div>
+                          ) : (
+                            rawMaterials.map((m) => {
+                              const selected = formData.rawMaterialIds?.includes(m.id);
+                              return (
+                                <div
+                                  key={m.id}
+                                  style={{ padding: '12px 16px', cursor: 'pointer', fontSize: '14px', fontWeight: selected ? 600 : 400, color: selected ? '#512728' : '#2E3135', backgroundColor: selected ? '#fdf5f5' : 'transparent', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                  onClick={() => {
+                                    setFormData(prev => {
+                                      const cur = prev.rawMaterialIds || [];
+                                      const next = cur.includes(m.id) ? cur.filter(id => id !== m.id) : [...cur, m.id];
+                                      return { ...prev, rawMaterialIds: next };
+                                    });
+                                  }}
+                                >
+                                  <input type="checkbox" checked={!!selected} readOnly style={{ accentColor: '#512728' }} />
+                                  {m.name} {m.category ? `— ${m.category}` : ''}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                        {formData.rawMaterialIds?.length > 0 && (
+                          <div style={{ padding: '8px 16px', borderTop: '1px solid #e8e8e8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '13px', color: '#6c757d' }}>{formData.rawMaterialIds.length} selected</span>
+                            <span style={{ fontSize: '13px', color: '#512728', cursor: 'pointer', fontWeight: 600 }} onClick={() => setFormData(prev => ({ ...prev, rawMaterialIds: [] }))}>Clear</span>
                           </div>
                         )}
                       </div>

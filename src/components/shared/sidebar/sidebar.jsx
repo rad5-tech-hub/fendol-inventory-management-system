@@ -1,7 +1,7 @@
 import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-import { Nav, Card, Collapse, Tooltip, OverlayTrigger, Offcanvas } from "react-bootstrap";
+import { Nav, Card, Tooltip, OverlayTrigger, Offcanvas } from "react-bootstrap";
 
 const computeOpenFromPath = (path) => {
   const open = {};
@@ -61,16 +61,31 @@ import { useSelector } from "react-redux";
 import { hasPermission } from "../permissions/permissions";
 import { ApiV2 } from "../api/apiLink";
 
+let cachedSiteDetails = null;
+let cachedSiteIdsKey = "";
+
 export default function SideBar({ show, handleClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(() => computeOpenFromPath(location.pathname));
   const sidebarRef = useRef(null);
-  const expandedCallbackRef = useRef(null);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const user = useSelector((store) => store.user);
   const activeSite = useSelector((store) => store.activeSite);
-  const [userSiteDetails, setUserSiteDetails] = useState([]);
+  const [userSiteDetails, setUserSiteDetails] = useState(() => {
+    if (cachedSiteDetails && cachedSiteIdsKey === JSON.stringify((user?.userSites || []).filter(s => typeof s === 'string').sort())) {
+      return cachedSiteDetails;
+    }
+    return [];
+  });
+  const [sitesReady, setSitesReady] = useState(() => {
+    if (cachedSiteDetails && cachedSiteIdsKey === JSON.stringify((user?.userSites || []).filter(s => typeof s === 'string').sort())) {
+      return true;
+    }
+    const initSites = user?.userSites || [];
+    const initIds = initSites.filter(s => typeof s === 'string');
+    return initIds.length === 0;
+  });
 
   const isSuperAdmin = userTypes.includes('super_admin');
 
@@ -80,18 +95,31 @@ export default function SideBar({ show, handleClose }) {
   const isHatcheryContext = isSuperAdmin
     ? !!activeSite && isHatcheryType(siteTypeName(activeSite))
     : hasHatcherySite;
+  const isMenuReady = isSuperAdmin || sitesReady;
 
   useEffect(() => {
     if (isSuperAdmin) {
       setUserSiteDetails([]);
+      setSitesReady(true);
       return;
     }
     const sites = user?.userSites || [];
     const siteIds = sites.filter(s => typeof s === 'string');
-    if (siteIds.length === 0) {
-      setUserSiteDetails(sites.filter(s => typeof s === 'object'));
+    const idsKey = JSON.stringify(siteIds.sort());
+    if (cachedSiteDetails && cachedSiteIdsKey === idsKey) {
+      setUserSiteDetails(cachedSiteDetails);
+      setSitesReady(true);
       return;
     }
+    if (siteIds.length === 0) {
+      const details = sites.filter(s => typeof s === 'object');
+      cachedSiteDetails = details;
+      cachedSiteIdsKey = idsKey;
+      setUserSiteDetails(details);
+      setSitesReady(true);
+      return;
+    }
+    setSitesReady(false);
     let cancelled = false;
     (async () => {
       try {
@@ -99,10 +127,14 @@ export default function SideBar({ show, handleClose }) {
         const allSites = Array.isArray(res.data?.data) ? res.data.data : [];
         if (!cancelled) {
           const matched = allSites.filter(s => siteIds.includes(s.id));
-          setUserSiteDetails(matched.length ? matched : user?.userSites || []);
+          const details = matched.length ? matched : user?.userSites || [];
+          cachedSiteDetails = details;
+          cachedSiteIdsKey = idsKey;
+          setUserSiteDetails(details);
+          setSitesReady(true);
         }
       } catch {
-        if (!cancelled) setUserSiteDetails(user?.userSites || []);
+        if (!cancelled) { const fallback = user?.userSites || []; cachedSiteDetails = fallback; cachedSiteIdsKey = idsKey; setUserSiteDetails(fallback); setSitesReady(true); }
       }
     })();
     return () => { cancelled = true; };
@@ -117,7 +149,6 @@ export default function SideBar({ show, handleClose }) {
       updates.hatchery = true;
       if (path.includes('/hatchery/hatch-batches')) updates.hatch_batches = true;
       if (path.includes('/hatchery/broodstock')) updates.broodstock = true;
-      
     }
     if (path.includes("/ponds")) updates.pond_management = true;
     if (path.includes("/manage-fish")) updates.fish_activities = true;
@@ -137,37 +168,26 @@ export default function SideBar({ show, handleClose }) {
       updates.sales = true;
       if (path.includes('/finance/staff')) updates.staff = true;
     }
-    if (path.includes("/customer")) updates.customer = true;
-    if (path.includes("/complaints")) updates.complaints = true;
-
-    const expandingKey = Object.keys(updates).find(k => updates[k] && !open[k]);
+  if (path.includes("/customer")) updates.customer = true;
+  if (path.includes("/supplier")) updates.supplier = true;
+  if (path.includes("/complaints")) updates.complaints = true;
+  if (path.includes("/referral")) updates.referral = true;
+  if (path.includes("/mlm")) updates.mlm = true;
 
     setOpen((prev) => ({ ...prev, ...updates }));
 
-    const scrollToActive = () => {
-      const section = sidebarRef.current;
-      if (!section) return;
-      const navsEl = section.querySelector(`.${styles.navs}`);
-      scrollActiveIntoView(navsEl);
-    };
-
-    if (expandingKey) {
-      expandedCallbackRef.current = () => {
-        expandedCallbackRef.current = null;
-        scrollToActive();
-      };
-    } else {
-      // No sections to expand — active element is already rendered
-      scrollToActive();
-    }
-  }, [location.pathname]);
-
-  useEffect(() => {
     const section = sidebarRef.current;
     if (!section) return;
     const navsEl = section.querySelector(`.${styles.navs}`);
     scrollActiveIntoView(navsEl);
-  }, [location.pathname, userTypes, activeSite]);
+  }, [location.pathname]);
+
+  useLayoutEffect(() => {
+    const section = sidebarRef.current;
+    if (!section) return;
+    const navsEl = section.querySelector(`.${styles.navs}`);
+    scrollActiveIntoView(navsEl);
+  }, [location.pathname, userTypes, activeSite, isMenuReady]);
 
   const handleToggle = (key) => {
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -220,13 +240,13 @@ export default function SideBar({ show, handleClose }) {
         </span>
         <span>{open[sectionKey] ? <FaChevronDown size={14} className="text-light" /> : <FaChevronRight size={14} className="text-light" />}</span>
       </Card.Header>
-      <Collapse in={open[sectionKey]} style={{ transitionDuration: "0s" }} onEntered={() => expandedCallbackRef.current?.()}>
+      {open[sectionKey] && (
         <div id={`${sectionKey}-collapse-text`} className="px-2">
           <Card.Body className={styles.navigationLinks}>
             {children}
           </Card.Body>
         </div>
-      </Collapse>
+      )}
     </Card>
   );
 
@@ -366,16 +386,16 @@ export default function SideBar({ show, handleClose }) {
           )}
 
           {/* --- FEED MANAGEMENT --- */}
-          {hasPermission(userTypes, 'feed') && (
+          {!isHatcheryContext && hasPermission(userTypes, 'feed') && (
             <>
               <span className={styles.sectionLabel}>FEED MANAGEMENT</span>
-              {!isHatcheryContext && renderDirectLink("Dashboard", "/feed/dashboard", <IoGridOutline size={25} className="me-1" />)}
-              {!isHatcheryContext && renderCard("raw_materials", "Raw Materials", <GiChipsBag size={25} className="me-1" />,
+              {renderDirectLink("Dashboard", "/feed/dashboard", <IoGridOutline size={25} className="me-1" />)}
+              {renderCard("raw_materials", "Raw Materials", <GiChipsBag size={25} className="me-1" />,
                 <>
                   {renderNavItem("Raw Material Inventory", "/feed/raw-materials")}
                 </>
               )}
-              {!isHatcheryContext && renderCard("feed_production", "Feed production", <GiFoodChain size={25} className="me-1" />,
+              {renderCard("feed_production", "Feed production", <GiFoodChain size={25} className="me-1" />,
                 <>
                   {renderNavItem("Create batch", "/feed/production/create")}
                   {renderNavItem("Production History", "/feed/production/history")}
@@ -415,6 +435,7 @@ export default function SideBar({ show, handleClose }) {
             hasPermission(userTypes, 'finance:ledger') ||
             hasPermission(userTypes, 'finance:cash-drawer') ||
             hasPermission(userTypes, 'customer') ||
+            hasPermission(userTypes, 'supplier') ||
             hasPermission(userTypes, 'staff')) && (
             <>
               <span className={styles.sectionLabel}>FINANCE</span>
@@ -440,6 +461,12 @@ export default function SideBar({ show, handleClose }) {
                   {renderNavItem("Attendance", "/finance/staff/attendance")}
                 </>
               )}
+              {hasPermission(userTypes, 'supplier') && renderCard("supplier", "Suppliers", <FaUserTie size={25} className="me-1" />,
+                <>
+                  {renderNavItem("All Suppliers", "/finance/supplier/view-all")}
+                  {renderNavItem("Add Supplier", "/finance/supplier/new")}
+                </>
+              )}
             </>
           )}
 
@@ -451,6 +478,33 @@ export default function SideBar({ show, handleClose }) {
                 <>
                   {renderNavItem("Make a Complaint", "/complaints")}
                   {hasPermission(userTypes, 'complaints:view-all') && renderNavItem("All Complaints", "/complaints/all")}
+                </>
+              )}
+            </>
+          )}
+
+          {/* --- REFERRAL --- */}
+          {hasPermission(userTypes, 'referral') && (
+            <>
+              <span className={styles.sectionLabel}>REFERRAL</span>
+              {renderCard("referral", "Referral", <FaTrophy size={25} className="me-1" />,
+                <>
+                  {renderNavItem("Agents", "/referral/agents")}
+                  {renderNavItem("Payouts", "/referral/payouts")}
+                </>
+              )}
+            </>
+          )}
+
+          {/* --- MLM --- */}
+          {hasPermission(userTypes, 'mlm') && (
+            <>
+              <span className={styles.sectionLabel}>MLM</span>
+              {renderCard("mlm", "MLM", <FaExchangeAlt size={25} className="me-1" />,
+                <>
+                  {renderNavItem("Leaders", "/mlm/leaders")}
+                  {renderNavItem("Payouts", "/mlm/payouts")}
+                  {renderNavItem("Earnings", "/mlm/earnings")}
                 </>
               )}
             </>

@@ -46,6 +46,11 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
   const [showPondDropdown, setShowPondDropdown] = useState(false);
   const [customerSearch, setCustomerSearch] = useState(""); // New state for customer search
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false); // Toggle customer dropdown
+  const siteTypeName = (s) => s?.type?.name || s?.type || s?.description || s?.typeName || s?.name || '';
+  const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
+  const isHatcheryContext = !!activeSite && isHatcheryType(siteTypeName(activeSite));
+  const [isWalkIn, setIsWalkIn] = useState(false);
+  const [walkInName, setWalkInName] = useState('');
   const [ConfirmDialog, confirm] = useConfirm();
 
   useEffect(() => {
@@ -216,14 +221,18 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
     const salesToast = toast.loading("Adding sale...", { className: "dark-toast" });
 
     try {
-      const payload = {
+      if (isHatcheryContext && isWalkIn && !walkInName.trim()) {
+        toast.error("Please enter walk-in customer name.", { className: 'dark-toast' });
+        setLoader(false);
+        return;
+      }
+      const basePayload = {
         products: [{
           id: freshData.products[0]?.id,
           quantityCount: freshData.products[0]?.quantity || 0,
           quantityWeight: parseFloat(freshData.products[0]?.productWeight) || 0,
           packCount: 0
         }],
-        customerId: freshData.customerId,
         paymentType: freshData.paymentType?.toLowerCase(),
         discount: freshData.category === "Marketer" ? 0 : (Number(freshData.discount) || 0),
         description: freshData.description,
@@ -232,6 +241,9 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
         pondId: freshData.pondId || undefined,
         siteId: resolvedSiteId
       };
+      const payload = (isHatcheryContext && isWalkIn)
+        ? { ...basePayload, customerName: walkInName.trim() }
+        : { ...basePayload, customerId: freshData.customerId };
       const saleResponse = await Api.post("/sales", payload);
       if (saleResponse.status < 200 || saleResponse.status >= 300) {
         throw new Error(saleResponse.data?.message || "Sale failed!");
@@ -295,6 +307,8 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
       });
       setPondSearch("");
       setCustomerSearch("");
+      setIsWalkIn(false);
+      setWalkInName('');
       setFilteredPonds(stage);
       fetchCustomers();
     } catch (error) {
@@ -405,7 +419,13 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
 
           {/* Searchable Customer Input */}
           <Col className="mb-4">
-            <Form.Label className="fw-semibold">Customer Name</Form.Label>
+            <Form.Label className="fw-semibold">Customer {isHatcheryContext && isWalkIn ? '(Walk-in)' : ''}</Form.Label>
+            {isHatcheryContext && (
+              <Form.Check type="checkbox" label="Walk-in customer (no ledger entry)" checked={isWalkIn} onChange={(e) => { setIsWalkIn(e.target.checked); if (e.target.checked) { setFreshData(prev => ({ ...prev, customerId: '', fullName: '' })); setCustomerSearch(''); setBalance(undefined); } else setWalkInName(''); }} className="mb-2" />
+            )}
+            {isHatcheryContext && isWalkIn ? (
+              <Form.Control type="text" placeholder="Enter walk-in customer name" value={walkInName} onChange={(e) => setWalkInName(e.target.value)} className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`} required />
+            ) : (
             <div style={{ position: "relative" }}>
               <Form.Control
                 type="text"
@@ -437,6 +457,7 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
                 </div>
               )}
             </div>
+            )}
           </Col>
 
           {/* Description */}

@@ -39,6 +39,11 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
     const [totalPrice, setTotalPrice] = useState(0);
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [balance, setBalance] = useState();
+    const siteTypeName = (s) => s?.type?.name || s?.type || s?.description || s?.typeName || s?.name || '';
+    const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
+    const isHatcheryContext = !!activeSite && isHatcheryType(siteTypeName(activeSite));
+    const [isWalkIn, setIsWalkIn] = useState(false);
+    const [walkInName, setWalkInName] = useState('');
     const [ConfirmDialog, confirm] = useConfirm();
 
     useEffect(() => {
@@ -276,7 +281,12 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
         const salesToast = toast.loading("Adding sale...", { className: 'dark-toast' });
 
         try {
-            const payload = {
+            if (isHatcheryContext && isWalkIn && !walkInName.trim()) {
+                toast.error("Please enter walk-in customer name.", { className: 'dark-toast' });
+                setLoader(false);
+                return;
+            }
+            const basePayload = {
                 products: feedData.products
                     .filter(p => checkedProducts[p.id])
                     .map(p => ({
@@ -284,7 +294,6 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                         quantityCount: p.quantityUsedToPack || 0,
                         packCount: p.quantity || 0
                     })),
-                customerId: feedData.customerId,
                 paymentType: feedData.paymentType?.toLowerCase(),
                 discount: feedData.category === 'Marketer' ? 0 : (Number(feedData.discount) || 0),
                 description: feedData.description,
@@ -292,6 +301,9 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                 salesCategoryId: feedTypeId,
                 siteId: resolvedSiteId
             };
+            const payload = (isHatcheryContext && isWalkIn)
+                ? { ...basePayload, customerName: walkInName.trim() }
+                : { ...basePayload, customerId: feedData.customerId };
             const saleResponse = await Api.post('/sales', payload);
 
             if (saleResponse.status < 200 || saleResponse.status >= 300) {
@@ -349,6 +361,8 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                 fullName: '',
                 amountPaid: null
             });
+            setIsWalkIn(false);
+            setWalkInName('');
             setCheckedProducts({});
             setCurrentStep(1);
             setFormSubmitted(false);
@@ -464,7 +478,13 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                     <Row xxl={2} xl={2} lg={2} md={1} sm={1} xs={1}>
                         <Col className="mb-4">
                             <Form.Group controlId="searchCustomer">
-                                <Form.Label className="fw-semibold">Customer Name</Form.Label>
+                                <Form.Label className="fw-semibold">Customer {isHatcheryContext && isWalkIn ? '(Walk-in)' : ''}</Form.Label>
+                                {isHatcheryContext && (
+                                    <Form.Check type="checkbox" label="Walk-in customer (no ledger entry)" checked={isWalkIn} onChange={(e) => { setIsWalkIn(e.target.checked); if (e.target.checked) { setFeedData(prev => ({ ...prev, customerId: '', fullName: '' })); setBalance(undefined); } else setWalkInName(''); }} className="mb-2" />
+                                )}
+                                {isHatcheryContext && isWalkIn ? (
+                                    <Form.Control type="text" placeholder="Enter walk-in customer name" value={walkInName} onChange={(e) => setWalkInName(e.target.value)} className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`} required />
+                                ) : (
                                 <div style={{ position: 'relative', width: '100%' }}>
                                     <Form.Control
                                         type="text"
@@ -492,6 +512,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                                         </div>
                                     )}
                                 </div>
+                                )}
                             </Form.Group>
                         </Col>
 
