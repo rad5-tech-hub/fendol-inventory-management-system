@@ -75,10 +75,10 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                 Customer
               </p>
               <p style={{ margin: "0 0 2px", fontSize: "13px", fontWeight: 600, color: "#1A1C1E" }}>
-                {receipt.customer.fullName}
+                {receipt.customer?.fullName || receipt.customerName || 'Walk-in Customer'}
               </p>
               <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#6B7280" }}>
-                {receipt.customer.address}
+                {receipt.customer?.address || ''}
               </p>
               <p style={{ margin: "0", fontSize: "11px", color: "#9CA3AF" }}>
                 Served by: {receiptData.data.serverBy || receipt.servedBy || '-'}
@@ -116,7 +116,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
               </tr>
             </thead>
             <tbody>
-              {receipt.salesItems?.map((product, index) => {
+              {(receipt.salesItems || receipt.salesItem || [])?.map((product, index) => {
                 const qty = Number(product.quantity) || 0;
                 const wt = Number(product.productWeight) || 0;
                 const tot = Number(product.totalPrice) || 0;
@@ -124,7 +124,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
                 const displayQty = isFresh ? wt.toLocaleString() : qty.toLocaleString();
                 const unitPrice = (isFresh && wt ? tot / wt : qty ? tot / qty : tot).toLocaleString();
                 return (
-                  <tr key={index} style={{ borderBottom: index < receipt.salesItems.length - 1 ? "1px solid #F3F4F6" : "none" }}>
+                  <tr key={index} style={{ borderBottom: index < (receipt.salesItems || receipt.salesItem || []).length - 1 ? "1px solid #F3F4F6" : "none" }}>
                     <td style={{ padding: "6px 4px 6px 0", fontSize: "12px", color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {product.productName}
                     </td>
