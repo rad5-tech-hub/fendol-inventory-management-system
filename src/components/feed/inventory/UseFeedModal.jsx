@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { createPortal } from 'react-dom';
 import { FiX, FiAlertTriangle } from 'react-icons/fi';
 import { BsArrowDownCircle } from 'react-icons/bs';
-import Api, { ApiV2 } from '../../shared/api/apiLink';
+import Api from '../../shared/api/apiLink';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import styles from './TopUpFeedModal.module.scss';
 
@@ -17,9 +17,6 @@ export default function UseFeedModal({ show, feed, onClose, onSuccess }) {
   const [pondOptions, setPondOptions] = useState([]);
   const [pondsLoading, setPondsLoading] = useState(false);
   const [targetType, setTargetType] = useState('pond');
-  const [hatchBatchId, setHatchBatchId] = useState('');
-  const [hatchBatches, setHatchBatches] = useState([]);
-  const [hatchLoading, setHatchLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -30,7 +27,6 @@ export default function UseFeedModal({ show, feed, onClose, onSuccess }) {
   useEffect(() => {
     if (show) {
       setPondId('');
-      setHatchBatchId('');
       setTargetType('pond');
       setQuantity('');
       setErrors({});
@@ -75,23 +71,7 @@ export default function UseFeedModal({ show, feed, onClose, onSuccess }) {
         if (!cancelled) setPondsLoading(false);
       }
     };
-    const fetchHatchBatches = async () => {
-      setHatchLoading(true);
-      try {
-        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || '');
-        const params = siteId ? { siteId } : {};
-        const res = await ApiV2.get('/v2/hatch-batches', { params });
-        const data = Array.isArray(res.data?.data) ? res.data.data : [];
-        const activeBatches = data.filter(b => !b.status || String(b.status).toLowerCase() === 'active');
-        if (!cancelled) setHatchBatches(activeBatches.length ? activeBatches : data);
-      } catch {
-        if (!cancelled) setHatchBatches([]);
-      } finally {
-        if (!cancelled) setHatchLoading(false);
-      }
-    };
     fetchPonds();
-    fetchHatchBatches();
     return () => { cancelled = true; };
   }, [show, activeSite?.id]);
 
@@ -103,10 +83,6 @@ export default function UseFeedModal({ show, feed, onClose, onSuccess }) {
   const validate = (field, value) => {
     if (field === 'pondId') {
       if (targetType === 'pond' && !value) return 'Please select a pond';
-      return null;
-    }
-    if (field === 'hatchBatchId') {
-      if (targetType === 'hatchery' && !value) return 'Please select a hatch batch';
       return null;
     }
     if (field === 'quantity') {
@@ -124,7 +100,6 @@ export default function UseFeedModal({ show, feed, onClose, onSuccess }) {
 
   const handleChange = (field, value) => {
     if (field === 'pondId') setPondId(value);
-    if (field === 'hatchBatchId') setHatchBatchId(value);
     if (field === 'quantity') setQuantity(value);
     if (touched[field]) {
       setErrors((prev) => {
@@ -141,7 +116,6 @@ export default function UseFeedModal({ show, feed, onClose, onSuccess }) {
     setTouched((prev) => ({ ...prev, [field]: true }));
     let value;
     if (field === 'pondId') value = pondId;
-    else if (field === 'hatchBatchId') value = hatchBatchId;
     else value = quantity;
     const err = validate(field, value);
     setErrors((prev) => {
@@ -155,15 +129,13 @@ export default function UseFeedModal({ show, feed, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const allTouched = targetType === 'pond' ? { pondId: true, quantity: true } : { hatchBatchId: true, quantity: true };
+    const allTouched = targetType === 'pond' ? { pondId: true, quantity: true } : { quantity: true };
     setTouched(allTouched);
 
     const pondErr = targetType === 'pond' ? validate('pondId', pondId) : null;
-    const hatchErr = targetType === 'hatchery' ? validate('hatchBatchId', hatchBatchId) : null;
     const qtyErr = validate('quantity', quantity);
     const errs = {};
     if (pondErr) errs.pondId = pondErr;
-    if (hatchErr) errs.hatchBatchId = hatchErr;
     if (qtyErr) errs.quantity = qtyErr;
     setErrors(errs);
 
@@ -172,8 +144,9 @@ export default function UseFeedModal({ show, feed, onClose, onSuccess }) {
     setSubmitting(true);
 
     try {
+      const hatchSiteId = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]?.id || '');
       const payload = targetType === 'hatchery'
-        ? { hatchBatchId, quantity: Number(quantity) }
+        ? { quantity: Number(quantity), target: 'hatchbatch', ...(hatchSiteId ? { siteId: hatchSiteId } : {}) }
         : { pondId, quantity: Number(quantity) };
 
       const res = await Api.patch(`/use-feed/${feed.id}`, payload);
@@ -277,27 +250,9 @@ export default function UseFeedModal({ show, feed, onClose, onSuccess }) {
               </div>
             ) : (
               <div className={styles.field}>
-                <label className={styles.label}>
-                  Hatch Batch (ongoing)<span className={styles.required}>*</span>
-                </label>
-                {hatchLoading ? (
-                  <div className={styles.displayField} style={{ color: '#9CA3AF', fontWeight: 400 }}>Loading hatch batches...</div>
-                ) : (
-                  <CustomDropdown
-                    options={hatchBatches.map((b) => ({ value: b.id, label: `${b.hatchbatchNo || b.batchNo || b.id} — ${b.status || 'active'}` }))}
-                    value={hatchBatchId}
-                    onChange={(val) => { setHatchBatchId(val); handleBlur('hatchBatchId'); }}
-                    placeholder={hatchBatches.length === 0 ? '— No active hatch batches —' : '— Select Hatch Batch —'}
-                    isInvalid={!!errors.hatchBatchId}
-                    className={`${errors.hatchBatchId ? styles.inputError : ''}`}
-                  />
-                )}
-                {errors.hatchBatchId && touched.hatchBatchId && (
-                  <span className={styles.errorText}>
-                    <FiAlertTriangle size={11} style={{ marginRight: 4, flexShrink: 0 }} />
-                    {errors.hatchBatchId}
-                  </span>
-                )}
+                <div className={styles.displayField} style={{ color: '#6B7280', fontSize: '13px' }}>
+                  Applies to all active hatch batches at this site (no batch selection required).
+                </div>
               </div>
             )}
 

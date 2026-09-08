@@ -6,8 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useSelector } from 'react-redux';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
-import Api, { ApiV2 } from '../../shared/api/apiLink';
-import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
+import Api from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
 import { useConfirm } from '../../shared/confirm-modal';
 
@@ -24,9 +23,6 @@ const DamageFish = () => {
     remarks: ''
   });
   const [targetType, setTargetType] = useState('pond');
-  const [hatchBatchId, setHatchBatchId] = useState('');
-  const [hatchBatches, setHatchBatches] = useState([]);
-  const [hatchLoading, setHatchLoading] = useState(false);
   const [loader, setLoader] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false); // Sidebar toggle state
   const navigate = useNavigate();
@@ -67,20 +63,7 @@ const DamageFish = () => {
     fetchStages();
   }, [activeSite?.id]);
 
-  useEffect(() => {
-    const fetchHatch = async () => {
-      setHatchLoading(true);
-      try {
-        const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
-        const params = siteId ? { siteId } : {};
-        const res = await ApiV2.get('/v2/hatch-batches', { params });
-        const data = Array.isArray(res.data?.data) ? res.data.data : [];
-        const active = data.filter(b => !b.status || String(b.status).toLowerCase() === 'active');
-        setHatchBatches(active.length ? active : data);
-      } catch { setHatchBatches([]); } finally { setHatchLoading(false); }
-    };
-    fetchHatch();
-  }, [activeSite?.id]);
+  // Hatchery target applies to all active batches — no batch fetch needed
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -144,10 +127,6 @@ const DamageFish = () => {
       toast.error('Please select a pond.', { className: 'dark-toast' });
       return;
     }
-    if (targetType === 'hatchery' && !hatchBatchId) {
-      toast.error('Please select a hatch batch.', { className: 'dark-toast' });
-      return;
-    }
     const ok = await confirm({ message: "Are you sure you want to record this mortality?", title: "Record Mortality", variant: "danger" });
     if (!ok) return;
 
@@ -155,8 +134,9 @@ const DamageFish = () => {
     const loadingToast = toast.loading("Recording mortality...", { className: 'dark-toast' });
 
     try {
+      const hatchSiteId = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0] || '');
       const payload = targetType === 'hatchery'
-        ? { hatchBatchId, actual_quantity: formData.actual_quantity, remarks: formData.remarks }
+        ? { target: 'hatchbatch', actual_quantity: formData.actual_quantity, remarks: formData.remarks, ...(hatchSiteId ? { siteId: hatchSiteId } : {}) }
         : formData;
       const response = await Api.post('/log-damage', payload);
       setFormData({
@@ -302,17 +282,9 @@ const DamageFish = () => {
                 ) : (
                 <>
                 <Col md={12} lg={6} className="mb-4">
-                  <Form.Label className="fw-semibold">Hatch Batch</Form.Label>
-                  {hatchLoading ? (
-                    <div className="py-2 text-muted" style={{ fontSize: '14px' }}>Loading hatch batches...</div>
-                  ) : (
-                    <CustomDropdown
-                      value={hatchBatchId}
-                      onChange={(val) => setHatchBatchId(val)}
-                      placeholder={hatchBatches.length === 0 ? 'No active hatch batches' : 'Select Hatch Batch'}
-                      options={hatchBatches.map(b => ({ value: b.id, label: `${b.hatchbatchNo || b.batchNo || b.id} — ${b.status || 'active'}` }))}
-                    />
-                  )}
+                  <div className="py-2 text-muted" style={{ fontSize: '13px', color: '#6B7280' }}>
+                    Applies to all active hatch batches at this site (no batch selection required).
+                  </div>
                 </Col>
                 <Col md={6} lg={6} className="mb-4">
                   <Form.Label className="fw-semibold">Quantity</Form.Label>

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import SideBar from "../../shared/sidebar/sidebar";
 import Header from "../../shared/header/header";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../finance.module.scss';
-import { BsSearch, BsPlusLg, BsChevronDown, BsX } from "react-icons/bs";
+import { BsSearch, BsPlusLg, BsX } from "react-icons/bs";
 import { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -18,13 +18,6 @@ import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import DataTable from "../../shared/data-table/DataTable";
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
-
-const BALANCE_FILTER_OPTIONS = [
-  { value: 'all', label: 'All Suppliers' },
-  { value: 'owed', label: 'Owed to Supplier' },
-  { value: 'owes', label: 'Supplier Owes Us' },
-  { value: 'zero', label: 'No Balance' },
-];
 
 const formatCurrency = (value) => {
   if (value == null) return '₦0.00';
@@ -47,12 +40,7 @@ export default function ViewAllSupplier() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [supplierTypes, setSupplierTypes] = useState([]);
-  const [selectedTypeFilter, setSelectedTypeFilter] = useState('');
-  const [balanceFilter, setBalanceFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
-  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
-  const typeFilterRef = useRef(null);
   const itemsPerPage = 45;
   const [ConfirmDialog] = useConfirm();
 
@@ -76,34 +64,13 @@ export default function ViewAllSupplier() {
     }
   };
 
-  const fetchSupplierTypes = async () => {
-    try {
-      const res = await ApiV2.get('/v2/supplier-type');
-      const types = res.data?.data || [];
-      setSupplierTypes(types);
-    } catch {
-      // non-critical
-    }
-  };
-
   useEffect(() => {
     fetchSuppliers();
-    fetchSupplierTypes();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (typeFilterRef.current && !typeFilterRef.current.contains(e.target)) {
-        setShowTypeDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchQuery, selectedTypeFilter, balanceFilter]);
+  }, [searchQuery]);
 
   const getSupplierTypeName = (s) => {
     if (!s) return '';
@@ -113,16 +80,10 @@ export default function ViewAllSupplier() {
 
   const filteredSuppliers = suppliers.filter(s => {
     const q = searchQuery.toLowerCase();
-    const typeName = getSupplierTypeName(s.supplierType);
     const matchesSearch = !searchQuery
       || s.name?.toLowerCase().includes(q)
       || (s.phone || '').includes(q);
-    const matchesType = !selectedTypeFilter || typeName === selectedTypeFilter;
-    let matchesBalance = true;
-    if (balanceFilter === 'owed') matchesBalance = (s.balance || 0) > 0;
-    else if (balanceFilter === 'owes') matchesBalance = (s.balance || 0) < 0;
-    else if (balanceFilter === 'zero') matchesBalance = (s.balance || 0) === 0;
-    return matchesSearch && matchesType && matchesBalance;
+    return matchesSearch;
   });
 
   const pageCount = Math.ceil(filteredSuppliers.length / itemsPerPage);
@@ -131,11 +92,9 @@ export default function ViewAllSupplier() {
 
   const resetFilters = () => {
     setSearchQuery('');
-    setSelectedTypeFilter('');
-    setBalanceFilter('all');
   };
 
-  const hasActiveFilters = searchQuery || selectedTypeFilter || balanceFilter !== 'all';
+  const hasActiveFilters = !!searchQuery;
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -236,62 +195,6 @@ export default function ViewAllSupplier() {
                   </div>
                 </div>
               </div>
-              <div
-                className="d-flex align-items-center gap-3 flex-fill"
-                style={{
-                  background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
-                  padding: '18px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', minWidth: '200px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '48px', height: '48px', borderRadius: '10px', background: '#F0FDF4',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '20px', color: '#16A34A', flexShrink: 0,
-                  }}
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#8C949B', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                    Total Credit
-                  </div>
-                  <div style={{ fontSize: '26px', fontWeight: 700, color: '#16A34A', lineHeight: 1.2 }}>
-                    {formatCurrency(summary.totalCredits ?? 0)}
-                  </div>
-                </div>
-              </div>
-              <div
-                className="d-flex align-items-center gap-3 flex-fill"
-                style={{
-                  background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
-                  padding: '18px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', minWidth: '200px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '48px', height: '48px', borderRadius: '10px', background: '#FEF2F2',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '20px', color: '#DC2626', flexShrink: 0,
-                  }}
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#8C949B', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                    Total Debit
-                  </div>
-                  <div style={{ fontSize: '26px', fontWeight: 700, color: '#DC2626', lineHeight: 1.2 }}>
-                    {formatCurrency(summary.totalDebits ?? 0)}
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* ── Controls Bar ── */}
@@ -328,92 +231,18 @@ export default function ViewAllSupplier() {
                 )}
               </div>
 
-              {/* Filters */}
-              <div className="d-flex align-items-center gap-2 flex-wrap">
-                {/* Supplier Type Filter */}
-                <div className="position-relative" ref={typeFilterRef}>
-                  <button
-                    className="btn btn-sm d-flex align-items-center gap-1"
-                    style={{
-                      background: selectedTypeFilter ? '#512728' : '#ffffff',
-                      color: selectedTypeFilter ? '#ffffff' : '#374151',
-                      border: `1px solid ${selectedTypeFilter ? '#512728' : '#e5e7eb'}`,
-                      borderRadius: '8px', padding: '6px 12px', fontSize: '13px', fontWeight: 500,
-                      transition: 'all 0.12s ease',
-                    }}
-                    onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                  >
-                    {selectedTypeFilter || 'Supplier Type'}
-                    <BsChevronDown style={{ fontSize: '11px', marginLeft: '4px' }} />
-                  </button>
-                  {showTypeDropdown && (
-                    <div
-                      style={{
-                        position: 'absolute', top: '100%', left: 0, zIndex: 1050, marginTop: '4px',
-                        minWidth: '200px', background: '#ffffff', border: '1px solid #e5e7eb',
-                        borderRadius: '10px', boxShadow: '0 8px 25px rgba(0,0,0,0.1)', overflow: 'hidden',
-                      }}
-                    >
-                      <div
-                        style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '13px', color: selectedTypeFilter === '' ? '#512728' : '#374151', fontWeight: selectedTypeFilter === '' ? 600 : 400, backgroundColor: selectedTypeFilter === '' ? '#fdf5f5' : 'transparent', borderBottom: '1px solid #f0f0f0' }}
-                        onClick={() => { setSelectedTypeFilter(''); setShowTypeDropdown(false); }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FAFCFF'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTypeFilter === '' ? '#fdf5f5' : 'transparent'}
-                      >
-                        All Types
-                      </div>
-                      {supplierTypes.map((type) => (
-                        <div
-                          key={type.id}
-                          style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '13px', color: selectedTypeFilter === type.name ? '#512728' : '#374151', fontWeight: selectedTypeFilter === type.name ? 600 : 400, backgroundColor: selectedTypeFilter === type.name ? '#fdf5f5' : 'transparent', borderBottom: '1px solid #f0f0f0' }}
-                          onClick={() => { setSelectedTypeFilter(type.name); setShowTypeDropdown(false); }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FAFCFF'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTypeFilter === type.name ? '#fdf5f5' : 'transparent'}
-                        >
-                          {type.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Balance Filter */}
-                <div
-                  className="d-flex"
+              {hasActiveFilters && (
+                <button
+                  className="btn btn-sm d-flex align-items-center gap-1"
                   style={{
-                    background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden',
+                    background: 'transparent', color: '#6B7280', border: '1px solid #e5e7eb',
+                    borderRadius: '8px', padding: '6px 10px', fontSize: '12px', cursor: 'pointer',
                   }}
+                  onClick={resetFilters}
                 >
-                  {BALANCE_FILTER_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      style={{
-                        padding: '6px 12px', fontSize: '12px', fontWeight: balanceFilter === opt.value ? 600 : 500,
-                        border: 'none', background: balanceFilter === opt.value ? '#512728' : 'transparent',
-                        color: balanceFilter === opt.value ? '#ffffff' : '#374151', cursor: 'pointer',
-                        transition: 'all 0.12s ease', borderRight: '1px solid #f0f0f0', whiteSpace: 'nowrap',
-                      }}
-                      onClick={() => setBalanceFilter(opt.value)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Reset */}
-                {hasActiveFilters && (
-                  <button
-                    className="btn btn-sm d-flex align-items-center gap-1"
-                    style={{
-                      background: 'transparent', color: '#6B7280', border: '1px solid #e5e7eb',
-                      borderRadius: '8px', padding: '6px 10px', fontSize: '12px', cursor: 'pointer',
-                    }}
-                    onClick={resetFilters}
-                  >
-                    <BsX style={{ fontSize: '14px' }} /> Reset
-                  </button>
-                )}
-              </div>
+                  <BsX style={{ fontSize: '14px' }} /> Reset
+                </button>
+              )}
             </div>
 
             {/* ── Error ── */}
@@ -425,8 +254,8 @@ export default function ViewAllSupplier() {
             {/* ── Empty ── */}
             {!loading && !error && filteredSuppliers.length === 0 && (
               <EmptyState
-                title={searchQuery || selectedTypeFilter || balanceFilter !== 'all' ? 'No matches found' : 'No suppliers available'}
-                description={searchQuery || selectedTypeFilter || balanceFilter !== 'all' ? 'Try adjusting your search or filters.' : 'Add new suppliers to get started.'}
+                title={searchQuery ? 'No matches found' : 'No suppliers available'}
+                description={searchQuery ? 'Try adjusting your search.' : 'Add new suppliers to get started.'}
               />
             )}
 
@@ -466,16 +295,10 @@ export default function ViewAllSupplier() {
                       );
                     }},
                     { key: 'phone', label: 'PHONE', width: '16%', render: (val) => <span style={{ fontSize: '13px', color: '#374151' }}>{val}</span> },
-                    { key: 'balance', label: 'BALANCE (₦)', width: '18%', align: 'right', render: (val) => {
-                      const balance = val || 0;
-                      const balanceColor = balance > 0 ? '#16A34A' : balance < 0 ? '#DC2626' : '#6B7280';
-                      const balanceLabel = balance > 0 ? 'Owed to Supplier' : balance < 0 ? 'Supplier Owes Us' : 'Settled';
-                      return (
-                        <>
-                          <div style={{ fontSize: '14px', fontWeight: 700, color: balanceColor }}>{formatCurrency(balance)}</div>
-                          <div style={{ fontSize: '11px', color: balanceColor, opacity: 0.7 }}>{balanceLabel}</div>
-                        </>
-                      );
+                    { key: 'rawMaterials', label: 'MATERIALS', width: '22%', render: (val, row) => {
+                      const list = Array.isArray(val) ? val : Array.isArray(row.rawMaterials) ? row.rawMaterials : Array.isArray(row.materials) ? row.materials : [];
+                      const display = list.map(v => typeof v === 'string' ? v : v.name || v.material || '').filter(Boolean);
+                      return display.length ? <span style={{ fontSize: '12px', color: '#374151' }}>{display.join(', ')}</span> : <span style={{ fontSize: '12px', color: '#9CA3AF' }}>—</span>;
                     }},
                   ]}
                   data={currentSuppliers}
