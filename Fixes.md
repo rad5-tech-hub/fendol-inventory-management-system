@@ -105,3 +105,76 @@ For roles with a restricted menu set (e.g. `sales_manager` sees only Sales/Showc
 4. Confirm whether initial `userTypes` hydration from `sessionStorage` (sync in `authReducer.js:22`) is reliable or if a race with `ProtectedRoute` redirect contributes to the flash.
 
 ---
+
+
+
+Full Test Map — every fix, where it lives, and how to verify
+1) Customer siteId on create ----fixed
+File: src/components/customer/add/add.jsx:13
+Route: /customer/add
+- Login as Super Admin → Add Customer shows required Site dropdown (loads GET /v2/all-site). Leaving empty blocks submit with Please select a site.
+- Submit → Network POST /customers includes siteId: "uuid" + fullName/phone/category/address.
+- Login as Farm Manager / Sales Manager → same route, no Site field, network payload omits siteId entirely (not " ").
+- Edit flow (/customer/view-all → ⋯ → Edit) intentionally unchanged (creation-only scope).
+2) Edit Store Threshold — full body ----fixed
+File: src/components/store/view-all/EditStoreModal.jsx:36
+Route: /store/view-all → ⋯ → Edit
+- Edit any store item, change Name/Unit/Threshold/Weight Per Item → Update.
+- Network PATCH /edit-store-threshold/:id payload must be { name:"baby oku", unit:"kg", threshold:78, weightPerItem:6.3 } (all 4, previously only 2).
+3) Hatchery walk-in sales (all 4 sales types) ----fixed
+Files: src/components/finance/add-sales/dryfish.jsx:26, freshfish.jsx:15, feed.jsx:13, fingerlingsfish.jsx:15 + receipt.jsx:78
+Route: /finance/add-sales → pick Dry/Fresh/Fingerlings/Feed
+- Precondition: set Active Site (header pill) to a Hatchery type site (or login as user whose sites include hatchery). On non-hatchery site the checkbox is hidden.
+- In step 2, check Walk-in customer (no ledger entry) → searchable dropdown is replaced by plain text Enter walk-in customer name.
+- Submit → Network POST /sales omits customerId, includes customerName:"Walk-in Customer" (+ products/discount/description/amountPaid/salesCategoryId/siteId/pondId). No customer record created, receipt shows typed name ( receipt.jsx:78 fallback to customerName when receipt.customer is null). Toggle off → reverts to registered-customer flow with customerId.
+4) Supplier — typed raw materials + ledger removal ---fixed
+Create/Edit: src/components/finance/supplier/new-supplier.jsx:46
+Route: /finance/supplier/new (+ edit via /finance/supplier/view-all → ⋯ → Edit)
+- Raw Materials Supplied is now free-text: type Maize → Add → chip appears; add Soya → two chips; × removes. Submitting sends rawMaterials:["Maize","Soya"] (strings, not IDs). No GET /v2/raw-material call on this page anymore.
+- Existing suppliers with typed materials prefill as chips on edit.
+List: src/components/finance/supplier/view-all-supplier.jsx:40
+Route: /finance/supplier/view-all
+- Only Total Suppliers stat card (Credit/Debit removed). No Supplier Type dropdown, no Balance filter, no supplier-type API call.
+- Search is name/phone only. Table shows MATERIALS column (comma-joined typed names), no BALANCE column, ⋯ menu shows only Edit ( View Ledger removed). Direct nav to /finance/supplier/ledger 404s (file supplier-ledger.jsx deleted).
+5) Raw-material siteId hotfix --fixed
+Files: src/components/feed/raw-material-inventory/raw-material-inventory.jsx:74, src/components/finance/supplier/new-supplier.jsx:63
+Route: /feed/raw-materials
+- Login as multi-site user (e.g., Farm Manager with 2+ sites) with no active site selected → page still loads (network GET /v2/raw-material?siteId=all), no toast siteId is required for users with access to multiple sites.
+6) Restock Store UI — packs vs weight ---fixed
+Create: src/components/store/view-all/AddStockModal.jsx:136
+Restock: src/components/store/view-all/RestockStoreModal.jsx:211
+Use: src/components/store/view-all/UseStoreModal.jsx:238
+Route: /store/view-all → Add Store / Restock / Use
+- Add: label Weight per 1 {unit} ({unit}) + helper Weight of one pack… 20 = 20g with live placeholder.
+- Restock: labels Total Price for all packs — ₦ (not per pack) + helper, Quantity — number of packs to add + helper, plus live Total weight: 5 × 20 preview (only when weightPerItem exists, decimals allowed on price).
+- Use: label Quantity Used — weight amount (1 pack = 20) + helper weight amount, not pack count, ≈ 0.012 packs (0.25 ÷ 20) preview, decimals allowed.
+7) Use Feed / Use Store / Mortality → Hatchery (all active batches) --fixed
+Files: src/components/feed/inventory/UseFeedModal.jsx:174, src/components/store/view-all/UseStoreModal.jsx:174, src/components/manage-fish/damage-fish/damage-fish.jsx:158
+Routes: /feed/inventory/overview → Use Feed; /store/view-all → Use; /manage-fish/damage-fish (Mortality)
+- Each has Pond | Hatchery Batch toggle. Choose Hatchery Batch → no batch dropdown, info box Applies to all active hatch batches at this site.
+- Submit hatchery branch → Network:
+- Store: PUT /use-store-item/:id { quantityUsed:2.90, target:"hatchbatch", siteId:"50bd2d1b-..." }
+- Feed: PATCH /use-feed/:id { quantity:6, target:"hatchbatch", siteId? } (siteId only for super admin, omitted otherwise)
+- Mortality: POST /log-damage { target:"hatchbatch", actual_quantity:50, remarks:"Fry mortality", siteId? }
+Previously sent hatchBatchId and got is not allowed.
+8) Sidebar glitch + persistence ----fixed
+Files: src/components/shared/sidebar/sidebar.jsx:64,90,226
+Scope: every protected route
+- Login as Farm Manager and Sales Manager (two restricted roles). Rapidly click 5-6 sidebar headers/items (Fish Operations, Finance, Inventory, Hatchery if visible). Before, farm manager flashed full unfiltered menu on each click due to per-page remount + Collapse transition; now with Collapse replaced by {open && <div>} + module-level cachedSiteDetails the sidebar stays static and only the main styles.content area shows its spinner. Hard-refresh each role to confirm no first-paint FOUC either.
+9) Hatchery labels — Fingerlings ----fixed
+Files: src/components/hatchery/hatch-batches/view-all/view-all-batches.jsx:405, src/components/hatchery/hatch-batches/summary/hatch-batch-summary.jsx:18
+Route: /hatchery/hatch-batches/view-all + summary  /hatchery/hatch-batches/summary/:id
+- Table headers Fingerlings Produced / Fingerlings Moved, chart Fingerlings Production Trend, summary cards Fingerlings Produced (Est.) / Fingerlings Moved. Data field fryProduced unchanged, only labels.
+10) Sidebar membership fixes --fixed
+File: src/components/shared/sidebar/sidebar.jsx:388,432,486
+- Feed Management entire section now hidden on isHatcheryContext (previously only sub-items hid, inventory leaked).
+- Suppliers card under FINANCE gated by hasPermission(...'supplier') → visible to super_admin/farm_manager/finance, hidden from sales_manager (spec).
+- Referral + MLM sections gated by hasPermission(...'referral'/'mlm') → visible only to super_admin, hidden from all others (previously removed entirely).
+Verify by logging in as each role:
+- sales_manager sees: Sales (New Sales, New Expenses no Finance Ledger), Showcase, Cash Drawer, Customers → no Supplier, Complaints, MLM/Referral, Processing/Feed on hatchery.
+- farm_manager sees: all above + Supplier + Ponds/Manage-Fish etc. but no MLM/Referral.
+- super_admin sees Supplier + Referral + MLM + everything.
+11) Fish process — skip showcase GET --fixed
+Files: src/components/fish-processes/process-fish/new-batch.jsx:140,257, src/components/fish-processes/process-fish/batch-processing.jsx:141
+Route: /fish-processes/process-fish → move through Washing → Smoking → Drying → Move To Showcase
+- At Drying → Showcase (POST /add-fish-to-show-glass) the subsequent GET /fish-process/:id is now skipped (if (!isShowcaseMove) await fetchProcessData), so no 404 fish-process not found toast. Washing→Smoking and Smoking→Drying still fetch and update quantities. Restoring a saved batchProcessId on reload silently clears storage on 404 instead of warning.

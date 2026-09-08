@@ -46,7 +46,8 @@ export default function UpdateStoreInventory() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editProduct, setEditProduct] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editStoreItem, setEditStoreItem] = useState(null);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [restockProduct, setRestockProduct] = useState(null);
   const [showUseModal, setShowUseModal] = useState(false);
@@ -138,7 +139,7 @@ export default function UpdateStoreInventory() {
                 <p className={styles.pageSubtitle}>View and manage store stock items.</p>
               </div>
               <div className={styles.headerRight}>
-                <button className={styles.exportBtn} onClick={() => { setEditProduct(null); setShowAddModal(true); }}>
+                <button className={styles.exportBtn} onClick={() => setShowAddModal(true)}>
                   <FiPlus size={14} />
                   Add Store
                 </button>
@@ -321,7 +322,7 @@ export default function UpdateStoreInventory() {
                           padding: '4px 0',
                         }}
                         items={[
-                          { label: 'Edit', onClick: () => { setEditProduct(row); setShowAddModal(true); } },
+                          { label: 'Edit', onClick: () => { setEditStoreItem(row); setShowEditModal(true); } },
                           { divider: true },
                           { label: 'Restock', onClick: () => { setRestockProduct(row); setShowRestockModal(true); } },
                           { label: 'Use', onClick: () => { setUseProduct(row); setShowUseModal(true); } },
@@ -375,9 +376,25 @@ export default function UpdateStoreInventory() {
 
       <AddStockModal
         show={showAddModal}
-        onClose={() => { setShowAddModal(false); setEditProduct(null); }}
+        onClose={() => setShowAddModal(false)}
         onSuccess={fetchProducts}
         isSuperAdmin={isSuperAdmin}
+      />
+
+      <EditStoreModal
+        show={showEditModal}
+        store={editStoreItem}
+        onClose={() => { setShowEditModal(false); setEditStoreItem(null); }}
+        onSuccess={(success, msg) => {
+          if (success) {
+            toast.success(msg, { className: 'dark-toast', autoClose: 3000 });
+            fetchProducts();
+          } else {
+            toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
+          }
+          setShowEditModal(false);
+          setEditStoreItem(null);
+        }}
       />
 
       {showRestockModal && (
