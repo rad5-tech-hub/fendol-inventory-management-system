@@ -23,15 +23,45 @@ const FinanceLedger = () => {
   useEffect(() => {
     const fetchLedgerData = async () => {
       try {
-        const response = await Api.get("/ledger");
-        if (Array.isArray(response.data.data)) {
-          setLedgerData(response.data.data);
-        } else {
-          throw new Error("Expected an array of ledger data");
+        setLoading(true);
+        setError("");
+        // Support both legacy non-paginated and new cursor-paginated responses
+        const allData = [];
+        let cursor = null;
+        let hasMore = true;
+        let firstResponse = null;
+        while (hasMore) {
+          const params = { limit: 45 };
+          if (cursor) params.cursor = cursor;
+          const response = await Api.get("/ledger", { params });
+          const body = response.data;
+          // Legacy shape: { data: [...] }
+          if (!body.pagination) {
+            if (Array.isArray(body.data)) {
+              setLedgerData(body.data);
+            } else {
+              throw new Error("Expected an array of ledger data");
+            }
+            return;
+          }
+          // Paginated shape: { data:[], pagination:{ hasMore, nextCursor } }
+          if (Array.isArray(body.data)) {
+            allData.push(...body.data);
+          }
+          if (!firstResponse) firstResponse = body;
+          hasMore = !!body.pagination?.hasMore;
+          cursor = body.pagination?.nextCursor || null;
+          if (!hasMore) break;
+          // Safety: avoid infinite loop if backend echoes same cursor
+          if (allData.length > 5000) break;
+        }
+        // If paginated, use accumulated data
+        if (firstResponse?.pagination) {
+          setLedgerData(allData);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError(err.response?.data?.message || "Failed to fetch data. Please try again.");
+        setError(err.response?.data?.message || err.response?.data?.response_message || "Failed to fetch data. Please try again.");
       } finally {
         setLoading(false);
       }

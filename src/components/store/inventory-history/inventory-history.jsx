@@ -15,7 +15,7 @@ export default function InventoryHistory() {
   const user = useSelector((store) => store.user);
   const activeSite = useSelector((store) => store.activeSite);
   const isSuperAdmin = user?.userTypes?.includes('super_admin');
-  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || '') : (user?.siteId || user?.userSites?.[0] || '');
+  const resolvedSiteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0]?.id || user?.userSites?.[0] || 'all');
 
   const [inventoryHistory, setInventoryHistory] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -28,14 +28,24 @@ export default function InventoryHistory() {
 
   useEffect(() => {
     const fetchInventoryHistory = async () => {
+      setLoading(true);
       try {
-        const params = {};
-        if (resolvedSiteId) params.siteId = resolvedSiteId;
+        const params = { siteId: resolvedSiteId };
         const response = await Api.get('/stores-histories', { params });
-        setInventoryHistory(response.data.data);
-        setFilteredData(response.data.data);
+        const list = Array.isArray(response.data?.data) ? response.data.data : [];
+        setInventoryHistory(list);
+        setFilteredData(list);
+        setError("");
       } catch (error) {
-        setError("Error fetching inventory history. Please try again.");
+        const status = error.response?.status;
+        const msg = error.response?.data?.response_message || error.response?.data?.message || "";
+        if (status === 404 && msg.toLowerCase().includes('not found')) {
+          setInventoryHistory([]);
+          setFilteredData([]);
+          setError("");
+        } else {
+          setError("Error fetching inventory history. Please try again.");
+        }
       } finally {
         setLoading(false);
       }

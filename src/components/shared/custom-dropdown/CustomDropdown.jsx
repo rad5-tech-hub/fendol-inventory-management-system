@@ -58,7 +58,13 @@ const CustomDropdown = forwardRef(({
     if (disabled) return;
     if (!open) {
       const rect = e.currentTarget.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 2, left: rect.left, width: rect.width });
+      const dropdownHeight = 240;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      // Flip upward if not enough space below but enough above
+      const shouldFlip = spaceBelow < Math.min(dropdownHeight, 160) && spaceAbove > spaceBelow;
+      const top = shouldFlip ? Math.max(8, rect.top - dropdownHeight - 2) : rect.bottom + 2;
+      setCoords({ top, left: rect.left, width: rect.width });
       if (searchable) setSearch('');
     }
     setOpen(!open);

@@ -157,9 +157,9 @@ const AddExpense = () => {
                     <SideBar show={showSidebar} handleClose={handleCloseSidebar} />
                 </div>
                 <section className={`${styles.content} flex-grow-1`}>
-                    <main>
+                    <main style={{ paddingBottom: 120 }}>
                         <ToastContainer />
-                        <Form className={styles.create_form} onSubmit={handleAddExpense}>
+                        <Form className={styles.create_form} onSubmit={handleAddExpense} style={{ overflow: 'visible' }}>
                             <h4 className="mt-4 mb-5">Add New Expense</h4>
                             <Row lg={1} md={1} className="g-4">
                                 <Col>

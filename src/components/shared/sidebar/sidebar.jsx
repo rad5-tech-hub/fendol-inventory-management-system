@@ -175,19 +175,30 @@ export default function SideBar({ show, handleClose }) {
   if (path.includes("/mlm")) updates.mlm = true;
 
     setOpen((prev) => ({ ...prev, ...updates }));
-
-    const section = sidebarRef.current;
-    if (!section) return;
-    const navsEl = section.querySelector(`.${styles.navs}`);
-    scrollActiveIntoView(navsEl);
   }, [location.pathname]);
 
+  // Scroll active item into view only on route change (not on dropdown toggle)
   useLayoutEffect(() => {
-    const section = sidebarRef.current;
-    if (!section) return;
-    const navsEl = section.querySelector(`.${styles.navs}`);
-    scrollActiveIntoView(navsEl);
-  }, [location.pathname, userTypes, activeSite, isMenuReady]);
+    const id = requestAnimationFrame(() => {
+      const section = sidebarRef.current;
+      if (!section) return;
+      const navsEl = section.querySelector(`.${styles.navs}`);
+      scrollActiveIntoView(navsEl);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [location.pathname]);
+
+  // Initial mount: ensure active is visible after menu hydrates
+  useLayoutEffect(() => {
+    if (!isMenuReady) return;
+    const id = requestAnimationFrame(() => {
+      const section = sidebarRef.current;
+      if (!section) return;
+      const navsEl = section.querySelector(`.${styles.navs}`);
+      scrollActiveIntoView(navsEl);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isMenuReady]);
 
   const handleToggle = (key) => {
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }));

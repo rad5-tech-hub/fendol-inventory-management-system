@@ -29,11 +29,10 @@ export default function NewSupplier() {
     supplierType: editSupplier?.supplierTypeId || "",
     rawMaterials: (() => {
       if (!editSupplier) return [];
-      if (Array.isArray(editSupplier.rawMaterials) && editSupplier.rawMaterials.length && typeof editSupplier.rawMaterials[0] === 'string') return editSupplier.rawMaterials;
-      if (Array.isArray(editSupplier.rawMaterialNames)) return editSupplier.rawMaterialNames;
-      if (Array.isArray(editSupplier.materials) && editSupplier.materials.length && typeof editSupplier.materials[0] === 'string') return editSupplier.materials;
-      if (Array.isArray(editSupplier.rawMaterials)) return editSupplier.rawMaterials.map(r => r.name || r.rawMaterialName || r.material || r).filter(Boolean);
-      if (Array.isArray(editSupplier.rawMaterialIds)) return editSupplier.rawMaterialIds;
+      const raw = editSupplier.rawMaterialSupplied || editSupplier.rawMaterials || editSupplier.rawMaterialNames || editSupplier.materials;
+      if (typeof raw === 'string' && raw.trim()) return raw.split(',').map(s => s.trim()).filter(Boolean);
+      if (Array.isArray(raw) && raw.length && typeof raw[0] === 'string') return raw;
+      if (Array.isArray(raw)) return raw.map(r => r.name || r.rawMaterialName || r.material || r).filter(Boolean);
       return [];
     })(),
   });
@@ -131,13 +130,16 @@ export default function NewSupplier() {
     try {
       const selectedType = supplierTypes.find(t => t.id === formData.supplierType);
 
-      const payload = {
+      const basePayload = {
         name: formData.fullName,
         phone: formData.phone ? normalizePhone(formData.phone) : '',
         supplierTypeId: selectedType?.id || formData.supplierType,
         address: formData.address,
-        rawMaterials: formData.rawMaterials || [],
+        rawMaterialSupplied: (formData.rawMaterials || []).join(', '),
       };
+      const payload = isEditing
+        ? basePayload
+        : { ...basePayload, ...(isSuperAdmin && activeSite?.id ? { siteId: activeSite.id } : {}) };
 
       if (isEditing) {
         await ApiV2.patch(`/v2/supplier/${editSupplier.id}`, payload);
@@ -418,7 +420,6 @@ export default function NewSupplier() {
                       Add
                     </Button>
                   </div>
-                  <small className="text-muted" style={{ fontSize: '11px' }}>Type and add multiple — e.g. Maize, Soya, etc.</small>
                   {formData.rawMaterials.length > 0 && (
                     <div className="d-flex flex-wrap gap-2 mt-2">
                       {formData.rawMaterials.map((m, i) => (

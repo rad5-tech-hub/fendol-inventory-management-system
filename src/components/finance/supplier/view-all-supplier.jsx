@@ -191,7 +191,7 @@ export default function ViewAllSupplier() {
                     Total Suppliers
                   </div>
                   <div style={{ fontSize: '26px', fontWeight: 700, color: '#2E3135', lineHeight: 1.2 }}>
-                    {summary.totalSuppliers ?? suppliers.length}
+                    {summary.totalSuppliers || suppliers.length}
                   </div>
                 </div>
               </div>
@@ -295,8 +295,10 @@ export default function ViewAllSupplier() {
                       );
                     }},
                     { key: 'phone', label: 'PHONE', width: '16%', render: (val) => <span style={{ fontSize: '13px', color: '#374151' }}>{val}</span> },
-                    { key: 'rawMaterials', label: 'MATERIALS', width: '22%', render: (val, row) => {
-                      const list = Array.isArray(val) ? val : Array.isArray(row.rawMaterials) ? row.rawMaterials : Array.isArray(row.materials) ? row.materials : [];
+                    { key: 'rawMaterialSupplied', label: 'MATERIALS', width: '22%', render: (val, row) => {
+                      const raw = val ?? row.rawMaterialSupplied ?? row.rawMaterials ?? row.materials ?? '';
+                      if (typeof raw === 'string' && raw.trim()) return <span style={{ fontSize: '12px', color: '#374151' }}>{raw}</span>;
+                      const list = Array.isArray(raw) ? raw : [];
                       const display = list.map(v => typeof v === 'string' ? v : v.name || v.material || '').filter(Boolean);
                       return display.length ? <span style={{ fontSize: '12px', color: '#374151' }}>{display.join(', ')}</span> : <span style={{ fontSize: '12px', color: '#9CA3AF' }}>—</span>;
                     }},
