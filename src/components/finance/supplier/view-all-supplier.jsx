@@ -295,7 +295,7 @@ export default function ViewAllSupplier() {
                       );
                     }},
                     { key: 'phone', label: 'PHONE', width: '16%', render: (val) => <span style={{ fontSize: '13px', color: '#374151' }}>{val}</span> },
-                    { key: 'rawMaterialSupplied', label: 'MATERIALS', width: '22%', render: (val, row) => {
+                    { key: 'rawMaterialSupplied', label: 'ITEMS', width: '22%', render: (val, row) => {
                       const raw = val ?? row.rawMaterialSupplied ?? row.rawMaterials ?? row.materials ?? '';
                       if (typeof raw === 'string' && raw.trim()) return <span style={{ fontSize: '12px', color: '#374151' }}>{raw}</span>;
                       const list = Array.isArray(raw) ? raw : [];

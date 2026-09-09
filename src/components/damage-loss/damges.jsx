@@ -10,6 +10,7 @@ import EmptyState from "../shared/empty-state/EmptyState";
 import Api from '../shared/api/apiLink';
 import { SkeletonTable } from "../shared/skeleton/Skeleton";
 import DataTable from "../shared/data-table/DataTable";
+import Pagination from "../shared/pagination/Pagination";
 import { BsSearch, BsPlusLg, BsX, BsCalendar3 } from "react-icons/bs";
 
 const f = (n) => (n != null ? new Intl.NumberFormat().format(Number(n)) : '0');
@@ -30,9 +31,8 @@ export default function DamageLoss() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
-  const [cursor, setCursor] = useState(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
   const [pondMap, setPondMap] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -56,39 +56,38 @@ export default function DamageLoss() {
     })();
   }, [siteId]);
 
-  const fetchDamageRecords = useCallback(async (appendCursor) => {
+  const fetchDamageRecords = useCallback(async () => {
     try {
-      if (appendCursor) setLoadingMore(true); else setLoading(true);
+      setLoading(true);
       setError("");
-      const params = {};
-      if (siteId) params.siteId = siteId;
-      if (appendCursor) params.cursor = appendCursor;
-      const response = await Api.get('/damaged-fish', { params });
-      const records = Array.isArray(response.data?.data) ? response.data.data : [];
-      const pagination = response.data?.pagination || {};
-      setHasMore(pagination.hasMore === true);
-      setCursor(pagination.nextCursor || null);
-      if (appendCursor) {
-        setDamageRecords(prev => [...prev, ...records]);
-      } else {
-        setDamageRecords(records);
+      // Fetch all pages via cursor loop (backend paginates)
+      const allRecords = [];
+      let cursor = null;
+      let hasMore = true;
+      while (hasMore) {
+        const params = {};
+        if (siteId) params.siteId = siteId;
+        if (cursor) params.cursor = cursor;
+        const response = await Api.get('/damaged-fish', { params });
+        const records = Array.isArray(response.data?.data) ? response.data.data : [];
+        allRecords.push(...records);
+        const pagination = response.data?.pagination || {};
+        hasMore = pagination.hasMore === true;
+        cursor = pagination.nextCursor || null;
+        if (!hasMore) break;
+        if (allRecords.length > 5000) break;
       }
+      setDamageRecords(allRecords);
     } catch (_) {
       setError("Error fetching damage/loss records. Please try again.");
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   }, [siteId]);
 
   useEffect(() => {
     fetchDamageRecords();
   }, [fetchDamageRecords]);
-
-  const loadMore = () => {
-    if (loadingMore || !hasMore || !cursor) return;
-    fetchDamageRecords(cursor);
-  };
 
   const getPondName = (record) => {
     if (record.pondId && pondMap[record.pondId]) return pondMap[record.pondId];
@@ -113,6 +112,12 @@ export default function DamageLoss() {
       return matchesSearch && matchesDateFrom && matchesDateTo;
     });
   }, [damageRecords, searchQuery, dateFrom, dateTo]);
+
+  useEffect(() => { setCurrentPage(0); }, [searchQuery, dateFrom, dateTo]);
+
+  const pageCount = Math.ceil(filteredRecords.length / itemsPerPage);
+  const offset = currentPage * itemsPerPage;
+  const currentRecords = filteredRecords.slice(offset, offset + itemsPerPage);
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -146,9 +151,9 @@ export default function DamageLoss() {
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
-        <section className={`${styles.content} flex-grow-1`}>
-          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', paddingBottom: 0 }}>
+            <div style={{ flexShrink: 0 }}>
               {/* ── Breadcrumb + Header Actions ── */}
               <div className={styles.headerRow}>
                 <div className={styles.breadcrumb}>
@@ -217,6 +222,8 @@ export default function DamageLoss() {
                   </button>
                 )}
               </div>
+            </div>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
               {/* ── Loading ── */}
               {loading && (
@@ -244,37 +251,29 @@ export default function DamageLoss() {
 
               {/* ── Table ── */}
               {!loading && !error && filteredRecords.length > 0 && (
-                <div className={styles.tableCard}>
+                <div className={styles.tableCard} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                   <div className={styles.tableHeader}>
                     <h4>Damage / Loss Records ({filteredRecords.length})</h4>
                   </div>
-                  <DataTable
-                    className={styles.dataTable}
-                    columns={columns}
-                    data={filteredRecords}
-                  />
-                  {hasMore && (
-                    <div className={styles.loadMoreWrapper}>
-                      <button
-                        type="button"
-                        className={styles.loadMoreBtn}
-                        onClick={loadMore}
-                        disabled={loadingMore}
-                      >
-                        {loadingMore ? 'Loading...' : 'Load More'}
-                      </button>
-                    </div>
-                  )}
+                  <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                    <DataTable
+                      className={styles.dataTable}
+                      columns={columns}
+                      data={currentRecords}
+                    />
+                  </div>
                 </div>
               )}
             </div>
-
-            {/* ── Footer ── */}
-            {!loading && !error && damageRecords.length > 0 && (
-              <div className={styles.tableFooter}>
-                <span>{damageRecords.length} record{damageRecords.length !== 1 ? 's' : ''}</span>
-                {hasMore && <span>More records available</span>}
-              </div>
+            {!loading && !error && filteredRecords.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                pageCount={pageCount}
+                totalItems={filteredRecords.length}
+                pageSize={itemsPerPage}
+                onPageChange={({ selected }) => setCurrentPage(selected)}
+                itemName="records"
+              />
             )}
           </main>
         </section>

@@ -521,19 +521,22 @@ export default function SideBar({ show, handleClose }) {
             </>
           )}
 
-          {/* --- DAMAGE / LOSS (kept as-is) --- */}
+          {/* --- DAMAGE / LOSS --- */}
           {hasPermission(userTypes, 'damage-loss') && (
             <>
               <span className={styles.sectionLabel}>RECORDS</span>
-              <Nav.Item className={`mt-3 ${isActiveRoute("/damage-loss") ? "mx-2" : ""}`}>
-                <Nav.Link
+              <Card className={styles.card}>
+                <Card.Header
                   onClick={() => navigate("/damage-loss")}
-                  className={`${isActiveRoute("/damage-loss") ? styles.activeLink : styles.nonactiveLink}`}
+                  className={`border-0 d-flex justify-content-between align-items-center ${styles.cardHeader} ${isActiveRoute("/damage-loss") ? styles.dashboardLinkActive : ""}`}
                   data-active={isActiveRoute("/damage-loss") ? "true" : undefined}
+                  style={{ cursor: "pointer" }}
                 >
-                  <GiDamagedHouse size={25} className="me-1 text-light" /> <span className={styles.title}>Damage/Loss</span>
-                </Nav.Link>
-              </Nav.Item>
+                  <span className={styles.title}>
+                    <GiDamagedHouse size={25} className="me-1" /> Damage/Loss
+                  </span>
+                </Card.Header>
+              </Card>
             </>
           )}
         </div>

@@ -133,7 +133,7 @@ export default function AddStockModal({ show, onClose, onSuccess, isSuperAdmin }
               />
             </div>
             <div className="col-md-6 mb-3">
-              <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Weight per 1 {unit || 'item'} {unit ? `(${unit})` : ''}</Form.Label>
+              <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Weight per {unit || 'item'} {unit ? `(${unit})` : ''}</Form.Label>
               <Form.Control
                 placeholder={unit ? `e.g. 20 — weight of 1 ${unit}` : "e.g. 20 — weight of 1 pack"}
                 type="number"
@@ -144,9 +144,6 @@ export default function AddStockModal({ show, onClose, onSuccess, isSuperAdmin }
                 className={`bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                 style={{ height: '48px' }}
               />
-              <small className="text-muted" style={{ fontSize: '11px' }}>
-                {unit ? `Weight of one ${unit} in the same weight unit as stock (e.g. 1 ${unit} = ${weightPerItem || '20'}).` : 'Weight of one pack/unit (e.g. 1 Salt pack = 20g). This is weightPerItem.'}
-              </small>
             </div>
             {isSuperAdmin && (
               <div className="col-md-6 mb-3">

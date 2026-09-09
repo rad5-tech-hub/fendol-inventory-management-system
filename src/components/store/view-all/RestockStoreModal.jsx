@@ -21,7 +21,7 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
   const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
+  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -32,7 +32,7 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
       setPrice('');
       setQuantity('');
       setErrors({});
-      setTouched({});
+      setSubmitted(false);
       setMounted(true);
       requestAnimationFrame(() => setVisible(true));
     } else {
@@ -92,7 +92,7 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
     const formatted = stripped === '' ? '' : formatCommas(stripped);
     if (field === 'price') setPrice(formatted);
     if (field === 'quantity') setQuantity(formatted);
-    if (touched[field]) {
+    if (submitted) {
       setErrors((prev) => {
         const copy = { ...prev };
         const err = validate(field, formatted);
@@ -103,24 +103,9 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
     }
   };
 
-  const handleBlur = (field) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    const value = field === 'price' ? price : quantity;
-    const err = validate(field, stripCommas(value));
-    setErrors((prev) => {
-      const copy = { ...prev };
-      if (err) copy[field] = err;
-      else delete copy[field];
-      return copy;
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const allTouched = { price: true, quantity: true };
-    setTouched(allTouched);
-
+    setSubmitted(true);
     const priceErr = validate('price', price);
     const qtyErr = validate('quantity', quantity);
     const errs = {};
@@ -166,8 +151,8 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
 
   if (!mounted) return null;
 
-  const priceErr = touched.price ? errors.price : null;
-  const qtyErr = touched.quantity ? errors.quantity : null;
+  const priceErr = submitted ? errors.price : null;
+  const qtyErr = submitted ? errors.quantity : null;
 
   return createPortal(
     <div
@@ -208,47 +193,20 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
               <div className={styles.displayField}>{store?.name || '--'}</div>
             </div>
 
-            <div className={styles.field}>
+             <div className={styles.field}>
               <label className={styles.label}>
-                Total Price for all packs — ₦ (not per pack)<span className={styles.required}>*</span>
-              </label>
-              <input
-                ref={priceRef}
-                className={`${styles.input} ${priceErr ? styles.inputError : ''}`}
-                placeholder="e.g. 20,000 — total cost for all packs"
-                type="text"
-                min={0}
-                step="0.01"
-                value={price}
-                onChange={(e) => handleChange('price', e.target.value)}
-                onBlur={() => handleBlur('price')}
-                autoComplete="off"
-              />
-              <small className="text-muted" style={{ fontSize: '11px' }}>Total price for the whole purchase (e.g. 5 packs for ₦20,000). Not price per pack.</small>
-              {priceErr && (
-                <span className={styles.errorText}>
-                  <FiAlertTriangle size={11} style={{ marginRight: 4, flexShrink: 0 }} />
-                  {priceErr}
-                </span>
-              )}
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>
-                Quantity — number of packs to add ({store?.unit || 'units'})<span className={styles.required}>*</span>
+                Number of items<span className={styles.required}>*</span>
               </label>
               <input
                 className={`${styles.input} ${qtyErr ? styles.inputError : ''}`}
-                placeholder={`e.g. 5 — number of ${store?.unit || 'packs'} being added`}
+                placeholder={`e.g. 5`}
                 type="text"
                 min={0}
                 step="1"
                 value={quantity}
                 onChange={(e) => handleChange('quantity', e.target.value)}
-                onBlur={() => handleBlur('quantity')}
                 autoComplete="off"
               />
-              <small className="text-muted" style={{ fontSize: '11px' }}>Number of packs being added (e.g. 5 packs). This is pack count, not weight.</small>
               {qtyErr && (
                 <span className={styles.errorText}>
                   <FiAlertTriangle size={11} style={{ marginRight: 4, flexShrink: 0 }} />
@@ -261,6 +219,29 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
                 </small>
               )}
             </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>
+                Total Price <span className={styles.required}>*</span>
+              </label>
+              <input
+                ref={priceRef}
+                className={`${styles.input} ${priceErr ? styles.inputError : ''}`}
+                placeholder="e.g. 20,000"
+                type="text"
+                min={0}
+                step="0.01"
+                value={price}
+                onChange={(e) => handleChange('price', e.target.value)}
+                autoComplete="off"
+              />
+              {priceErr && (
+                <span className={styles.errorText}>
+                  <FiAlertTriangle size={11} style={{ marginRight: 4, flexShrink: 0 }} />
+                  {priceErr}
+                </span>
+              )}
+            </div>           
           </div>
 
           <div className={styles.footer}>

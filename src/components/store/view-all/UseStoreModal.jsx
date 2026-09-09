@@ -12,13 +12,18 @@ export default function UseStoreModal({ show, store, onClose, onSuccess }) {
   const user = useSelector((store) => store.user);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const isSuperAdmin = userTypes.includes('super_admin');
+  const siteTypeName = (s) => s?.type?.name || s?.type || s?.description || s?.typeName || s?.name || '';
+  const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
+  const isHatcheryContext = isSuperAdmin
+    ? !!activeSite && isHatcheryType(siteTypeName(activeSite))
+    : (user?.userSites || []).some(s => isHatcheryType(siteTypeName(typeof s === 'string' ? {} : s))) || !!activeSite && isHatcheryType(siteTypeName(activeSite));
   const [pondId, setPondId] = useState('');
   const [quantityUsed, setQuantityUsed] = useState('');
   const [pondOptions, setPondOptions] = useState([]);
   const [pondsLoading, setPondsLoading] = useState(false);
   const [targetType, setTargetType] = useState('pond');
   const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
+  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -30,7 +35,7 @@ export default function UseStoreModal({ show, store, onClose, onSuccess }) {
       setTargetType('pond');
       setQuantityUsed('');
       setErrors({});
-      setTouched({});
+      setSubmitted(false);
       setMounted(true);
       requestAnimationFrame(() => setVisible(true));
     } else {
@@ -98,39 +103,33 @@ export default function UseStoreModal({ show, store, onClose, onSuccess }) {
   };
 
   const handleChange = (field, value) => {
-    if (field === 'pondId') setPondId(value);
-    if (field === 'quantityUsed') setQuantityUsed(value);
-    if (touched[field]) {
-      setErrors((prev) => {
-        const copy = { ...prev };
+    if (field === 'pondId') {
+      setPondId(value);
+      if (submitted) {
         const err = validate(field, value);
-        if (err) copy[field] = err;
-        else delete copy[field];
-        return copy;
-      });
+        setErrors(prev => {
+          const copy = { ...prev };
+          if (err) copy[field] = err; else delete copy[field];
+          return copy;
+        });
+      }
     }
-  };
-
-  const handleBlur = (field) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    let value;
-    if (field === 'pondId') value = pondId;
-    else value = quantityUsed;
-    const err = validate(field, value);
-    setErrors((prev) => {
-      const copy = { ...prev };
-      if (err) copy[field] = err;
-      else delete copy[field];
-      return copy;
-    });
+    if (field === 'quantityUsed') {
+      setQuantityUsed(value);
+      if (submitted) {
+        const err = validate(field, value);
+        setErrors(prev => {
+          const copy = { ...prev };
+          if (err) copy[field] = err; else delete copy[field];
+          return copy;
+        });
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const allTouched = targetType === 'pond' ? { pondId: true, quantityUsed: true } : { quantityUsed: true };
-    setTouched(allTouched);
-
+    setSubmitted(true);
     const pondErr = targetType === 'pond' ? validate('pondId', pondId) : null;
     const qtyErr = validate('quantityUsed', quantityUsed);
     const errs = {};
@@ -171,8 +170,8 @@ export default function UseStoreModal({ show, store, onClose, onSuccess }) {
 
   if (!mounted) return null;
 
-  const pondErr = touched.pondId ? errors.pondId : null;
-  const qtyErr = touched.quantityUsed ? errors.quantityUsed : null;
+  const pondErr = submitted ? errors.pondId : null;
+  const qtyErr = submitted ? errors.quantityUsed : null;
 
   return createPortal(
     <div
@@ -213,18 +212,20 @@ export default function UseStoreModal({ show, store, onClose, onSuccess }) {
               <div className={styles.displayField}>{store?.name || '--'}</div>
             </div>
 
-            <div className={styles.field}>
-              <label className={styles.label}>Record for<span className={styles.required}>*</span></label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="button" onClick={() => setTargetType('pond')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: targetType === 'pond' ? '1px solid #512728' : '1px solid #E5E7EB', background: targetType === 'pond' ? '#FDF5F5' : '#fff', color: targetType === 'pond' ? '#512728' : '#374151', fontWeight: 600, fontSize: '13px' }}>Pond</button>
-                <button type="button" onClick={() => setTargetType('hatchery')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: targetType === 'hatchery' ? '1px solid #512728' : '1px solid #E5E7EB', background: targetType === 'hatchery' ? '#FDF5F5' : '#fff', color: targetType === 'hatchery' ? '#512728' : '#374151', fontWeight: 600, fontSize: '13px' }}>Hatchery Batch</button>
+            {isHatcheryContext && (
+              <div className={styles.field}>
+                <label className={styles.label}>Record for<span className={styles.required}>*</span></label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" onClick={() => setTargetType('pond')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: targetType === 'pond' ? '1px solid #512728' : '1px solid #E5E7EB', background: targetType === 'pond' ? '#FDF5F5' : '#fff', color: targetType === 'pond' ? '#512728' : '#374151', fontWeight: 600, fontSize: '13px' }}>Pond</button>
+                  <button type="button" onClick={() => setTargetType('hatchery')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: targetType === 'hatchery' ? '1px solid #512728' : '1px solid #E5E7EB', background: targetType === 'hatchery' ? '#FDF5F5' : '#fff', color: targetType === 'hatchery' ? '#512728' : '#374151', fontWeight: 600, fontSize: '13px' }}>Hatchery Batch</button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {targetType === 'pond' ? (
+            {(targetType === 'hatchery' && isHatcheryContext) ? null : (
               <div className={styles.field}>
                 <label className={styles.label}>
-                  Pond / Stage<span className={styles.required}>*</span>
+                  Pond<span className={styles.required}>*</span>
                 </label>
                 {pondsLoading ? (
                   <div className={styles.displayField} style={{ color: '#9CA3AF', fontWeight: 400 }}>
@@ -234,7 +235,7 @@ export default function UseStoreModal({ show, store, onClose, onSuccess }) {
                   <CustomDropdown
                     options={pondOptions.map((p) => ({ value: p.id, label: p.title || 'Unnamed' }))}
                     value={pondId}
-                    onChange={(val) => { setPondId(val); handleBlur('pondId'); }}
+                    onChange={(val) => { setPondId(val); }}
                     placeholder={pondOptions.length === 0 ? '— No ponds available —' : '— Select Pond —'}
                     isInvalid={!!pondErr}
                     className={`${pondErr ? styles.inputError : ''}`}
@@ -247,43 +248,28 @@ export default function UseStoreModal({ show, store, onClose, onSuccess }) {
                   </span>
                 )}
               </div>
-            ) : (
-              <div className={styles.field}>
-                <div className={styles.displayField} style={{ color: '#6B7280', fontSize: '13px' }}>
-                  Applies to all active hatch batches at this site (no batch selection required).
-                </div>
-              </div>
             )}
 
             <div className={styles.field}>
               <label className={styles.label}>
-                Quantity Used — weight amount ({store?.weightPerItem ? `1 ${store?.unit || 'pack'} = ${store.weightPerItem}` : `in ${store?.unit || 'weight unit'}`})<span className={styles.required}>*</span>
+                Quantity used<span className={styles.required}>*</span>
               </label>
               <input
                 ref={qtyRef}
                 className={`${styles.input} ${qtyErr ? styles.inputError : ''}`}
-                placeholder={store?.weightPerItem ? `e.g. 0.25 — weight used (1 ${store?.unit || 'pack'} = ${store.weightPerItem})` : "e.g. 0.25 — weight amount, not pack count"}
+                placeholder="eg. 5"
                 type="number"
                 min={0}
                 step="0.001"
                 value={quantityUsed}
                 onChange={(e) => handleChange('quantityUsed', e.target.value)}
-                onBlur={() => handleBlur('quantityUsed')}
                 autoComplete="off"
               />
-              <small className="text-muted" style={{ fontSize: '11px' }}>
-                Weight amount used — references weightPerItem ({store?.weightPerItem ? `1 ${store?.unit || 'pack'} = ${store.weightPerItem}` : 'per pack weight'}). Not pack count. e.g. 0.25 means 0.25 weight units used.
-              </small>
               {qtyErr && (
                 <span className={styles.errorText}>
                   <FiAlertTriangle size={11} style={{ marginRight: 4, flexShrink: 0 }} />
                   {qtyErr}
                 </span>
-              )}
-              {quantityUsed && !qtyErr && store?.weightPerItem && (
-                <small className="text-muted" style={{ fontSize: '11px', color: '#512728' }}>
-                  ≈ {(Number(quantityUsed) / Number(store.weightPerItem)).toFixed(3)} × {store?.unit || 'pack'}s ( {quantityUsed} ÷ {store.weightPerItem} per pack )
-                </small>
               )}
             </div>
           </div>
