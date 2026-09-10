@@ -37,6 +37,9 @@ export default function DamageLoss() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [overviewPeriod, setOverviewPeriod] = useState('daily');
 
   const siteId = isSuperAdmin ? (activeSite?.id || 'all') : (user?.siteId || user?.userSites?.[0] || '');
 
@@ -113,6 +116,44 @@ export default function DamageLoss() {
     });
   }, [damageRecords, searchQuery, dateFrom, dateTo]);
 
+  // ── Overview stats (independent of table filters) ──
+  const overview = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const weekStart = new Date(now);
+    weekStart.setHours(0,0,0,0);
+    weekStart.setDate(now.getDate() - 6);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const getQty = (r) => Number(r.quantity ?? r.actual_quantity ?? 0) || 0;
+    let daily = 0, weekly = 0, monthly = 0, total = 0;
+    damageRecords.forEach(r => {
+      const q = getQty(r);
+      total += q;
+      const d = new Date(r.createdAt);
+      const dStr = d.toISOString().split('T')[0];
+      if (dStr === todayStr) daily += q;
+      if (d >= weekStart) weekly += q;
+      if (d >= monthStart) monthly += q;
+    });
+    return { daily, weekly, monthly, total };
+  }, [damageRecords]);
+
+  const customLoss = useMemo(() => {
+    if (!customFrom && !customTo) return null;
+    const getQty = (r) => Number(r.quantity ?? r.actual_quantity ?? 0) || 0;
+    const from = customFrom ? new Date(customFrom) : null;
+    const to = customTo ? new Date(customTo + 'T23:59:59') : null;
+    if (from && to && from > to) return 0;
+    return damageRecords
+      .filter(r => {
+        const d = new Date(r.createdAt);
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      })
+      .reduce((sum, r) => sum + getQty(r), 0);
+  }, [damageRecords, customFrom, customTo]);
+
   useEffect(() => { setCurrentPage(0); }, [searchQuery, dateFrom, dateTo]);
 
   const pageCount = Math.ceil(filteredRecords.length / itemsPerPage);
@@ -174,6 +215,42 @@ export default function DamageLoss() {
               <p className={styles.headingSubtitle}>
                 View and track all recorded fish damage and mortality events.
               </p>
+
+              {/* ── Overview Card + Period Picker ── */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
+                <div style={{ width: 260, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                  <span style={{ width: 36, height: 36, borderRadius: 8, background: overviewPeriod === 'custom' ? '#F3E8FF' : overviewPeriod === 'weekly' ? '#DBEAFE' : overviewPeriod === 'monthly' ? '#DCFCE7' : '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: overviewPeriod === 'custom' ? '#7C3AED' : overviewPeriod === 'weekly' ? '#1D4ED8' : overviewPeriod === 'monthly' ? '#15803D' : '#B45309', fontSize: 16, flexShrink: 0 }}>●</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: '#8C949B', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap' }}>
+                      {overviewPeriod === 'daily' ? 'Daily losses' : overviewPeriod === 'weekly' ? 'Weekly losses' : overviewPeriod === 'monthly' ? 'Monthly losses' : (customFrom || customTo) ? `Losses ${customFrom || '…'} → ${customTo || '…'}` : 'Custom losses'}
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: '#2E3135', lineHeight: 1.2 }}>
+                      {overviewPeriod === 'daily' ? f(overview.daily) : overviewPeriod === 'weekly' ? f(overview.weekly) : overviewPeriod === 'monthly' ? f(overview.monthly) : customLoss !== null ? f(customLoss) : '—'}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#8C949B' }}>
+                      {overviewPeriod === 'daily' ? 'Today' : overviewPeriod === 'weekly' ? 'Last 7 days' : overviewPeriod === 'monthly' ? 'This month' : (customFrom && customTo ? `${customFrom} to ${customTo}` : customFrom ? `From ${customFrom}` : customTo ? `Until ${customTo}` : 'Pick a range')}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ width: 160, height: 34, display: 'flex', alignItems: 'center', background: '#fff', borderRadius: 8, padding: '0 10px', border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', outline: 'none', }}>
+                    <select value={overviewPeriod} onChange={e => setOverviewPeriod(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12, fontWeight: 600, color: '#374151', background: 'transparent', cursor: 'pointer', minWidth: 0, height: '100%' }}>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                  {overviewPeriod === 'custom' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '0 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', height: 34 }}>
+                      <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12, minWidth: 110 }} />
+                      <span style={{ color: '#9CA3AF', fontSize: 12 }}>—</span>
+                      <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12, minWidth: 110 }} />
+                      {(customFrom || customTo) && <button onClick={() => { setCustomFrom(''); setCustomTo(''); }} style={{ background: 'transparent', border: 'none', color: '#8C949B', cursor: 'pointer', padding: 0, lineHeight: 1 }}><BsX size={14} /></button>}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* ── Controls Bar ── */}
               <div className={styles.controlsBar}>
