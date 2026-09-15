@@ -172,7 +172,7 @@ const FinanceLedger = () => {
             </div>
 
             {/* Loader */}
-            {loading && <SkeletonTable cols={6} rows={5} />}
+            {loading && <SkeletonTable cols={8} rows={5} />}
 
             {/* Error Message */}
             {error && <ErrorState message={error} />}
@@ -190,8 +190,18 @@ const FinanceLedger = () => {
                 className={`${styles.styled_table} ${styles.table_responsive}`}
                 columns={[
                   { key: 'date', label: 'DATE', render: (val) => formatDate(val) },
+                  { key: 'customerName', label: 'CUSTOMER', render: (val) => (
+                    <span title={val || ""} style={{ display: 'inline-block', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom', fontWeight: 500 }}>
+                      {val || "-"}
+                    </span>
+                  )},
                   { key: 'productName', label: 'PRODUCT', render: (val) => (
-                    <span title={val || ""} style={{ cursor: 'pointer', display: 'inline-block', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
+                    <span title={val || ""} style={{ cursor: 'pointer', display: 'inline-block', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
+                      {val || "-"}
+                    </span>
+                  )},
+                  { key: 'description', label: 'DESCRIPTION', render: (val) => (
+                    <span title={val || ""} style={{ display: 'inline-block', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom', color: '#6B7280' }}>
                       {val || "-"}
                     </span>
                   )},

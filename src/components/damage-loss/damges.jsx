@@ -116,43 +116,82 @@ export default function DamageLoss() {
     });
   }, [damageRecords, searchQuery, dateFrom, dateTo]);
 
-  // ── Overview stats (independent of table filters) ──
-  const overview = useMemo(() => {
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const weekStart = new Date(now);
-    weekStart.setHours(0,0,0,0);
-    weekStart.setDate(now.getDate() - 6);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const getQty = (r) => Number(r.quantity ?? r.actual_quantity ?? 0) || 0;
-    let daily = 0, weekly = 0, monthly = 0, total = 0;
-    damageRecords.forEach(r => {
-      const q = getQty(r);
-      total += q;
-      const d = new Date(r.createdAt);
-      const dStr = d.toISOString().split('T')[0];
-      if (dStr === todayStr) daily += q;
-      if (d >= weekStart) weekly += q;
-      if (d >= monthStart) monthly += q;
-    });
-    return { daily, weekly, monthly, total };
-  }, [damageRecords]);
+  // ── Overview: backend-driven via /damaged-fish-count ──
+  const [overview, setOverview] = useState({ daily: 0, weekly: 0, monthly: 0 });
+  const [customLoss, setCustomLoss] = useState(null);
+  const [overviewLoading, setOverviewLoading] = useState(false);
 
-  const customLoss = useMemo(() => {
-    if (!customFrom && !customTo) return null;
-    const getQty = (r) => Number(r.quantity ?? r.actual_quantity ?? 0) || 0;
-    const from = customFrom ? new Date(customFrom) : null;
-    const to = customTo ? new Date(customTo + 'T23:59:59') : null;
-    if (from && to && from > to) return 0;
-    return damageRecords
-      .filter(r => {
+  const parseCount = (body) => {
+    if (body == null) return 0;
+    if (typeof body.data === 'number') return body.data;
+    if (body.data && typeof body.data.count === 'number') return body.data.count;
+    if (body.data && typeof body.data.total === 'number') return body.data.total;
+    if (typeof body.count === 'number') return body.count;
+    if (typeof body.total === 'number') return body.total;
+    if (typeof body.data === 'object' && body.data !== null) {
+      const v = body.data.count ?? body.data.total ?? body.data.value;
+      if (typeof v === 'number') return v;
+    }
+    return 0;
+  };
+
+  const fetchOverviewCounts = useCallback(async () => {
+    if (!siteId || siteId === 'all') {
+      // No site context — fall back to client-side calc until site selected
+      return;
+    }
+    try {
+      setOverviewLoading(true);
+      const [dailyRes, weeklyRes, monthlyRes] = await Promise.all([
+        Api.get('/damaged-fish-count', { params: { siteId } }),
+        Api.get('/damaged-fish-count', { params: { siteId, period: 'weekly' } }),
+        Api.get('/damaged-fish-count', { params: { siteId, period: 'monthly' } }),
+      ]);
+      setOverview({
+        daily: parseCount(dailyRes.data),
+        weekly: parseCount(weeklyRes.data),
+        monthly: parseCount(monthlyRes.data),
+      });
+    } catch (_) {
+      // Keep previous values on error
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, [siteId]);
+
+  useEffect(() => { fetchOverviewCounts(); }, [fetchOverviewCounts]);
+
+  // Custom range — fetch on demand when both dates present or when Custom selected
+  useEffect(() => {
+    if (overviewPeriod !== 'custom') { setCustomLoss(null); return; }
+    if (!customFrom && !customTo) { setCustomLoss(null); return; }
+    if (!siteId || siteId === 'all') {
+      // Client fallback when siteId is 'all'
+      const from = customFrom ? new Date(customFrom) : null;
+      const to = customTo ? new Date(customTo + 'T23:59:59') : null;
+      if (from && to && from > to) { setCustomLoss(0); return; }
+      const getQty = (r) => Number(r.quantity ?? r.actual_quantity ?? 0) || 0;
+      const sum = damageRecords.filter(r => {
         const d = new Date(r.createdAt);
         if (from && d < from) return false;
         if (to && d > to) return false;
         return true;
-      })
-      .reduce((sum, r) => sum + getQty(r), 0);
-  }, [damageRecords, customFrom, customTo]);
+      }).reduce((s, r) => s + getQty(r), 0);
+      setCustomLoss(sum);
+      return;
+    }
+    const params = { siteId };
+    if (customFrom) params.startDate = customFrom;
+    if (customTo) params.endDate = customTo;
+    // Require at least one bound; backend expects startDate & endDate for range
+    if (!params.startDate && !params.endDate) { setCustomLoss(null); return; }
+    // If only one bound, mirror it
+    if (!params.startDate) params.startDate = params.endDate;
+    if (!params.endDate) params.endDate = params.startDate;
+    Api.get('/damaged-fish-count', { params })
+      .then(res => setCustomLoss(parseCount(res.data)))
+      .catch(() => setCustomLoss(null));
+  }, [overviewPeriod, customFrom, customTo, siteId, damageRecords]);
 
   useEffect(() => { setCurrentPage(0); }, [searchQuery, dateFrom, dateTo]);
 
