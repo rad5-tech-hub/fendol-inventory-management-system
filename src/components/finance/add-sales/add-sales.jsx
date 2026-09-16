@@ -18,10 +18,10 @@ const formatTypeLabel = (name) =>
 
 const getSalesForm = (typeName) => {
     const n = typeName?.toLowerCase() || '';
-    if (n === 'dry-fish' || n.includes('dry')) return SalesForm;
+    if (n === 'dry-fish' || (n.includes('dry') && !n.includes('bag'))) return SalesForm;
     if (n === 'fresh-fish' || n.includes('fresh fish')) return FreshForm;
     if (n === 'fingerlings' || n.includes('fingerlings')) return FingerlingsForm;
-    if (n === 'feed') return FeedForm;
+    if (n === 'feed' || n.includes('feed') || n.includes('bag') || n.includes('water')) return FeedForm;
     return null;
 };
 

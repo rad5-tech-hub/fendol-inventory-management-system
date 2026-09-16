@@ -54,6 +54,31 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
         const fetchFeedProducts = async () => {
             setFeedProductsLoading(true);
             try {
+                // For Feed Bag / Water and other product-type sales, use products prop directly
+                const hasProductsProp = Array.isArray(products) && products.length > 0;
+                const isProductTypeSale = hasProductsProp && products.some(p => p.productName);
+                if (isProductTypeSale) {
+                    const mappedFromProducts = products.map(p => ({
+                        id: p.id,
+                        productName: p.productName,
+                        productWeight: String(p.productWeight || p.weightPerBag || 1),
+                        unit: p.unit || 'pcs',
+                        basePrice: Number(p.basePrice ?? p.pricePerBag ?? 0),
+                    }));
+                    // If we have products for this type, prefer them (e.g., Water, Dry bag)
+                    // Otherwise fall back to /feeds
+                    if (mappedFromProducts.length > 0) {
+                        // Check if this looks like a non-feed inventory type (Water/Dry bag) — use it directly
+                        const isNonStandardFeed = mappedFromProducts.some(m => {
+                            const n = (m.productName || '').toLowerCase();
+                            return n.includes('water') || n.includes('bag');
+                        });
+                        if (isNonStandardFeed) {
+                            setFeedProducts(mappedFromProducts);
+                            return;
+                        }
+                    }
+                }
                 if (!resolvedSiteId) {
                     setFeedProducts([]);
                     return;
@@ -67,15 +92,39 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                     unit: f.unit || 'kg',
                     basePrice: f.pricePerBag || 0,
                 }));
-                setFeedProducts(mapped);
+                // Fallback to products prop if feeds empty but products available
+                if (mapped.length === 0 && hasProductsProp) {
+                    const fallback = products.map(p => ({
+                        id: p.id,
+                        productName: p.productName,
+                        productWeight: String(p.productWeight || 1),
+                        unit: p.unit || 'pcs',
+                        basePrice: Number(p.basePrice || 0),
+                    }));
+                    setFeedProducts(fallback);
+                } else {
+                    setFeedProducts(mapped);
+                }
             } catch {
-                setFeedProducts([]);
+                // On error, fallback to products prop if available
+                if (Array.isArray(products) && products.length > 0) {
+                    const fallback = products.map(p => ({
+                        id: p.id,
+                        productName: p.productName,
+                        productWeight: String(p.productWeight || 1),
+                        unit: p.unit || 'pcs',
+                        basePrice: Number(p.basePrice || 0),
+                    }));
+                    setFeedProducts(fallback);
+                } else {
+                    setFeedProducts([]);
+                }
             } finally {
                 setFeedProductsLoading(false);
             }
         };
         fetchFeedProducts();
-    }, [resolvedSiteId]);
+    }, [resolvedSiteId, products]);
 
     const fetchCustomers = async () => {
         try {

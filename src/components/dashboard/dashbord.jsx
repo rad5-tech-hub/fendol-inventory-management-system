@@ -178,6 +178,9 @@ const generatePeriods = (startDate, endDate, groupBy) => {
 };
 
 const Dashboard = () => {
+  const user = useSelector((store) => store.user);
+  const isSuperAdmin = user?.userTypes?.includes('super_admin');
+  const activeSite = useSelector((store) => store.activeSite);
   const [showSidebar, setShowSidebar] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -187,6 +190,10 @@ const Dashboard = () => {
   const [dateTo, setDateTo] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [userSiteDetails, setUserSiteDetails] = useState([]);
+  const [sitesLoading, setSitesLoading] = useState(() => {
+    const ids = user?.userSites?.filter(s => typeof s === 'string') || [];
+    return ids.length > 0;
+  });
   const [activeTooltip, setActiveTooltip] = useState(null);
   const [salesDateRange, setSalesDateRange] = useState('1M');
   const [customDateFrom, setCustomDateFrom] = useState('');
@@ -195,9 +202,6 @@ const Dashboard = () => {
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState(null);
   const tooltipRef = useRef(null);
-  const user = useSelector((store) => store.user);
-  const isSuperAdmin = user?.userTypes?.includes('super_admin');
-  const activeSite = useSelector((store) => store.activeSite);
 
   const effectiveSiteId = activeSite?.id || siteId;
 
@@ -366,9 +370,11 @@ const Dashboard = () => {
     const siteIds = user?.userSites?.filter(s => typeof s === 'string') || [];
     if (siteIds.length === 0) {
       setUserSiteDetails(user?.userSites?.filter(s => typeof s === 'object') || []);
+      setSitesLoading(false);
       return;
     }
     let cancelled = false;
+    setSitesLoading(true);
     (async () => {
       try {
         const res = await ApiV2.get('/v2/all-site');
@@ -379,6 +385,8 @@ const Dashboard = () => {
         }
       } catch {
         if (!cancelled) setUserSiteDetails(user?.userSites || []);
+      } finally {
+        if (!cancelled) setSitesLoading(false);
       }
     })();
     return () => { cancelled = true; };
@@ -1074,9 +1082,8 @@ const Dashboard = () => {
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
                         {userSiteDetails.map((site, i) => {
                           const siteName = site?.name || '';
-                          const siteId = site?.id || '';
-                          const initial = (siteName?.[0] || siteId?.[0] || 'S').toUpperCase();
-                          const displayName = siteName || siteId || '—';
+                          const initial = (siteName?.[0] || 'S').toUpperCase();
+                          const displayName = siteName || '—';
                           return (
                             <div key={i} style={{
                               background: '#F8F9FA', border: '1px solid #EFEFEF',
@@ -1103,21 +1110,15 @@ const Dashboard = () => {
                             </div>
                           );
                         })}
-                        {userSiteDetails.length === 0 && user?.siteId && (
+                        {userSiteDetails.length === 0 && sitesLoading && (
                           <div style={{
                             background: '#F8F9FA', border: '1px solid #EFEFEF',
                             borderRadius: '12px', padding: '12px 18px',
                             display: 'flex', alignItems: 'center', gap: '10px',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                           }}>
-                            <div style={{
-                              width: '32px', height: '32px', borderRadius: '8px',
-                              background: 'linear-gradient(135deg, #512728 0%, #6B3536 100%)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: '#fff', fontSize: '14px', fontWeight: 700,
-                            }}>S</div>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2E3135' }}>
-                              Site ID: {user.siteId}
+                            <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#8C949B' }}>
+                              Loading site…
                             </span>
                           </div>
                         )}

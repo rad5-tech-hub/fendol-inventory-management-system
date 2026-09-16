@@ -135,31 +135,34 @@ export default function DamageLoss() {
     return 0;
   };
 
-  const fetchOverviewCounts = useCallback(async () => {
-    if (!siteId || siteId === 'all') {
-      // No site context — fall back to client-side calc until site selected
-      return;
-    }
+  const overviewCacheRef = React.useRef({});
+  const fetchOverviewForPeriod = useCallback(async (period, extraParams = {}) => {
+    if (!siteId || siteId === 'all') return null;
+    const cacheKey = `${siteId}:${period}:${JSON.stringify(extraParams)}`;
+    if (overviewCacheRef.current[cacheKey] !== undefined) return overviewCacheRef.current[cacheKey];
     try {
       setOverviewLoading(true);
-      const [dailyRes, weeklyRes, monthlyRes] = await Promise.all([
-        Api.get('/damaged-fish-count', { params: { siteId } }),
-        Api.get('/damaged-fish-count', { params: { siteId, period: 'weekly' } }),
-        Api.get('/damaged-fish-count', { params: { siteId, period: 'monthly' } }),
-      ]);
-      setOverview({
-        daily: parseCount(dailyRes.data),
-        weekly: parseCount(weeklyRes.data),
-        monthly: parseCount(monthlyRes.data),
-      });
-    } catch (_) {
-      // Keep previous values on error
-    } finally {
-      setOverviewLoading(false);
-    }
+      const params = { siteId, ...extraParams };
+      if (period && period !== 'daily') params.period = period;
+      const res = await Api.get('/damaged-fish-count', { params });
+      const val = parseCount(res.data);
+      overviewCacheRef.current[cacheKey] = val;
+      return val;
+    } catch { return null; }
+    finally { setOverviewLoading(false); }
   }, [siteId]);
 
-  useEffect(() => { fetchOverviewCounts(); }, [fetchOverviewCounts]);
+  // Fetch only the selected period on demand
+  useEffect(() => {
+    if (overviewPeriod === 'custom') return;
+    let cancelled = false;
+    const load = async () => {
+      const val = await fetchOverviewForPeriod(overviewPeriod);
+      if (!cancelled && val !== null) setOverview(prev => ({ ...prev, [overviewPeriod]: val }));
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [overviewPeriod, siteId, fetchOverviewForPeriod]);
 
   // Custom range — fetch on demand when both dates present or when Custom selected
   useEffect(() => {
@@ -222,17 +225,17 @@ export default function DamageLoss() {
   const handleCloseSidebar = () => setShowSidebar(false);
 
   return (
-    <section className={`${styles.body}`} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <div className="sticky-top">
+    <section className={styles.body}>
+      <div className="sticky-top" style={{ zIndex: 1020 }}>
         <Header toggleSidebar={toggleSidebar} />
       </div>
-      <div className="d-flex gap-2" style={{ flex: 1, overflow: 'hidden' }}>
+      <div className="d-flex gap-2">
         <div className={`${styles.sidebar} d-lg-block ${showSidebar ? 'd-block' : 'd-none'}`}>
           <SideBar className={styles.sidebarItem} show={showSidebar} handleClose={handleCloseSidebar} />
         </div>
 
-        <section className={`${styles.content} flex-grow-1`} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <main className={styles.create_form} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', paddingBottom: 0 }}>
+        <section className={`${styles.content} flex-grow-1`} style={{ minWidth: 0 }}>
+          <main className={styles.create_form}>
             <div style={{ flexShrink: 0 }}>
               {/* ── Breadcrumb + Header Actions ── */}
               <div className={styles.headerRow}>
@@ -339,7 +342,7 @@ export default function DamageLoss() {
                 )}
               </div>
             </div>
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <div>
 
               {/* ── Loading ── */}
               {loading && (
@@ -367,11 +370,11 @@ export default function DamageLoss() {
 
               {/* ── Table ── */}
               {!loading && !error && filteredRecords.length > 0 && (
-                <div className={styles.tableCard} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <div className={styles.tableCard}>
                   <div className={styles.tableHeader}>
                     <h4>Damage / Loss Records ({filteredRecords.length})</h4>
                   </div>
-                  <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                  <div style={{ overflowX: 'auto' }}>
                     <DataTable
                       className={styles.dataTable}
                       columns={columns}
@@ -380,17 +383,17 @@ export default function DamageLoss() {
                   </div>
                 </div>
               )}
+              {!loading && !error && filteredRecords.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  pageCount={pageCount}
+                  totalItems={filteredRecords.length}
+                  pageSize={itemsPerPage}
+                  onPageChange={({ selected }) => setCurrentPage(selected)}
+                  itemName="records"
+                />
+              )}
             </div>
-            {!loading && !error && filteredRecords.length > 0 && (
-              <Pagination
-                currentPage={currentPage}
-                pageCount={pageCount}
-                totalItems={filteredRecords.length}
-                pageSize={itemsPerPage}
-                onPageChange={({ selected }) => setCurrentPage(selected)}
-                itemName="records"
-              />
-            )}
           </main>
         </section>
       </div>

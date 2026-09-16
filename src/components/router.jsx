@@ -73,7 +73,14 @@ const routeLoaders = [
 function usePrefetchRoutes() {
   useEffect(() => {
     const id = window.setTimeout(() => {
-      routeLoaders.forEach((loader) => loader().catch(() => {}));
+      routeLoaders.forEach((loader) => {
+        if (typeof loader === 'function') {
+          try {
+            const result = loader();
+            if (result && typeof result.catch === 'function') result.catch(() => {});
+          } catch (_) { /* ignore prefetch failures */ }
+        }
+      });
     }, 800);
     return () => window.clearTimeout(id);
   }, []);
