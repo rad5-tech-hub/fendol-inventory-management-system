@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
-  FiChevronLeft, FiChevronRight, FiSearch, FiRefreshCw, FiPlus,
+  FiChevronLeft, FiChevronRight, FiSearch, FiRefreshCw, FiPlus, FiEye,
 } from 'react-icons/fi';
+import { BsArrowUpCircle, BsArrowDownCircle } from 'react-icons/bs';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { GiCardboardBox } from 'react-icons/gi';
 import SideBar from "../../shared/sidebar/sidebar";
@@ -12,7 +14,6 @@ import DataTable from "../../shared/data-table/DataTable";
 import AddStockModal from './AddStockModal';
 import RestockStoreModal from './RestockStoreModal';
 import UseStoreModal from './UseStoreModal';
-import EditStoreModal from './EditStoreModal';
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -33,6 +34,7 @@ const nameIconColors = [
 ];
 
 export default function UpdateStoreInventory() {
+  const navigate = useNavigate();
   const activeSite = useSelector((store) => store.activeSite);
   const user = useSelector((store) => store.user);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
@@ -46,8 +48,6 @@ export default function UpdateStoreInventory() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editStoreItem, setEditStoreItem] = useState(null);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [restockProduct, setRestockProduct] = useState(null);
   const [showUseModal, setShowUseModal] = useState(false);
@@ -276,21 +276,26 @@ export default function UpdateStoreInventory() {
                       { key: 'unit', label: 'Unit' },
                       {
                         key: 'quantity',
-                        label: 'Quantity',
+                        label: 'Total Stock',
                         align: 'right',
                         render: (value) => <span className={styles.numCell}>{value != null ? f(value) : '—'}</span>,
                       },
                       {
-                        key: 'threshold',
-                        label: 'Threshold',
+                        key: 'unitPrice',
+                        label: 'Unit Cost',
                         align: 'right',
                         render: (value) => <span className={styles.numCell}>{value != null ? f(value) : '—'}</span>,
                       },
                       {
-                        key: 'weightPerItem',
-                        label: 'Weight/Item',
+                        key: 'totalValue',
+                        label: 'Total Value',
                         align: 'right',
-                        render: (value) => <span className={styles.numCell}>{value != null ? f(value) : '—'}</span>,
+                        render: (value, row) => {
+                          const qty = Number(row.quantity) || 0;
+                          const price = Number(row.unitPrice) || 0;
+                          const total = qty * price;
+                          return <span className={styles.numCell}>{total > 0 ? f(total) : '—'}</span>;
+                        },
                       },
                       {
                         key: 'status',
@@ -322,10 +327,13 @@ export default function UpdateStoreInventory() {
                           padding: '4px 0',
                         }}
                         items={[
-                          { label: 'Edit', onClick: () => { setEditStoreItem(row); setShowEditModal(true); } },
+                          {
+                            label: <><FiEye size={14} style={{ marginRight: 10 }} /> View Details</>,
+                            onClick: () => navigate(`/store/detail/${row.id}`),
+                          },
                           { divider: true },
-                          { label: 'Restock', onClick: () => { setRestockProduct(row); setShowRestockModal(true); } },
-                          { label: 'Use', onClick: () => { setUseProduct(row); setShowUseModal(true); } },
+                          { label: <><BsArrowUpCircle size={14} style={{ marginRight: 10 }} /> Restock</>, onClick: () => { setRestockProduct(row); setShowRestockModal(true); } },
+                          { label: <><BsArrowDownCircle size={14} style={{ marginRight: 10 }} /> Use</>, onClick: () => { setUseProduct(row); setShowUseModal(true); } },
                         ]}
                       />
                     )}
@@ -379,22 +387,6 @@ export default function UpdateStoreInventory() {
         onClose={() => setShowAddModal(false)}
         onSuccess={fetchProducts}
         isSuperAdmin={isSuperAdmin}
-      />
-
-      <EditStoreModal
-        show={showEditModal}
-        store={editStoreItem}
-        onClose={() => { setShowEditModal(false); setEditStoreItem(null); }}
-        onSuccess={(success, msg) => {
-          if (success) {
-            toast.success(msg, { className: 'dark-toast', autoClose: 3000 });
-            fetchProducts();
-          } else {
-            toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
-          }
-          setShowEditModal(false);
-          setEditStoreItem(null);
-        }}
       />
 
       {showRestockModal && (

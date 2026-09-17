@@ -123,10 +123,8 @@ export default function RestockStoreModal({ show, store, onClose, onSuccess }) {
       const payload = {
         price: Number(rawPrice),
         quantity: Number(rawQty),
+        siteId: store.siteId,
       };
-
-      const resolvedSiteId = isSuperAdmin ? activeSite?.id : (user?.siteId || user?.userSites?.[0]?.id);
-      if (resolvedSiteId) payload.siteId = resolvedSiteId;
 
       const res = await Api.post(`/store/${store.id}`, payload);
 

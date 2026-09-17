@@ -516,7 +516,7 @@ export default function FeedInventory() {
                       },
                       {
                         key: 'unitPrice',
-                        label: 'Average Cost (₦/Kg)',
+                        label: 'Unit Cost (₦/Kg)',
                         align: 'right',
                         render: (value) => <span className={styles.numCell}>{formatCurrency(Number(value) || 0)}</span>,
                       },

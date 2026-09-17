@@ -195,17 +195,10 @@ const FinanceLedger = () => {
                       {val || "-"}
                     </span>
                   )},
-                  { key: 'productName', label: 'PRODUCT', render: (val, row) => {
-                    const name = row?.productName || val || "";
-                    const qty = row?.quantity ?? row?.quantityCount ?? row?.qty ?? null;
-                    const weight = row?.weight ?? row?.quantityWeight ?? row?.productWeight ?? null;
-                    const unit = row?.unit ? ` ${row.unit}` : "";
-                    const parts = [name.split('(')[0].trim() || name];
-                    if (qty !== null && qty !== '' && !isNaN(Number(qty)) && Number(qty) !== 0) parts.push(`Qty: ${qty}`);
-                    if (weight !== null && weight !== '' && !isNaN(Number(weight)) && Number(weight) !== 0) parts.push(`Weight: ${weight}${unit}`);
-                    const text = parts.filter(Boolean).join(' | ') || "-";
+                  { key: 'productName', label: 'PRODUCT', render: (val) => {
+                    const text = val || "-";
                     return (
-                      <span title={text} style={{ display: 'inline-block', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
+                      <span title={text} style={{ display: 'inline-block', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
                         {text}
                       </span>
                     );
@@ -215,14 +208,10 @@ const FinanceLedger = () => {
                       {val || "-"}
                     </span>
                   )},
-                  { key: 'credit', label: 'CREDIT(₦)', render: (val, row) => {
-                    // Sales (money in) have a product — show in credit only
-                    if (!row?.productName) return '';
+                  { key: 'credit', label: 'CREDIT(₦)', render: (val) => {
                     return Number(val) ? <span style={{ color: "green" }}>{`₦${new Intl.NumberFormat().format(val)}`}</span> : '';
                   }},
-                  { key: 'debit', label: 'DEBIT(₦)', render: (val, row) => {
-                    // Expenses (money out) have no product — show in debit only
-                    if (row?.productName) return '';
+                  { key: 'debit', label: 'DEBIT(₦)', render: (val) => {
                     return Number(val) ? <span style={{ color: "red" }}>{`₦${new Intl.NumberFormat().format(val)}`}</span> : '';
                   }},
                   { key: 'balance', label: 'BALANCE(₦)', render: (val) => Number(val) ? `₦${new Intl.NumberFormat().format(val)}` : '' },
