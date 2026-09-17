@@ -68,12 +68,21 @@ const AddExpense = () => {
         }
     }, [isAdmin, resolvedUserSiteId]);
 
-    // Handle input changes
+    // Handle input changes — price accepts digits and one decimal point only
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
         if (name === 'price') {
-            const numberValue = value.replace(/,/g, '');
+            const cleaned = value.replace(/,/g, '').replace(/[^0-9.]/g, '');
+            const parts = cleaned.split('.');
+            const numberValue = parts.length > 2
+                ? parts[0] + '.' + parts.slice(1).join('')
+                : cleaned;
+            if (numberValue === '') {
+                setFormData({ ...formData, price: '' });
+                setUnformattedPrice(0);
+                return;
+            }
             setFormData({
                 ...formData,
                 price: formatNumberWithCommas(numberValue),
@@ -167,6 +176,7 @@ const AddExpense = () => {
                                     <Form.Control
                                         placeholder="Enter total price"
                                         type="text"
+                                        inputMode="decimal"
                                         name="price"
                                         value={formData.price}
                                         required

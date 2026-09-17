@@ -402,6 +402,7 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
             <Form.Control
               placeholder="Enter quantity"
               type="number"
+              step="any"
               name="quantity"
               value={fingerlingsData.products[0]?.quantity || ""}
               min="0"

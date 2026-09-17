@@ -400,10 +400,11 @@ const SalesForm = ({ customers, stages, products, siteId, productTypes }) => {
                                     <Form.Control
                                         placeholder="Enter number of packs"
                                         type="number"
+                                        step="any"
                                         name="quantity"
                                         value={dryData.products.find(p => p.id === val)?.quantity || ''}
                                         required
-                                        min={1}
+                                        min="0"
                                         onChange={(e) => handleInputChange(e, val)}
                                         onFocus={(e) => handleFocus(e, val)}
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}
@@ -414,6 +415,7 @@ const SalesForm = ({ customers, stages, products, siteId, productTypes }) => {
                                         <Form.Control
                                             placeholder={!row.productName?.toLowerCase().includes("broken") ? `Fishes in the ${row.productName}` : `Weigh in Kg`}
                                             type="number"
+                                            step="any"
                                             name="quantityUsedToPack"
                                             value={dryData.products.find(p => p.id === val)?.quantityUsedToPack || ''}
                                             min="0"

@@ -396,6 +396,8 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
             <Form.Control
               placeholder="Enter quantity"
               type="number"
+              step="any"
+              min="0"
               name="quantity"
               value={freshData.products[0]?.quantity || ""}
               required
@@ -410,6 +412,8 @@ const FreshForm = ({ customers, stages, products, siteId, productTypes }) => {
             <Form.Control
               placeholder="Enter product weight"
               type="number"
+              step="any"
+              min="0"
               name="productWeight"
               value={freshData.products[0]?.productWeight || ""}
               onChange={handleInputChange}

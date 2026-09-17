@@ -76,8 +76,8 @@ const ACCESS = {
 	// ── Damage / Loss ──
 	'damage-loss': ['super_admin', 'farm_manager'],
 
-	// ── Supplier (all except Sales Manager) ──
-	supplier: ['super_admin', 'farm_manager', 'finance'],
+	// ── Supplier (super admin only) ──
+	supplier: ['super_admin'],
 
 	// ── Staff (under Finance) ──
 	staff: ['super_admin', 'farm_manager', 'finance'],

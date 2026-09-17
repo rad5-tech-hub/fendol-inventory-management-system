@@ -478,10 +478,11 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                                     <Form.Control
                                         placeholder="Enter no. of bags"
                                         type="number"
+                                        step="any"
                                         name="quantity"
                                         value={feedData.products.find(p => p.id === val)?.quantity || ''}
                                         required
-                                        min={1}
+                                        min="0"
                                         onChange={(e) => handleInputChange(e, val)}
                                         onFocus={(e) => handleFocus(e, val)}
                                         className={`py-2 bg-light-subtle shadow-none border-1 ${styles.inputs}`}

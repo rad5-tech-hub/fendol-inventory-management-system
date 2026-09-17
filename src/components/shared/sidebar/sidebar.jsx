@@ -396,17 +396,17 @@ export default function SideBar({ show, handleClose }) {
             </>
           )}
 
-          {/* --- FEED MANAGEMENT --- */}
-          {!isHatcheryContext && hasPermission(userTypes, 'feed') && (
+          {/* --- FEED MANAGEMENT (hatchery sees Feed Inventory only) --- */}
+          {hasPermission(userTypes, 'feed') && (
             <>
               <span className={styles.sectionLabel}>FEED MANAGEMENT</span>
-              {renderDirectLink("Dashboard", "/feed/dashboard", <IoGridOutline size={25} className="me-1" />)}
-              {renderCard("raw_materials", "Raw Materials", <GiChipsBag size={25} className="me-1" />,
+              {!isHatcheryContext && renderDirectLink("Dashboard", "/feed/dashboard", <IoGridOutline size={25} className="me-1" />)}
+              {!isHatcheryContext && renderCard("raw_materials", "Raw Materials", <GiChipsBag size={25} className="me-1" />,
                 <>
                   {renderNavItem("Raw Material Inventory", "/feed/raw-materials")}
                 </>
               )}
-              {renderCard("feed_production", "Feed production", <GiFoodChain size={25} className="me-1" />,
+              {!isHatcheryContext && renderCard("feed_production", "Feed production", <GiFoodChain size={25} className="me-1" />,
                 <>
                   {renderNavItem("Create batch", "/feed/production/create")}
                   {renderNavItem("Production History", "/feed/production/history")}
