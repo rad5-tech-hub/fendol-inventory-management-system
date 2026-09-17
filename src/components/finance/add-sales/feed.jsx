@@ -51,6 +51,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
     }, [customers]);
 
     useEffect(() => {
+        let cancelled = false;
         const fetchFeedProducts = async () => {
             setFeedProductsLoading(true);
             try {
@@ -65,25 +66,19 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                         unit: p.unit || 'pcs',
                         basePrice: Number(p.basePrice ?? p.pricePerBag ?? 0),
                     }));
-                    // If we have products for this type, prefer them (e.g., Water, Dry bag)
-                    // Otherwise fall back to /feeds
                     if (mappedFromProducts.length > 0) {
-                        // Check if this looks like a non-feed inventory type (Water/Dry bag) — use it directly
-                        const isNonStandardFeed = mappedFromProducts.some(m => {
-                            const n = (m.productName || '').toLowerCase();
-                            return n.includes('water') || n.includes('bag');
-                        });
-                        if (isNonStandardFeed) {
+                        if (!cancelled) {
                             setFeedProducts(mappedFromProducts);
-                            return;
                         }
+                        return;
                     }
                 }
                 if (!resolvedSiteId) {
-                    setFeedProducts([]);
+                    if (!cancelled) setFeedProducts([]);
                     return;
                 }
                 const res = await Api.get(`/feeds?siteId=${resolvedSiteId}`);
+                if (cancelled) return;
                 const data = Array.isArray(res.data?.data) ? res.data.data : [];
                 const mapped = data.map(f => ({
                     id: f.id,
@@ -92,7 +87,6 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                     unit: f.unit || 'kg',
                     basePrice: f.pricePerBag || 0,
                 }));
-                // Fallback to products prop if feeds empty but products available
                 if (mapped.length === 0 && hasProductsProp) {
                     const fallback = products.map(p => ({
                         id: p.id,
@@ -106,7 +100,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                     setFeedProducts(mapped);
                 }
             } catch {
-                // On error, fallback to products prop if available
+                if (cancelled) return;
                 if (Array.isArray(products) && products.length > 0) {
                     const fallback = products.map(p => ({
                         id: p.id,
@@ -120,10 +114,11 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
                     setFeedProducts([]);
                 }
             } finally {
-                setFeedProductsLoading(false);
+                if (!cancelled) setFeedProductsLoading(false);
             }
         };
         fetchFeedProducts();
+        return () => { cancelled = true; };
     }, [resolvedSiteId, products]);
 
     const fetchCustomers = async () => {
