@@ -53,7 +53,7 @@ export default function FeedLedger() {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [filterApplied, setFilterApplied] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 20;
+  const itemsPerPage = 85;
 
   const displayName = feedDetails?.feedName || feedMeta?.feedName || 'Feed';
 
@@ -382,51 +382,9 @@ export default function FeedLedger() {
                         );
                       },
                     },
-                    {
-                      key: 'stage',
-                      label: 'Stage',
-                      render: (value) => {
-                        const pill = STAGE_PILL_COLORS[value] || { bg: '#F3F4F6', color: '#374151' };
-                        return (
-                          <span className={styles.txPill} style={{ background: pill.bg, color: pill.color }}>
-                            {value || '--'}
-                          </span>
-                        );
-                      },
-                    },
-                    {
-                      key: 'pondId',
-                      label: 'Pond',
-                      render: (value, row) => {
-                        if (row?.stage === 'Feed used' && value) {
-                          const pond = ponds.find(p => p.id === value);
-                          const pondName = pond?.title || pond?.name || null;
-                          return pondName ? (
-                            <span className={styles.txPill} style={{ background: '#EFF6FF', color: '#1D4ED8' }}>
-                              {pondName}
-                            </span>
-                          ) : '--';
-                        }
-                        return '--';
-                      },
-                    },
-                    { key: 'originalQuantity', label: 'Original Qty', render: (value) => <span>{Number(value) > 0 ? f(value) : '--'}</span> },
                     { key: 'quantityUsed', label: 'Qty Used', render: (value) => <span>{Number(value) > 0 ? f(value) : '--'}</span> },
-                    { key: 'noOfBagAdded', label: 'Bags Added', render: (value) => <span>{value != null ? f(value) : '--'}</span> },
                     { key: 'quantitySold', label: 'Qty Sold', render: (value) => <span>{Number(value) > 0 ? f(value) : '--'}</span> },
                     { key: 'cost', label: 'Cost (₦)', render: (value) => <span>{Number(value) > 0 ? formatCurrency(value) : '--'}</span> },
-                    {
-                      key: 'status',
-                      label: 'Status',
-                      render: (value) => {
-                        const pillStyle = STATUS_PILL_COLORS[value] || { bg: '#F3F4F6', color: '#374151' };
-                        return (
-                          <span className={styles.txPill} style={{ background: pillStyle.bg, color: pillStyle.color }}>
-                            {value}
-                          </span>
-                        );
-                      },
-                    },
                     { key: 'remainingFeed', label: 'Qty Remaining', render: (value) => <span style={{ fontWeight: 700 }}>{f(value)}</span> },
                   ]}
                   data={paginatedData}

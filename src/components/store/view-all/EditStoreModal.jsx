@@ -9,7 +9,6 @@ export default function EditStoreModal({ show, store, onClose, onSuccess }) {
   const [name, setName] = useState('');
   const [threshold, setThreshold] = useState('');
   const [unit, setUnit] = useState('');
-  const [weightPerItem, setWeightPerItem] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -17,14 +16,13 @@ export default function EditStoreModal({ show, store, onClose, onSuccess }) {
       setName(store?.name || '');
       setThreshold(store?.threshold !== undefined && store?.threshold !== null ? String(Number(store.threshold)) : '');
       setUnit(store?.unit || '');
-      setWeightPerItem(store?.weightPerItem !== undefined && store?.weightPerItem !== null ? String(Number(store.weightPerItem)) : '');
     }
   }, [show, store]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name.trim() || !threshold || !unit || !weightPerItem) {
+    if (!name.trim()) {
       toast.error('Please fill in all required fields.', { className: 'dark-toast' });
       return;
     }
@@ -34,10 +32,9 @@ export default function EditStoreModal({ show, store, onClose, onSuccess }) {
 
     try {
       const payload = {
-        name,
-        unit,
-        threshold: Number(threshold),
-        weightPerItem: Number(weightPerItem),
+        name: name.trim(),
+        unit: unit.trim(),
+        threshold: Number(threshold) || 0,
       };
 
       const res = await Api.patch(`/edit-store-threshold/${store.id}`, payload);
@@ -90,7 +87,6 @@ export default function EditStoreModal({ show, store, onClose, onSuccess }) {
             <div className="col-md-6 mb-3">
               <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Unit</Form.Label>
               <CustomDropdown
-                required
                 value={unit}
                 onChange={(value) => setUnit(value)}
                 className={`bg-light-subtle shadow-none border-1 ${styles.inputs}`}
@@ -114,19 +110,6 @@ export default function EditStoreModal({ show, store, onClose, onSuccess }) {
                 min="0"
                 value={threshold}
                 onChange={(e) => setThreshold(e.target.value === '' ? '' : Number(e.target.value))}
-                className={`bg-light-subtle shadow-none border-1 ${styles.inputs}`}
-                style={{ height: '48px' }}
-              />
-            </div>
-            <div className="col-md-6 mb-3">
-              <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Weight per store item</Form.Label>
-              <Form.Control
-                placeholder="Enter weight per item"
-                type="number"
-                required
-                min="0"
-                value={weightPerItem}
-                onChange={(e) => setWeightPerItem(e.target.value === '' ? '' : Number(e.target.value))}
                 className={`bg-light-subtle shadow-none border-1 ${styles.inputs}`}
                 style={{ height: '48px' }}
               />

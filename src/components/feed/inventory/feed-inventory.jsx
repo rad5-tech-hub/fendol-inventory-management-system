@@ -74,7 +74,7 @@ export default function FeedInventory() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 45;
+  const itemsPerPage = 85;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFeedType, setSelectedFeedType] = useState('');
   const [selectedSiteId, setSelectedSiteId] = useState('');
@@ -597,9 +597,6 @@ export default function FeedInventory() {
                       style={{ opacity: currentPage >= pageCount - 1 ? 0.4 : 1 }}
                     >
                       <FiChevronRight size={15} />
-                    </button>
-                    <button className={styles.perPageDropdown}>
-                      {itemsPerPage} / page <IoChevronDown size={11} />
                     </button>
                   </div>
                 </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
-  FiChevronLeft, FiChevronRight, FiSearch, FiRefreshCw, FiPlus, FiEye,
+  FiChevronLeft, FiChevronRight, FiSearch, FiRefreshCw, FiPlus, FiEye, FiEdit,
 } from 'react-icons/fi';
 import { BsArrowUpCircle, BsArrowDownCircle } from 'react-icons/bs';
 import { FaExclamationTriangle } from 'react-icons/fa';
@@ -14,6 +14,7 @@ import DataTable from "../../shared/data-table/DataTable";
 import AddStockModal from './AddStockModal';
 import RestockStoreModal from './RestockStoreModal';
 import UseStoreModal from './UseStoreModal';
+import EditStoreModal from './EditStoreModal';
 import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -52,6 +53,8 @@ export default function UpdateStoreInventory() {
   const [restockProduct, setRestockProduct] = useState(null);
   const [showUseModal, setShowUseModal] = useState(false);
   const [useProduct, setUseProduct] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
 
   const toggleSidebar = () => setShowSidebar(!showSidebar);
   const handleCloseSidebar = () => setShowSidebar(false);
@@ -107,6 +110,11 @@ export default function UpdateStoreInventory() {
   const resetFilters = () => {
     setSearchQuery('');
     setCurrentPage(0);
+  };
+
+  const openEditModal = (row) => {
+    setEditProduct(row);
+    setShowEditModal(true);
   };
 
   const currentProducts = filteredRows.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
@@ -331,6 +339,10 @@ export default function UpdateStoreInventory() {
                             label: <><FiEye size={14} style={{ marginRight: 10 }} /> View Details</>,
                             onClick: () => navigate(`/store/detail/${row.id}`),
                           },
+                          {
+                            label: <><FiEdit size={14} style={{ marginRight: 10 }} /> Edit</>,
+                            onClick: () => openEditModal(row),
+                          },
                           { divider: true },
                           { label: <><BsArrowUpCircle size={14} style={{ marginRight: 10 }} /> Restock</>, onClick: () => { setRestockProduct(row); setShowRestockModal(true); } },
                           { label: <><BsArrowDownCircle size={14} style={{ marginRight: 10 }} /> Use</>, onClick: () => { setUseProduct(row); setShowUseModal(true); } },
@@ -421,6 +433,24 @@ export default function UpdateStoreInventory() {
             }
             setShowUseModal(false);
             setUseProduct(null);
+          }}
+        />
+      )}
+
+      {showEditModal && (
+        <EditStoreModal
+          show={showEditModal}
+          store={editProduct}
+          onClose={() => { setShowEditModal(false); setEditProduct(null); }}
+          onSuccess={(success, msg) => {
+            if (success) {
+              toast.success(msg, { className: 'dark-toast', autoClose: 3000 });
+              fetchProducts();
+            } else {
+              toast.error(msg, { className: 'dark-toast', autoClose: 5000 });
+            }
+            setShowEditModal(false);
+            setEditProduct(null);
           }}
         />
       )}

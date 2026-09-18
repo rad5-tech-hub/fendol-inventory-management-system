@@ -247,6 +247,7 @@ export default function CreateProducts() {
                                             { value: 'pieces', label: 'Pieces' },
                                             { value: 'packs', label: 'Packs' },
                                             { value: 'sachets', label: 'Sachets' },
+                                            { value: 'litre', label: 'Litre' },
                                         ]}
                                         value={formData.unit}
                                         onChange={(val) => handleInputChange({ target: { name: 'unit', value: val } })}
