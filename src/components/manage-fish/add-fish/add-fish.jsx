@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from '../product-stages.module.scss';
 import Api from '../../shared/api/apiLink';
+import extractError from '../../shared/utils/extractError';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { useConfirm } from '../../shared/confirm-modal';
@@ -60,6 +61,7 @@ const AddFish = () => {
         }
       } catch (err) {
         console.error(err.response?.data?.message || 'Failed to fetch stages');
+        toast.error(extractError(err, 'Failed to fetch stages.'));
       }
     };
 
@@ -77,6 +79,7 @@ const AddFish = () => {
         }
       } catch (err) {
         console.error(err.response?.data?.message || 'Failed to fetch fish types');
+        toast.error(extractError(err, 'Failed to fetch fish types.'));
       }
     };
 
@@ -129,7 +132,7 @@ const AddFish = () => {
       });
     } catch (error) {
       toast.update(loadingToast, {
-        render: error.response?.data?.message || 'Error adding fish. Please try again.',
+        render: extractError(error, 'Error adding fish. Please try again.'),
         type: 'error',
         isLoading: false,
         autoClose: 3000,

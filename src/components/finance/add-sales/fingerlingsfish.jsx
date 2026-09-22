@@ -4,6 +4,7 @@ import { Form, Row, Col, Button } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import Api from "../../shared/api/apiLink";
+import extractError from "../../shared/utils/extractError";
 import styles from "../finance.module.scss";
 import ReceiptModal from "./receipt";
 import { useConfirm } from '../../shared/confirm-modal';
@@ -203,6 +204,7 @@ const FingerlingsForm = ({ customers, stages, products, siteId, productTypes }) 
       }
     } catch (err) {
       console.log(err.response?.data?.message || "Failed to fetch customers.");
+      toast.error(extractError(err, "Failed to fetch customers."));
     }
   };
 

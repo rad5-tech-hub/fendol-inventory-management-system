@@ -18,6 +18,7 @@ import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import CustomDropdown from '../../shared/custom-dropdown/CustomDropdown';
 import DataTable from '../../shared/data-table/DataTable';
 import Pagination from "../../shared/pagination/Pagination";
+import extractError from '../../shared/utils/extractError';
 
 const ProductTable = ({ rows, avatarColors, onEditClick, onDeleteClick, isSuperAdmin }) => (
   <DataTable
@@ -95,7 +96,7 @@ export default function ViewAllProducts() {
         const data = response.data.data;
         setProducts(data);
       } catch (err) {
-        setError('Failed to fetch data. Please try again.');
+        setError(extractError(err, 'Failed to fetch data. Please try again.'));
       } finally {
         setLoading(false);
       }

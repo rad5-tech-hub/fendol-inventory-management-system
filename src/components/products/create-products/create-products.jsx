@@ -9,6 +9,7 @@ import Api, { ApiV2 } from "../../shared/api/apiLink";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import extractError from '../../shared/utils/extractError';
 
 export default function CreateProducts() {
     const [loader, setLoader] = useState(false);
@@ -184,7 +185,7 @@ export default function CreateProducts() {
             }, 2500)
         } catch (error) {
             toast.update(loadingToast, {
-                render: error.response?.data?.message || `Error ${isEditing ? 'updating' : 'creating'} product. Please try again.`,
+                render: extractError(error, `Error ${isEditing ? 'updating' : 'creating'} product. Please try again.`),
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,

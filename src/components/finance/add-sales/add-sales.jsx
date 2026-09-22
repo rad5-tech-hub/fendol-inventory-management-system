@@ -3,11 +3,12 @@ import { Form } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import styles from '../finance.module.scss';
-import { ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
+import extractError from '../../shared/utils/extractError';
 import SalesForm from './dryfish';
 import FreshForm from './freshfish';
 import FingerlingsForm from './fingerlingsfish';
@@ -54,6 +55,7 @@ const AddSales = () => {
             }
         } catch (err) {
             console.log(err.response?.data?.message || 'Failed to fetch stages.');
+            toast.error(extractError(err, 'Failed to fetch stages.'));
         }
     };
 
@@ -68,6 +70,7 @@ const AddSales = () => {
             }
         } catch (err) {
             console.log(err.response?.data?.message || 'Failed to fetch customers.');
+            toast.error(extractError(err, 'Failed to fetch customers.'));
         }
     };
 

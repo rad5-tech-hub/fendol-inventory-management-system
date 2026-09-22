@@ -9,6 +9,7 @@ import Header from '../../shared/header/header';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import { useNavigate } from 'react-router-dom';
+import extractError from '../../shared/utils/extractError';
 
 const AddStock = () => {
     const [formData, setFormData] = useState({
@@ -85,7 +86,7 @@ const AddStock = () => {
             navigate('/store/view-all');
         } catch (error) {
             toast.update(loadingToast, {
-                render: error.response?.data?.message || "Error adding stock. Please try again.",
+                render: extractError(error, "Error adding stock. Please try again."),
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,

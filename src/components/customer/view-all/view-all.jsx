@@ -17,6 +17,7 @@ import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import ErrorState from "../../shared/error-state/ErrorState";
 import EmptyState from "../../shared/empty-state/EmptyState";
 import { useConfirm } from '../../shared/confirm-modal';
+import extractError from '../../shared/utils/extractError';
 import { normalizePhone } from '../../shared/phoneUtils';
 import PhoneInput from '../../shared/phone-input/PhoneInput';
 
@@ -94,7 +95,7 @@ export default function ViewAllCustomers() {
       setCustomers(allData);
       setAggregates(agg);
     } catch (err) {
-      setError('Failed to fetch customers. Please try again.');
+      setError(extractError(err, 'Failed to fetch customers. Please try again.'));
       console.error(err);
     } finally {
       setLoading(false);

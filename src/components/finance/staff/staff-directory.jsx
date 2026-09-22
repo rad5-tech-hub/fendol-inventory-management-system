@@ -6,6 +6,7 @@ import { VscOrganization } from 'react-icons/vsc';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
+import extractError from '../../shared/utils/extractError';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
@@ -75,6 +76,7 @@ export default function StaffDirectory() {
         data: err.response?.data,
         message: err.message,
       });
+      toast.error(extractError(err, 'Failed to fetch staff.'));
       return [];
     }
   };
@@ -85,6 +87,7 @@ export default function StaffDirectory() {
       return Array.isArray(res.data?.data) ? res.data.data : [];
     } catch (err) {
       console.error('[StaffDirectory] fetchSites failed:', err.response?.data || err.message || err);
+      toast.error(extractError(err, 'Failed to fetch sites.'));
       return [];
     }
   };

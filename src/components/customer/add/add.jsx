@@ -10,6 +10,7 @@ import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
 import PhoneInput from '../../shared/phone-input/PhoneInput';
+import extractError from '../../shared/utils/extractError';
 
 const AddCustomer = () => {
   const [loader, setLoader] = useState(false);
@@ -81,10 +82,7 @@ const AddCustomer = () => {
 
       navigate('/customer/view-all');
     } catch (error) {
-      const data = error.response?.data;
-      const errorMessage = data?.errors?.length
-        ? data.errors.join('. ')
-        : data?.message || "Error adding customer. Please try again.";
+      const errorMessage = extractError(error, "Error adding customer. Please try again.");
       toast.update(loadingToast, {
         render: errorMessage,
         type: "error",

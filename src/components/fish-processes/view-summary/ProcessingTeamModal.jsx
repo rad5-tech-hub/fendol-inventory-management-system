@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { FiX, FiSearch, FiUsers } from 'react-icons/fi';
 import Api, { ApiV2 } from '../../shared/api/apiLink';
 import styles from './ProcessingTeamModal.module.scss';
+import extractError from '../../shared/utils/extractError';
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
 
@@ -121,12 +122,7 @@ export default function ProcessingTeamModal({ show, processId, existingTeam, onC
         onSuccess(saved);
       }
     } catch (error) {
-      let msg = 'Failed to save processing team. Please try again.';
-      if (error.response) {
-        msg = error.response?.data?.message ||
-              error.response?.data?.response_message ||
-              msg;
-      }
+      const msg = extractError(error, 'Failed to save processing team. Please try again.');
       if (onSuccess) onSuccess(null, msg);
     } finally {
       setSubmitting(false);

@@ -12,6 +12,7 @@ import styles from '../product-stages.module.scss';
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import DataTable from "../../shared/data-table/DataTable";
 import { useConfirm } from '../../shared/confirm-modal';
+import extractError from '../../shared/utils/extractError';
 
 const AddSpecies = () => {
     const [formData, setFormData] = useState({
@@ -40,7 +41,7 @@ const AddSpecies = () => {
                 throw new Error('Expected an array of stages');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+            setError(extractError(err, 'Failed to fetch data. Please try again.'));
         } finally {
             setLoading(false);
         }
@@ -84,7 +85,7 @@ const AddSpecies = () => {
             }, 4500);
         } catch (error) {
             toast.update(loadingToast, {
-                render: error.response?.data?.message || "Error adding fish Type. Please try again.",
+                render: extractError(error, "Error adding fish Type. Please try again."),
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,

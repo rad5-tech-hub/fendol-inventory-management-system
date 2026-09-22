@@ -9,6 +9,7 @@ import EmptyState from "../../shared/empty-state/EmptyState";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import DataTable from "../../shared/data-table/DataTable";
 import Pagination from "../../shared/pagination/Pagination";
+import extractError from '../../shared/utils/extractError';
 
 const FinanceLedger = () => {
   const [ledgerData, setLedgerData] = useState([]);
@@ -61,7 +62,7 @@ const FinanceLedger = () => {
         }
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError(err.response?.data?.message || err.response?.data?.response_message || "Failed to fetch data. Please try again.");
+        setError(extractError(err, "Failed to fetch data. Please try again."));
       } finally {
         setLoading(false);
       }

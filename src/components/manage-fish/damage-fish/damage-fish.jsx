@@ -9,6 +9,7 @@ import Header from '../../shared/header/header';
 import Api from '../../shared/api/apiLink';
 import { useNavigate } from 'react-router-dom';
 import { useConfirm } from '../../shared/confirm-modal';
+import extractError from '../../shared/utils/extractError';
 
 const DamageFish = () => {
   const [ConfirmDialog, confirm] = useConfirm();
@@ -52,7 +53,7 @@ const DamageFish = () => {
       }
     } catch (err) {
       console.error(err.response?.data?.message || 'Failed to fetch data. Please try again.');
-      toast.error(err.response?.data?.message || 'Failed to fetch ponds. Please try again.', {
+      toast.error(extractError(err, 'Failed to fetch ponds. Please try again.'), {
         className: 'dark-toast',
         autoClose: 3000,
       });
@@ -159,7 +160,7 @@ const DamageFish = () => {
       await fetchStages();
     } catch (error) {
       toast.update(loadingToast, {
-        render: error.response?.data?.message || "Error recording mortality. Please try again.",
+        render: extractError(error, "Error recording mortality. Please try again."),
         type: "error",
         isLoading: false,
         autoClose: 3000,

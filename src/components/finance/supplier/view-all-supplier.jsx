@@ -16,6 +16,7 @@ import { SkeletonTable } from "../../shared/skeleton/Skeleton";
 import { useConfirm } from '../../shared/confirm-modal';
 import PortalDropdown from '../../shared/portal-dropdown/PortalDropdown';
 import DataTable from "../../shared/data-table/DataTable";
+import extractError from '../../shared/utils/extractError';
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
 
@@ -57,8 +58,8 @@ export default function ViewAllSupplier() {
       if (summ) {
         setSummary(summ);
       }
-    } catch {
-      setError("Failed to load suppliers. Please try again.");
+    } catch (err) {
+      setError(extractError(err, "Failed to load suppliers. Please try again."));
     } finally {
       setLoading(false);
     }

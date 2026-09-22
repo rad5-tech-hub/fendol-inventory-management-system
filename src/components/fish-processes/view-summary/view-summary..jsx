@@ -18,6 +18,7 @@ import Api, { ApiV2 } from '../../shared/api/apiLink';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ProcessingTeamModal from './ProcessingTeamModal';
+import extractError from '../../shared/utils/extractError';
 
 
 // ─── inline style tokens (no changes to process.module.scss) ────────────────
@@ -511,7 +512,7 @@ export default function ViewSummary() {
         setSites(Array.isArray(sitesRes.data?.data) ? sitesRes.data.data : []);
         setPonds(Array.isArray(pondsRes.data?.data) ? pondsRes.data.data : []);
       } catch (error) {
-        const errMsg = error.response?.data?.message || error.message || 'Unknown error';
+        const errMsg = extractError(error, 'Unknown error');
         const status = error.response?.status || 'N/A';
         const statusText = error.response?.statusText || '';
         const endpoint = error.config?.url || '/latest-completed, /v2/all-site, /fish-stages?siteId=all';
@@ -1377,7 +1378,7 @@ export default function ViewSummary() {
         onClose={() => setTeamModalProcess(null)}
         onSuccess={(members, error) => {
           if (error) {
-            const errMsg = error.response?.data?.message || error.message || 'Unknown error';
+        const errMsg = extractError(error, 'Unknown error');
             const status = error.response?.status || 'N/A';
             const statusText = error.response?.statusText || '';
             const endpoint = error.config?.url || '/processing-team';

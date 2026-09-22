@@ -12,6 +12,7 @@ import ReactPaginate from 'react-paginate';
 import { ToastContainer } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import extractError from '../../shared/utils/extractError';
 import DataTable from "../../shared/data-table/DataTable";
 
 const typeBadgeStyle = (type) => {
@@ -44,7 +45,7 @@ const ViewAllSites = () => {
         throw new Error('Expected an array of sites');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch data. Please try again.');
+      setError(extractError(err, 'Failed to fetch data. Please try again.'));
     } finally {
       setLoading(false);
     }

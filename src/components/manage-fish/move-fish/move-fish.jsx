@@ -8,6 +8,7 @@ import Api from '../../shared/api/apiLink';
 import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import { useConfirm } from '../../shared/confirm-modal';
+import extractError from '../../shared/utils/extractError';
 
 
 export default function MoveFish() {
@@ -61,7 +62,7 @@ export default function MoveFish() {
           throw new Error('Expected an array of stages');
         }
       } catch (err) {
-        toast.error(err.response?.data?.message || 'Failed to fetch stages. Check your connection and try again.', { autoClose: 4000 });
+        toast.error(extractError(err, 'Failed to fetch stages. Check your connection and try again.'), { autoClose: 4000 });
       }
     };
     fetchStages();
@@ -108,7 +109,7 @@ export default function MoveFish() {
         setSelectedQuantityFrom('0');
         setSelectedQuantityTo('0');
       } else {
-        const msg = error.response?.data?.message || 'Failed to fetch pond quantity.';
+        const msg = extractError(error, 'Failed to fetch pond quantity.');
         console.error(msg, error);
         toast.error(msg, { autoClose: 4000 });
         if (type === 'from') setSelectedQuantityFrom('Error fetching quantity');
@@ -200,7 +201,7 @@ export default function MoveFish() {
       });
     } catch (error) {
       toast.update(loadingToast, {
-        render: error.response?.data?.message || 'Error moving fish. Please try again.',
+        render: extractError(error, 'Error moving fish. Please try again.'),
         type: 'error',
         isLoading: false,
         autoClose: 3000,

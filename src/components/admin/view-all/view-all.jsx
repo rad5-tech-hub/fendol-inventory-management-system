@@ -17,6 +17,7 @@ import { FaUserPlus, FaFilter } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useConfirm } from '../../shared/confirm-modal';
+import extractError from '../../shared/utils/extractError';
 
 const avatarColors = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47'];
 
@@ -61,7 +62,7 @@ export default function ViewAll() {
         throw new Error("Expected an array of admins");
       }
     } catch (err) {
-      setError('Failed to fetch data. Please try again.');
+      setError(extractError(err, 'Failed to fetch data. Please try again.'));
       console.error(err);
     } finally {
       setLoading(false);

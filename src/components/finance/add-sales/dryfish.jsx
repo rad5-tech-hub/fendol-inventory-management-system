@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
 import Api from '../../shared/api/apiLink';
+import extractError from '../../shared/utils/extractError';
 import styles from '../finance.module.scss';
 import EmptyState from "../../shared/empty-state/EmptyState";
 import ReceiptModal from './receipt';
@@ -63,6 +64,7 @@ const SalesForm = ({ customers, stages, products, siteId, productTypes }) => {
             }
         } catch (err) {
             console.log(err.response?.data?.message || 'Failed to fetch customers.');
+            toast.error(extractError(err, 'Failed to fetch customers.'));
         }
     };
 

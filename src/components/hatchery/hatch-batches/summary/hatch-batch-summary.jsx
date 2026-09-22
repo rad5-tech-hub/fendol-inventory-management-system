@@ -8,6 +8,7 @@ import { IoArrowBackOutline, IoPrintOutline, IoPencilOutline } from 'react-icons
 import SideBar from '../../../shared/sidebar/sidebar';
 import Header from '../../../shared/header/header';
 import Api, { ApiV2 } from '../../../shared/api/apiLink';
+import extractError from '../../../shared/utils/extractError';
 import styles from '../../hatchery.module.scss';
 
 const f = (n) => new Intl.NumberFormat().format(n);
@@ -86,8 +87,8 @@ export default function HatchBatchSummary() {
         }
         const siteList = Array.isArray(sitesRes.data?.data) ? sitesRes.data.data : [];
         setSites(siteList);
-      } catch {
-        setError('Failed to load batch summary.');
+      } catch (err) {
+        setError(extractError(err, 'Failed to load batch summary.'));
       } finally {
         setLoading(false);
       }

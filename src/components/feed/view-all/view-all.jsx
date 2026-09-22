@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import AddFeedModal from "./AddFeedModal";
 import ErrorState from "../../shared/error-state/ErrorState";
 import EmptyState from "../../shared/empty-state/EmptyState";
+import extractError from '../../shared/utils/extractError';
 
 export default function UpdateFeedInventory() {
   const activeSite = useSelector((store) => store.activeSite);
@@ -126,7 +127,7 @@ export default function UpdateFeedInventory() {
       const response = await Api.get('/feeds');
       setProducts(response.data.data);
     } catch (err) {
-      setError('Failed to fetch data. Please try again.');
+      setError(extractError(err, 'Failed to fetch data. Please try again.'));
     } finally {
       setLoading(false);
     }

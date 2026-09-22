@@ -7,6 +7,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../customer.module.scss';
 import { BsCalendar3, BsPlusLg, BsPrinter, BsX } from "react-icons/bs";
 import Api from "../../shared/api/apiLink";
+import extractError from '../../shared/utils/extractError';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Button, Form, Modal, Spinner } from 'react-bootstrap';
@@ -31,15 +32,6 @@ const getPendingNetPrice = (sale) => {
 };
 
 const getPendingBalance = (sale) => getPendingNetPrice(sale) - (Number(sale.totalPaid) || 0);
-
-const extractError = (error, fallback) => {
-  const data = error?.response?.data;
-  if (data?.errors?.length) return data.errors.join('. ');
-  if (data?.response_message) return data.response_message;
-  if (data?.error?.message) return data.error.message;
-  if (data?.message) return data.message;
-  return fallback;
-};
 
 const AVATAR_COLORS = ['#E8A87C', '#5C4033', '#6DBFB8', '#8B6F47', '#A78BFA', '#F5A623', '#4A90D9', '#2E7D32'];
 
@@ -119,6 +111,7 @@ export default function PersonalLedger() {
       }
     } catch (err) {
       console.error('Error fetching customer info:', err);
+      toast.error(extractError(err, 'Failed to fetch customer info.'));
     }
   };
 

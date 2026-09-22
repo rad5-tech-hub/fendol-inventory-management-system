@@ -422,10 +422,10 @@ export default function SideBar({ show, handleClose }) {
           )}
 
           {/* --- INVENTORY --- */}
-          {(hasPermission(userTypes, 'store') || hasPermission(userTypes, 'products')) && (
+          {(hasPermission(userTypes, 'store') || hasPermission(userTypes, 'products') || isHatcheryContext) && (
             <>
               <span className={styles.sectionLabel}>INVENTORY</span>
-              {hasPermission(userTypes, 'store') && renderCard("store", "Store", <RiStoreFill size={25} className="me-1" />,
+              {(hasPermission(userTypes, 'store') || isHatcheryContext) && renderCard("store", "Store", <RiStoreFill size={25} className="me-1" />,
                 <>
                   {renderNavItem("View all", "/store/view-all")}
                   {renderNavItem("History", "/store/inventory-history")}

@@ -11,6 +11,7 @@ import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import extractError from '../../shared/utils/extractError';
 
 const PRIMARY = '#512728';
 const PRIMARY_HV = '#714445';
@@ -54,7 +55,7 @@ export default function ViewBrokenHistory() {
         throw new Error("Invalid data structure");
       }
     } catch (error) {
-      setErrorStages(error.response?.data?.message || "Error getting broken fish data.");
+      setErrorStages(extractError(error, "Error getting broken fish data."));
     } finally {
       setLoadingStages(false);
     }
@@ -73,7 +74,7 @@ export default function ViewBrokenHistory() {
         throw new Error("Expected an array in data property");
       }
     } catch (error) {
-      setErrorTable(error.response?.data?.message || "Error getting broken history data.");
+      setErrorTable(extractError(error, "Error getting broken history data."));
     } finally {
       setLoadingTable(false);
     }
@@ -182,7 +183,7 @@ export default function ViewBrokenHistory() {
 
   const columns = [
     {
-      key: 'createdAt', label: 'Date',
+      key: 'createdAt', label: 'Date', width: '110px',
       render: (value, row) => {
         const dt = formatDateTime(value || row.date);
         return (
@@ -194,23 +195,21 @@ export default function ViewBrokenHistory() {
       },
     },
     {
-      key: 'description', label: 'Description',
+      key: 'description', label: 'Description', width: '160px',
       render: (value) => (
-        <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block' }} title={value}>
+        <span
+          style={{
+            color: TEXT_MUTED, fontSize: '12px', display: 'block',
+            maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}
+          title={value}
+        >
           {value || ''}
         </span>
       ),
     },
     {
-      key: 'quantity', label: 'Quantity added', align: 'right',
-      render: (value, row) => (
-        <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
-          {row.kgRemoved || row.isSale ? '' : (value ? new Intl.NumberFormat().format(value) : '')}
-        </span>
-      ),
-    },
-    {
-      key: 'kgRemoved', label: 'Removed (kg)', align: 'right',
+      key: 'kgRemoved', label: 'Removed (kg)', width: '90px', align: 'right',
       render: (value, row) => {
         const kg = row.kgRemoved ? Number(row.kgRemoved).toFixed(3) : (row.isSale && row.quantityInKg ? Number(row.quantityInKg).toFixed(3) : '');
         return (
@@ -219,6 +218,14 @@ export default function ViewBrokenHistory() {
           </span>
         );
       },
+    },
+    {
+      key: 'quantity', label: 'Qty Remaining', width: '100px', align: 'right',
+      render: (value) => (
+        <span style={{ fontWeight: 700, color: '#1D4ED8', fontSize: '13px' }}>
+          {new Intl.NumberFormat().format(Number(value) || 0)}
+        </span>
+      ),
     },
     {
       key: '_actions', label: '', width: '100px',
@@ -412,7 +419,7 @@ export default function ViewBrokenHistory() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{
                     width: '100%', borderCollapse: 'collapse', fontSize: '12.5px',
-                    minWidth: '850px',
+                    minWidth: '700px', tableLayout: 'fixed',
                   }}>
                     <thead style={{ backgroundColor: '#F9FAFB' }}>
                       <tr>
@@ -422,6 +429,8 @@ export default function ViewBrokenHistory() {
                             fontSize: '10px', fontWeight: 700, letterSpacing: '0.07em',
                             textTransform: 'uppercase', color: TEXT_MUTED, whiteSpace: 'nowrap',
                             borderBottom: `1px solid ${BORDER}`,
+                            width: col.width || 'auto',
+                            overflow: 'hidden', textOverflow: 'ellipsis',
                           }}>
                             {col.label}
                           </th>
@@ -446,7 +455,10 @@ export default function ViewBrokenHistory() {
                                 padding: '10px 12px',
                                 borderBottom: `1px solid ${BORDER}`,
                                 textAlign: col.align === 'right' ? 'right' : 'left',
-                                whiteSpace: 'nowrap',
+                                whiteSpace: col.key === 'description' ? 'normal' : 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                maxWidth: col.width || undefined,
                               }}>
                                 {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '')}
                               </td>

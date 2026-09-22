@@ -8,6 +8,7 @@ import SideBar from '../../shared/sidebar/sidebar';
 import Header from '../../shared/header/header';
 import DataTable from '../../shared/data-table/DataTable';
 import Api from '../../shared/api/apiLink';
+import extractError from '../../shared/utils/extractError';
 import feedStyles from '../../feed/feed.module.scss';
 import styles from './store-item-detail.module.scss';
 
@@ -56,15 +57,8 @@ export default function StoreItemDetail() {
           throw new Error(res.data?.response_message || 'Failed to load store item details.');
         }
       } catch (err) {
-        const msg = !err.response
-          ? 'Network error. Please check your internet connection and try again.'
-          : err.response?.status === 404
-            ? 'Store item not found.'
-            : err.response?.data?.response_message
-              || err.response?.data?.message
-              || 'Failed to load store item details.';
+        const msg = extractError(err, 'Failed to load store item details.');
         setError(msg);
-        toast.error(msg, { autoClose: 6000 });
       } finally {
         setLoading(false);
       }

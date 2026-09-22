@@ -6,6 +6,7 @@ import SideBar from '../shared/sidebar/sidebar';
 import Header from '../shared/header/header';
 import { useSelector } from 'react-redux';
 import { SkeletonStatGrid } from '../shared/skeleton/Skeleton';
+import extractError from '../shared/utils/extractError';
 import { GiCirclingFish } from 'react-icons/gi';
 import { BsSearch, BsCalendarRange, BsExclamationTriangleFill, BsArrowClockwise } from 'react-icons/bs';
 import {
@@ -221,7 +222,7 @@ const Dashboard = () => {
       setDashboardData(response.data?.data || response.data);
       setLoading(false);
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to fetch dashboard data.');
+      setError(extractError(err, 'Failed to fetch dashboard data.'));
       setLoading(false);
     }
   }, [effectiveSiteId, isSuperAdmin, dateFrom, dateTo]);
@@ -352,7 +353,7 @@ const Dashboard = () => {
     } catch (err) {
       console.error('Chart data fetch error:', err);
       setChartData([]);
-      setChartError(err.response?.data?.message || 'Failed to load chart data');
+      setChartError(extractError(err, 'Failed to load chart data'));
     } finally {
       setChartLoading(false);
     }

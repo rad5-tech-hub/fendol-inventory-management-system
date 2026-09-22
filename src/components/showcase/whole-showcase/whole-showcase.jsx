@@ -12,6 +12,7 @@ import Api from "../../shared/api/apiLink";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { SkeletonTable } from "../../shared/skeleton/Skeleton";
+import extractError from '../../shared/utils/extractError';
 
 const PRIMARY = '#512728';
 const PRIMARY_HV = '#714445';
@@ -75,7 +76,7 @@ export default function ViewWholeHistory() {
       }
     } catch (error) {
       console.error("Fetch Error:", error);
-      const errorMsg = error.response?.data?.message || "Error fetching data.";
+      const errorMsg = extractError(error, "Error fetching data.");
       if (!isLoadMore) {
         setErrorStages(errorMsg);
         setErrorTable(errorMsg);
@@ -250,7 +251,7 @@ export default function ViewWholeHistory() {
 
   const columns = [
     {
-      key: 'createdAt', label: 'Date',
+      key: 'createdAt', label: 'Date', width: '80px',
       render: (value) => {
         const { d, t } = formatDateTime(value);
         return (
@@ -262,16 +263,21 @@ export default function ViewWholeHistory() {
       },
     },
     {
-      key: 'remarks', label: 'Description',
+      key: 'remarks', label: 'Description', width: '110px',
       render: (value) => (
-        <span style={{ color: TEXT_MUTED, fontSize: '12px', display: 'block' }} title={value}>
+        <span
+          style={{
+            color: TEXT_MUTED, fontSize: '12px', display: 'block',
+            maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}
+          title={value}
+        >
           {value || '—'}
         </span>
       ),
     },
     {
-      key: 'wholeFishAdded', label: 'Added',
-      align: 'right',
+      key: 'wholeFishAdded', label: 'Added', width: '80px', align: 'right',
       render: (value, row) => {
         if (row.siteId && value > 0) {
           return <span style={{ fontWeight: 700, color: '#2E7D32', fontSize: '13px' }}>
@@ -282,8 +288,7 @@ export default function ViewWholeHistory() {
       },
     },
     {
-      key: 'wholeFishAdded', label: 'Removed',
-      align: 'right',
+      key: 'wholeFishAdded', label: 'Removed', width: '80px', align: 'right',
       render: (value, row) => {
         if (!row.siteId && value > 0) {
           return <span style={{ fontWeight: 700, color: '#dc3545', fontSize: '13px' }}>
@@ -292,6 +297,14 @@ export default function ViewWholeHistory() {
         }
         return <span style={{ color: TEXT_MUTED, fontSize: '13px' }}>—</span>;
       },
+    },
+    {
+      key: 'wholeFishCumulative', label: 'Qty Remaining', width: '80px', align: 'right',
+      render: (value) => (
+        <span style={{ fontWeight: 700, color: '#1D4ED8', fontSize: '13px' }}>
+          {new Intl.NumberFormat().format(Number(value) || 0)}
+        </span>
+      ),
     },
   ];
 
@@ -521,7 +534,7 @@ export default function ViewWholeHistory() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{
                     width: '100%', borderCollapse: 'collapse', fontSize: '12.5px',
-                    minWidth: '700px',
+                    minWidth: '600px', tableLayout: 'fixed',
                   }}>
                     <thead style={{ backgroundColor: '#F9FAFB' }}>
                       <tr>
@@ -531,6 +544,8 @@ export default function ViewWholeHistory() {
                             fontSize: '11px', fontWeight: 700, letterSpacing: '0.07em',
                             textTransform: 'uppercase', color: TEXT_MUTED, whiteSpace: 'nowrap',
                             borderBottom: `1px solid ${BORDER}`,
+                            width: col.width || 'auto',
+                            overflow: 'hidden', textOverflow: 'ellipsis',
                           }}>
                             {col.label}
                           </th>
@@ -555,7 +570,10 @@ export default function ViewWholeHistory() {
                                 padding: '14px 16px',
                                 borderBottom: `1px solid ${BORDER}`,
                                 textAlign: col.align === 'right' ? 'right' : 'left',
-                                whiteSpace: 'nowrap',
+                                whiteSpace: col.key === 'remarks' ? 'normal' : 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                maxWidth: col.width || undefined,
                               }}>
                                 {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
                               </td>

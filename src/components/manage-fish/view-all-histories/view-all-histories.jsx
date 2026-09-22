@@ -12,6 +12,7 @@ import ReactPaginate from "react-paginate";
 import Api from "../../shared/api/apiLink";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
+import extractError from '../../shared/utils/extractError';
 
 const NavTab = styled.div`
   display: flex;
@@ -110,7 +111,7 @@ export default function ViewAllHistory() {
         },
       }));
     } catch (err) {
-      setError("Error fetching data. Please try again.");
+      setError(extractError(err, "Error fetching data. Please try again."));
     } finally {
       setLoading(false);
     }

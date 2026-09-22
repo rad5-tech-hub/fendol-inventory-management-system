@@ -4,6 +4,7 @@ import Api, { ApiV2 } from '../../shared/api/apiLink';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import styles from '../store.module.scss';
 import { toast } from 'react-toastify';
+import extractError from '../../shared/utils/extractError';
 
 export default function AddStockModal({ show, onClose, onSuccess, isSuperAdmin }) {
   const [name, setName] = useState('');
@@ -70,7 +71,7 @@ export default function AddStockModal({ show, onClose, onSuccess, isSuperAdmin }
       if (onSuccess) onSuccess();
     } catch (error) {
       toast.update(loadingToast, {
-        render: error.response?.data?.message || "Error adding stock. Please try again.",
+        render: extractError(error, "Error adding stock. Please try again."),
         type: "error",
         isLoading: false,
         autoClose: 3000,

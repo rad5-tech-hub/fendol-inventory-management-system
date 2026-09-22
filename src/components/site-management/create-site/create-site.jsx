@@ -8,6 +8,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import { ApiV2 } from "../../shared/api/apiLink";
 import { useNavigate, useLocation } from "react-router-dom";
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import extractError from '../../shared/utils/extractError';
 
 export default function CreateSite() {
     const location = useLocation();
@@ -75,7 +76,7 @@ export default function CreateSite() {
             }, 4000);
         } catch (error) {
             toast.update(loadingToast, {
-                render: error.response?.data?.message || (isEdit ? 'Failed to update site. Please try again.' : 'Failed to create site. Please try again.'),
+                render: extractError(error, isEdit ? 'Failed to update site. Please try again.' : 'Failed to create site. Please try again.'),
                 type: "error",
                 isLoading: false,
                 autoClose: 3000,
