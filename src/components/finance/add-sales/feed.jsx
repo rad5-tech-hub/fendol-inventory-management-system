@@ -6,6 +6,7 @@ import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
 import DataTable from "../../shared/data-table/DataTable";
 import Api from '../../shared/api/apiLink';
 import extractError from '../../shared/utils/extractError';
+import useIsHatcheryContext from '../../shared/hooks/useIsHatcheryContext';
 import styles from '../finance.module.scss';
 import EmptyState from "../../shared/empty-state/EmptyState";
 import ReceiptModal from './receipt';
@@ -40,9 +41,7 @@ const FeedForm = ({ customers, stages, products, siteId, productTypes }) => {
     const [totalPrice, setTotalPrice] = useState(0);
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [balance, setBalance] = useState();
-    const siteTypeName = (s) => s?.type?.name || s?.type || s?.description || s?.typeName || s?.name || '';
-    const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
-    const isHatcheryContext = !!activeSite && isHatcheryType(siteTypeName(activeSite));
+    const isHatcheryContext = useIsHatcheryContext();
     const [isWalkIn, setIsWalkIn] = useState(false);
     const [walkInName, setWalkInName] = useState('');
     const [ConfirmDialog, confirm] = useConfirm();

@@ -5,6 +5,7 @@ import { FiX, FiAlertTriangle } from 'react-icons/fi';
 import { BsArrowDownCircle } from 'react-icons/bs';
 import Api from '../../shared/api/apiLink';
 import CustomDropdown from "../../shared/custom-dropdown/CustomDropdown";
+import useIsHatcheryContext from '../../shared/hooks/useIsHatcheryContext';
 import styles from './StoreModals.module.scss';
 
 export default function UseStoreModal({ show, store, onClose, onSuccess }) {
@@ -12,11 +13,7 @@ export default function UseStoreModal({ show, store, onClose, onSuccess }) {
   const user = useSelector((store) => store.user);
   const userTypes = useSelector((store) => store.user?.userTypes || []);
   const isSuperAdmin = userTypes.includes('super_admin');
-  const siteTypeName = (s) => s?.type?.name || s?.type || s?.description || s?.typeName || s?.name || '';
-  const isHatcheryType = (t) => String(t || '').toLowerCase().includes('hatch');
-  const isHatcheryContext = isSuperAdmin
-    ? !!activeSite && isHatcheryType(siteTypeName(activeSite))
-    : (user?.userSites || []).some(s => isHatcheryType(siteTypeName(typeof s === 'string' ? {} : s))) || !!activeSite && isHatcheryType(siteTypeName(activeSite));
+  const isHatcheryContext = useIsHatcheryContext();
   const [pondId, setPondId] = useState('');
   const [quantityUsed, setQuantityUsed] = useState('');
   const [pondOptions, setPondOptions] = useState([]);
