@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import styles from "../finance.module.scss";
-import Logo from "../../../assests/logo.png";
+// 1-bit monochrome logo (no gradients/grays) so thermal print heads render it crisply
+import Logo from "../../../assests/logo-thermal.png";
 
 const ReceiptModal = ({ receiptData, onClose, show }) => {
   const printRef = useRef();
@@ -29,7 +30,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
       <div className="custom-receipt-overlay">
         <div className="custom-receipt-container">
           <div className="text-center p-3">
-            <img src={Logo} alt="logo" style={{ maxWidth: "80px", margin: "0 auto 5px", display: "block" }} />
+            <img src={Logo} alt="logo" className="receipt-logo" style={{ width: "180px", margin: "0 auto 5px", display: "block" }} />
             <p>No receipt data available.</p>
             <button className="btn btn-danger px-4 py-2" onClick={onClose}>Close</button>
           </div>
@@ -50,7 +51,7 @@ const ReceiptModal = ({ receiptData, onClose, show }) => {
 
           {/* ── Header ── */}
           <div style={{ textAlign: "center", marginBottom: "16px" }}>
-            <img src={Logo} alt="logo" style={{ maxWidth: "64px", margin: "0 auto 8px", display: "block" }} />
+            <img src={Logo} alt="logo" className="receipt-logo" style={{ width: "200px", maxWidth: "100%", margin: "0 auto 8px", display: "block" }} />
             <p style={{ fontSize: "14px", fontWeight: 700, letterSpacing: "1.5px", color: "#1A1C1E", margin: 0, textTransform: "uppercase" }}>
               Sales Receipt
             </p>
@@ -223,6 +224,9 @@ const customStyles = `
     color: #374151;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
+  .receipt-logo {
+    image-rendering: pixelated;
+  }
   @media print {
     body > *:not(#printable-content) {
       display: none;
@@ -233,11 +237,26 @@ const customStyles = `
       left: 0;
       width: 300px;
       background-color: #ffffff;
-      color: #374151;
       padding: 8px;
       font-size: 12px;
       line-height: 1.5;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    /* Thermal printers: pure black, heavy, web-safe type. !important beats the inline styles. */
+    #printable-content,
+    #printable-content * {
+      color: #000000 !important;
+      font-family: Arial, Helvetica, sans-serif !important;
+      font-weight: 700 !important;
+      border-color: #000000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    /* Separator divs are drawn with background colour */
+    #printable-content div[style*="height: 1px"] {
+      background: #000000 !important;
+    }
+    #printable-content .receipt-logo {
+      image-rendering: pixelated;
     }
     .d-print-none {
       display: none;
