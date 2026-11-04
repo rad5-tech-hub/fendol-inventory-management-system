@@ -63,6 +63,14 @@ const formatRangeLabel = (startDate, endDate) => {
   return `${startDay} — ${endDay}`;
 };
 
+const getThisMonthRange = () => {
+  const now = new Date();
+  return {
+    startDate: toISODate(new Date(now.getFullYear(), now.getMonth(), 1)),
+    endDate: toISODate(now),
+  };
+};
+
 const SalesTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
@@ -486,6 +494,17 @@ const Dashboard = () => {
   const totalCustomers = totals?.totalCustomers ?? 0;
   const totalPonds = totals?.totalPonds ?? 0;
 
+  // With no dates the API returns the last 30 days
+  const thisMonthRange = getThisMonthRange();
+  const isThisMonth = dateFrom === thisMonthRange.startDate && dateTo === thisMonthRange.endDate;
+  const isLast30Days = !dateFrom && !dateTo;
+  let overviewRangeLabel;
+  if (isLast30Days) overviewRangeLabel = 'Last 30 days';
+  else if (isThisMonth) overviewRangeLabel = 'This month';
+  else if (dateFrom && dateTo) overviewRangeLabel = formatRangeLabel(dateFrom, dateTo);
+  else if (dateFrom) overviewRangeLabel = `From ${formatRangeLabel(dateFrom, dateFrom)}`;
+  else overviewRangeLabel = `Up to ${formatRangeLabel(dateTo, dateTo)}`;
+
   const searchFiltered = searchQuery
     ? sales.filter(s =>
         s.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -592,6 +611,20 @@ const Dashboard = () => {
                 <>
               {/* Date Range Filter */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+                <div className={styles.timeSelector}>
+                  <button
+                    className={`${styles.timeBtn} ${isLast30Days ? styles.timeBtnActive : ''}`}
+                    onClick={() => { setDateFrom(''); setDateTo(''); }}
+                  >
+                    Last 30 days
+                  </button>
+                  <button
+                    className={`${styles.timeBtn} ${isThisMonth ? styles.timeBtnActive : ''}`}
+                    onClick={() => { setDateFrom(thisMonthRange.startDate); setDateTo(thisMonthRange.endDate); }}
+                  >
+                    This month
+                  </button>
+                </div>
                 <BsCalendarRange size={18} color="#8C949B" />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>From:</label>
@@ -625,28 +658,24 @@ const Dashboard = () => {
                 {[
                   {
                     label: 'TOTAL SALES', value: totalSalesFormatted,
-                    sub: '↑ +16.5% vs last month', subClass: styles.statSubGreen,
+                    sub: overviewRangeLabel, subClass: styles.statSubNeutral,
                     icon: '🛍', iconClass: styles.statIconAmber,
-                    tooltipText: `Total revenue of ${totalSalesFormatted} recorded. +16.5% increase from the previous month.`,
+                    tooltipText: `Total revenue of ${totalSalesFormatted} recorded (${overviewRangeLabel.toLowerCase()}).`,
                   },
                   {
                     label: 'TOTAL CUSTOMERS', value: totalCustomers.toLocaleString(),
-                    sub: '↑ +42 new this week', subClass: styles.statSubGreen,
                     icon: '👤', iconClass: styles.statIconAmber,
-                    tooltipText: `${totalCustomers.toLocaleString()} registered customers. 42 new customers joined this week.`,
+                    tooltipText: `${totalCustomers.toLocaleString()} registered customers.`,
                   },
                   {
-                    label: 'ACTIVE PONDS',
-                    value: <>{totalPonds} <span className={styles.statValueMuted}>/ 52</span></>,
-                    sub: '⊙ 4 in maintenance', subClass: styles.statSubNeutral,
+                    label: 'ACTIVE PONDS', value: totalPonds,
                     icon: '🐟', iconClass: styles.statIconBrown,
-                    tooltipText: `${totalPonds} of 52 ponds currently active. 4 ponds under maintenance.`,
+                    tooltipText: `${totalPonds} ponds currently active.`,
                   },
                   {
                     label: 'COMPLETED SALES', value: summary?.completedCount ?? 0,
-                    sub: '✓ All transactions verified', subClass: styles.statSubGreen,
                     icon: '✅', iconClass: styles.statIconAmber,
-                    tooltipText: `${summary?.completedCount ?? 0} completed sales transactions. All verified and confirmed.`,
+                    tooltipText: `${summary?.completedCount ?? 0} completed sales transactions.`,
                   },
                 ].map((card, i) => (
                   <Col key={i} xl={3} lg={6} md={6} sm={12} xs={12}>
@@ -661,7 +690,7 @@ const Dashboard = () => {
                         <div className={`${styles.statIcon} ${card.iconClass}`}>{card.icon}</div>
                       </div>
                       <div className={styles.statValue}>{card.value}</div>
-                      <div className={`${styles.statSub} ${card.subClass}`}>{card.sub}</div>
+                      {card.sub && <div className={`${styles.statSub} ${card.subClass}`}>{card.sub}</div>}
                       <div className={`${styles.statTooltip} ${activeTooltip === i ? styles.statTooltipVisible : ''}`}>
                         <span className={styles.tooltipText}>{card.tooltipText}</span>
                       </div>
